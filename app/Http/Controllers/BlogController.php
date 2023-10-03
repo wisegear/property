@@ -93,7 +93,34 @@ class BlogController extends Controller
 
         $this->authorize('Admin');
 
+        // Prepare a new database entry.
         $post = new BlogPosts;
+
+        if ($request->hasFile('gallery')) {
+
+            // Validate the file types, limited to certain extensions and maximum size of 8mb
+            $request->validate(['gallery.*' => 'image|mimes:jpeg,jpg,png,gif,svg|max:8096',]);
+
+            // Create empty array for the images
+            $imageNames = [];
+
+            //Process each of the image files.
+            foreach ($request->file('gallery') as $file) {
+                $imageName = time() . '-' . $file->getClientOriginalName();
+                $file->move(public_path('images/blog/galleries'), $imageName);
+
+                //Create a thumbnail 
+                $thumbnail = Image::make(public_path('images/blog/galleries') . '/' . $imageName)
+                            ->fit(375, 175)
+                            ->save(public_path('images/blog/galleries/thumbnail_' . $imageName));
+
+                $imageNames[] = $imageName;
+            }
+
+            // Add gallery array to the database 
+            $post->gallery = json_encode($imageNames);
+        }
+
 
         $post->title = $request->title;
         $post->excerpt = $request->excerpt;
@@ -134,7 +161,10 @@ class BlogController extends Controller
     {
         $post = BlogPosts::with('BlogCategories', 'Users', 'BlogTags')->where('slug', $slug)->first();
 
-        return view('blog.show', compact('post'));
+        // Add gallery if there is one
+        $galleryImages = json_decode($post->gallery, true);
+
+        return view('blog.show', compact('post', 'galleryImages'));
     }
 
     /**

@@ -24,7 +24,7 @@ return new class extends Migration
         Schema::create('blog_posts', function (Blueprint $table) {
             $table->id('id');
             $table->string('image')->default('blog_post_default.jpg');
-            $table->string('gallery')->nullable();
+            $table->string('gallery', 1000)->nullable();
             $table->string('title', 150);
             $table->string('slug', 200);
             $table->text('excerpt');

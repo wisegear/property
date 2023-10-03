@@ -16,11 +16,15 @@
     <img src="../images/media/large-{{$post->image}}" class="my-6 w-full h-[300px]">
 </div>
 
+
+
 <!-- Post Text -->
 
 <div class="flex space-x-10">
     <div class="w-9/12 wise1text">
-        {!! $post->addAnchorLinkstoHeadings() !!}
+        {!! str_replace('{gallery}', view('snippets.gallery', ['images' => $galleryImages])->render(), $post->addAnchorLinkstoHeadings()) !!}
+
+
     </div>
 
     <div class="w-3/12 border-l border-gray-300">
@@ -38,11 +42,6 @@
         </div>
     </div>
 </div>
-
-
-
-
-
 
 
 

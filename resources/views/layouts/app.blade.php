@@ -19,6 +19,12 @@
         <!-- FontAwesome -->
         <script src="https://kit.fontawesome.com/0ff5084395.js" crossorigin="anonymous"></script>
 
+        <!-- VenoBox -->
+        <link rel="stylesheet" href="{{ asset('assets/venobox.min.css') }}">
+        <script src="{{ asset('assets/venobox.min.js') }}"></script>
+
+        <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -37,5 +43,6 @@
             @include('layouts.footer')
 
         </div>
+
     </body>
 </html>

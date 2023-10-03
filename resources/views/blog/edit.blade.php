@@ -83,6 +83,12 @@
             <input type="text" class="w-full border text-sm h-8" id="tags" name="tags" value="{{ $split_tags }}">
         </div>
 
+        <!-- Gallery, optional -->
+        <div class="my-10 flex flex-col space-y-6">
+            <label for="gallery" class="font-bold">Gallery Images:</label>
+            <input type="file" name="gallery[]" multiple>
+        </div>
+
         <!-- Post Options -->   
         <div class="">
             <p class="font-semibold text-gray-700 mb-2">Post Options:</p>
