@@ -5,7 +5,7 @@
 	<div class="text-center mb-4">
 		<p class="font-semibold mb-2 text-lg">You're viewing the user profile for {{ $user->name }}</p>
 		<div class="flex space-x-4 justify-center my-10">
-			<a href="{{ $user->twitter }}"><i class="fa-brands fa-square-x-twitter fa-xl"></i></a>					
+			<a href="{{ $user->x }}"><i class="fa-brands fa-square-x-twitter fa-xl"></i></a>					
 			<a href="{{ $user->facebook }}"><i class="fa-brands fa-square-facebook fa-xl"></i></a>					
 			<a href="{{ $user->linkedin }}"><i class="fa-brands fa-linkedin fa-xl"></i></a>	
 		</div>				
@@ -37,7 +37,7 @@
 	@if (empty($user->bio))
 				<p class="border p-2 text-sm">User has not provided any information about themselves.</p>
 			@else
-				<p class="border rounded-md p-2 text-gray-700 text-sm">{{ $user->bio }}</p>
+				<p class="border p-2 text-gray-700 text-sm">{{ $user->bio }}</p>
 			@endif
 	</div>
 

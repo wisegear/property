@@ -189,12 +189,63 @@ class BlogController extends Controller
 
         $this->authorize('Admin');
 
+            // Form Validation
+
             $validator = Validator::make($request->all(), [
                 'title' => 'required|max:100',
                 'body' => 'required|min:1',
             ])->validate();
 
+                // Get existing blog post    
+
                 $post = BlogPosts::find($id);
+
+                // first check if there are any new gallery images
+            
+                if (!empty($request->gallery)) {
+
+                    // Check if there are existing gallery images and delete
+
+                    if (!empty($post->gallery)) {
+                        foreach (json_decode($post->gallery) as $image) {
+
+                            $path = public_path('images/blog/galleries/' . $image);
+                            $path2 = public_path('images/blog/galleries/thumbnail_' . $image);
+
+                            File::delete($path2);
+                            File::delete($path);
+                        }
+                    }
+
+                // Validate the file types, limited to certain extensions and maximum size of 8mb
+                
+                $request->validate(['gallery.*' => 'image|mimes:jpeg,jpg,png,gif,svg|max:8096',]);
+
+                // Create empty array for the new images
+                
+                $imageNames = [];
+
+                //Process each of the new image files.
+
+                foreach ($request->file('gallery') as $file) {
+                    $imageName = time() . '-' . $file->getClientOriginalName();
+                    $file->move(public_path('images/blog/galleries'), $imageName);
+
+                    //Create a thumbnail for each 
+
+                    $thumbnail = Image::make(public_path('images/blog/galleries') . '/' . $imageName)
+                                ->fit(375, 175)
+                                ->save(public_path('images/blog/galleries/thumbnail_' . $imageName));
+
+                    // Add each new image to an array
+
+                    $imageNames[] = $imageName;
+                }
+
+                // Add gallery array of new images to the database 
+
+                $post->gallery = json_encode($imageNames);
+            }
 
             if(isset($request->imageInput)) {
 
@@ -237,15 +288,30 @@ class BlogController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
-         {
+    {
 
-            $this->authorize('Admin');
+        $this->authorize('Admin');
 
-            $post = BlogPosts::find($id);
-      
-            BlogPosts::destroy($id);
-            return back();
-        }
+        $post = BlogPosts::find($id);
+
+        // Delete associated gallery images
+
+        $galleryArray = json_decode($post->gallery);
+        
+        if (!empty($galleryArray)) {
+            foreach ($galleryArray as $image) {
+
+                $path = public_path('images/blog/galleries/' . $image);
+                $path2 = public_path('images/blog/galleries/thumbnail_' . $image);
+
+                File::delete($path2);
+                File::delete($path);
+            }
+        }       
+  
+        BlogPosts::destroy($id);
+        return back();
+    }
 
 
 }

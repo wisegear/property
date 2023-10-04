@@ -20,7 +20,7 @@
                     @endcan
                 </div>
                 <ul class="flex space-x-4 text-sm">
-                    <li><a href="#" class="text-gray-700 hover:text-sky-700"><i class="fa-solid fa-user mr-2"></i>{{ $post->users->name }}</a></li>
+                    <li><a href="../profile/{{$post->users->name_slug }}" class="text-gray-700 hover:text-sky-700"><i class="fa-solid fa-user mr-2"></i>{{ $post->users->name }}</a></li>
                     <li class="text-gray-700"><i class="fa-solid fa-calendar-days mr-2"></i>{{ $post->created_at->diffForHumans() }}</li>
                     <li><a href="/blog?category={{ $post->blogcategories->name }}" class="text-gray-700 hover:text-sky-700"><i class="fa-solid fa-folder mr-2"></i>{{ $post->blogcategories->name }}</a></li>
                 </ul>
@@ -76,7 +76,7 @@
          <h2 class="text-xl font-bold text-gray-700 border-b border-gray-300 mb-4"><i class="fa-solid fa-user-secret text-red-800"></i> Unpublished Posts</h2>
             <div class="flex flex-col space-y-2 text-sm">
                 @foreach ($unpublished as $post)
-                    <a href="#" class="text-gray-700 hover:text-sky-700">{{ $post->title }}</a>
+                    <a href="../blog/{{$post->id}}/edit" class="text-gray-700 hover:text-sky-700">{{ $post->title }}</a>
                 @endforeach
             </div>
         </div> 

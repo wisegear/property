@@ -112,7 +112,7 @@
 
 			  <div class="">
 			    <label for="bio">Tell everyone a bit about you</label>
-			    <textarea class="border rounded-md w-full" id="bio" name="bio" rows="6">{{ $user->bio }}</textarea>
+			    <textarea class="border w-full" id="bio" name="bio" rows="6">{{ $user->bio }}</textarea>
 			    <p class="text-red-500">{{ $errors->has('bio') ? ' Max 500 characters' : '' }}</p>
 			  </div>
 
