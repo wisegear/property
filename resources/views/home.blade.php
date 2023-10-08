@@ -25,7 +25,7 @@
 <div class="grid md:grid-cols-4 gap-5">
     @foreach ($posts as $post)
     <div>
-        <img src="../images/media/{{$post->image}}" class="border border-gray-300" style="width: 100%; height: 175px;">
+        <img src="../images/media/small-{{$post->image}}" class="border border-gray-300" style="width: 100%; height: 175px;">
         <h2 class="text-gray-700 py-2 text-center hover:text-sky-700"><a href="/blog/{{$post->slug}}">{{$post->title}}</a></h2>
     </div>
     @endforeach
