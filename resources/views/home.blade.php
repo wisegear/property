@@ -41,7 +41,7 @@
         $time = ceil( $words / 250);
     ?>
         <div class="flex md:w-8/12 space-x-4 items-center text-gray-700 justify-center mx-auto">
-            <p class="hidden md:block md:w-2/12">{{$post->created_at->diffForHumans() }}</p>
+            <p class="hidden md:block md:w-2/12">{{$post->date->diffForHumans() }}</p>
             <h2 class="md:w-6/12 py-2 text-center hover:text-sky-700"><a href="/blog/{{$post->slug}}">{{$post->title}}</a></h2>
             <p class="hidden md:block md:w-2/12"><?= $time ?> min read</p>
         </div>

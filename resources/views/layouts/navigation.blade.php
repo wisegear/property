@@ -35,6 +35,7 @@
                 
             @else
                 <a href="/login"><button class="border text-xs text-white uppercase font-bold bg-green-800 p-2">Login</button></a>
+                <a href="/register"><button class="border text-xs text-white uppercase font-bold bg-green-600 p-2">Register</button></a>
             @endif
         </div>
     </div>

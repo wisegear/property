@@ -11,6 +11,10 @@ class BlogPosts extends Model
     use HasFactory;
     protected $table = 'blog_posts';
 
+    protected $casts = [
+        'date' => 'date', // or 'datetime' depending on your needs
+    ];
+
     public function Users() {
         
         return $this->hasOne(User::class, 'id', 'user_id');

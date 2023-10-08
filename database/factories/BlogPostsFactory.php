@@ -36,6 +36,7 @@ class BlogPostsFactory extends Factory
             'categories_id' => $this->faker->numberBetween(1, 5),
             'user_id' => $this->faker->numberBetween(1, 4),
             'created_at' => $this->faker->dateTimeThisYear(),
+            'date' => $this->faker->dateTimeThisYear(),
         ];
 
     }

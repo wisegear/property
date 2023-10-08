@@ -25,6 +25,7 @@ return new class extends Migration
             $table->id('id');
             $table->string('image')->default('blog_post_default.jpg');
             $table->string('gallery', 1000)->nullable();
+            $table->date('date')->nullable();
             $table->string('title', 150);
             $table->string('slug', 200);
             $table->text('excerpt');
@@ -32,9 +33,8 @@ return new class extends Migration
             $table->boolean('published')->default(true);
             $table->text('body');
             $table->Biginteger('user_id')->unsigned();
-            $table->Biginteger('categories_id')->unsigned();
-            $table->timestamps();
-        
+            $table->Biginteger('categories_id')->unsigned();     
+            $table->timestamps();  
 
             // Create foreign keys
 

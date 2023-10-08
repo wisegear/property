@@ -34,8 +34,15 @@
             {{ $errors->has('newimage') ? 'An image is required' : '' }}
         </div>
 
-        <div class="mx-auto" id="output"></div>            
-            
+        <div class="mx-auto" id="output"></div>  
+
+            <!-- Post Date --> 
+            <div class="mt-10">
+                <p class="font-semibold text-gray-700 mb-2">Enter Date of Post<span class="text-gray-400">(dd-mm-yyyy)</span>:</p>
+                <div class="mt-2 text-red-500">{{ $errors->has('title') ? 'A title is required' : '' }}</div>
+                <input class="border text-sm h-8 w-full" type="text" id="date" name="date"  value="{{ $post->date->format('d-m-Y') }}">
+            </div>           
+
             <!-- Post Title --> 
             <div class="mt-3">
                 <p class="font-semibold text-gray-700 mb-2">Enter title:</p>

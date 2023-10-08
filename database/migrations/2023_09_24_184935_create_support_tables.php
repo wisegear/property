@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('support', function (Blueprint $table) {
             $table->id('id');
             $table->string('title', 100);
+            $table->date('d-m-Y')->nullable();
             $table->text('text');
             $table->string('status', 100)->default('Open');
             $table->Biginteger('user_id')->unsigned();

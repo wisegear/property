@@ -51,7 +51,7 @@ class BlogController extends Controller
 
         $posts = BlogPosts::with('BlogCategories', 'BlogTags', 'Users')
                  ->where('published', true)
-                 ->orderBy('created_at', 'desc')
+                 ->orderBy('date', 'desc')
                  ->paginate(6);
 
         }
@@ -121,7 +121,7 @@ class BlogController extends Controller
             $post->gallery = json_encode($imageNames);
         }
 
-
+        $post->date = $request->date;
         $post->title = $request->title;
         $post->excerpt = $request->excerpt;
         $post->image = $request->imageInput;
@@ -160,11 +160,12 @@ class BlogController extends Controller
     public function show(string $slug)
     {
         $post = BlogPosts::with('BlogCategories', 'Users', 'BlogTags')->where('slug', $slug)->first();
+        $recent_posts = BlogPosts::where('published', true)->orderBy('date', 'desc')->limit(3)->get();
 
         // Add gallery if there is one
         $galleryImages = json_decode($post->gallery, true);
 
-        return view('blog.show', compact('post', 'galleryImages'));
+        return view('blog.show', compact('post', 'galleryImages', 'recent_posts'));
     }
 
     /**
@@ -252,7 +253,7 @@ class BlogController extends Controller
                 $post->image = $request->imageInput;
 
             }
-                
+                $post->date = $request->date;
                 $post->title = $request->title;
                 $post->slug = Str::slug($post->title, '-');
                 $post->excerpt = $request->excerpt;

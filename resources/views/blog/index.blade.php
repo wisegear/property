@@ -21,7 +21,7 @@
                 </div>
                 <ul class="flex space-x-4 text-sm">
                     <li><a href="../profile/{{$post->users->name_slug }}" class="text-gray-700 hover:text-sky-700"><i class="fa-solid fa-user mr-2"></i>{{ $post->users->name }}</a></li>
-                    <li class="text-gray-700"><i class="fa-solid fa-calendar-days mr-2"></i>{{ $post->created_at->diffForHumans() }}</li>
+                    <li class="text-gray-700"><i class="fa-solid fa-calendar-days mr-2"></i>{{ $post->date->diffForHumans() }}</li>
                     <li><a href="/blog?category={{ $post->blogcategories->name }}" class="text-gray-700 hover:text-sky-700"><i class="fa-solid fa-folder mr-2"></i>{{ $post->blogcategories->name }}</a></li>
                 </ul>
                 <p class="my-4">{{ $post->excerpt }}</p>
