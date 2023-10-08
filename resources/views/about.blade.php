@@ -24,7 +24,7 @@
 
 	<p class="wise1text pt-4">I don’t claim to be a professional writer or blogger, so apologize if my at times rambling or opinionated views are at times incoherent but I am sure that will improve with time. Probably shouldn’t have waited 21 years to do this!</p>
 
-	<p class="wise1text pt-4">If you want to get in touch please use the contact link at the top of the page, or drop me a line at hello@housing.scot</p>
+	<p class="wise1text pt-4">If you want to get in touch please use the contact link at the top of the page, or drop me a line at lee@wisener.net</p>
 
 	<p class="font-bold pt-4 mb-10">Lee Wisener CeMAP, CeRER, CeFAP, CSME</p>
 </div>

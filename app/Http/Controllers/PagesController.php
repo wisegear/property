@@ -10,8 +10,8 @@ class PagesController extends Controller
     
     public function home() {
 
-        $posts = BlogPosts::where('published', true)->orderBy('created_at', 'desc')->limit(4)->get();
-        $recent_posts = BlogPosts::where('published', true)->orderBy('created_at', 'desc')->limit(5)->get();
+        $posts = BlogPosts::where('published', true)->orderBy('date', 'desc')->limit(4)->get();
+        $recent_posts = BlogPosts::where('published', true)->orderBy('date', 'desc')->limit(5)->get();
 
         return view ('home', compact('posts', 'recent_posts'));
     }
