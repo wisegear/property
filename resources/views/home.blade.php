@@ -13,19 +13,19 @@
 
 <!-- Buttons -->
 <div class="flex justify-center space-x-10">
-    <a href="/important"><button class="border p-2 text-xs uppercase font-bold bg-orange-300 hover:bg-orange-500 hover:text-white">Important</button></a>
-    <a href="/about"><button class="border p-2 text-xs uppercase font-bold bg-gray-300 hover:bg-sky-700 hover:text-white">About</button></a>
+    <a href="/important"><button class="border rounded p-2 text-xs uppercase font-bold bg-orange-300 hover:bg-orange-500 hover:text-white">Important</button></a>
+    <a href="/about"><button class="border rounded p-2 text-xs uppercase font-bold bg-gray-300 hover:bg-sky-700 hover:text-white">About</button></a>
 </div>
 
 <!-- Featured Posts -->
-<div class="border-b border-gray-300 font-bold my-10">
+<div class="border-b border-gray-300 font-bold mt-10 mb-4">
     <p>Featured Posts</p>        
 </div>
 
 <div class="grid md:grid-cols-4 gap-5">
     @foreach ($posts as $post)
     <div>
-        <img src="../images/media/small-{{$post->image}}" class="border border-gray-300" style="width: 100%; height: 175px;">
+        <img src="../images/media/small-{{$post->image}}" class="border rounded border-gray-300" style="width: 100%; height: 150px;">
         <h2 class="text-gray-700 py-2 text-center hover:text-sky-700"><a href="/blog/{{$post->slug}}">{{$post->title}}</a></h2>
     </div>
     @endforeach
