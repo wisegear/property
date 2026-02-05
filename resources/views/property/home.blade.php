@@ -244,19 +244,24 @@
         (int) collect($ewTop5Series)->filter(fn($v) => !is_null($v))->min(),
     ])->min();
 
+    $ewYearExpr = \Illuminate\Support\Facades\Schema::hasColumn('land_registry', 'YearDate')
+        ? '"YearDate"'
+        : (DB::connection()->getDriverName() === 'sqlite'
+            ? 'CAST(strftime(\'%Y\', "Date") AS INTEGER)'
+            : 'EXTRACT(YEAR FROM "Date")::int');
+    $homeCacheTtl = now()->addDays(45);
+
     // === Property type split (England & Wales, Cat A) ===
     // Prefer warmed cache; fallback to live query if missing.
-    $typeRows = \Illuminate\Support\Facades\Cache::get('ew:propertyTypeSplitByYear:catA:v1');
-
-    if (!$typeRows) {
-        $typeRows = DB::table('land_registry')
-            ->selectRaw('`YearDate` as year, `PropertyType` as type, COUNT(*) as total')
+    $typeRows = \Illuminate\Support\Facades\Cache::remember('ew:propertyTypeSplitByYear:catA:v1', $homeCacheTtl, function () use ($ewYearExpr) {
+        return DB::table('land_registry')
+            ->selectRaw("{$ewYearExpr} as year, \"PropertyType\" as type, COUNT(*) as total")
             ->where('PPDCategoryType', 'A')
             ->whereIn('PropertyType', ['D','S','T','F'])
-            ->groupBy('year', 'type')
+            ->groupByRaw($ewYearExpr . ', "PropertyType"')
             ->orderBy('year')
             ->get();
-    }
+    });
 
     // Normalise into a year -> {D,S,T,F} map, then align to $ewYears
     $typeByYear = collect($typeRows)->groupBy('year')->map(function ($rows) {
@@ -278,19 +283,17 @@
 
     // === Average price by property type (England & Wales, Cat A) ===
     // Prefer warmed cache; fallback to live query if missing.
-    $avgTypeRows = \Illuminate\Support\Facades\Cache::get('ew:avgPriceByTypeByYear:catA:v1');
-
-    if (!$avgTypeRows) {
-        $avgTypeRows = DB::table('land_registry')
-            ->selectRaw('`YearDate` as year, `PropertyType` as type, ROUND(AVG(`Price`)) as avg_price')
+    $avgTypeRows = \Illuminate\Support\Facades\Cache::remember('ew:avgPriceByTypeByYear:catA:v1', $homeCacheTtl, function () use ($ewYearExpr) {
+        return DB::table('land_registry')
+            ->selectRaw("{$ewYearExpr} as year, \"PropertyType\" as type, ROUND(AVG(\"Price\")) as avg_price")
             ->where('PPDCategoryType', 'A')
             ->whereIn('PropertyType', ['D','S','T','F'])
             ->whereNotNull('Price')
             ->where('Price', '>', 0)
-            ->groupBy('year', 'type')
+            ->groupByRaw($ewYearExpr . ', "PropertyType"')
             ->orderBy('year')
             ->get();
-    }
+    });
 
     $avgTypeByYear = collect($avgTypeRows)->groupBy('year')->map(function ($rows) {
         $out = ['D' => null, 'S' => null, 'T' => null, 'F' => null];
@@ -311,17 +314,15 @@
 
     // === New build vs existing split (England & Wales, Cat A) ===
     // Prefer warmed cache; fallback to live query if missing.
-    $nbRows = \Illuminate\Support\Facades\Cache::get('ew:newBuildSplitByYear:catA:v1');
-
-    if (!$nbRows) {
-        $nbRows = DB::table('land_registry')
-            ->selectRaw('`YearDate` as year, `NewBuild` as nb, COUNT(*) as total')
+    $nbRows = \Illuminate\Support\Facades\Cache::remember('ew:newBuildSplitByYear:catA:v1', $homeCacheTtl, function () use ($ewYearExpr) {
+        return DB::table('land_registry')
+            ->selectRaw("{$ewYearExpr} as year, \"NewBuild\" as nb, COUNT(*) as total")
             ->where('PPDCategoryType', 'A')
             ->whereIn('NewBuild', ['Y','N'])
-            ->groupBy('year', 'nb')
+            ->groupByRaw($ewYearExpr . ', "NewBuild"')
             ->orderBy('year')
             ->get();
-    }
+    });
 
     $nbByYear = collect($nbRows)->groupBy('year')->map(function ($rows) {
         $out = ['Y' => 0, 'N' => 0];
@@ -352,17 +353,15 @@
 
 // === Leasehold vs freehold split (England & Wales, Cat A) ===
 // Prefer warmed cache; fallback to live query if missing.
-$durRows = \Illuminate\Support\Facades\Cache::get('ew:durationSplitByYear:catA:v1');
-
-if (!$durRows) {
-    $durRows = DB::table('land_registry')
-        ->selectRaw('`YearDate` as year, `Duration` as dur, COUNT(*) as total')
+$durRows = \Illuminate\Support\Facades\Cache::remember('ew:durationSplitByYear:catA:v1', $homeCacheTtl, function () use ($ewYearExpr) {
+    return DB::table('land_registry')
+        ->selectRaw("{$ewYearExpr} as year, \"Duration\" as dur, COUNT(*) as total")
         ->where('PPDCategoryType', 'A')
         ->whereIn('Duration', ['F','L'])
-        ->groupBy('year', 'dur')
+        ->groupByRaw($ewYearExpr . ', "Duration"')
         ->orderBy('year')
         ->get();
-}
+});
 
 $durByYear = collect($durRows)->groupBy('year')->map(function ($rows) {
     $out = ['F' => 0, 'L' => 0];

@@ -3,8 +3,9 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Process\Process;
 
 class PropertyHomeWarm extends Command
@@ -32,11 +33,12 @@ class PropertyHomeWarm extends Command
             $this->runTask($task, $ttl);
             Cache::put('property:home:catA:last_warm', now()->toIso8601String(), $ttl);
             $this->info("Task '{$task}' complete.");
+
             return self::SUCCESS;
         }
 
         // Orchestrator mode: define the seven independent tasks
-        $tasks = ['sales','avgPrice','p90','top5','topSale','top3','monthly24','typeSplit','newBuildSplit','durationSplit','avgPriceByType'];
+        $tasks = ['sales', 'avgPrice', 'p90', 'top5', 'topSale', 'top3', 'monthly24', 'typeSplit', 'newBuildSplit', 'durationSplit', 'avgPriceByType'];
 
         $parallel = max(1, (int) ($this->option('parallel') ?? 1));
         if ($parallel <= 1) {
@@ -47,6 +49,7 @@ class PropertyHomeWarm extends Command
             $this->newLine(2);
             Cache::put('property:home:catA:last_warm', now()->toIso8601String(), $ttl);
             $this->info('PropertyController home cache warm complete (EW Cat A only).');
+
             return self::SUCCESS;
         }
 
@@ -60,6 +63,7 @@ class PropertyHomeWarm extends Command
         $maxWorkers = (int) min($parallel, 11); // safety cap (we have 11 tasks)
         $queue = $tasks; // array of strings
         $running = [];
+        $failedTasks = [];
 
         $startWorker = function (string $t) use (&$running) {
             $php = PHP_BINARY;
@@ -72,20 +76,21 @@ class PropertyHomeWarm extends Command
         };
 
         // Prime the pool
-        while (!empty($queue) && count($running) < $maxWorkers) {
+        while (! empty($queue) && count($running) < $maxWorkers) {
             $startWorker(array_shift($queue));
         }
 
         // Event loop
-        while (!empty($running)) {
+        while (! empty($running)) {
             foreach ($running as $t => $proc) {
-                if (!$proc->isRunning()) {
+                if (! $proc->isRunning()) {
                     if ($proc->getExitCode() !== 0) {
                         $this->warn("Worker failed for task {$t} (exit code: {$proc->getExitCode()})");
+                        $failedTasks[] = $t;
                     }
                     unset($running[$t]);
                     $bar->advance();
-                    if (!empty($queue)) {
+                    if (! empty($queue)) {
                         $startWorker(array_shift($queue));
                     }
                 }
@@ -96,6 +101,12 @@ class PropertyHomeWarm extends Command
         $bar->finish();
         $this->newLine(2);
 
+        if (! empty($failedTasks)) {
+            $this->error('One or more warm tasks failed: '.implode(', ', $failedTasks));
+
+            return self::FAILURE;
+        }
+
         Cache::put('property:home:catA:last_warm', now()->toIso8601String(), $ttl);
         $this->info('PropertyController home cache warm complete (EW Cat A only).');
 
@@ -104,30 +115,32 @@ class PropertyHomeWarm extends Command
 
     private function runTask(string $task, int $ttl): void
     {
+        $yearExpr = $this->yearExpression();
+
         switch ($task) {
             case 'sales':
                 $data = DB::table('land_registry')
-                    ->selectRaw('YEAR(`Date`) as year, COUNT(*) as total')
+                    ->selectRaw("{$yearExpr} as year, COUNT(*) as total")
                     ->where('PPDCategoryType', 'A')
-                    ->groupBy('year')->orderBy('year')->get();
+                    ->groupByRaw($yearExpr)->orderBy('year')->get();
                 Cache::put('land_registry_sales_by_year:catA:v2', $data, $ttl);
                 break;
 
             case 'avgPrice':
                 $data = DB::table('land_registry')
-                    ->selectRaw('YEAR(`Date`) as year, ROUND(AVG(`Price`)) as avg_price')
+                    ->selectRaw("{$yearExpr} as year, ROUND(AVG(\"Price\")) as avg_price")
                     ->where('PPDCategoryType', 'A')
-                    ->groupBy('year')->orderBy('year')->get();
+                    ->groupByRaw($yearExpr)->orderBy('year')->get();
                 Cache::put('land_registry_avg_price_by_year:catA:v2', $data, $ttl);
                 break;
 
             case 'p90':
                 $sub = DB::table('land_registry')
-                    ->selectRaw('`YearDate` as year, `Price`, CUME_DIST() OVER (PARTITION BY `YearDate` ORDER BY `Price`) as cd')
+                    ->selectRaw("{$yearExpr} as year, \"Price\", CUME_DIST() OVER (PARTITION BY {$yearExpr} ORDER BY \"Price\") as cd")
                     ->where('PPDCategoryType', 'A')
                     ->whereNotNull('Price')->where('Price', '>', 0);
                 $data = DB::query()->fromSub($sub, 't')
-                    ->selectRaw('year, MIN(Price) as p90_price')
+                    ->selectRaw('year, MIN("Price") as p90_price')
                     ->where('cd', '>=', 0.9)
                     ->groupBy('year')->orderBy('year')->get();
                 Cache::put('ew:p90:catA:v1', $data, $ttl);
@@ -135,11 +148,11 @@ class PropertyHomeWarm extends Command
 
             case 'top5':
                 $sub = DB::table('land_registry')
-                    ->selectRaw('`YearDate` as year, `Price`, ROW_NUMBER() OVER (PARTITION BY `YearDate` ORDER BY `Price` DESC) as rn, COUNT(*) OVER (PARTITION BY `YearDate`) as cnt')
+                    ->selectRaw("{$yearExpr} as year, \"Price\", ROW_NUMBER() OVER (PARTITION BY {$yearExpr} ORDER BY \"Price\" DESC) as rn, COUNT(*) OVER (PARTITION BY {$yearExpr}) as cnt")
                     ->where('PPDCategoryType', 'A')
                     ->whereNotNull('Price')->where('Price', '>', 0);
                 $data = DB::query()->fromSub($sub, 'r')
-                    ->selectRaw('year, ROUND(AVG(`Price`)) as top5_avg')
+                    ->selectRaw('year, ROUND(AVG("Price")) as top5_avg')
                     ->whereColumn('rn', '<=', DB::raw('CEIL(0.05*cnt)'))
                     ->groupBy('year')->orderBy('year')->get();
                 Cache::put('ew:top5avg:catA:v1', $data, $ttl);
@@ -147,10 +160,10 @@ class PropertyHomeWarm extends Command
 
             case 'topSale':
                 $data = DB::table('land_registry')
-                    ->selectRaw('`YearDate` as year, MAX(`Price`) as top_sale')
+                    ->selectRaw("{$yearExpr} as year, MAX(\"Price\") as top_sale")
                     ->where('PPDCategoryType', 'A')
                     ->whereNotNull('Price')->where('Price', '>', 0)
-                    ->groupBy('YearDate')
+                    ->groupByRaw($yearExpr)
                     ->orderBy('year')
                     ->get();
                 Cache::put('ew:topSalePerYear:catA:v1', $data, $ttl);
@@ -158,7 +171,7 @@ class PropertyHomeWarm extends Command
 
             case 'top3':
                 $rankedTop3 = DB::table('land_registry')
-                    ->selectRaw('`YearDate` as year, `Date`, `Postcode`, `Price`, ROW_NUMBER() OVER (PARTITION BY `YearDate` ORDER BY `Price` DESC) as rn')
+                    ->selectRaw("{$yearExpr} as year, \"Date\", \"Postcode\", \"Price\", ROW_NUMBER() OVER (PARTITION BY {$yearExpr} ORDER BY \"Price\" DESC) as rn")
                     ->where('PPDCategoryType', 'A')
                     ->whereNotNull('Price')->where('Price', '>', 0);
                 $data = DB::query()
@@ -175,11 +188,11 @@ class PropertyHomeWarm extends Command
                 // Monthly sales — last 24 months (England & Wales, Cat A)
                 // Build a slightly wider seed window, then trim to last available month and take 24 months
                 $seedMonths = 36;
-                $seedStart  = now()->startOfMonth()->subMonths($seedMonths - 1);
-                $seedEnd    = now()->startOfMonth();
+                $seedStart = now()->startOfMonth()->subMonths($seedMonths - 1);
+                $seedEnd = now()->startOfMonth();
 
                 $raw = DB::table('land_registry')
-                    ->selectRaw("DATE_FORMAT(`Date`, '%Y-%m-01') as month_start, COUNT(*) as sales")
+                    ->selectRaw($this->monthStartExpression().' as month_start, COUNT(*) as sales')
                     ->where('PPDCategoryType', 'A')
                     ->whereDate('Date', '>=', $seedStart)
                     ->groupBy('month_start')
@@ -189,7 +202,7 @@ class PropertyHomeWarm extends Command
 
                 // Determine last month with data
                 $keys = array_keys($raw);
-                if (!empty($keys)) {
+                if (! empty($keys)) {
                     sort($keys); // ascending
                     $lastDataKey = end($keys); // e.g., '2025-08-01'
                     $seriesEnd = \Carbon\Carbon::createFromFormat('Y-m-d', $lastDataKey)->startOfMonth();
@@ -202,12 +215,12 @@ class PropertyHomeWarm extends Command
                 $start = $seriesEnd->copy()->subMonths(23)->startOfMonth();
 
                 $labels = [];
-                $data   = [];
+                $data = [];
                 $cursor = $start->copy();
                 while ($cursor->lte($seriesEnd)) {
                     $key = $cursor->format('Y-m-01');
                     $labels[] = $cursor->format('M Y');  // matches controller (formatted to MM/YY in ticks)
-                    $data[]   = (int)($raw[$key] ?? 0);
+                    $data[] = (int) ($raw[$key] ?? 0);
                     $cursor->addMonth();
                 }
 
@@ -219,10 +232,10 @@ class PropertyHomeWarm extends Command
                 // Property type split by year (England & Wales, Cat A)
                 // D = Detached, S = Semi-detached, T = Terraced, F = Flat
                 $data = DB::table('land_registry')
-                    ->selectRaw('`YearDate` as year, `PropertyType` as type, COUNT(*) as total')
+                    ->selectRaw("{$yearExpr} as year, \"PropertyType\" as type, COUNT(*) as total")
                     ->where('PPDCategoryType', 'A')
-                    ->whereIn('PropertyType', ['D','S','T','F'])
-                    ->groupBy('year', 'type')
+                    ->whereIn('PropertyType', ['D', 'S', 'T', 'F'])
+                    ->groupByRaw($yearExpr.', "PropertyType"')
                     ->orderBy('year')
                     ->get();
 
@@ -234,10 +247,10 @@ class PropertyHomeWarm extends Command
                 // New build vs existing split by year (England & Wales, Cat A)
                 // Y = New build, N = Existing
                 $data = DB::table('land_registry')
-                    ->selectRaw('`YearDate` as year, `NewBuild` as nb, COUNT(*) as total')
+                    ->selectRaw("{$yearExpr} as year, \"NewBuild\" as nb, COUNT(*) as total")
                     ->where('PPDCategoryType', 'A')
-                    ->whereIn('NewBuild', ['Y','N'])
-                    ->groupBy('year', 'nb')
+                    ->whereIn('NewBuild', ['Y', 'N'])
+                    ->groupByRaw($yearExpr.', "NewBuild"')
                     ->orderBy('year')
                     ->get();
 
@@ -248,10 +261,10 @@ class PropertyHomeWarm extends Command
                 // Leasehold vs Freehold split by year (England & Wales, Cat A)
                 // F = Freehold, L = Leasehold
                 $data = DB::table('land_registry')
-                    ->selectRaw('`YearDate` as year, `Duration` as dur, COUNT(*) as total')
+                    ->selectRaw("{$yearExpr} as year, \"Duration\" as dur, COUNT(*) as total")
                     ->where('PPDCategoryType', 'A')
-                    ->whereIn('Duration', ['F','L'])
-                    ->groupBy('year', 'dur')
+                    ->whereIn('Duration', ['F', 'L'])
+                    ->groupByRaw($yearExpr.', "Duration"')
                     ->orderBy('year')
                     ->get();
 
@@ -262,12 +275,12 @@ class PropertyHomeWarm extends Command
                 // Average price by property type by year (England & Wales, Cat A)
                 // D = Detached, S = Semi-detached, T = Terraced, F = Flat
                 $data = DB::table('land_registry')
-                    ->selectRaw('`YearDate` as year, `PropertyType` as type, ROUND(AVG(`Price`)) as avg_price')
+                    ->selectRaw("{$yearExpr} as year, \"PropertyType\" as type, ROUND(AVG(\"Price\")) as avg_price")
                     ->where('PPDCategoryType', 'A')
-                    ->whereIn('PropertyType', ['D','S','T','F'])
+                    ->whereIn('PropertyType', ['D', 'S', 'T', 'F'])
                     ->whereNotNull('Price')
                     ->where('Price', '>', 0)
-                    ->groupBy('year', 'type')
+                    ->groupByRaw($yearExpr.', "PropertyType"')
                     ->orderBy('year')
                     ->get();
 
@@ -277,5 +290,31 @@ class PropertyHomeWarm extends Command
             default:
                 $this->warn("Unknown task '{$task}', skipping.");
         }
+    }
+
+    private function yearExpression(): string
+    {
+        if (Schema::hasColumn('land_registry', 'YearDate')) {
+            return '"YearDate"';
+        }
+
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            return 'CAST(strftime(\'%Y\', "Date") AS INTEGER)';
+        }
+
+        return 'EXTRACT(YEAR FROM "Date")::int';
+    }
+
+    private function monthStartExpression(): string
+    {
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            return "strftime('%Y-%m-01', \"Date\")";
+        }
+
+        return "TO_CHAR(DATE_TRUNC('month', \"Date\"), 'YYYY-MM-01')";
     }
 }

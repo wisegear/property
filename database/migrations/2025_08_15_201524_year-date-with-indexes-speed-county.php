@@ -5,37 +5,33 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-public function up(): void
+return new class extends Migration
+{
+    public function up(): void
     {
-        if (!Schema::hasColumn('land_registry', 'YearDate')) {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        if (! Schema::hasColumn('land_registry', 'YearDate')) {
             Schema::table('land_registry', function (Blueprint $table) {
-                $table->year('YearDate')->nullable()->after('Date');
+                $table->year('YearDate')->nullable();
             });
         }
 
-        // Backfill YearDate using year-by-year ranges (leverages idx_date)
-        $bounds = DB::selectOne("
-            SELECT MIN(YEAR(`Date`)) AS miny, MAX(YEAR(`Date`)) AS maxy
+        $bounds = DB::selectOne('
+            SELECT MIN(EXTRACT(YEAR FROM "Date")) AS miny, MAX(EXTRACT(YEAR FROM "Date")) AS maxy
             FROM land_registry
-            WHERE `Date` IS NOT NULL
-        ");
+            WHERE "Date" IS NOT NULL
+        ');
 
         if ($bounds && $bounds->miny !== null && $bounds->maxy !== null) {
-            // Ensure safe updates won't block range UPDATEs
-            DB::statement('SET SQL_SAFE_UPDATES=0');
-
-            $start = (int) $bounds->miny;
-            $end   = (int) $bounds->maxy;
-
-            for ($y = $start; $y <= $end; $y++) {
-                DB::statement("
-                    UPDATE land_registry
-                    SET YearDate = {$y}
-                    WHERE YearDate IS NULL
-                      AND `Date` >= '{$y}-01-01' AND `Date` < '".($y+1)."-01-01'
-                ");
-            }
+            DB::statement('
+                UPDATE land_registry
+                SET "YearDate" = EXTRACT(YEAR FROM "Date")::int
+                WHERE "YearDate" IS NULL
+                  AND "Date" IS NOT NULL
+            ');
         }
 
         Schema::table('land_registry', function (Blueprint $table) {
@@ -47,6 +43,10 @@ public function up(): void
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         Schema::table('land_registry', function (Blueprint $table) {
             $table->dropIndex('idx_yeardate');
             $table->dropIndex('idx_county_yeardate');

@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Prime & Ultra Prime Postcodes</h1>
+        <h1 class="text-2xl font-bold">Prime London Postcodes</h1>
         <a href="{{ route('admin.postcodes.create') }}"
            class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
             + Add Postcode

@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class PropertyAreaController extends Controller
@@ -28,11 +27,17 @@ class PropertyAreaController extends Controller
 
         // Find the area whose type + slug matches the URL
         $area = collect($areas)->first(function ($item) use ($type, $slug) {
-            if (!is_array($item)) return false;
-            if (($item['type'] ?? null) !== $type) return false;
+            if (! is_array($item)) {
+                return false;
+            }
+            if (($item['type'] ?? null) !== $type) {
+                return false;
+            }
 
             $name = $item['name'] ?? $item['label'] ?? null;
-            if (! $name) return false;
+            if (! $name) {
+                return false;
+            }
 
             return Str::slug($name) === $slug;
         });
@@ -46,15 +51,15 @@ class PropertyAreaController extends Controller
         // Map the logical type to the actual column in land_registry
         $columnMap = [
             'locality' => 'Locality',
-            'town'     => 'TownCity',
+            'town' => 'TownCity',
             'district' => 'District',
-            'county'   => 'County',
+            'county' => 'County',
         ];
 
         $column = $columnMap[$type];
 
         // Cache key + TTL must match the warmer
-        $cacheKey = 'area:v1:' . $type . ':' . Str::slug($areaName);
+        $cacheKey = 'area:v1:'.$type.':'.Str::slug($areaName);
         $ttl = now()->addDays(45);
 
         // Use Laravel's cache normally now that config is fixed
@@ -63,9 +68,9 @@ class PropertyAreaController extends Controller
         });
 
         return view('property.area-show', array_merge([
-            'type'       => $type,
-            'areaName'   => $areaName,
-            'column'     => $column,
+            'type' => $type,
+            'areaName' => $areaName,
+            'column' => $column,
         ], $data));
 
     }
@@ -76,21 +81,15 @@ class PropertyAreaController extends Controller
      */
     public function buildAreaPayload(string $column, string $areaName): array
     {
-        $driver = DB::getDriverName();
-        if ($driver === 'pgsql') {
-            $yearExpr = 'EXTRACT(YEAR FROM "Date")';
-        } else {
-            // MySQL and others
-            $yearExpr = 'YEAR(Date)';
-        }
+        $yearExpr = $this->yearExpression();
 
         // High-level summary
         $summary = DB::table('land_registry')
             ->selectRaw('
                 COUNT(*)   as sales_count,
-                MIN(Price) as min_price,
-                MAX(Price) as max_price,
-                AVG(Price) as avg_price
+                MIN("Price") as min_price,
+                MAX("Price") as max_price,
+                AVG("Price") as avg_price
             ')
             ->where($column, $areaName)
             ->where('PPDCategoryType', '<>', 'B')
@@ -101,7 +100,7 @@ class PropertyAreaController extends Controller
             ->selectRaw("
                 {$yearExpr}   as year,
                 COUNT(*)      as sales_count,
-                AVG(Price)    as avg_price
+                AVG(\"Price\") as avg_price
             ")
             ->where($column, $areaName)
             ->where('PPDCategoryType', '<>', 'B')
@@ -124,7 +123,7 @@ class PropertyAreaController extends Controller
                 ->selectRaw("
                     {$yearExpr}   as year,
                     COUNT(*)      as sales_count,
-                    AVG(Price)    as avg_price
+                    AVG(\"Price\") as avg_price
                 ")
                 ->where($column, $areaName)
                 ->where('PPDCategoryType', '<>', 'B')
@@ -134,13 +133,13 @@ class PropertyAreaController extends Controller
                 ->get();
 
             $byType[$meta['key']] = [
-                'label'  => $meta['label'],
+                'label' => $meta['label'],
                 'series' => $series,
             ];
         }
 
         // Build a unified yearly axis from the overall byYear series
-        $years = $byYear->pluck('year')->map(fn($y) => (int) $y)->values();
+        $years = $byYear->pluck('year')->map(fn ($y) => (int) $y)->values();
         $yearIndex = [];
         foreach ($years as $i => $y) {
             $yearIndex[$y] = $i;
@@ -166,7 +165,7 @@ class PropertyAreaController extends Controller
             }
 
             $propertyTypeSplit['types'][$key] = [
-                'label'  => $meta['label'],
+                'label' => $meta['label'],
                 'counts' => $counts,
             ];
         }
@@ -175,7 +174,7 @@ class PropertyAreaController extends Controller
         $newBuildRaw = DB::table('land_registry')
             ->selectRaw("
                 {$yearExpr}   as year,
-                NewBuild      as new_build,
+                \"NewBuild\"      as new_build,
                 COUNT(*)      as sales_count
             ")
             ->where($column, $areaName)
@@ -186,14 +185,14 @@ class PropertyAreaController extends Controller
             ->get();
 
         $newBuildSplit = [
-            'years'  => $years,
+            'years' => $years,
             'series' => [
                 'Y' => [
-                    'label'  => 'New build',
+                    'label' => 'New build',
                     'counts' => array_fill(0, $years->count(), 0),
                 ],
                 'N' => [
-                    'label'  => 'Existing',
+                    'label' => 'Existing',
                     'counts' => array_fill(0, $years->count(), 0),
                 ],
             ],
@@ -215,13 +214,27 @@ class PropertyAreaController extends Controller
         }
 
         return [
-            'summary'           => $summary,
-            'byYear'            => $byYear,
-            'byType'            => $byType,
+            'summary' => $summary,
+            'byYear' => $byYear,
+            'byType' => $byType,
             'propertyTypeSplit' => $propertyTypeSplit,
-            'newBuildSplit'     => $newBuildSplit,
-            'generated_at'      => now()->toIso8601String(),
+            'newBuildSplit' => $newBuildSplit,
+            'generated_at' => now()->toIso8601String(),
         ];
     }
 
+    private function yearExpression(): string
+    {
+        if (Schema::hasColumn('land_registry', 'YearDate')) {
+            return '"YearDate"';
+        }
+
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            return 'CAST(strftime(\'%Y\', "Date") AS INTEGER)';
+        }
+
+        return 'EXTRACT(YEAR FROM "Date")::int';
+    }
 }

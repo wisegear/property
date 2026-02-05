@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('prime_postcodes', function (Blueprint $table) {
-            $table->text('notes')->nullable()->after('category');
+            $table->text('notes')->nullable();
         });
     }
 

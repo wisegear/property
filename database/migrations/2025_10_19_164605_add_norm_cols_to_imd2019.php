@@ -7,24 +7,32 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         // Add generated normalized columns and composite index for sargable queries
-        DB::statement(<<<SQL
+        DB::statement(<<<'SQL'
             ALTER TABLE imd2019
             ADD COLUMN measurement_norm VARCHAR(16)
-              GENERATED ALWAYS AS (LOWER(TRIM(Measurement))) STORED,
+              GENERATED ALWAYS AS (LOWER(BTRIM("Measurement"))) STORED,
             ADD COLUMN iod_norm VARCHAR(160)
-              GENERATED ALWAYS AS (LOWER(TRIM(`Indices_of_Deprivation`))) STORED
+              GENERATED ALWAYS AS (LOWER(BTRIM("Indices_of_Deprivation"))) STORED
         SQL);
 
-        DB::statement(<<<SQL
+        DB::statement(<<<'SQL'
             CREATE INDEX idx_imd_norm_combo
-              ON imd2019 (FeatureCode, measurement_norm, iod_norm(64));
+              ON imd2019 ("FeatureCode", measurement_norm, iod_norm);
         SQL);
     }
 
     public function down(): void
     {
-        DB::statement('DROP INDEX idx_imd_norm_combo ON imd2019');
-        DB::statement('ALTER TABLE imd2019 DROP COLUMN measurement_norm, DROP COLUMN iod_norm');
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        DB::statement('DROP INDEX IF EXISTS idx_imd_norm_combo');
+        DB::statement('ALTER TABLE imd2019 DROP COLUMN IF EXISTS measurement_norm, DROP COLUMN IF EXISTS iod_norm');
     }
 };

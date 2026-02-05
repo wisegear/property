@@ -27,8 +27,8 @@ class AdminPostCodesController extends Controller
     {
         $validated = $request->validate([
             'postcode' => 'required|string|max:10',
-            'category' => 'required|in:Prime Central,Ultra Prime',
-            'notes'    => 'nullable|string',
+            'category' => 'required|in:Prime Central,Ultra Prime,Outer Prime London',
+            'notes' => 'nullable|string',
         ]);
 
         DB::table('prime_postcodes')->insert($validated);
@@ -48,8 +48,8 @@ class AdminPostCodesController extends Controller
     {
         $validated = $request->validate([
             'postcode' => 'required|string|max:10',
-            'category' => 'required|in:Prime Central,Ultra Prime',
-            'notes'    => 'nullable|string',
+            'category' => 'required|in:Prime Central,Ultra Prime,Outer Prime London',
+            'notes' => 'nullable|string',
         ]);
 
         DB::table('prime_postcodes')->where('id', $id)->update($validated);

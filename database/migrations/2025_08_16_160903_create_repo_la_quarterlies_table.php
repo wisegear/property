@@ -1,4 +1,5 @@
 <?php
+
 // database/migrations/2025_08_16_000000_create_repo_la_quarterlies_table.php
 
 use Illuminate\Database\Migrations\Migration;
@@ -31,10 +32,10 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes for fast filtering/rollups
-            $table->index(['year', 'quarter', 'possession_type', 'possession_action'], 'idx_period_type_action');
-            $table->index(['county_ua'], 'idx_county');
-            $table->index(['la_code'], 'idx_la_code');
-            $table->index(['region'], 'idx_region');
+            $table->index(['year', 'quarter', 'possession_type', 'possession_action'], 'idx_rlq_period_type_action');
+            $table->index(['county_ua'], 'idx_rlq_county_ua');
+            $table->index(['la_code'], 'idx_rlq_la_code');
+            $table->index(['region'], 'idx_rlq_region');
 
             // Optional: if you want to prevent duplicate rows being inserted later,
             // you *can* enforce uniqueness at this grain. Commented out to avoid

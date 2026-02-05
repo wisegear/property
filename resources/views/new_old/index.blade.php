@@ -18,53 +18,6 @@
     </div>
   </section>
 
-  @php
-    // If the controller doesn't supply nation_trends yet, build them here (keeps the page working).
-    // NOTE: This is intentionally minimal and mirrors the controller logic we discussed.
-    $nation_trends = $nation_trends ?? [];
-
-    if (empty($nation_trends)) {
-      $includeAggregates = (bool) ($include_aggregates ?? false);
-
-      $trendBase = DB::table('hpi_monthly')
-        ->when(!$includeAggregates, fn($q) => $q->whereRaw("LEFT(`AreaCode`, 1) <> 'K'"));
-
-      $nationTrendRows = (clone $trendBase)
-        ->selectRaw("CASE LEFT(`AreaCode`, 1)
-          WHEN 'E' THEN 'England'
-          WHEN 'S' THEN 'Scotland'
-          WHEN 'W' THEN 'Wales'
-          WHEN 'N' THEN 'Northern Ireland'
-          ELSE NULL
-        END as nation")
-        ->selectRaw('YEAR(`Date`) as year')
-        ->selectRaw('SUM(`NewSalesVolume`) as new_vol')
-        ->selectRaw('SUM(`OldSalesVolume`) as old_vol')
-        ->whereRaw("LEFT(`AreaCode`, 1) IN ('E','S','W','N')")
-        ->groupBy('nation', DB::raw('YEAR(`Date`)'))
-        ->orderBy(DB::raw('YEAR(`Date`)'), 'desc')
-        ->limit(15 * 4)
-        ->get();
-
-      $nation_trends = collect(['England','Scotland','Wales','Northern Ireland'])->mapWithKeys(function ($nation) use ($nationTrendRows) {
-        $rows = $nationTrendRows
-          ->where('nation', $nation)
-          ->sortBy('year')
-          ->values()
-          ->take(-15)
-          ->values();
-
-        return [
-          $nation => $rows->map(fn($r) => [
-            'date'    => (string) $r->year,
-            'new_vol' => (int) $r->new_vol,
-            'old_vol' => (int) $r->old_vol,
-          ])->all()
-        ];
-      })->all();
-    }
-  @endphp
-
   {{-- UK trend --}}
   <div class="mb-6">
     <h2 class="text-xl font-semibold mb-3">Last 15 years — UK totals</h2>

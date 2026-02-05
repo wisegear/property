@@ -3,14 +3,14 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('epc_certificates_scotland', function (Blueprint $table) {
             $table->id();
-            $table->text('﻿BUILDING_REFERENCE_NUMBER')->nullable();
+            $table->text('BUILDING_REFERENCE_NUMBER')->nullable();
             $table->text('OSG_REFERENCE_NUMBER')->nullable();
             $table->text('ADDRESS1')->nullable();
             $table->text('ADDRESS2')->nullable();
@@ -123,31 +123,6 @@ return new class extends Migration {
             $table->index('REPORT_REFERENCE_NUMBER');
             $table->index('LODGEMENT_DATE');
         });
-
-        // Safety: if any columns were accidentally created with a UTF‑8 BOM prefix (EF BB BF),
-        // rename them to the clean version while preserving the original column type/nullability.
-        $badCols = DB::select(<<<SQL
-            SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE()
-              AND TABLE_NAME = 'epc_certificates_scotland'
-              AND HEX(COLUMN_NAME) LIKE 'EFBBBF%'
-        SQL);
-
-        foreach ($badCols as $col) {
-            // Remove BOM from the beginning of the name
-            $clean = preg_replace('/^\xEF\xBB\xBF/u', '', $col->COLUMN_NAME);
-            $nullSql = ($col->IS_NULLABLE === 'YES') ? 'NULL' : 'NOT NULL';
-            // Use COLUMN_TYPE to preserve length/precision/etc.
-            $sql = sprintf(
-                'ALTER TABLE `epc_certificates_scotland` CHANGE COLUMN `%s` `%s` %s %s',
-                $col->COLUMN_NAME,
-                $clean,
-                $col->COLUMN_TYPE,
-                $nullSql
-            );
-            DB::statement($sql);
-        }
     }
 
     public function down(): void

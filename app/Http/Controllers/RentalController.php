@@ -69,6 +69,7 @@ class RentalController extends Controller
         }
 
         $parsed = date_create($trimmed, new \DateTimeZone('UTC'));
+
         return $parsed ? \DateTimeImmutable::createFromMutable($parsed) : null;
     }
 
@@ -82,9 +83,9 @@ class RentalController extends Controller
         $seconds = (int) round(($serial - $days) * 86400);
 
         $base = new \DateTimeImmutable('1899-12-30', new \DateTimeZone('UTC'));
-        $date = $base->modify('+' . $days . ' days');
+        $date = $base->modify('+'.$days.' days');
         if ($seconds > 0) {
-            $date = $date->modify('+' . $seconds . ' seconds');
+            $date = $date->modify('+'.$seconds.' seconds');
         }
 
         return $date;
@@ -107,7 +108,7 @@ class RentalController extends Controller
 
         foreach ($rows as $row) {
             $date = $this->parseTimePeriod($row->time_period);
-            if (!$date) {
+            if (! $date) {
                 continue;
             }
 
@@ -129,7 +130,6 @@ class RentalController extends Controller
             $rows = RentalCost::query()
                 ->select(['time_period', 'rental_price', 'monthly_change'])
                 ->where('area_name', $name)
-                ->orderByRaw("COALESCE(STR_TO_DATE(time_period, '%b-%Y'), STR_TO_DATE(time_period, '%Y-%m'), STR_TO_DATE(time_period, '%Y-%m-%d'))")
                 ->get();
 
             $series = $this->buildQuarterlySeries($rows, 'rental_price', 'monthly_change');
@@ -157,15 +157,16 @@ class RentalController extends Controller
     {
         $sorted = $rows->map(function ($row) use ($priceField, $changeField) {
             $date = $this->parseTimePeriod($row->time_period);
-            $quarter = $date ? 'Q' . (int) ceil(((int) $date->format('n')) / 3) : null;
+            $quarter = $date ? 'Q'.(int) ceil(((int) $date->format('n')) / 3) : null;
+
             return [
-                'label' => $date && $quarter ? $date->format('Y') . '-' . $quarter : $row->time_period,
+                'label' => $date && $quarter ? $date->format('Y').'-'.$quarter : $row->time_period,
                 'ts' => $date ? $date->getTimestamp() : null,
                 'rental_price' => $row->{$priceField} ?? null,
                 'monthly_change' => $row->{$changeField} ?? null,
             ];
         })
-            ->filter(fn($row) => $row['ts'] !== null)
+            ->filter(fn ($row) => $row['ts'] !== null)
             ->sortBy('ts')
             ->values();
 
@@ -195,8 +196,8 @@ class RentalController extends Controller
 
         return [
             'labels' => $quarterly->pluck('period')->values()->all(),
-            'prices' => $quarterly->pluck('rental_price')->map(fn($v) => is_null($v) ? null : (float) $v)->values()->all(),
-            'changes' => $quarterly->pluck('monthly_change')->map(fn($v) => is_null($v) ? null : (float) $v)->values()->all(),
+            'prices' => $quarterly->pluck('rental_price')->map(fn ($v) => is_null($v) ? null : (float) $v)->values()->all(),
+            'changes' => $quarterly->pluck('monthly_change')->map(fn ($v) => is_null($v) ? null : (float) $v)->values()->all(),
         ];
     }
 
@@ -222,7 +223,6 @@ class RentalController extends Controller
         $rows = RentalCost::query()
             ->select($columns)
             ->where('area_name', $areaName)
-            ->orderByRaw("COALESCE(STR_TO_DATE(time_period, '%b-%Y'), STR_TO_DATE(time_period, '%Y-%m'), STR_TO_DATE(time_period, '%Y-%m-%d'))")
             ->get();
 
         $series = [];

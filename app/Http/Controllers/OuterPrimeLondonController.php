@@ -46,17 +46,17 @@ class OuterPrimeLondonController extends Controller
 
         foreach ($allDistricts as $district) {
             // Key base (namespace): keep per-district in v1 for compatibility; use v2 for ALL aggregate
-            $keyBase = $district === 'ALL' ? 'outerprime:v2:catA:ALL:' : 'outerprime:v1:catA:' . $district . ':';
+            $keyBase = $district === 'ALL' ? 'outerprime:v2:catA:ALL:' : 'outerprime:v1:catA:'.$district.':';
 
             if ($district === 'ALL') {
                 // ===== Aggregate across ALL Outer Prime London outward codes (prefix join) =====
                 $baseAll = DB::table('land_registry as lr')
                     ->join(DB::raw("(SELECT DISTINCT postcode FROM prime_postcodes WHERE category = 'Outer Prime London') as pp"),
-                        DB::raw("SUBSTRING_INDEX(lr.Postcode, ' ', 1)"), 'LIKE', DB::raw("CONCAT(pp.postcode, '%')"))
+                        DB::raw("REPLACE(lr.Postcode, ' ', '')"), 'LIKE', DB::raw("(pp.postcode || '%')"))
                     ->where('lr.PPDCategoryType', 'A');
 
                 // Average price by year
-                $avgPrice = Cache::remember($keyBase . 'avgPrice', $ttl, function () use ($baseAll) {
+                $avgPrice = Cache::remember($keyBase.'avgPrice', $ttl, function () use ($baseAll) {
                     return (clone $baseAll)
                         ->selectRaw('lr.YearDate as year, ROUND(AVG(lr.Price)) as avg_price')
                         ->groupBy('lr.YearDate')
@@ -65,7 +65,7 @@ class OuterPrimeLondonController extends Controller
                 });
 
                 // Sales count by year
-                $sales = Cache::remember($keyBase . 'sales', $ttl, function () use ($baseAll) {
+                $sales = Cache::remember($keyBase.'sales', $ttl, function () use ($baseAll) {
                     return (clone $baseAll)
                         ->selectRaw('lr.YearDate as year, COUNT(*) as sales')
                         ->groupBy('lr.YearDate')
@@ -74,7 +74,7 @@ class OuterPrimeLondonController extends Controller
                 });
 
                 // Property types by year
-                $propertyTypes = Cache::remember($keyBase . 'propertyTypes', $ttl, function () use ($baseAll) {
+                $propertyTypes = Cache::remember($keyBase.'propertyTypes', $ttl, function () use ($baseAll) {
                     return (clone $baseAll)
                         ->selectRaw('lr.YearDate as year, lr.PropertyType as type, COUNT(*) as count')
                         ->groupBy('lr.YearDate', 'type')
@@ -83,48 +83,48 @@ class OuterPrimeLondonController extends Controller
                 });
 
                 // Average price by property type (D/S/T/F) per year
-                $avgPriceByType = Cache::remember($keyBase . 'avgPriceByType', $ttl, function () use ($baseAll) {
+                $avgPriceByType = Cache::remember($keyBase.'avgPriceByType', $ttl, function () use ($baseAll) {
                     return (clone $baseAll)
-                        ->selectRaw("lr.YearDate as year, LEFT(lr.PropertyType, 1) as type, ROUND(AVG(lr.Price)) as avg_price")
+                        ->selectRaw('lr.YearDate as year, SUBSTR(lr.PropertyType, 1, 1) as type, ROUND(AVG(lr.Price)) as avg_price')
                         ->whereNotNull('lr.PropertyType')
-                        ->whereRaw("LEFT(lr.PropertyType, 1) IN ('D','S','T','F')")
+                        ->whereRaw("SUBSTR(lr.PropertyType, 1, 1) IN ('D','S','T','F')")
                         ->groupBy('lr.YearDate', 'type')
                         ->orderBy('lr.YearDate')
                         ->get();
                 });
 
                 // New build vs existing (% of sales) per year
-                $newBuildPct = Cache::remember($keyBase . 'newBuildPct', $ttl, function () use ($baseAll) {
+                $newBuildPct = Cache::remember($keyBase.'newBuildPct', $ttl, function () use ($baseAll) {
                     return (clone $baseAll)
                         ->selectRaw(
-                            "lr.YearDate as year, " .
-                            "ROUND(100 * SUM(CASE WHEN lr.NewBuild = 'Y' THEN 1 ELSE 0 END) / COUNT(*), 1) as new_pct, " .
+                            'lr.YearDate as year, '.
+                            "ROUND(100 * SUM(CASE WHEN lr.NewBuild = 'Y' THEN 1 ELSE 0 END) / COUNT(*), 1) as new_pct, ".
                             "ROUND(100 * SUM(CASE WHEN lr.NewBuild = 'N' THEN 1 ELSE 0 END) / COUNT(*), 1) as existing_pct"
                         )
                         ->whereNotNull('lr.NewBuild')
-                        ->whereIn('lr.NewBuild', ['Y','N'])
+                        ->whereIn('lr.NewBuild', ['Y', 'N'])
                         ->groupBy('lr.YearDate')
                         ->orderBy('lr.YearDate')
                         ->get();
                 });
 
                 // Freehold vs Leasehold (% of sales) per year (Duration: F/L)
-                $tenurePct = Cache::remember($keyBase . 'tenurePct', $ttl, function () use ($baseAll) {
+                $tenurePct = Cache::remember($keyBase.'tenurePct', $ttl, function () use ($baseAll) {
                     return (clone $baseAll)
                         ->selectRaw(
-                            "lr.YearDate as year, " .
-                            "ROUND(100 * SUM(CASE WHEN lr.Duration = 'F' THEN 1 ELSE 0 END) / COUNT(*), 1) as free_pct, " .
+                            'lr.YearDate as year, '.
+                            "ROUND(100 * SUM(CASE WHEN lr.Duration = 'F' THEN 1 ELSE 0 END) / COUNT(*), 1) as free_pct, ".
                             "ROUND(100 * SUM(CASE WHEN lr.Duration = 'L' THEN 1 ELSE 0 END) / COUNT(*), 1) as lease_pct"
                         )
                         ->whereNotNull('lr.Duration')
-                        ->whereIn('lr.Duration', ['F','L'])
+                        ->whereIn('lr.Duration', ['F', 'L'])
                         ->groupBy('lr.YearDate')
                         ->orderBy('lr.YearDate')
                         ->get();
                 });
 
                 // 90th percentile (decile threshold) per year via window function
-                $p90 = Cache::remember($keyBase . 'p90', $ttl, function () use ($baseAll) {
+                $p90 = Cache::remember($keyBase.'p90', $ttl, function () use ($baseAll) {
                     $deciles = (clone $baseAll)
                         ->selectRaw('lr.YearDate, lr.Price, NTILE(10) OVER (PARTITION BY lr.YearDate ORDER BY lr.Price) as decile');
 
@@ -138,21 +138,21 @@ class OuterPrimeLondonController extends Controller
                 });
 
                 // Top 5% average per year via window ranking
-                $top5 = Cache::remember($keyBase . 'top5', $ttl, function () use ($baseAll) {
+                $top5 = Cache::remember($keyBase.'top5', $ttl, function () use ($baseAll) {
                     $rankedTop5 = (clone $baseAll)
                         ->selectRaw('lr.YearDate, lr.Price, ROW_NUMBER() OVER (PARTITION BY lr.YearDate ORDER BY lr.Price DESC) as rn, COUNT(*) OVER (PARTITION BY lr.YearDate) as cnt');
 
                     return DB::query()
                         ->fromSub($rankedTop5, 'ranked')
                         ->selectRaw('YearDate as year, ROUND(AVG(Price)) as top5_avg')
-                        ->whereRaw('rn <= CEIL(cnt * 0.05)')
+                        ->whereRaw('rn <= ((cnt + 19) / 20)')
                         ->groupBy('year')
                         ->orderBy('year')
                         ->get();
                 });
 
                 // Top sale per year (for spike marker)
-                $topSalePerYear = Cache::remember($keyBase . 'topSalePerYear', $ttl, function () use ($baseAll) {
+                $topSalePerYear = Cache::remember($keyBase.'topSalePerYear', $ttl, function () use ($baseAll) {
                     return (clone $baseAll)
                         ->selectRaw('lr.YearDate as year, MAX(lr.Price) as top_sale')
                         ->groupBy('lr.YearDate')
@@ -161,7 +161,7 @@ class OuterPrimeLondonController extends Controller
                 });
 
                 // Top 3 sales per year (for tooltip/context)
-                $top3PerYear = Cache::remember($keyBase . 'top3PerYear', $ttl, function () use ($baseAll) {
+                $top3PerYear = Cache::remember($keyBase.'top3PerYear', $ttl, function () use ($baseAll) {
                     $rankedTop3 = (clone $baseAll)
                         ->selectRaw('lr.YearDate as year, lr.Date as Date, lr.Postcode as Postcode, lr.Price as Price, ROW_NUMBER() OVER (PARTITION BY lr.YearDate ORDER BY lr.Price DESC) as rn');
 
@@ -176,10 +176,10 @@ class OuterPrimeLondonController extends Controller
             } else {
                 // ===== Per-district (existing logic) =====
                 // Average price by year
-                $avgPrice = Cache::remember($keyBase . 'avgPrice', $ttl, function () use ($district) {
+                $avgPrice = Cache::remember($keyBase.'avgPrice', $ttl, function () use ($district) {
                     return DB::table('land_registry')
-                        ->selectRaw('`YearDate` as year, ROUND(AVG(`Price`)) as avg_price')
-                        ->whereRaw("SUBSTRING_INDEX(`Postcode`, ' ', 1) LIKE CONCAT(?, '%')", [$district])
+                        ->selectRaw('YearDate as year, ROUND(AVG(Price)) as avg_price')
+                        ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->groupBy('YearDate')
                         ->orderBy('YearDate')
@@ -187,10 +187,10 @@ class OuterPrimeLondonController extends Controller
                 });
 
                 // Sales count by year
-                $sales = Cache::remember($keyBase . 'sales', $ttl, function () use ($district) {
+                $sales = Cache::remember($keyBase.'sales', $ttl, function () use ($district) {
                     return DB::table('land_registry')
-                        ->selectRaw('`YearDate` as year, COUNT(*) as sales')
-                        ->whereRaw("SUBSTRING_INDEX(`Postcode`, ' ', 1) LIKE CONCAT(?, '%')", [$district])
+                        ->selectRaw('YearDate as year, COUNT(*) as sales')
+                        ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->groupBy('YearDate')
                         ->orderBy('YearDate')
@@ -198,10 +198,10 @@ class OuterPrimeLondonController extends Controller
                 });
 
                 // Property types by year
-                $propertyTypes = Cache::remember($keyBase . 'propertyTypes', $ttl, function () use ($district) {
+                $propertyTypes = Cache::remember($keyBase.'propertyTypes', $ttl, function () use ($district) {
                     return DB::table('land_registry')
-                        ->selectRaw('`YearDate` as year, `PropertyType` as type, COUNT(*) as count')
-                        ->whereRaw("SUBSTRING_INDEX(`Postcode`, ' ', 1) LIKE CONCAT(?, '%')", [$district])
+                        ->selectRaw('YearDate as year, PropertyType as type, COUNT(*) as count')
+                        ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->groupBy('YearDate', 'type')
                         ->orderBy('YearDate')
@@ -209,64 +209,64 @@ class OuterPrimeLondonController extends Controller
                 });
 
                 // Average price by property type (D/S/T/F) per year
-                $avgPriceByType = Cache::remember($keyBase . 'avgPriceByType', $ttl, function () use ($district) {
+                $avgPriceByType = Cache::remember($keyBase.'avgPriceByType', $ttl, function () use ($district) {
                     return DB::table('land_registry')
-                        ->selectRaw("`YearDate` as year, LEFT(`PropertyType`, 1) as type, ROUND(AVG(`Price`)) as avg_price")
-                        ->whereRaw("SUBSTRING_INDEX(`Postcode`, ' ', 1) LIKE CONCAT(?, '%')", [$district])
+                        ->selectRaw('YearDate as year, SUBSTR(PropertyType, 1, 1) as type, ROUND(AVG(Price)) as avg_price')
+                        ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->whereNotNull('PropertyType')
-                        ->whereRaw("LEFT(`PropertyType`, 1) IN ('D','S','T','F')")
+                        ->whereRaw("SUBSTR(PropertyType, 1, 1) IN ('D','S','T','F')")
                         ->groupBy('YearDate', 'type')
                         ->orderBy('YearDate')
                         ->get();
                 });
 
                 // New build vs existing (% of sales) per year
-                $newBuildPct = Cache::remember($keyBase . 'newBuildPct', $ttl, function () use ($district) {
+                $newBuildPct = Cache::remember($keyBase.'newBuildPct', $ttl, function () use ($district) {
                     return DB::table('land_registry')
                         ->selectRaw(
-                            "`YearDate` as year, " .
-                            "ROUND(100 * SUM(CASE WHEN `NewBuild` = 'Y' THEN 1 ELSE 0 END) / COUNT(*), 1) as new_pct, " .
-                            "ROUND(100 * SUM(CASE WHEN `NewBuild` = 'N' THEN 1 ELSE 0 END) / COUNT(*), 1) as existing_pct"
+                            'YearDate as year, '.
+                            "ROUND(100 * SUM(CASE WHEN NewBuild = 'Y' THEN 1 ELSE 0 END) / COUNT(*), 1) as new_pct, ".
+                            "ROUND(100 * SUM(CASE WHEN NewBuild = 'N' THEN 1 ELSE 0 END) / COUNT(*), 1) as existing_pct"
                         )
-                        ->whereRaw("SUBSTRING_INDEX(`Postcode`, ' ', 1) LIKE CONCAT(?, '%')", [$district])
+                        ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->whereNotNull('NewBuild')
-                        ->whereIn('NewBuild', ['Y','N'])
+                        ->whereIn('NewBuild', ['Y', 'N'])
                         ->groupBy('YearDate')
                         ->orderBy('YearDate')
                         ->get();
                 });
 
                 // Freehold vs Leasehold (% of sales) per year (Duration: F/L)
-                $tenurePct = Cache::remember($keyBase . 'tenurePct', $ttl, function () use ($district) {
+                $tenurePct = Cache::remember($keyBase.'tenurePct', $ttl, function () use ($district) {
                     return DB::table('land_registry')
                         ->selectRaw(
-                            "`YearDate` as year, " .
-                            "ROUND(100 * SUM(CASE WHEN `Duration` = 'F' THEN 1 ELSE 0 END) / COUNT(*), 1) as free_pct, " .
-                            "ROUND(100 * SUM(CASE WHEN `Duration` = 'L' THEN 1 ELSE 0 END) / COUNT(*), 1) as lease_pct"
+                            'YearDate as year, '.
+                            "ROUND(100 * SUM(CASE WHEN Duration = 'F' THEN 1 ELSE 0 END) / COUNT(*), 1) as free_pct, ".
+                            "ROUND(100 * SUM(CASE WHEN Duration = 'L' THEN 1 ELSE 0 END) / COUNT(*), 1) as lease_pct"
                         )
-                        ->whereRaw("SUBSTRING_INDEX(`Postcode`, ' ', 1) LIKE CONCAT(?, '%')", [$district])
+                        ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->whereNotNull('Duration')
-                        ->whereIn('Duration', ['F','L'])
+                        ->whereIn('Duration', ['F', 'L'])
                         ->groupBy('YearDate')
                         ->orderBy('YearDate')
                         ->get();
                 });
 
                 // 90th percentile (threshold) per year via window function
-                $p90 = Cache::remember($keyBase . 'p90', $ttl, function () use ($district) {
+                $p90 = Cache::remember($keyBase.'p90', $ttl, function () use ($district) {
                     $deciles = DB::table('land_registry')
-                        ->selectRaw('`YearDate`, `Price`, NTILE(10) OVER (PARTITION BY `YearDate` ORDER BY `Price`) as decile')
-                        ->whereRaw("SUBSTRING_INDEX(`Postcode`, ' ', 1) LIKE CONCAT(?, '%')", [$district])
+                        ->selectRaw('YearDate, Price, NTILE(10) OVER (PARTITION BY YearDate ORDER BY Price) as decile')
+                        ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->whereNotNull('Price')
                         ->where('Price', '>', 0);
 
                     return DB::query()
                         ->fromSub($deciles, 't')
-                        ->selectRaw('`YearDate` as year, MIN(`Price`) as p90')
+                        ->selectRaw('YearDate as year, MIN(Price) as p90')
                         ->where('decile', 10)
                         ->groupBy('year')
                         ->orderBy('year')
@@ -274,28 +274,28 @@ class OuterPrimeLondonController extends Controller
                 });
 
                 // Top 5% average per year via window ranking
-                $top5 = Cache::remember($keyBase . 'top5', $ttl, function () use ($district) {
+                $top5 = Cache::remember($keyBase.'top5', $ttl, function () use ($district) {
                     $rankedTop5 = DB::table('land_registry')
-                        ->selectRaw('`YearDate`, `Price`, ROW_NUMBER() OVER (PARTITION BY `YearDate` ORDER BY `Price` DESC) as rn, COUNT(*) OVER (PARTITION BY `YearDate`) as cnt')
-                        ->whereRaw("SUBSTRING_INDEX(`Postcode`, ' ', 1) LIKE CONCAT(?, '%')", [$district])
+                        ->selectRaw('YearDate, Price, ROW_NUMBER() OVER (PARTITION BY YearDate ORDER BY Price DESC) as rn, COUNT(*) OVER (PARTITION BY YearDate) as cnt')
+                        ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->whereNotNull('Price')
                         ->where('Price', '>', 0);
 
                     return DB::query()
                         ->fromSub($rankedTop5, 'ranked')
-                        ->selectRaw('`YearDate` as year, ROUND(AVG(`Price`)) as top5_avg')
-                        ->whereRaw('rn <= CEIL(cnt * 0.05)')
+                        ->selectRaw('YearDate as year, ROUND(AVG(Price)) as top5_avg')
+                        ->whereRaw('rn <= ((cnt + 19) / 20)')
                         ->groupBy('year')
                         ->orderBy('year')
                         ->get();
                 });
 
                 // Top sale per year (for spike marker)
-                $topSalePerYear = Cache::remember($keyBase . 'topSalePerYear', $ttl, function () use ($district) {
+                $topSalePerYear = Cache::remember($keyBase.'topSalePerYear', $ttl, function () use ($district) {
                     return DB::table('land_registry')
-                        ->selectRaw('`YearDate` as year, MAX(`Price`) as top_sale')
-                        ->whereRaw("SUBSTRING_INDEX(`Postcode`, ' ', 1) LIKE CONCAT(?, '%')", [$district])
+                        ->selectRaw('YearDate as year, MAX(Price) as top_sale')
+                        ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->whereNotNull('Price')
                         ->where('Price', '>', 0)
@@ -305,10 +305,10 @@ class OuterPrimeLondonController extends Controller
                 });
 
                 // Top 3 sales per year (for tooltip/context)
-                $top3PerYear = Cache::remember($keyBase . 'top3PerYear', $ttl, function () use ($district) {
+                $top3PerYear = Cache::remember($keyBase.'top3PerYear', $ttl, function () use ($district) {
                     $rankedTop3 = DB::table('land_registry')
-                        ->selectRaw('`YearDate` as year, `Date`, `Postcode`, `Price`, ROW_NUMBER() OVER (PARTITION BY `YearDate` ORDER BY `Price` DESC) as rn')
-                        ->whereRaw("SUBSTRING_INDEX(`Postcode`, ' ', 1) LIKE CONCAT(?, '%')", [$district])
+                        ->selectRaw('YearDate as year, Date, Postcode, Price, ROW_NUMBER() OVER (PARTITION BY YearDate ORDER BY Price DESC) as rn')
+                        ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->whereNotNull('Price')
                         ->where('Price', '>', 0);
@@ -324,16 +324,16 @@ class OuterPrimeLondonController extends Controller
             }
 
             $charts[$district] = [
-                'avgPrice'       => $avgPrice,
-                'sales'          => $sales,
-                'propertyTypes'  => $propertyTypes,
+                'avgPrice' => $avgPrice,
+                'sales' => $sales,
+                'propertyTypes' => $propertyTypes,
                 'avgPriceByType' => $avgPriceByType,
-                'newBuildPct'    => $newBuildPct,
-                'tenurePct'      => $tenurePct,
-                'p90'            => $p90,
-                'top5'           => $top5,
+                'newBuildPct' => $newBuildPct,
+                'tenurePct' => $tenurePct,
+                'p90' => $p90,
+                'top5' => $top5,
                 'topSalePerYear' => $topSalePerYear,
-                'top3PerYear'    => $top3PerYear,
+                'top3PerYear' => $top3PerYear,
             ];
         }
 
@@ -347,8 +347,8 @@ class OuterPrimeLondonController extends Controller
         return view('outerprime.home', [
             'pageTitle' => $pageTitle,
             'districts' => $allDistricts,
-            'charts'    => $charts,
-            'notes'     => $notes,
+            'charts' => $charts,
+            'notes' => $notes,
         ]);
     }
 }

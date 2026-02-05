@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::table('blog_posts', function (Blueprint $table) {
             $table->json('gallery_images')
-                  ->nullable()
-                  ->after('original_image');
+                ->nullable();
         });
     }
 

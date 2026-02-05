@@ -29,6 +29,7 @@ class PropertyAreaWarm extends Command
 
         if (! file_exists($jsonPath)) {
             $this->error("JSON index not found at {$jsonPath}");
+
             return 1;
         }
 
@@ -37,9 +38,9 @@ class PropertyAreaWarm extends Command
         $allowedTypes = ['locality', 'town', 'district', 'county'];
         $columnMap = [
             'locality' => 'Locality',
-            'town'     => 'TownCity',
+            'town' => 'TownCity',
             'district' => 'District',
-            'county'   => 'County',
+            'county' => 'County',
         ];
 
         $filterType = $this->option('type') ? strtolower($this->option('type')) : null;
@@ -76,7 +77,7 @@ class PropertyAreaWarm extends Command
             }
 
             $slug = Str::slug($areaName);
-            $cacheKey = 'area:v1:' . $type . ':' . $slug;
+            $cacheKey = 'area:v1:'.$type.':'.$slug;
 
             // Build payload using the same logic as the controller
             $payload = $controller->buildAreaPayload($column, $areaName);
@@ -91,7 +92,9 @@ class PropertyAreaWarm extends Command
             }
         }
 
+        Cache::put('area:v1:last_warm', now()->toIso8601String(), $ttl);
         $this->info("Finished. Warmed {$count} areas.");
-        return 0;
+
+        return self::SUCCESS;
     }
 }

@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
@@ -12,10 +10,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         // Normalise existing postcodes in both tables
         DB::statement("
             UPDATE land_registry 
-            SET Postcode = UPPER(REPLACE(TRIM(Postcode), ' ', ''))
+            SET \"Postcode\" = UPPER(REPLACE(TRIM(\"Postcode\"), ' ', ''))
         ");
 
         DB::statement("

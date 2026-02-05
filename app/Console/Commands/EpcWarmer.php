@@ -2,65 +2,58 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class EpcWarmer extends Command
 {
-    /**
-     * The name and signature of the console command.
-     */
     protected $signature = 'epc:warm-dashboard';
 
-    /**
-     * The console command description.
-     */
     protected $description = 'Precompute and cache EPC dashboard queries for faster page loads';
 
-    /**
-     * Execute the console command.
-     */
     public function handle(): int
     {
         $this->info('Warming EPC dashboard cache...');
         $started = microtime(true);
+        $driver = DB::connection()->getDriverName();
         DB::connection()->disableQueryLog();
-        if (function_exists('set_time_limit')) { set_time_limit(0); }
+
+        if (function_exists('set_time_limit')) {
+            set_time_limit(0);
+        }
 
         $today = Carbon::today();
-        $ttl   = now()->addDays(45); // match controller's 45-day TTL cadence
-        $ratings = ['A','B','C','D','E','F','G'];
+        $ttl = now()->addDays(45);
+        $ratings = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
-        // Nations to warm: England & Wales (ew) and Scotland (scotland)
         $nations = [
             'ew' => [
-                'table'        => 'epc_certificates',
-                'dateExpr'     => 'lodgement_date',
-                'yearExpr'     => 'YEAR(lodgement_date)',
-                'currentCol'   => 'current_energy_rating',
-                'potentialCol' => 'potential_energy_rating',
-                'since'        => Carbon::create(2008, 1, 1),
+                'table' => 'epc_certificates',
+                'dateExpr' => $this->ewDateExpr($driver),
+                'yearExpr' => $this->ewYearExpr($driver),
+                'currentCol' => 'CURRENT_ENERGY_RATING',
+                'potentialCol' => 'POTENTIAL_ENERGY_RATING',
+                'tenureCol' => 'TENURE',
+                'since' => Carbon::create(2008, 1, 1),
             ],
             'scotland' => [
-                'table'        => 'epc_certificates_scotland',
-                'dateExpr'     => "STR_TO_DATE(LODGEMENT_DATE, '%Y-%m-%d')",
-                'yearExpr'     => "SUBSTRING(LODGEMENT_DATE,1,4)",
-                'currentCol'   => 'CURRENT_ENERGY_RATING',
+                'table' => 'epc_certificates_scotland',
+                'dateExpr' => $this->scotlandDateExpr($driver),
+                'yearExpr' => $this->scotlandYearExpr($driver),
+                'currentCol' => 'CURRENT_ENERGY_RATING',
                 'potentialCol' => 'POTENTIAL_ENERGY_RATING',
-                'since'        => Carbon::create(2015, 1, 1),
+                'tenureCol' => 'TENURE',
+                'since' => Carbon::create(2015, 1, 1),
             ],
         ];
 
-        $ck = function (string $nation, string $key) {
-            return "epc:{$nation}:{$key}";
-        };
+        $cacheKey = fn (string $nation, string $key): string => "epc:{$nation}:{$key}";
 
         foreach ($nations as $nation => $cfg) {
-            $this->line("→ Warming {$nation} ({$cfg['table']})...");
+            $this->line("-> Warming {$nation} ({$cfg['table']})...");
 
-            // 1) Stats (totals & recency)
             $maxDate = DB::table($cfg['table'])
                 ->selectRaw("MAX({$cfg['dateExpr']}) as d")
                 ->value('d');
@@ -77,103 +70,127 @@ class EpcWarmer extends Command
                 ->whereBetween(DB::raw($cfg['dateExpr']), [$today->copy()->subDays(365), $today])
                 ->count();
 
-            $stats = [
-                'total'            => (int) DB::table($cfg['table'])->count(),
+            Cache::put($cacheKey($nation, 'stats'), [
+                'total' => (int) DB::table($cfg['table'])->count(),
                 'latest_lodgement' => $maxDate,
-                'last30_count'     => $last30Count,
-                'last365_count'    => $last365Count,
-            ];
-            Cache::put($ck($nation, 'stats'), $stats, $ttl);
-            $this->line("✔ {$nation}: stats cached");
+                'last30_count' => $last30Count,
+                'last365_count' => $last365Count,
+            ], $ttl);
 
-            // 2) Certificates by year
             $byYear = DB::table($cfg['table'])
                 ->selectRaw("{$cfg['yearExpr']} as yr, COUNT(*) as cnt")
                 ->whereRaw("{$cfg['dateExpr']} IS NOT NULL")
                 ->whereRaw("{$cfg['dateExpr']} >= ?", [$cfg['since']])
                 ->groupBy('yr')
-                ->orderBy('yr', 'asc')
+                ->orderBy('yr')
                 ->get();
-            Cache::put($ck($nation, 'byYear'), $byYear, $ttl);
+            Cache::put($cacheKey($nation, 'byYear'), $byYear, $ttl);
 
-            $this->line("✔ {$nation}: byYear cached");
-
-            // 3) Current energy ratings by year (A–G)
             $ratingByYear = DB::table($cfg['table'])
-                ->selectRaw("{$cfg['yearExpr']} as yr, {$cfg['currentCol']} as rating, COUNT(*) as cnt")
+                ->selectRaw("{$cfg['yearExpr']} as yr, {$this->column($cfg['currentCol'])} as rating, COUNT(*) as cnt")
                 ->whereRaw("{$cfg['dateExpr']} IS NOT NULL")
                 ->whereRaw("{$cfg['dateExpr']} >= ?", [$cfg['since']])
                 ->whereIn($cfg['currentCol'], $ratings)
                 ->groupBy('yr', 'rating')
-                ->orderBy('yr', 'asc')
-                ->orderByRaw("FIELD({$cfg['currentCol']}, 'A','B','C','D','E','F','G')")
+                ->orderBy('yr')
                 ->get();
-            Cache::put($ck($nation, 'ratingByYear'), $ratingByYear, $ttl);
-            $this->line("✔ {$nation}: ratingByYear cached");
+            Cache::put($cacheKey($nation, 'ratingByYear'), $ratingByYear, $ttl);
 
-            // 3b) Potential energy ratings by year (A–G)
             $potentialByYear = DB::table($cfg['table'])
-                ->selectRaw("{$cfg['yearExpr']} as yr, {$cfg['potentialCol']} as rating, COUNT(*) as cnt")
+                ->selectRaw("{$cfg['yearExpr']} as yr, {$this->column($cfg['potentialCol'])} as rating, COUNT(*) as cnt")
                 ->whereRaw("{$cfg['dateExpr']} IS NOT NULL")
                 ->whereRaw("{$cfg['dateExpr']} >= ?", [$cfg['since']])
                 ->whereIn($cfg['potentialCol'], $ratings)
                 ->groupBy('yr', 'rating')
-                ->orderBy('yr', 'asc')
-                ->orderByRaw("FIELD({$cfg['potentialCol']}, 'A','B','C','D','E','F','G')")
+                ->orderBy('yr')
                 ->get();
-            Cache::put($ck($nation, 'potentialByYear'), $potentialByYear, $ttl);
-            $this->line("✔ {$nation}: potentialByYear cached");
+            Cache::put($cacheKey($nation, 'potentialByYear'), $potentialByYear, $ttl);
 
-            // Normalise tenure values for both nations
-            $tenureLabels    = ['Owner-occupied','Rented (private)','Rented (social)'];
-            $tenureRawValues = [
-                'Owner-occupied','owner-occupied',
-                'Rented (private)','rental (private)',
-                'Rented (social)','rental (social)',
-            ];
-
-            // 3c) Tenure by year (normalised)
             $tenureByYear = DB::table($cfg['table'])
-                ->selectRaw("
-                    {$cfg['yearExpr']} as yr,
-                    CASE
-                        WHEN tenure IN ('Owner-occupied','owner-occupied') THEN 'Owner-occupied'
-                        WHEN tenure IN ('Rented (private)','rental (private)') THEN 'Rented (private)'
-                        WHEN tenure IN ('Rented (social)','rental (social)') THEN 'Rented (social)'
-                        ELSE NULL
-                    END as tenure,
-                    COUNT(*) as cnt
-                ")
+                ->selectRaw("\n                    {$cfg['yearExpr']} as yr,\n                    CASE\n                        WHEN {$this->column($cfg['tenureCol'])} IN ('Owner-occupied','owner-occupied') THEN 'Owner-occupied'\n                        WHEN {$this->column($cfg['tenureCol'])} IN ('Rented (private)','rental (private)') THEN 'Rented (private)'\n                        WHEN {$this->column($cfg['tenureCol'])} IN ('Rented (social)','rental (social)') THEN 'Rented (social)'\n                        ELSE NULL\n                    END as tenure,\n                    COUNT(*) as cnt\n                ")
                 ->whereRaw("{$cfg['dateExpr']} IS NOT NULL")
                 ->whereRaw("{$cfg['dateExpr']} >= ?", [$cfg['since']])
-                ->whereIn('tenure', $tenureRawValues)
+                ->whereIn($cfg['tenureCol'], [
+                    'Owner-occupied', 'owner-occupied',
+                    'Rented (private)', 'rental (private)',
+                    'Rented (social)', 'rental (social)',
+                ])
                 ->groupBy('yr', 'tenure')
-                ->orderBy('yr', 'asc')
-                ->orderByRaw("FIELD(tenure, '" . implode("','", $tenureLabels) . "')")
+                ->orderBy('yr')
                 ->get();
+            Cache::put($cacheKey($nation, 'tenureByYear'), $tenureByYear, $ttl);
 
-            Cache::put($ck($nation, 'tenureByYear'), $tenureByYear, $ttl);
-            $this->line("✔ {$nation}: tenureByYear cached");
-
-            // 4) Distribution of current ratings (A–G, Other, Unknown)
             $ratingDist = DB::table($cfg['table'])
-                ->selectRaw("
-                    CASE
-                        WHEN {$cfg['currentCol']} IN ('A','B','C','D','E','F','G') THEN {$cfg['currentCol']}
-                        WHEN {$cfg['currentCol']} IS NULL THEN 'Unknown'
-                        ELSE 'Other'
-                    END as rating,
-                    COUNT(*) as cnt
-                ")
+                ->selectRaw("\n                    CASE\n                        WHEN {$this->column($cfg['currentCol'])} IN ('A','B','C','D','E','F','G') THEN {$this->column($cfg['currentCol'])}\n                        WHEN {$this->column($cfg['currentCol'])} IS NULL THEN 'Unknown'\n                        ELSE 'Other'\n                    END as rating,\n                    COUNT(*) as cnt\n                ")
                 ->groupBy('rating')
-                ->orderByRaw("FIELD(rating, 'A','B','C','D','E','F','G','Other','Unknown')")
                 ->get();
-            Cache::put($ck($nation, 'ratingDist'), $ratingDist, $ttl);
-            $this->line("✔ {$nation}: ratingDist cached");
+            Cache::put($cacheKey($nation, 'ratingDist'), $ratingDist, $ttl);
+
+            Cache::put($cacheKey($nation, 'last_warm'), now()->toIso8601String(), $ttl);
         }
+
+        Cache::put('epc:last_warm', now()->toIso8601String(), $ttl);
 
         $elapsed = round((microtime(true) - $started), 2);
         $this->info("Done in {$elapsed}s");
+
         return self::SUCCESS;
+    }
+
+    private function ewYearExpr(string $driver): string
+    {
+        if ($driver === 'pgsql') {
+            return 'EXTRACT(YEAR FROM CAST("LODGEMENT_DATE" AS date))::int';
+        }
+
+        return 'CAST(strftime(\'%Y\', "LODGEMENT_DATE") AS INTEGER)';
+    }
+
+    private function ewDateExpr(string $driver): string
+    {
+        if ($driver === 'pgsql') {
+            return 'CAST("LODGEMENT_DATE" AS date)';
+        }
+
+        return 'date("LODGEMENT_DATE")';
+    }
+
+    private function scotlandDateExpr(string $driver): string
+    {
+        if ($driver === 'pgsql') {
+            return 'CAST("LODGEMENT_DATE" AS date)';
+        }
+
+        return 'date("LODGEMENT_DATE")';
+    }
+
+    private function scotlandYearExpr(string $driver): string
+    {
+        if ($driver === 'pgsql') {
+            return 'EXTRACT(YEAR FROM CAST("LODGEMENT_DATE" AS date))::int';
+        }
+
+        return 'CAST(strftime(\'%Y\', "LODGEMENT_DATE") AS INTEGER)';
+    }
+
+    private function ratingOrderExpression(string $column, bool $includeTail = false): string
+    {
+        $case = "CASE {$column}\n            WHEN 'A' THEN 1\n            WHEN 'B' THEN 2\n            WHEN 'C' THEN 3\n            WHEN 'D' THEN 4\n            WHEN 'E' THEN 5\n            WHEN 'F' THEN 6\n            WHEN 'G' THEN 7";
+
+        if ($includeTail) {
+            $case .= "\n            WHEN 'Other' THEN 8\n            WHEN 'Unknown' THEN 9";
+        }
+
+        return $case."\n            ELSE 99\n        END";
+    }
+
+    private function tenureOrderExpression(string $column): string
+    {
+        return "CASE {$column}\n            WHEN 'Owner-occupied' THEN 1\n            WHEN 'Rented (private)' THEN 2\n            WHEN 'Rented (social)' THEN 3\n            ELSE 99\n        END";
+    }
+
+    private function column(string $name): string
+    {
+        return '"'.$name.'"';
     }
 }

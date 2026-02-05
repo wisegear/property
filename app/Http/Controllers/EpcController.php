@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class EpcController extends Controller
 {
@@ -18,36 +19,37 @@ class EpcController extends Controller
     public function home()
     {
         $nation = request()->query('nation', 'ew'); // 'ew' | 'scotland'
+        $driver = DB::connection()->getDriverName();
 
         // Nation-specific config to avoid duplicated query blocks
         $cfg = ($nation === 'scotland')
             ? [
-                'table'        => 'epc_certificates_scotland',
-                'dateExpr'     => "STR_TO_DATE(LODGEMENT_DATE, '%Y-%m-%d')",
-                'yearExpr'     => "SUBSTRING(LODGEMENT_DATE,1,4)",
-                'dateCol'      => 'LODGEMENT_DATE',
-                'currentCol'   => 'CURRENT_ENERGY_RATING',
+                'table' => 'epc_certificates_scotland',
+                'dateExpr' => $this->scotlandDateExpr($driver),
+                'yearExpr' => $this->scotlandYearExpr($driver),
+                'dateCol' => 'LODGEMENT_DATE',
+                'currentCol' => 'CURRENT_ENERGY_RATING',
                 'potentialCol' => 'POTENTIAL_ENERGY_RATING',
-                'roomsCol'     => 'NUMBER_HABITABLE_ROOMS',
-                'ageCol'       => 'CONSTRUCTION_AGE_BAND',
-                'since'        => Carbon::create(2015, 1, 1),
-              ]
+                'roomsCol' => 'NUMBER_HABITABLE_ROOMS',
+                'ageCol' => 'CONSTRUCTION_AGE_BAND',
+                'since' => Carbon::create(2015, 1, 1),
+            ]
             : [
-                'table'        => 'epc_certificates',
-                'dateExpr'     => 'lodgement_date',
-                'yearExpr'     => 'YEAR(lodgement_date)',
-                'dateCol'      => 'lodgement_date',
-                'currentCol'   => 'current_energy_rating',
+                'table' => 'epc_certificates',
+                'dateExpr' => 'lodgement_date',
+                'yearExpr' => $this->ewYearExpr($driver),
+                'dateCol' => 'lodgement_date',
+                'currentCol' => 'current_energy_rating',
                 'potentialCol' => 'potential_energy_rating',
-                'roomsCol'     => 'number_habitable_rooms',
-                'ageCol'       => 'construction_age_band',
-                'since'        => Carbon::create(2008, 1, 1),
-              ];
+                'roomsCol' => 'number_habitable_rooms',
+                'ageCol' => 'construction_age_band',
+                'since' => Carbon::create(2008, 1, 1),
+            ];
 
-        $today   = Carbon::today();
-        $ttl     = 60 * 60 * 24 * 45; // 45 days
-        $ck      = fn(string $k) => "epc:{$nation}:{$k}"; // cache key helper
-        $ratings = ['A','B','C','D','E','F','G'];
+        $today = Carbon::today();
+        $ttl = 60 * 60 * 24 * 45; // 45 days
+        $ck = fn (string $k) => "epc:{$nation}:{$k}"; // cache key helper
+        $ratings = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
         // 1) Totals & recency
         $stats = Cache::remember($ck('stats'), $ttl, function () use ($cfg, $today) {
@@ -69,10 +71,10 @@ class EpcController extends Controller
                 ->count();
 
             return [
-                'total'            => (int) DB::table($cfg['table'])->count(),
+                'total' => (int) DB::table($cfg['table'])->count(),
                 'latest_lodgement' => $maxDate,
-                'last30_count'     => $last30Count,
-                'last365_count'    => $last365Count,
+                'last30_count' => $last30Count,
+                'last365_count' => $last365Count,
             ];
         });
 
@@ -96,7 +98,7 @@ class EpcController extends Controller
                 ->whereIn($cfg['currentCol'], $ratings)
                 ->groupBy('yr', 'rating')
                 ->orderBy('yr', 'asc')
-                ->orderByRaw("FIELD({$cfg['currentCol']}, 'A','B','C','D','E','F','G')")
+                ->orderByRaw($this->ratingOrderExpression('rating'))
                 ->get();
         });
 
@@ -109,22 +111,22 @@ class EpcController extends Controller
                 ->whereIn($cfg['potentialCol'], $ratings)
                 ->groupBy('yr', 'rating')
                 ->orderBy('yr', 'asc')
-                ->orderByRaw("FIELD({$cfg['potentialCol']}, 'A','B','C','D','E','F','G')")
+                ->orderByRaw($this->ratingOrderExpression('rating'))
                 ->get();
         });
 
         // 6) Tenure by year: normalise variants into 3 buckets
         // EPC tenure values can vary (e.g. "Rented (private)" vs "Rental (private)").
-        $tenureLabels = ['Owner-occupied','Rented (private)','Rented (social)'];
+        $tenureLabels = ['Owner-occupied', 'Rented (private)', 'Rented (social)'];
 
-        $tenureByYear = Cache::remember($ck('tenureByYear'), $ttl, function () use ($cfg, $tenureLabels) {
+        $tenureByYear = Cache::remember($ck('tenureByYear'), $ttl, function () use ($cfg) {
             // Normalise common variants into our 3 labels. Anything else is ignored.
             $tenureCase = "CASE\n"
-                . "  WHEN tenure IN ('Owner-occupied','Owner occupied','Owner Occupied','Owner-Occupied') THEN 'Owner-occupied'\n"
-                . "  WHEN tenure IN ('Rented (private)','Rental (private)','Private rented','Private Rented','Rented - private','Rental - private') THEN 'Rented (private)'\n"
-                . "  WHEN tenure IN ('Rented (social)','Rental (social)','Social rented','Social Rented','Rented - social','Rental - social') THEN 'Rented (social)'\n"
-                . "  ELSE NULL\n"
-                . "END";
+                ."  WHEN tenure IN ('Owner-occupied','Owner occupied','Owner Occupied','Owner-Occupied') THEN 'Owner-occupied'\n"
+                ."  WHEN tenure IN ('Rented (private)','Rental (private)','Private rented','Private Rented','Rented - private','Rental - private') THEN 'Rented (private)'\n"
+                ."  WHEN tenure IN ('Rented (social)','Rental (social)','Social rented','Social Rented','Rented - social','Rental - social') THEN 'Rented (social)'\n"
+                ."  ELSE NULL\n"
+                .'END';
 
             return DB::table($cfg['table'])
                 ->selectRaw("{$cfg['yearExpr']} as yr, {$tenureCase} as tenure, COUNT(*) as cnt")
@@ -133,12 +135,12 @@ class EpcController extends Controller
                 ->whereNotNull('tenure')
                 ->groupBy('yr', 'tenure')
                 ->orderBy('yr', 'asc')
-                ->orderByRaw("FIELD(tenure, '" . implode("','", $tenureLabels) . "')")
+                ->orderByRaw($this->tenureOrderExpression('tenure'))
                 ->get();
         });
 
         // 5) Distribution of current ratings (optional for Scotland too)
-        $ratingDist = Cache::remember($ck('ratingDist'), $ttl, function () use ($cfg, $ratings) {
+        $ratingDist = Cache::remember($ck('ratingDist'), $ttl, function () use ($cfg) {
             return DB::table($cfg['table'])
                 ->selectRaw("
                     CASE
@@ -149,19 +151,96 @@ class EpcController extends Controller
                     COUNT(*) as cnt
                 ")
                 ->groupBy('rating')
-                ->orderByRaw("FIELD(rating, 'A','B','C','D','E','F','G','Other','Unknown')")
+                ->orderByRaw($this->ratingOrderExpression('rating', true))
                 ->get();
         });
 
         return view('epc.home', [
-            'stats'            => $stats,
-            'byYear'           => $byYear,
-            'ratingByYear'     => $ratingByYear,
-            'potentialByYear'  => $potentialByYear,
-            'tenureByYear'     => $tenureByYear,
-            'ratingDist'       => $ratingDist ?? collect(),
-            'nation'           => $nation,
+            'stats' => $stats,
+            'byYear' => $byYear,
+            'ratingByYear' => $ratingByYear,
+            'potentialByYear' => $potentialByYear,
+            'tenureByYear' => $tenureByYear,
+            'ratingDist' => $ratingDist ?? collect(),
+            'nation' => $nation,
         ]);
+    }
+
+    private function ewYearExpr(string $driver): string
+    {
+        if ($driver === 'pgsql') {
+            return 'EXTRACT(YEAR FROM "lodgement_date")::int';
+        }
+
+        return 'CAST(strftime(\'%Y\', "lodgement_date") AS INTEGER)';
+    }
+
+    private function scotlandDateExpr(string $driver): string
+    {
+        if ($driver === 'pgsql') {
+            return 'CAST("LODGEMENT_DATE" AS date)';
+        }
+
+        return 'date("LODGEMENT_DATE")';
+    }
+
+    private function scotlandYearExpr(string $driver): string
+    {
+        if ($driver === 'pgsql') {
+            return 'EXTRACT(YEAR FROM CAST("LODGEMENT_DATE" AS date))::int';
+        }
+
+        return 'CAST(strftime(\'%Y\', "LODGEMENT_DATE") AS INTEGER)';
+    }
+
+    private function ratingOrderExpression(string $column, bool $includeTail = false): string
+    {
+        $case = "CASE {$column}
+            WHEN 'A' THEN 1
+            WHEN 'B' THEN 2
+            WHEN 'C' THEN 3
+            WHEN 'D' THEN 4
+            WHEN 'E' THEN 5
+            WHEN 'F' THEN 6
+            WHEN 'G' THEN 7";
+
+        if ($includeTail) {
+            $case .= "
+            WHEN 'Other' THEN 8
+            WHEN 'Unknown' THEN 9";
+        }
+
+        return $case.'
+            ELSE 99
+        END';
+    }
+
+    private function tenureOrderExpression(string $column): string
+    {
+        return "CASE {$column}
+            WHEN 'Owner-occupied' THEN 1
+            WHEN 'Rented (private)' THEN 2
+            WHEN 'Rented (social)' THEN 3
+            ELSE 99
+        END";
+    }
+
+    private function resolveColumn(string $table, array $candidates): string
+    {
+        foreach ($candidates as $candidate) {
+            if (Schema::hasColumn($table, $candidate)) {
+                return $candidate;
+            }
+        }
+
+        return $candidates[0];
+    }
+
+    private function wrapColumn(string $column, ?string $table = null): string
+    {
+        $grammar = DB::connection()->getQueryGrammar();
+
+        return $grammar->wrap($table ? "{$table}.{$column}" : $column);
     }
 
     // Search for EPC certificates by postcode (exact match)
@@ -175,7 +254,7 @@ class EpcController extends Controller
 
         // Validate: require a plausible UK postcode
         $request->validate([
-            'postcode' => ['required','string','max:16','regex:/^[A-Za-z]{1,2}\\d[A-Za-z\\d]?\\s*\\d[A-Za-z]{2}$/'],
+            'postcode' => ['required', 'string', 'max:16', 'regex:/^[A-Za-z]{1,2}\\d[A-Za-z\\d]?\\s*\\d[A-Za-z]{2}$/'],
         ], [
             'postcode.regex' => 'Please enter a full UK postcode (e.g. W11 3TH).',
         ]);
@@ -185,20 +264,20 @@ class EpcController extends Controller
 
         // Sorting (whitelist fields to avoid SQL injection)
         $allowedSorts = [
-            'lodgement_date'          => 'lodgement_date',
-            'address'                 => 'address',
-            'current_energy_rating'   => 'current_energy_rating',
+            'lodgement_date' => 'lodgement_date',
+            'address' => 'address',
+            'current_energy_rating' => 'current_energy_rating',
             'potential_energy_rating' => 'potential_energy_rating',
-            'property_type'           => 'property_type',
-            'total_floor_area'        => 'total_floor_area',
+            'property_type' => 'property_type',
+            'total_floor_area' => 'total_floor_area',
         ];
         $sort = $request->query('sort', 'lodgement_date');
-        $dir  = strtolower($request->query('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+        $dir = strtolower($request->query('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
         $sortCol = $allowedSorts[$sort] ?? 'lodgement_date';
 
         // Query by postcode only with dynamic sorting
         $query = DB::table('epc_certificates')
-            ->select('lmk_key','address','postcode','lodgement_date','current_energy_rating','potential_energy_rating','property_type','total_floor_area','local_authority_label')
+            ->select('lmk_key', 'address', 'postcode', 'lodgement_date', 'current_energy_rating', 'potential_energy_rating', 'property_type', 'total_floor_area', 'local_authority_label')
             ->where('postcode', $postcode)
             ->orderBy($sortCol, $dir);
 
@@ -217,6 +296,21 @@ class EpcController extends Controller
      */
     public function points(Request $request)
     {
+        $epcTable = 'epc_certificates';
+        $onsudTable = 'onsud';
+
+        $epcUprnColumn = $this->resolveColumn($epcTable, ['UPRN', 'uprn']);
+        $epcLodgementColumn = $this->resolveColumn($epcTable, ['LODGEMENT_DATE', 'lodgement_date']);
+        $epcLmkColumn = $this->resolveColumn($epcTable, ['LMK_KEY', 'lmk_key']);
+        $epcAddressColumn = $this->resolveColumn($epcTable, ['ADDRESS', 'address']);
+        $epcPostcodeColumn = $this->resolveColumn($epcTable, ['POSTCODE', 'postcode']);
+        $epcRatingColumn = $this->resolveColumn($epcTable, ['CURRENT_ENERGY_RATING', 'current_energy_rating']);
+
+        $onsudUprnColumn = $this->resolveColumn($onsudTable, ['UPRN', 'uprn']);
+        $onsudEastingColumn = $this->resolveColumn($onsudTable, ['GRIDGB1E', 'gridgb1e']);
+        $onsudNorthingColumn = $this->resolveColumn($onsudTable, ['GRIDGB1N', 'gridgb1n']);
+        $onsudCountryColumn = $this->resolveColumn($onsudTable, ['ctry25cd', 'CTRY25CD']);
+
         $zoom = (int) $request->query('zoom', 6);
         $limit = (int) $request->query('limit', 5000);
 
@@ -238,15 +332,15 @@ class EpcController extends Controller
             return response()->json(['points' => []]);
         }
 
-        $uprnRows = DB::table('onsud')
-            ->select('UPRN')
-            ->whereNotNull('GRIDGB1E')
-            ->whereNotNull('GRIDGB1N')
-            ->whereBetween('GRIDGB1E', [$eMin, $eMax])
-            ->whereBetween('GRIDGB1N', [$nMin, $nMax])
-            ->whereIn('ctry25cd', ['E92000001', 'W92000004'])
-            ->whereNotNull('UPRN')
-            ->where('UPRN', '!=', '')
+        $uprnRows = DB::table($onsudTable)
+            ->select($onsudUprnColumn)
+            ->whereNotNull($onsudEastingColumn)
+            ->whereNotNull($onsudNorthingColumn)
+            ->whereBetween($onsudEastingColumn, [$eMin, $eMax])
+            ->whereBetween($onsudNorthingColumn, [$nMin, $nMax])
+            ->whereIn($onsudCountryColumn, ['E92000001', 'W92000004'])
+            ->whereNotNull($onsudUprnColumn)
+            ->where($onsudUprnColumn, '!=', '')
             ->limit($limit + 1)
             ->get();
 
@@ -255,7 +349,7 @@ class EpcController extends Controller
             $uprnRows = $uprnRows->take($limit);
         }
 
-        $uprns = $uprnRows->pluck('UPRN')->filter()->values()->all();
+        $uprns = $uprnRows->pluck($onsudUprnColumn)->filter()->values()->all();
         if (empty($uprns)) {
             return response()->json([
                 'points' => [],
@@ -263,25 +357,26 @@ class EpcController extends Controller
             ]);
         }
 
-        $latestByUprn = DB::table('epc_certificates')
-            ->select('UPRN', DB::raw('MAX(LODGEMENT_DATE) as max_date'))
-            ->whereIn('UPRN', $uprns)
-            ->groupBy('UPRN');
+        $epcUprnWrapped = $this->wrapColumn($epcUprnColumn);
+        $epcLodgementWrapped = $this->wrapColumn($epcLodgementColumn);
+        $latestByUprn = DB::table($epcTable)
+            ->selectRaw("{$epcUprnWrapped} as uprn")
+            ->selectRaw("MAX({$epcLodgementWrapped}) as max_date")
+            ->whereIn($epcUprnColumn, $uprns)
+            ->groupBy('uprn');
 
-        $rows = DB::table('epc_certificates as e')
-            ->joinSub($latestByUprn, 'latest', function ($join) {
-                $join->on('e.UPRN', '=', 'latest.UPRN')
-                    ->on('e.LODGEMENT_DATE', '=', 'latest.max_date');
+        $rows = DB::table($epcTable.' as e')
+            ->joinSub($latestByUprn, 'latest', function ($join) use ($epcUprnColumn, $epcLodgementColumn) {
+                $join->on(DB::raw($this->wrapColumn($epcUprnColumn, 'e')), '=', 'latest.uprn')
+                    ->on(DB::raw($this->wrapColumn($epcLodgementColumn, 'e')), '=', 'latest.max_date');
             })
-            ->whereIn('e.UPRN', $uprns)
-            ->select([
-                'e.UPRN as uprn',
-                'e.LMK_KEY as lmk_key',
-                'e.ADDRESS as address',
-                'e.POSTCODE as postcode',
-                'e.LODGEMENT_DATE as lodgement_date',
-                'e.CURRENT_ENERGY_RATING as rating',
-            ])
+            ->whereIn(DB::raw($this->wrapColumn($epcUprnColumn, 'e')), $uprns)
+            ->selectRaw($this->wrapColumn($epcUprnColumn, 'e').' as uprn')
+            ->selectRaw($this->wrapColumn($epcLmkColumn, 'e').' as lmk_key')
+            ->selectRaw($this->wrapColumn($epcAddressColumn, 'e').' as address')
+            ->selectRaw($this->wrapColumn($epcPostcodeColumn, 'e').' as postcode')
+            ->selectRaw($this->wrapColumn($epcLodgementColumn, 'e').' as lodgement_date')
+            ->selectRaw($this->wrapColumn($epcRatingColumn, 'e').' as rating')
             ->limit($limit + 1)
             ->get();
 
@@ -291,19 +386,22 @@ class EpcController extends Controller
         }
 
         $epcUprns = $rows->pluck('uprn')->filter()->unique()->values()->all();
-        $coords = DB::table('onsud')
-            ->whereIn('UPRN', $epcUprns)
-            ->select(['UPRN', 'GRIDGB1E as easting', 'GRIDGB1N as northing'])
+        $coords = DB::table($onsudTable)
+            ->whereIn($onsudUprnColumn, $epcUprns)
+            ->selectRaw($this->wrapColumn($onsudUprnColumn).' as uprn')
+            ->selectRaw($this->wrapColumn($onsudEastingColumn).' as easting')
+            ->selectRaw($this->wrapColumn($onsudNorthingColumn).' as northing')
             ->get()
-            ->keyBy('UPRN');
+            ->keyBy('uprn');
 
         $points = $rows->map(function ($row) use ($coords) {
             $uprn = (string) $row->uprn;
-            if (!isset($coords[$uprn])) {
+            if (! isset($coords[$uprn])) {
                 return null;
             }
             $coord = $coords[$uprn];
             $lmk = (string) $row->lmk_key;
+
             return [
                 'easting' => $coord->easting !== null ? (int) $coord->easting : null,
                 'northing' => $coord->northing !== null ? (int) $coord->northing : null,
@@ -327,6 +425,23 @@ class EpcController extends Controller
      */
     public function pointsScotland(Request $request)
     {
+        $epcTable = 'epc_certificates_scotland';
+        $onsudTable = 'onsud';
+
+        $scotUprnColumn = $this->resolveColumn($epcTable, ['OSG_REFERENCE_NUMBER', 'osg_reference_number']);
+        $scotLodgementColumn = $this->resolveColumn($epcTable, ['LODGEMENT_DATE', 'lodgement_date']);
+        $scotRrnColumn = $this->resolveColumn($epcTable, ['REPORT_REFERENCE_NUMBER', 'report_reference_number']);
+        $scotAddress1Column = $this->resolveColumn($epcTable, ['ADDRESS1', 'address1']);
+        $scotAddress2Column = $this->resolveColumn($epcTable, ['ADDRESS2', 'address2']);
+        $scotAddress3Column = $this->resolveColumn($epcTable, ['ADDRESS3', 'address3']);
+        $scotPostcodeColumn = $this->resolveColumn($epcTable, ['POSTCODE', 'postcode']);
+        $scotRatingColumn = $this->resolveColumn($epcTable, ['CURRENT_ENERGY_RATING', 'current_energy_rating']);
+
+        $onsudUprnColumn = $this->resolveColumn($onsudTable, ['UPRN', 'uprn']);
+        $onsudEastingColumn = $this->resolveColumn($onsudTable, ['GRIDGB1E', 'gridgb1e']);
+        $onsudNorthingColumn = $this->resolveColumn($onsudTable, ['GRIDGB1N', 'gridgb1n']);
+        $onsudCountryColumn = $this->resolveColumn($onsudTable, ['ctry25cd', 'CTRY25CD']);
+
         $zoom = (int) $request->query('zoom', 6);
         $limit = (int) $request->query('limit', 5000);
 
@@ -348,15 +463,15 @@ class EpcController extends Controller
             return response()->json(['points' => []]);
         }
 
-        $uprnRows = DB::table('onsud')
-            ->select('UPRN')
-            ->whereNotNull('GRIDGB1E')
-            ->whereNotNull('GRIDGB1N')
-            ->whereBetween('GRIDGB1E', [$eMin, $eMax])
-            ->whereBetween('GRIDGB1N', [$nMin, $nMax])
-            ->whereIn('ctry25cd', ['S92000003'])
-            ->whereNotNull('UPRN')
-            ->where('UPRN', '!=', '')
+        $uprnRows = DB::table($onsudTable)
+            ->select($onsudUprnColumn)
+            ->whereNotNull($onsudEastingColumn)
+            ->whereNotNull($onsudNorthingColumn)
+            ->whereBetween($onsudEastingColumn, [$eMin, $eMax])
+            ->whereBetween($onsudNorthingColumn, [$nMin, $nMax])
+            ->whereIn($onsudCountryColumn, ['S92000003'])
+            ->whereNotNull($onsudUprnColumn)
+            ->where($onsudUprnColumn, '!=', '')
             ->limit($limit + 1)
             ->get();
 
@@ -365,7 +480,7 @@ class EpcController extends Controller
             $uprnRows = $uprnRows->take($limit);
         }
 
-        $uprns = $uprnRows->pluck('UPRN')->filter()->values()->all();
+        $uprns = $uprnRows->pluck($onsudUprnColumn)->filter()->values()->all();
         if (empty($uprns)) {
             return response()->json([
                 'points' => [],
@@ -373,27 +488,28 @@ class EpcController extends Controller
             ]);
         }
 
-        $latestByUprn = DB::table('epc_certificates_scotland')
-            ->select('OSG_REFERENCE_NUMBER', DB::raw('MAX(LODGEMENT_DATE) as max_date'))
-            ->whereIn('OSG_REFERENCE_NUMBER', $uprns)
-            ->groupBy('OSG_REFERENCE_NUMBER');
+        $scotUprnWrapped = $this->wrapColumn($scotUprnColumn);
+        $scotLodgementWrapped = $this->wrapColumn($scotLodgementColumn);
+        $latestByUprn = DB::table($epcTable)
+            ->selectRaw("{$scotUprnWrapped} as uprn")
+            ->selectRaw("MAX({$scotLodgementWrapped}) as max_date")
+            ->whereIn($scotUprnColumn, $uprns)
+            ->groupBy('uprn');
 
-        $rows = DB::table('epc_certificates_scotland as e')
-            ->joinSub($latestByUprn, 'latest', function ($join) {
-                $join->on('e.OSG_REFERENCE_NUMBER', '=', 'latest.OSG_REFERENCE_NUMBER')
-                    ->on('e.LODGEMENT_DATE', '=', 'latest.max_date');
+        $rows = DB::table($epcTable.' as e')
+            ->joinSub($latestByUprn, 'latest', function ($join) use ($scotUprnColumn, $scotLodgementColumn) {
+                $join->on(DB::raw($this->wrapColumn($scotUprnColumn, 'e')), '=', 'latest.uprn')
+                    ->on(DB::raw($this->wrapColumn($scotLodgementColumn, 'e')), '=', 'latest.max_date');
             })
-            ->whereIn('e.OSG_REFERENCE_NUMBER', $uprns)
-            ->select([
-                'e.OSG_REFERENCE_NUMBER as uprn',
-                'e.REPORT_REFERENCE_NUMBER as rrn',
-                'e.ADDRESS1',
-                'e.ADDRESS2',
-                'e.ADDRESS3',
-                'e.POSTCODE as postcode',
-                'e.LODGEMENT_DATE as lodgement_date',
-                'e.CURRENT_ENERGY_RATING as rating',
-            ])
+            ->whereIn(DB::raw($this->wrapColumn($scotUprnColumn, 'e')), $uprns)
+            ->selectRaw($this->wrapColumn($scotUprnColumn, 'e').' as uprn')
+            ->selectRaw($this->wrapColumn($scotRrnColumn, 'e').' as rrn')
+            ->selectRaw($this->wrapColumn($scotAddress1Column, 'e').' as address1')
+            ->selectRaw($this->wrapColumn($scotAddress2Column, 'e').' as address2')
+            ->selectRaw($this->wrapColumn($scotAddress3Column, 'e').' as address3')
+            ->selectRaw($this->wrapColumn($scotPostcodeColumn, 'e').' as postcode')
+            ->selectRaw($this->wrapColumn($scotLodgementColumn, 'e').' as lodgement_date')
+            ->selectRaw($this->wrapColumn($scotRatingColumn, 'e').' as rating')
             ->limit($limit + 1)
             ->get();
 
@@ -403,24 +519,27 @@ class EpcController extends Controller
         }
 
         $epcUprns = $rows->pluck('uprn')->filter()->unique()->values()->all();
-        $coords = DB::table('onsud')
-            ->whereIn('UPRN', $epcUprns)
-            ->select(['UPRN', 'GRIDGB1E as easting', 'GRIDGB1N as northing'])
+        $coords = DB::table($onsudTable)
+            ->whereIn($onsudUprnColumn, $epcUprns)
+            ->selectRaw($this->wrapColumn($onsudUprnColumn).' as uprn')
+            ->selectRaw($this->wrapColumn($onsudEastingColumn).' as easting')
+            ->selectRaw($this->wrapColumn($onsudNorthingColumn).' as northing')
             ->get()
-            ->keyBy('UPRN');
+            ->keyBy('uprn');
 
         $points = $rows->map(function ($row) use ($coords) {
             $uprn = (string) $row->uprn;
-            if (!isset($coords[$uprn])) {
+            if (! isset($coords[$uprn])) {
                 return null;
             }
             $coord = $coords[$uprn];
             $rrn = (string) $row->rrn;
             $address = trim(implode(', ', array_filter([
-                $row->ADDRESS1 ?? null,
-                $row->ADDRESS2 ?? null,
-                $row->ADDRESS3 ?? null,
+                $row->address1 ?? null,
+                $row->address2 ?? null,
+                $row->address3 ?? null,
             ])));
+
             return [
                 'easting' => $coord->easting !== null ? (int) $coord->easting : null,
                 'northing' => $coord->northing !== null ? (int) $coord->northing : null,
@@ -450,7 +569,7 @@ class EpcController extends Controller
 
         // Validate: require a plausible full UK postcode (same rule as E&W)
         $request->validate([
-            'postcode' => ['required','string','max:16','regex:/^[A-Za-z]{1,2}\\d[A-Za-z\\d]?\\s*\\d[A-Za-z]{2}$/'],
+            'postcode' => ['required', 'string', 'max:16', 'regex:/^[A-Za-z]{1,2}\\d[A-Za-z\\d]?\\s*\\d[A-Za-z]{2}$/'],
         ], [
             'postcode.regex' => 'Please enter a full UK postcode (e.g. G12 8QQ).',
         ]);
@@ -460,15 +579,15 @@ class EpcController extends Controller
 
         // Sorting (whitelist fields)
         $allowedSorts = [
-            'lodgement_date'          => 'lodgement_date',
-            'address'                 => 'address',
-            'current_energy_rating'   => 'current_energy_rating',
+            'lodgement_date' => 'lodgement_date',
+            'address' => 'address',
+            'current_energy_rating' => 'current_energy_rating',
             'potential_energy_rating' => 'potential_energy_rating',
-            'property_type'           => 'property_type',
-            'total_floor_area'        => 'total_floor_area',
+            'property_type' => 'property_type',
+            'total_floor_area' => 'total_floor_area',
         ];
-        $sort   = $request->query('sort', 'lodgement_date');
-        $dir    = strtolower($request->query('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+        $sort = $request->query('sort', 'lodgement_date');
+        $dir = strtolower($request->query('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
         $sortCol = $allowedSorts[$sort] ?? 'lodgement_date';
 
         // Build address expression that works whether Scotland data has a single `address` column
@@ -523,7 +642,7 @@ class EpcController extends Controller
         // Prefer decoded `r`, then plain `return` param
         $backUrlParam = $decoded ?: $incomingReturn;
         $fallbackScot = route('epc.search_scotland');
-        $fallbackEW   = route('epc.search');
+        $fallbackEW = route('epc.search');
 
         // --- Try Scotland first
         $scot = DB::table('epc_certificates_scotland')
@@ -543,9 +662,9 @@ class EpcController extends Controller
             $record['nation'] = 'scotland';
 
             return view('epc.show', [
-                'nation'  => 'scotland',
-                'lmk'     => $lmk,
-                'record'  => $record,   // full row as associative array
+                'nation' => 'scotland',
+                'lmk' => $lmk,
+                'record' => $record,   // full row as associative array
                 'columns' => array_keys($record),
                 'backUrl' => $backUrlParam ?: $fallbackScot,
             ]);
@@ -559,15 +678,15 @@ class EpcController extends Controller
         if ($ew) {
             $record = (array) $ew;
             // Keep a consistent extra field for display if needed
-            if (!array_key_exists('address_display', $record)) {
+            if (! array_key_exists('address_display', $record)) {
                 $record['address_display'] = $record['address'] ?? null;
             }
             $record['nation'] = 'ew';
 
             return view('epc.show', [
-                'nation'  => 'ew',
-                'lmk'     => $lmk,
-                'record'  => $record,   // full row as associative array
+                'nation' => 'ew',
+                'lmk' => $lmk,
+                'record' => $record,   // full row as associative array
                 'columns' => array_keys($record),
                 'backUrl' => $backUrlParam ?: $fallbackEW,
             ]);
@@ -584,8 +703,9 @@ class EpcController extends Controller
     {
         $pc = strtoupper(preg_replace('/\s+/', '', $pc));
         if (strlen($pc) >= 5) {
-            return substr($pc, 0, -3) . ' ' . substr($pc, -3);
+            return substr($pc, 0, -3).' '.substr($pc, -3);
         }
+
         return $pc;
     }
 
@@ -603,7 +723,7 @@ class EpcController extends Controller
             ->where('REPORT_REFERENCE_NUMBER', $rrn)
             ->first();
 
-        abort_if(!$scot, 404);
+        abort_if(! $scot, 404);
 
         // Build a readable address
         $address = trim(implode(', ', array_filter([
@@ -617,9 +737,9 @@ class EpcController extends Controller
         $record['nation'] = 'scotland';
 
         return view('epc.show', [
-            'nation'  => 'scotland',
-            'lmk'     => $rrn, // reuse slot; Scotland uses RRN
-            'record'  => $record,
+            'nation' => 'scotland',
+            'lmk' => $rrn, // reuse slot; Scotland uses RRN
+            'record' => $record,
             'columns' => array_keys($record),
             'backUrl' => $backUrl,
         ]);

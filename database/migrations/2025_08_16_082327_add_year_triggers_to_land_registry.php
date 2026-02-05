@@ -3,43 +3,56 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
-        // Be idempotent
-        DB::unprepared('DROP TRIGGER IF EXISTS bi_land_registry_set_yeardate;');
-        DB::unprepared('DROP TRIGGER IF EXISTS bu_land_registry_set_yeardate;');
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
 
-        // Before INSERT: compute YearDate from Date
+        DB::unprepared('DROP TRIGGER IF EXISTS bi_land_registry_set_yeardate ON land_registry;');
+        DB::unprepared('DROP TRIGGER IF EXISTS bu_land_registry_set_yeardate ON land_registry;');
+        DB::unprepared('DROP FUNCTION IF EXISTS set_land_registry_yeardate();');
+
+        DB::unprepared(<<<'SQL'
+CREATE FUNCTION set_land_registry_yeardate()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    NEW."YearDate" = CASE
+        WHEN NEW."Date" IS NOT NULL THEN EXTRACT(YEAR FROM NEW."Date")::int
+        ELSE NULL
+    END;
+    RETURN NEW;
+END;
+$$;
+SQL);
+
         DB::unprepared(<<<'SQL'
 CREATE TRIGGER bi_land_registry_set_yeardate
 BEFORE INSERT ON land_registry
 FOR EACH ROW
-BEGIN
-    SET NEW.YearDate = CASE
-        WHEN NEW.`Date` IS NOT NULL THEN YEAR(NEW.`Date`)
-        ELSE NULL
-    END;
-END
+EXECUTE FUNCTION set_land_registry_yeardate();
 SQL);
 
-        // Before UPDATE: keep YearDate in sync if Date changes
         DB::unprepared(<<<'SQL'
 CREATE TRIGGER bu_land_registry_set_yeardate
-BEFORE UPDATE ON land_registry
+BEFORE UPDATE OF "Date" ON land_registry
 FOR EACH ROW
-BEGIN
-    SET NEW.YearDate = CASE
-        WHEN NEW.`Date` IS NOT NULL THEN YEAR(NEW.`Date`)
-        ELSE NULL
-    END;
-END
+EXECUTE FUNCTION set_land_registry_yeardate();
 SQL);
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TRIGGER IF EXISTS bi_land_registry_set_yeardate;');
-        DB::unprepared('DROP TRIGGER IF EXISTS bu_land_registry_set_yeardate;');
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        DB::unprepared('DROP TRIGGER IF EXISTS bi_land_registry_set_yeardate ON land_registry;');
+        DB::unprepared('DROP TRIGGER IF EXISTS bu_land_registry_set_yeardate ON land_registry;');
+        DB::unprepared('DROP FUNCTION IF EXISTS set_land_registry_yeardate();');
     }
 };

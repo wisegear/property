@@ -5,14 +5,11 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('epc_staging', function (Blueprint $t) {
-            $t->engine('InnoDB');
-            $t->charset('utf8mb4');
-            $t->collation('utf8mb4_0900_ai_ci');
-
             // Keep source header names for frictionless LOAD DATA
             $t->string('LMK_KEY', 128)->nullable();
             $t->text('ADDRESS1')->nullable();

@@ -214,12 +214,17 @@ class LocalAuthorityController extends Controller
     {
         // Aggregate the LA-level rows into Region-year totals
         $rows = DB::table('england_council_housing_stock')
-            ->selectRaw('`year`, `region_name`, SUM(`total_stock`) as total_stock, SUM(`new_builds`) as new_builds, SUM(`acquisitions`) as acquisitions')
+            ->select('year', 'region_name')
+            ->selectRaw('SUM(total_stock) as total_stock')
+            ->selectRaw('SUM(new_builds) as new_builds')
+            ->selectRaw('SUM(acquisitions) as acquisitions')
             ->groupBy('year', 'region_name')
-            // Financial year stored as string e.g. 1978-79; sort by the start year
-            ->orderByRaw('CAST(LEFT(`year`, 4) AS UNSIGNED) ASC')
-            ->orderBy('region_name')
             ->get();
+
+        // Financial year is a label like 1978-79; sort by start year then region.
+        $rows = $rows
+            ->sortBy(fn ($row) => [(int) substr((string) $row->year, 0, 4), (string) $row->region_name])
+            ->values();
 
         // Years (labels) in correct chronological order
         $years = $rows->pluck('year')->unique()->values()->all();

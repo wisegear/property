@@ -2,13 +2,17 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         Schema::table('land_registry', function (Blueprint $table) {
             // Existing indexes
             if (! $this->indexExists('land_registry', 'idx_county_date')) {
@@ -30,6 +34,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         Schema::table('land_registry', function (Blueprint $table) {
             $table->dropIndex('idx_county_date');
             $table->dropIndex('idx_postcode_date');
@@ -40,14 +48,14 @@ return new class extends Migration
 
     /**
      * Check if an index exists on a table.
-     *
-     * @param string $table
-     * @param string $indexName
-     * @return bool
      */
     private function indexExists(string $table, string $indexName): bool
     {
-        $result = DB::select("SHOW INDEX FROM {$table} WHERE Key_name = ?", [$indexName]);
-        return !empty($result);
+        $result = DB::select(
+            'SELECT 1 FROM pg_indexes WHERE schemaname = current_schema() AND tablename = ? AND indexname = ? LIMIT 1',
+            [$table, $indexName]
+        );
+
+        return ! empty($result);
     }
 };

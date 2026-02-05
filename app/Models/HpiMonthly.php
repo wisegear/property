@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -12,7 +11,9 @@ class HpiMonthly extends Model
 
     // No auto IDs, no timestamps, and we won't rely on a single PK
     public $timestamps = false;
+
     public $incrementing = false;
+
     protected $primaryKey = null;
 
     // We’re only reading via Eloquent; imports use DB::table()->upsert()
@@ -20,21 +21,22 @@ class HpiMonthly extends Model
 
     // Useful casts (you can add more if you like)
     protected $casts = [
-        'Date'           => 'date:Y-m-d',
-        'AveragePrice'   => 'float',
-        'Index'          => 'float',
-        'IndexSA'        => 'float',
+        'Date' => 'date:Y-m-d',
+        'AveragePrice' => 'float',
+        'Index' => 'float',
+        'IndexSA' => 'float',
         'AveragePriceSA' => 'float',
-        'SalesVolume'    => 'integer',
+        'SalesVolume' => 'integer',
     ];
+
     /** Mapping for UK + Nations (ordered for charts) */
     public static function ukAndNationAreas(): array
     {
         return [
-            'United Kingdom'   => 'K02000001',
-            'England'          => 'E92000001',
-            'Scotland'         => 'S92000003',
-            'Wales'            => 'W92000004',
+            'United Kingdom' => 'K02000001',
+            'England' => 'E92000001',
+            'Scotland' => 'S92000003',
+            'Wales' => 'W92000004',
             'Northern Ireland' => 'N92000002',
         ];
     }
@@ -43,7 +45,7 @@ class HpiMonthly extends Model
     public static function typePriceSeries(string $areaCode): \Illuminate\Support\Collection
     {
         return static::query()
-            ->select(['Date','DetachedPrice','SemiDetachedPrice','TerracedPrice','FlatPrice'])
+            ->select(['Date', 'DetachedPrice', 'SemiDetachedPrice', 'TerracedPrice', 'FlatPrice'])
             ->where('AreaCode', $areaCode)
             ->orderBy('Date')
             ->get();
@@ -57,19 +59,21 @@ class HpiMonthly extends Model
         foreach ($areas as $name => $code) {
             $rows = self::typePriceSeries($code);
             $out[] = [
-                'name'  => $name,
-                'code'  => $code,
-                'dates' => $rows->pluck('Date')->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m'))->all(),
+                'name' => $name,
+                'code' => $code,
+                'dates' => $rows->pluck('Date')->map(fn ($d) => \Carbon\Carbon::parse($d)->format('Y-m'))->all(),
                 'types' => [
-                    'Detached'     => $rows->pluck('DetachedPrice')->map(fn($v) => is_null($v) ? null : (float)$v)->all(),
-                    'SemiDetached' => $rows->pluck('SemiDetachedPrice')->map(fn($v) => is_null($v) ? null : (float)$v)->all(),
-                    'Terraced'     => $rows->pluck('TerracedPrice')->map(fn($v) => is_null($v) ? null : (float)$v)->all(),
-                    'Flat'         => $rows->pluck('FlatPrice')->map(fn($v) => is_null($v) ? null : (float)$v)->all(),
+                    'Detached' => $rows->pluck('DetachedPrice')->map(fn ($v) => is_null($v) ? null : (float) $v)->all(),
+                    'SemiDetached' => $rows->pluck('SemiDetachedPrice')->map(fn ($v) => is_null($v) ? null : (float) $v)->all(),
+                    'Terraced' => $rows->pluck('TerracedPrice')->map(fn ($v) => is_null($v) ? null : (float) $v)->all(),
+                    'Flat' => $rows->pluck('FlatPrice')->map(fn ($v) => is_null($v) ? null : (float) $v)->all(),
                 ],
             ];
         }
+
         return $out;
     }
+
     /** Latest date (global across all areas) */
     public static function latestDate(): ?string
     {
@@ -94,13 +98,16 @@ class HpiMonthly extends Model
         return collect(self::nationCodes())
             ->map(function ($code, $name) {
                 $d = self::latestDateFor($code);
-                if (!$d) return null;
+                if (! $d) {
+                    return null;
+                }
+
                 return static::query()
                     ->select([
-                        'RegionName','AreaCode','Date',
+                        'RegionName', 'AreaCode', 'Date',
                         'AveragePrice',
-                        DB::raw('`1m%Change` as one_m_change'),
-                        DB::raw('`12m%Change` as twelve_m_change'),
+                        DB::raw('"1m%Change" as one_m_change'),
+                        DB::raw('"12m%Change" as twelve_m_change'),
                         'SalesVolume',
                     ])
                     ->where('AreaCode', $code)
@@ -116,9 +123,9 @@ class HpiMonthly extends Model
     {
         return static::query()
             ->select([
-                'Date','AveragePrice','Index',
-                DB::raw('`1m%Change` as one_m_change'),
-                DB::raw('`12m%Change` as twelve_m_change'),
+                'Date', 'AveragePrice', 'Index',
+                DB::raw('"1m%Change" as one_m_change'),
+                DB::raw('"12m%Change" as twelve_m_change'),
                 'SalesVolume',
             ])
             ->where('AreaCode', 'K02000001')

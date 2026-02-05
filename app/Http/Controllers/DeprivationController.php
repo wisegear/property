@@ -139,6 +139,23 @@ class DeprivationController extends Controller
             return $data;
         });
 
+        // If historical empty-cache entries exist, rebuild from source.
+        if ($engTop10->isEmpty()) {
+            $engTop10 = (clone $imd25Base)
+                ->orderByDesc('rank')
+                ->limit(10)
+                ->get();
+            Cache::put('imd25:top10', $engTop10, $ttl);
+        }
+
+        if ($engBottom10->isEmpty()) {
+            $engBottom10 = (clone $imd25Base)
+                ->orderBy('rank')
+                ->limit(10)
+                ->get();
+            Cache::put('imd25:bottom10', $engBottom10, $ttl);
+        }
+
         // Scotland — SIMD Top/Bottom 10 (by overall rank). Use SIMD table directly for speed.
         $scoTop10 = Cache::remember('simd:top10', $ttl, function () {
             $data = DB::table('simd2020')
@@ -146,11 +163,11 @@ class DeprivationController extends Controller
                     'Data_Zone as data_zone',
                     'Intermediate_Zone',
                     'Council_area',
-                    DB::raw('CAST(SIMD2020v2_Decile AS UNSIGNED) as decile'),
-                    DB::raw("CAST(REPLACE(SIMD2020v2_Rank, ',', '') AS UNSIGNED) as `rank`"),
+                    DB::raw("CAST(NULLIF(REPLACE(\"SIMD2020v2_Decile\", ',', ''), '') AS INTEGER) as decile"),
+                    DB::raw("CAST(NULLIF(REPLACE(\"SIMD2020v2_Rank\", ',', ''), '') AS INTEGER) as rank"),
                 ])
                 ->whereNotNull('SIMD2020v2_Rank')
-                ->orderByRaw("CAST(REPLACE(SIMD2020v2_Rank, ',', '') AS UNSIGNED) DESC")
+                ->orderByRaw("CAST(NULLIF(REPLACE(\"SIMD2020v2_Rank\", ',', ''), '') AS INTEGER) DESC")
                 ->limit(10)
                 ->get();
             Cache::put('simd:last_warm', now()->toDateTimeString());
@@ -164,11 +181,11 @@ class DeprivationController extends Controller
                     'Data_Zone as data_zone',
                     'Intermediate_Zone',
                     'Council_area',
-                    DB::raw('CAST(SIMD2020v2_Decile AS UNSIGNED) as decile'),
-                    DB::raw("CAST(REPLACE(SIMD2020v2_Rank, ',', '') AS UNSIGNED) as `rank`"),
+                    DB::raw("CAST(NULLIF(REPLACE(\"SIMD2020v2_Decile\", ',', ''), '') AS INTEGER) as decile"),
+                    DB::raw("CAST(NULLIF(REPLACE(\"SIMD2020v2_Rank\", ',', ''), '') AS INTEGER) as rank"),
                 ])
                 ->whereNotNull('SIMD2020v2_Rank')
-                ->orderByRaw("CAST(REPLACE(SIMD2020v2_Rank, ',', '') AS UNSIGNED) ASC")
+                ->orderByRaw("CAST(NULLIF(REPLACE(\"SIMD2020v2_Rank\", ',', ''), '') AS INTEGER) ASC")
                 ->limit(10)
                 ->get();
             Cache::put('simd:last_warm', now()->toDateTimeString());
@@ -182,7 +199,7 @@ class DeprivationController extends Controller
                 'LSOA_code as lsoa_code',
                 'LSOA_name as lsoa_name',
                 'WIMD_2019 as rank',
-                DB::raw('CEIL(WIMD_2019 / 190.9) as decile'), // 1..10
+                DB::raw('CEIL("WIMD_2019" / 190.9) as decile'), // 1..10
             ]);
 
         $walTop10 = Cache::remember('wimd:top10', $ttl, function () use ($wimdBase) {
@@ -282,7 +299,7 @@ class DeprivationController extends Controller
         });
 
         $totalSIMD = Cache::rememberForever('simd.total_rank', function () {
-            $row = DB::table('simd2020')->selectRaw("MAX(CAST(REPLACE(SIMD2020v2_Rank, ',', '') AS UNSIGNED)) as max_rank")->first();
+            $row = DB::table('simd2020')->selectRaw("MAX(CAST(NULLIF(REPLACE(\"SIMD2020v2_Rank\", ',', ''), '') AS INTEGER)) as max_rank")->first();
             $n = (int) ($row->max_rank ?? 0);
 
             return $n ?: 6976;
@@ -417,7 +434,7 @@ class DeprivationController extends Controller
 
         // Total Data Zones for percentile (max rank); cache forever, fallback ~6976
         $total = Cache::rememberForever('simd.total_rank', function () {
-            $row = DB::table('simd2020')->selectRaw("MAX(CAST(REPLACE(SIMD2020v2_Rank, ',', '') AS UNSIGNED)) as max_rank")->first();
+            $row = DB::table('simd2020')->selectRaw("MAX(CAST(NULLIF(REPLACE(\"SIMD2020v2_Rank\", ',', ''), '') AS INTEGER)) as max_rank")->first();
             $n = (int) ($row->max_rank ?? 0);
 
             return $n ?: 6976;

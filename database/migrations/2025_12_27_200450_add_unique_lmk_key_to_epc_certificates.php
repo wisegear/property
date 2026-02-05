@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('epc_certificates', function (Blueprint $table) {
-            $table->unique('lmk_key', 'uq_epc_certificates_lmk_key');
+            $table->unique('LMK_KEY', 'uq_epc_certificates_lmk_key');
         });
     }
 

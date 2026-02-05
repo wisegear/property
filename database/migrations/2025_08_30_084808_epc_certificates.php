@@ -2,10 +2,10 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         // ⚠️ This will DROP the existing epc_certificates table and recreate it
@@ -18,12 +18,9 @@ return new class extends Migration {
         // }
 
         Schema::dropIfExists('epc_certificates');
+        $driver = Schema::getConnection()->getDriverName();
 
-        Schema::create('epc_certificates', function (Blueprint $t) {
-            $t->engine('InnoDB');
-            $t->charset('utf8mb4');
-            $t->collation('utf8mb4_0900_ai_ci');
-
+        Schema::create('epc_certificates', function (Blueprint $t) use ($driver) {
             // Keep source header names for frictionless LOAD DATA
             $t->string('LMK_KEY', 128)->nullable();
             $t->text('ADDRESS1')->nullable();
@@ -135,8 +132,10 @@ return new class extends Migration {
             $t->index(['POSTCODE', 'LODGEMENT_DATE']);
             $t->index(['POSTCODE', 'CURRENT_ENERGY_RATING']);
 
-            // Fulltext for fuzzy address search (InnoDB supports FT in MySQL 5.7+)
-            $t->fullText(['ADDRESS', 'ADDRESS1', 'ADDRESS2', 'ADDRESS3']);
+            if ($driver !== 'sqlite') {
+                // Fulltext for fuzzy address search.
+                $t->fullText(['ADDRESS', 'ADDRESS1', 'ADDRESS2', 'ADDRESS3']);
+            }
         });
     }
 
@@ -146,4 +145,3 @@ return new class extends Migration {
         // Optionally, you could recreate the old simplified schema here if needed.
     }
 };
-

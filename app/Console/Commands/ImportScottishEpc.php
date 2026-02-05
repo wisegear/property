@@ -4,28 +4,28 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 
 class ImportScottishEpc extends Command
 {
     protected $signature = 'epc:import-scotland {path : Path to folder containing CSV files} {--scan-only : Scan headers only and do not import} {--write-migration= : Write a generated migration stub to this file path}';
+
     protected $description = 'Bulk import Scottish EPC quarterly CSV files into epc_certificates_scotland';
 
     public function handle(): int
     {
-        $path = $this->argument('path');
+        $path = (string) $this->argument('path');
 
-        if (!is_dir($path)) {
+        if (! is_dir($path)) {
             $this->error("Directory not found: {$path}");
+
             return self::FAILURE;
         }
 
-        // Ensure LOCAL INFILE is enabled
-        DB::statement("SET GLOBAL local_infile = 1");
-
-        $files = glob(rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '*.csv');
+        $files = glob(rtrim($path, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'*.csv');
         if (empty($files)) {
             $this->warn("No CSV files found in {$path}");
+
             return self::SUCCESS;
         }
 
@@ -36,37 +36,49 @@ class ImportScottishEpc extends Command
 
             foreach ($files as $file) {
                 $fh = fopen($file, 'r');
-                if ($fh === false) { $this->warn("Cannot open: {$file}"); continue; }
+                if ($fh === false) {
+                    $this->warn("Cannot open: {$file}");
+
+                    continue;
+                }
                 $h1 = fgets($fh);
-                $h2 = fgets($fh);
+                fgets($fh);
                 fclose($fh);
-                if ($h1 === false) { $this->warn("No header in: {$file}"); continue; }
+                if ($h1 === false) {
+                    $this->warn("No header in: {$file}");
+
+                    continue;
+                }
                 $cols = str_getcsv(trim($h1));
                 $perFile[basename($file)] = $cols;
                 foreach ($cols as $c) {
-                    if (!isset($seen[$c])) {
+                    if (! isset($seen[$c])) {
                         $seen[$c] = true;
                         $union[] = $c;
                     }
                 }
             }
 
-            $this->info("Scanned " . count($perFile) . " file(s).");
-            $this->info("Union column count: " . count($union));
+            $this->info('Scanned '.count($perFile).' file(s).');
+            $this->info('Union column count: '.count($union));
 
             // Report columns that vary
             $varying = [];
             foreach ($union as $col) {
                 $presentIn = 0;
-                foreach ($perFile as $cols) { if (in_array($col, $cols, true)) $presentIn++; }
+                foreach ($perFile as $cols) {
+                    if (in_array($col, $cols, true)) {
+                        $presentIn++;
+                    }
+                }
                 if ($presentIn !== count($perFile)) {
                     $varying[$col] = $presentIn;
                 }
             }
-            if (!empty($varying)) {
-                $this->line("Columns that vary across quarters:");
+            if (! empty($varying)) {
+                $this->line('Columns that vary across quarters:');
                 foreach ($varying as $col => $cnt) {
-                    $this->line(" - {$col}: {$cnt}/" . count($perFile));
+                    $this->line(" - {$col}: {$cnt}/".count($perFile));
                 }
             }
 
@@ -74,6 +86,7 @@ class ImportScottishEpc extends Command
                 $stub = $this->buildMigrationStub($union);
                 if (@file_put_contents($path, $stub) === false) {
                     $this->error("Failed to write migration stub to: {$path}");
+
                     return self::FAILURE;
                 }
                 $this->info("Migration stub written to: {$path}");
@@ -82,85 +95,85 @@ class ImportScottishEpc extends Command
             return self::SUCCESS;
         }
 
-        // Get existing target table columns once
-        $tableCols = DB::select(<<<SQL
-            SELECT COLUMN_NAME
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'epc_certificates_scotland'
-        SQL);
-        $tableColNames = array_map(fn($r) => $r->COLUMN_NAME, $tableCols);
+        $tableColNames = Schema::getColumnListing('epc_certificates_scotland');
         $normalizedTableCols = [];
         foreach ($tableColNames as $name) {
             $normalizedTableCols[$this->stripBom($name)] = $name;
         }
 
         foreach ($files as $file) {
-            // Parse this file's header (Row 1 is machine names; Row 2 human-readable)
             $fh = fopen($file, 'r');
             if ($fh === false) {
                 $this->error("Unable to open CSV: {$file}");
-                return self::FAILURE;
-            }
-            $header1 = fgets($fh); // machine header
-            $header2 = fgets($fh); // human header (ignored)
-            fclose($fh);
-            if ($header1 === false) {
-                $this->error("No header row in: {$file}");
-                return self::FAILURE;
-            }
-            $columns = str_getcsv(trim($header1));
 
-            // Build token list preserving this file's column order. Unknown columns map to user vars to keep alignment.
+                return self::FAILURE;
+            }
+
+            $header1 = fgets($fh);
+            fgets($fh);
+            if ($header1 === false) {
+                fclose($fh);
+                $this->error("No header row in: {$file}");
+
+                return self::FAILURE;
+            }
+            $columns = array_map(fn ($value) => $this->stripBom((string) $value), str_getcsv(trim($header1)));
+
             $missing = [];
-            $tokens = [];
-            foreach ($columns as $c) {
-                $normalized = $this->stripBom($c);
+            $columnMap = [];
+            foreach ($columns as $index => $column) {
+                $normalized = $this->stripBom($column);
                 if (isset($normalizedTableCols[$normalized])) {
-                    $actual = $normalizedTableCols[$normalized];
-                    $tokens[] = "`{$actual}`";
+                    $columnMap[$index] = $normalizedTableCols[$normalized];
                 } else {
-                    $missing[] = $c;
-                    $tokens[] = '@skip_' . preg_replace('/[^A-Za-z0-9_]+/', '_', $c);
+                    $missing[] = $column;
                 }
             }
-            if (!empty($missing)) {
-                $this->warn('Skipping unrecognised columns in ' . basename($file) . ':');
-                foreach ($missing as $m) { $this->line(' - ' . $m); }
-            }
 
-            $columnsSql = implode(', ', $tokens);
+            if (! empty($missing)) {
+                $this->warn('Skipping unrecognised columns in '.basename($file).':');
+                foreach ($missing as $column) {
+                    $this->line(' - '.$column);
+                }
+            }
 
             $base = basename($file);
-            // Detect line endings (some quarters are CRLF)
-            $sample = @file_get_contents($file, false, null, 0, 200000) ?: '';
-            $lineTerm = (strpos($sample, "\r\n") !== false) ? "\\r\\n" : "\\n";
-
             $this->info("Importing {$base}...");
+            $inserted = 0;
+            $batch = [];
+            $batchSize = 1000;
 
-            $sql = "
-                LOAD DATA LOCAL INFILE '" . addslashes($file) . "'
-                INTO TABLE epc_certificates_scotland
-                CHARACTER SET utf8mb4
-                FIELDS TERMINATED BY ','
-                ENCLOSED BY '\"'
-                ESCAPED BY '\\\\'
-                LINES TERMINATED BY '{$lineTerm}'
-                IGNORE 2 LINES
-                ({$columnsSql})
-                SET source_file = '{$base}'
-            ";
+            while (($row = fgetcsv($fh)) !== false) {
+                if ($row === [null] || $row === []) {
+                    continue;
+                }
 
-            $this->line(" - line endings: " . ($lineTerm === "\\r\\n" ? "CRLF" : "LF"));
+                $record = ['source_file' => $base];
+                foreach ($columnMap as $index => $targetColumn) {
+                    $value = $row[$index] ?? null;
+                    $record[$targetColumn] = $value === '' ? null : $value;
+                }
 
-            try {
-                DB::connection()->getPdo()->exec($sql);
-            } catch (\Exception $e) {
-                $this->error("Failed on {$base}: " . $e->getMessage());
-                return self::FAILURE;
+                $batch[] = $record;
+                if (count($batch) >= $batchSize) {
+                    DB::table('epc_certificates_scotland')->insert($batch);
+                    $inserted += count($batch);
+                    $batch = [];
+                }
             }
+
+            fclose($fh);
+
+            if (! empty($batch)) {
+                DB::table('epc_certificates_scotland')->insert($batch);
+                $inserted += count($batch);
+            }
+
+            $this->line(" - inserted {$inserted} row(s)");
         }
 
         $this->info('All files imported.');
+
         return self::SUCCESS;
     }
 
@@ -171,13 +184,14 @@ class ImportScottishEpc extends Command
         foreach ($columns as $c) {
             $col = $this->stripBom($c);
             if (in_array($col, $stringCols, true)) {
-                $lines[] = "            $" . "table->string('{$c}')->nullable();";
+                $lines[] = '            $'."table->string('{$c}')->nullable();";
             } else {
-                $lines[] = "            $" . "table->text('{$c}')->nullable();";
+                $lines[] = '            $'."table->text('{$c}')->nullable();";
             }
         }
 
         $colsText = implode("\n", $lines);
+
         return <<<PHP
 <?php
 

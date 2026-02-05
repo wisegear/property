@@ -18,7 +18,7 @@ class WarmAllTownCaches extends Command
 
     public function handle(): int
     {
-        $ppd  = strtoupper((string) $this->option('ppd')) === 'B' ? 'B' : 'A';
+        $ppd = strtoupper((string) $this->option('ppd')) === 'B' ? 'B' : 'A';
         $only = strtolower((string) $this->option('only'));
         $limit = (int) $this->option('limit');
         $skipDup = (bool) $this->option('skip-duplicates');
@@ -28,23 +28,32 @@ class WarmAllTownCaches extends Command
         // Reduce memory usage in long runs
         DB::connection()->disableQueryLog();
 
+        $grammar = DB::connection()->getQueryGrammar();
+        $townColumn = $grammar->wrap('TownCity');
+        $districtColumn = $grammar->wrap('District');
+        $yearDateColumn = $grammar->wrap('YearDate');
+        $priceColumn = $grammar->wrap('Price');
+        $propertyTypeColumn = $grammar->wrap('PropertyType');
+        $trimTownExpression = "TRIM({$townColumn})";
+        $trimDistrictExpression = "TRIM({$districtColumn})";
+
         // Build the canonical Town list (trimmed, non-empty)
         $towns = DB::table('land_registry')
-            ->selectRaw('TRIM(TownCity) AS town')
+            ->selectRaw("{$trimTownExpression} AS town")
             ->whereNotNull('TownCity')
-            ->whereRaw("TRIM(TownCity) <> ''")
+            ->whereRaw("{$trimTownExpression} <> ''")
             ->distinct()
-            ->orderBy('town')
+            ->orderByRaw($trimTownExpression)
             ->pluck('town');
 
         // Optionally skip Towns that are effectively the same as their District
         $dupTowns = collect();
         if ($skipDup) {
             $dupTowns = DB::table('land_registry')
-                ->selectRaw('DISTINCT TRIM(TownCity) AS town')
+                ->selectRaw("DISTINCT {$trimTownExpression} AS town")
                 ->whereNotNull('TownCity')
-                ->whereRaw("TRIM(TownCity) <> ''")
-                ->whereRaw('TRIM(TownCity) = TRIM(District)')
+                ->whereRaw("{$trimTownExpression} <> ''")
+                ->whereRaw("{$trimTownExpression} = {$trimDistrictExpression}")
                 ->pluck('town');
             $towns = $towns->reject(fn ($t) => $dupTowns->contains($t))->values();
         }
@@ -60,7 +69,7 @@ class WarmAllTownCaches extends Command
             default => 3,
         };
 
-        $this->info('Warming caches for ' . $towns->count() . ' towns (PPD=' . $ppd . ', only=' . $only . ($skipDup ? ', skip-duplicates' : '') . ')...');
+        $this->info('Warming caches for '.$towns->count().' towns (PPD='.$ppd.', only='.$only.($skipDup ? ', skip-duplicates' : '').')...');
         $bar = $this->output->createProgressBar($towns->count() * $metrics);
         $bar->setFormat(' %current%/%max% [%bar%] %percent:3s%% | %elapsed:6s% elapsed | %estimated:-6s% eta | %memory:6s% | %message%');
         $bar->setBarCharacter('=');
@@ -73,12 +82,12 @@ class WarmAllTownCaches extends Command
         if ($only === 'all' || $only === 'price') {
             // v2: town price history (stream rows, flush per-town)
             $cursor = DB::table('land_registry')
-                ->selectRaw('TRIM(TownCity) AS town, YearDate AS year, ROUND(AVG(Price)) AS avg_price')
+                ->selectRaw("{$trimTownExpression} AS town, {$yearDateColumn} AS year, ROUND(AVG({$priceColumn})) AS avg_price")
                 ->where('PPDCategoryType', $ppd)
                 ->whereNotNull('TownCity')
-                ->whereRaw("TRIM(TownCity) <> ''")
-                ->groupBy('town', 'YearDate')
-                ->orderBy('town')
+                ->whereRaw("{$trimTownExpression} <> ''")
+                ->groupBy(DB::raw($trimTownExpression), 'YearDate')
+                ->orderByRaw($trimTownExpression)
                 ->orderBy('YearDate')
                 ->cursor();
 
@@ -97,8 +106,8 @@ class WarmAllTownCaches extends Command
 
                 // Town changed -> flush previous
                 if ($town !== $currentTown) {
-                    $bar->setMessage('Price: ' . $currentTown);
-                    Cache::put('town:priceHistory:v2:cat' . $ppd . ':' . $currentTown, collect($bucket), $ttl);
+                    $bar->setMessage('Price: '.$currentTown);
+                    Cache::put('town:priceHistory:v2:cat'.$ppd.':'.$currentTown, collect($bucket), $ttl);
                     $bar->advance();
 
                     $currentTown = $town;
@@ -110,20 +119,20 @@ class WarmAllTownCaches extends Command
 
             // Flush last town
             if ($currentTown !== null) {
-                $bar->setMessage('Price: ' . $currentTown);
-                Cache::put('town:priceHistory:v2:cat' . $ppd . ':' . $currentTown, collect($bucket), $ttl);
+                $bar->setMessage('Price: '.$currentTown);
+                Cache::put('town:priceHistory:v2:cat'.$ppd.':'.$currentTown, collect($bucket), $ttl);
                 $bar->advance();
             }
 
             // v3: per-property-type town price history (stream rows, flush per (town,type))
             $cursorByType = DB::table('land_registry')
-                ->selectRaw('TRIM(TownCity) AS town, PropertyType, YearDate AS year, ROUND(AVG(Price)) AS avg_price')
+                ->selectRaw("{$trimTownExpression} AS town, {$propertyTypeColumn} as property_type, {$yearDateColumn} AS year, ROUND(AVG({$priceColumn})) AS avg_price")
                 ->where('PPDCategoryType', $ppd)
                 ->whereNotNull('TownCity')
-                ->whereRaw("TRIM(TownCity) <> ''")
-                ->groupBy('town', 'PropertyType', 'YearDate')
-                ->orderBy('town')
-                ->orderBy('PropertyType')
+                ->whereRaw("{$trimTownExpression} <> ''")
+                ->groupBy(DB::raw($trimTownExpression), DB::raw($propertyTypeColumn), 'YearDate')
+                ->orderByRaw($trimTownExpression)
+                ->orderByRaw($propertyTypeColumn)
                 ->orderBy('YearDate')
                 ->cursor();
 
@@ -133,7 +142,7 @@ class WarmAllTownCaches extends Command
 
             foreach ($cursorByType as $row) {
                 $town = trim((string) $row->town);
-                $type = (string) $row->PropertyType;
+                $type = (string) $row->property_type;
 
                 if ($skipDup && $dupTowns->contains($town)) {
                     continue;
@@ -148,7 +157,7 @@ class WarmAllTownCaches extends Command
                 if ($town !== $currentTown || $type !== $currentType) {
                     if ($currentTown !== null && $currentType !== null) {
                         Cache::put(
-                            'town:priceHistory:v3:cat' . $ppd . ':' . $currentTown . ':type:' . $currentType,
+                            'town:priceHistory:v3:cat'.$ppd.':'.$currentTown.':type:'.$currentType,
                             collect($bucket)->values(),
                             $ttl
                         );
@@ -165,7 +174,7 @@ class WarmAllTownCaches extends Command
             // Flush last (town,type)
             if ($currentTown !== null && $currentType !== null) {
                 Cache::put(
-                    'town:priceHistory:v3:cat' . $ppd . ':' . $currentTown . ':type:' . $currentType,
+                    'town:priceHistory:v3:cat'.$ppd.':'.$currentTown.':type:'.$currentType,
                     collect($bucket)->values(),
                     $ttl
                 );
@@ -176,12 +185,12 @@ class WarmAllTownCaches extends Command
         if ($only === 'all' || $only === 'sales') {
             // v2: town sales history (stream rows, flush per-town)
             $cursor = DB::table('land_registry')
-                ->selectRaw('TRIM(TownCity) AS town, YearDate AS year, COUNT(*) AS total_sales')
+                ->selectRaw("{$trimTownExpression} AS town, {$yearDateColumn} AS year, COUNT(*) AS total_sales")
                 ->where('PPDCategoryType', $ppd)
                 ->whereNotNull('TownCity')
-                ->whereRaw("TRIM(TownCity) <> ''")
-                ->groupBy('town', 'YearDate')
-                ->orderBy('town')
+                ->whereRaw("{$trimTownExpression} <> ''")
+                ->groupBy(DB::raw($trimTownExpression), 'YearDate')
+                ->orderByRaw($trimTownExpression)
                 ->orderBy('YearDate')
                 ->cursor();
 
@@ -199,8 +208,8 @@ class WarmAllTownCaches extends Command
                 }
 
                 if ($town !== $currentTown) {
-                    $bar->setMessage('Sales: ' . $currentTown);
-                    Cache::put('town:salesHistory:v2:cat' . $ppd . ':' . $currentTown, collect($bucket), $ttl);
+                    $bar->setMessage('Sales: '.$currentTown);
+                    Cache::put('town:salesHistory:v2:cat'.$ppd.':'.$currentTown, collect($bucket), $ttl);
                     $bar->advance();
 
                     $currentTown = $town;
@@ -211,20 +220,20 @@ class WarmAllTownCaches extends Command
             }
 
             if ($currentTown !== null) {
-                $bar->setMessage('Sales: ' . $currentTown);
-                Cache::put('town:salesHistory:v2:cat' . $ppd . ':' . $currentTown, collect($bucket), $ttl);
+                $bar->setMessage('Sales: '.$currentTown);
+                Cache::put('town:salesHistory:v2:cat'.$ppd.':'.$currentTown, collect($bucket), $ttl);
                 $bar->advance();
             }
 
             // v3: per-property-type town sales history (stream rows, flush per (town,type))
             $cursorByType = DB::table('land_registry')
-                ->selectRaw('TRIM(TownCity) AS town, PropertyType, YearDate AS year, COUNT(*) AS total_sales')
+                ->selectRaw("{$trimTownExpression} AS town, {$propertyTypeColumn} as property_type, {$yearDateColumn} AS year, COUNT(*) AS total_sales")
                 ->where('PPDCategoryType', $ppd)
                 ->whereNotNull('TownCity')
-                ->whereRaw("TRIM(TownCity) <> ''")
-                ->groupBy('town', 'PropertyType', 'YearDate')
-                ->orderBy('town')
-                ->orderBy('PropertyType')
+                ->whereRaw("{$trimTownExpression} <> ''")
+                ->groupBy(DB::raw($trimTownExpression), DB::raw($propertyTypeColumn), 'YearDate')
+                ->orderByRaw($trimTownExpression)
+                ->orderByRaw($propertyTypeColumn)
                 ->orderBy('YearDate')
                 ->cursor();
 
@@ -234,7 +243,7 @@ class WarmAllTownCaches extends Command
 
             foreach ($cursorByType as $row) {
                 $town = trim((string) $row->town);
-                $type = (string) $row->PropertyType;
+                $type = (string) $row->property_type;
 
                 if ($skipDup && $dupTowns->contains($town)) {
                     continue;
@@ -248,7 +257,7 @@ class WarmAllTownCaches extends Command
                 if ($town !== $currentTown || $type !== $currentType) {
                     if ($currentTown !== null && $currentType !== null) {
                         Cache::put(
-                            'town:salesHistory:v3:cat' . $ppd . ':' . $currentTown . ':type:' . $currentType,
+                            'town:salesHistory:v3:cat'.$ppd.':'.$currentTown.':type:'.$currentType,
                             collect($bucket)->values(),
                             $ttl
                         );
@@ -264,7 +273,7 @@ class WarmAllTownCaches extends Command
 
             if ($currentTown !== null && $currentType !== null) {
                 Cache::put(
-                    'town:salesHistory:v3:cat' . $ppd . ':' . $currentTown . ':type:' . $currentType,
+                    'town:salesHistory:v3:cat'.$ppd.':'.$currentTown.':type:'.$currentType,
                     collect($bucket)->values(),
                     $ttl
                 );
@@ -273,16 +282,16 @@ class WarmAllTownCaches extends Command
 
         // ---- PROPERTY TYPES (streamed)
         if ($only === 'all' || $only === 'types') {
-            $map = [ 'D' => 'Detached', 'S' => 'Semi', 'T' => 'Terraced', 'F' => 'Flat', 'O' => 'Other' ];
+            $map = ['D' => 'Detached', 'S' => 'Semi', 'T' => 'Terraced', 'F' => 'Flat', 'O' => 'Other'];
 
             $cursor = DB::table('land_registry')
-                ->selectRaw('TRIM(TownCity) AS town, PropertyType, COUNT(*) AS property_count')
+                ->selectRaw("{$trimTownExpression} AS town, {$propertyTypeColumn} as property_type, COUNT(*) AS property_count")
                 ->where('PPDCategoryType', $ppd)
                 ->whereNotNull('TownCity')
-                ->whereRaw("TRIM(TownCity) <> ''")
-                ->groupBy('town', 'PropertyType')
-                ->orderBy('town')
-                ->orderBy('PropertyType')
+                ->whereRaw("{$trimTownExpression} <> ''")
+                ->groupBy(DB::raw($trimTownExpression), DB::raw($propertyTypeColumn))
+                ->orderByRaw($trimTownExpression)
+                ->orderByRaw($propertyTypeColumn)
                 ->cursor();
 
             $currentTown = null;
@@ -300,11 +309,11 @@ class WarmAllTownCaches extends Command
                 }
 
                 if ($town !== $currentTown) {
-                    $bar->setMessage('Types: ' . $currentTown);
+                    $bar->setMessage('Types: '.$currentTown);
                     $mapped = collect($bucket)->map(function ($r) use ($map) {
-                        return [ 'label' => $map[$r->PropertyType] ?? $r->PropertyType, 'value' => (int) $r->property_count ];
+                        return ['label' => $map[$r->property_type] ?? $r->property_type, 'value' => (int) $r->property_count];
                     });
-                    Cache::put('town:types:v2:cat' . $ppd . ':' . $currentTown, $mapped, $ttl);
+                    Cache::put('town:types:v2:cat'.$ppd.':'.$currentTown, $mapped, $ttl);
                     $bar->advance();
 
                     $currentTown = $town;
@@ -315,18 +324,20 @@ class WarmAllTownCaches extends Command
             }
 
             if ($currentTown !== null) {
-                $bar->setMessage('Types: ' . $currentTown);
+                $bar->setMessage('Types: '.$currentTown);
                 $mapped = collect($bucket)->map(function ($r) use ($map) {
-                    return [ 'label' => $map[$r->PropertyType] ?? $r->PropertyType, 'value' => (int) $r->property_count ];
+                    return ['label' => $map[$r->property_type] ?? $r->property_type, 'value' => (int) $r->property_count];
                 });
-                Cache::put('town:types:v2:cat' . $ppd . ':' . $currentTown, $mapped, $ttl);
+                Cache::put('town:types:v2:cat'.$ppd.':'.$currentTown, $mapped, $ttl);
                 $bar->advance();
             }
         }
 
+        Cache::put('town:v2:last_warm', now()->toIso8601String(), $ttl);
         $bar->finish();
         $this->newLine(2);
         $this->info('Town cache warm complete.');
+
         return self::SUCCESS;
     }
 }

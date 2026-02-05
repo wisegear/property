@@ -1,11 +1,12 @@
 <?php
+
 // app/Models/RepoLaQuarterly.php
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Model;
 
 class RepoLaQuarterly extends Model
 {
@@ -15,7 +16,7 @@ class RepoLaQuarterly extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'year'  => 'integer',
+        'year' => 'integer',
         'value' => 'integer',
     ];
 
@@ -76,7 +77,7 @@ class RepoLaQuarterly extends Model
         $row = static::query()
             ->select('year', 'quarter')
             ->orderByDesc('year')
-            ->orderByRaw("FIELD(quarter,'Q4','Q3','Q2','Q1')") // Q4 > Q3 > Q2 > Q1
+            ->orderByRaw("CASE quarter WHEN 'Q4' THEN 1 WHEN 'Q3' THEN 2 WHEN 'Q2' THEN 3 WHEN 'Q1' THEN 4 ELSE 5 END")
             ->first();
 
         return $row ? [(int) $row->year, (string) $row->quarter] : [null, null];

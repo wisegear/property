@@ -17,8 +17,8 @@ class WarmAllLocalityCaches extends Command
 
     public function handle(): int
     {
-        $ppd   = strtoupper((string) $this->option('ppd')) === 'B' ? 'B' : 'A';
-        $only  = strtolower((string) $this->option('only'));
+        $ppd = strtoupper((string) $this->option('ppd')) === 'B' ? 'B' : 'A';
+        $only = strtolower((string) $this->option('only'));
         $limit = (int) $this->option('limit');
 
         $ttl = now()->addDays(45);
@@ -26,14 +26,21 @@ class WarmAllLocalityCaches extends Command
         // Avoid Laravel keeping every result in memory
         DB::connection()->disableQueryLog();
 
+        $grammar = DB::connection()->getQueryGrammar();
+        $localityColumn = $grammar->wrap('Locality');
+        $yearDateColumn = $grammar->wrap('YearDate');
+        $priceColumn = $grammar->wrap('Price');
+        $propertyTypeColumn = $grammar->wrap('PropertyType');
+        $trimLocalityExpression = "TRIM({$localityColumn})";
+
         // Get distinct localities
         // IMPORTANT: TRIM() so cache keys match controller usage
         $localities = DB::table('land_registry')
-            ->selectRaw('TRIM(Locality) AS locality')
+            ->selectRaw("{$trimLocalityExpression} AS locality")
             ->whereNotNull('Locality')
-            ->whereRaw("TRIM(Locality) <> ''")
+            ->whereRaw("{$trimLocalityExpression} <> ''")
             ->distinct()
-            ->orderBy('locality')
+            ->orderByRaw($trimLocalityExpression)
             ->pluck('locality');
 
         if ($limit > 0) {
@@ -43,6 +50,7 @@ class WarmAllLocalityCaches extends Command
         $count = $localities->count();
         if ($count === 0) {
             $this->info('No localities found.');
+
             return self::SUCCESS;
         }
 
@@ -67,31 +75,34 @@ class WarmAllLocalityCaches extends Command
                 if ($only === 'all' || $only === 'price') {
                     // v2: all property types for this locality
                     $price = DB::table('land_registry')
-                        ->select('YearDate as year', DB::raw('ROUND(AVG(Price)) as avg_price'))
+                        ->selectRaw("{$yearDateColumn} as year")
+                        ->selectRaw("ROUND(AVG({$priceColumn})) as avg_price")
                         ->where('PPDCategoryType', $ppd)
-                        ->whereRaw('TRIM(Locality) = ?', [$locality])
+                        ->whereRaw("{$trimLocalityExpression} = ?", [$locality])
                         ->groupBy('YearDate')
                         ->orderBy('YearDate')
                         ->get();
 
-                    Cache::put('locality:priceHistory:v2:cat' . $ppd . ':' . $locality, $price, $ttl);
-                    $bar->setMessage('Price: ' . $locality);
+                    Cache::put('locality:priceHistory:v2:cat'.$ppd.':'.$locality, $price, $ttl);
+                    $bar->setMessage('Price: '.$locality);
                     $bar->advance();
 
                     // v3: per-property-type for this locality
                     $priceByType = DB::table('land_registry')
-                        ->select('PropertyType', 'YearDate as year', DB::raw('ROUND(AVG(Price)) as avg_price'))
+                        ->selectRaw("{$propertyTypeColumn} as property_type")
+                        ->selectRaw("{$yearDateColumn} as year")
+                        ->selectRaw("ROUND(AVG({$priceColumn})) as avg_price")
                         ->where('PPDCategoryType', $ppd)
-                        ->whereRaw('TRIM(Locality) = ?', [$locality])
-                        ->groupBy('PropertyType', 'YearDate')
-                        ->orderBy('PropertyType')
+                        ->whereRaw("{$trimLocalityExpression} = ?", [$locality])
+                        ->groupBy(DB::raw($propertyTypeColumn), 'YearDate')
+                        ->orderByRaw($propertyTypeColumn)
                         ->orderBy('YearDate')
                         ->get()
-                        ->groupBy('PropertyType');
+                        ->groupBy('property_type');
 
                     foreach ($priceByType as $type => $series) {
                         Cache::put(
-                            'locality:priceHistory:v3:cat' . $ppd . ':' . $locality . ':type:' . $type,
+                            'locality:priceHistory:v3:cat'.$ppd.':'.$locality.':type:'.$type,
                             $series->values(),
                             $ttl
                         );
@@ -102,31 +113,34 @@ class WarmAllLocalityCaches extends Command
                 if ($only === 'all' || $only === 'sales') {
                     // v2: all property types for this locality
                     $sales = DB::table('land_registry')
-                        ->select('YearDate as year', DB::raw('COUNT(*) as total_sales'))
+                        ->selectRaw("{$yearDateColumn} as year")
+                        ->selectRaw('COUNT(*) as total_sales')
                         ->where('PPDCategoryType', $ppd)
-                        ->whereRaw('TRIM(Locality) = ?', [$locality])
+                        ->whereRaw("{$trimLocalityExpression} = ?", [$locality])
                         ->groupBy('YearDate')
                         ->orderBy('YearDate')
                         ->get();
 
-                    Cache::put('locality:salesHistory:v2:cat' . $ppd . ':' . $locality, $sales, $ttl);
-                    $bar->setMessage('Sales: ' . $locality);
+                    Cache::put('locality:salesHistory:v2:cat'.$ppd.':'.$locality, $sales, $ttl);
+                    $bar->setMessage('Sales: '.$locality);
                     $bar->advance();
 
                     // v3: per-property-type for this locality
                     $salesByType = DB::table('land_registry')
-                        ->select('PropertyType', 'YearDate as year', DB::raw('COUNT(*) as total_sales'))
+                        ->selectRaw("{$propertyTypeColumn} as property_type")
+                        ->selectRaw("{$yearDateColumn} as year")
+                        ->selectRaw('COUNT(*) as total_sales')
                         ->where('PPDCategoryType', $ppd)
-                        ->whereRaw('TRIM(Locality) = ?', [$locality])
-                        ->groupBy('PropertyType', 'YearDate')
-                        ->orderBy('PropertyType')
+                        ->whereRaw("{$trimLocalityExpression} = ?", [$locality])
+                        ->groupBy(DB::raw($propertyTypeColumn), 'YearDate')
+                        ->orderByRaw($propertyTypeColumn)
                         ->orderBy('YearDate')
                         ->get()
-                        ->groupBy('PropertyType');
+                        ->groupBy('property_type');
 
                     foreach ($salesByType as $type => $series) {
                         Cache::put(
-                            'locality:salesHistory:v3:cat' . $ppd . ':' . $locality . ':type:' . $type,
+                            'locality:salesHistory:v3:cat'.$ppd.':'.$locality.':type:'.$type,
                             $series->values(),
                             $ttl
                         );
@@ -144,21 +158,22 @@ class WarmAllLocalityCaches extends Command
                     ];
 
                     $rows = DB::table('land_registry')
-                        ->select('PropertyType', DB::raw('COUNT(*) as property_count'))
+                        ->selectRaw("{$propertyTypeColumn} as property_type")
+                        ->selectRaw('COUNT(*) as property_count')
                         ->where('PPDCategoryType', $ppd)
-                        ->whereRaw('TRIM(Locality) = ?', [$locality])
-                        ->groupBy('PropertyType')
+                        ->whereRaw("{$trimLocalityExpression} = ?", [$locality])
+                        ->groupBy(DB::raw($propertyTypeColumn))
                         ->get();
 
                     $mapped = $rows->map(function ($row) use ($map) {
                         return [
-                            'label' => $map[$row->PropertyType] ?? $row->PropertyType,
+                            'label' => $map[$row->property_type] ?? $row->property_type,
                             'value' => (int) $row->property_count,
                         ];
                     });
 
-                    Cache::put('locality:types:v2:cat' . $ppd . ':' . $locality, $mapped, $ttl);
-                    $bar->setMessage('Types: ' . $locality);
+                    Cache::put('locality:types:v2:cat'.$ppd.':'.$locality, $mapped, $ttl);
+                    $bar->setMessage('Types: '.$locality);
                     $bar->advance();
                 }
             }
@@ -169,12 +184,12 @@ class WarmAllLocalityCaches extends Command
             if ($only === 'all' || $only === 'price') {
                 // v2: locality price history (flush per-locality)
                 $cursor = DB::table('land_registry')
-                    ->selectRaw('TRIM(Locality) AS locality, YearDate AS year, ROUND(AVG(Price)) AS avg_price')
+                    ->selectRaw("{$trimLocalityExpression} AS locality, {$yearDateColumn} AS year, ROUND(AVG({$priceColumn})) AS avg_price")
                     ->where('PPDCategoryType', $ppd)
                     ->whereNotNull('Locality')
-                    ->whereRaw("TRIM(Locality) <> ''")
-                    ->groupBy('locality', 'YearDate')
-                    ->orderBy('locality')
+                    ->whereRaw("{$trimLocalityExpression} <> ''")
+                    ->groupBy(DB::raw($trimLocalityExpression), 'YearDate')
+                    ->orderByRaw($trimLocalityExpression)
                     ->orderBy('YearDate')
                     ->cursor();
 
@@ -189,8 +204,8 @@ class WarmAllLocalityCaches extends Command
                     }
 
                     if ($loc !== $currentLocality) {
-                        Cache::put('locality:priceHistory:v2:cat' . $ppd . ':' . $currentLocality, collect($bucket), $ttl);
-                        $bar->setMessage('Price: ' . $currentLocality);
+                        Cache::put('locality:priceHistory:v2:cat'.$ppd.':'.$currentLocality, collect($bucket), $ttl);
+                        $bar->setMessage('Price: '.$currentLocality);
                         $bar->advance();
 
                         $currentLocality = $loc;
@@ -201,20 +216,20 @@ class WarmAllLocalityCaches extends Command
                 }
 
                 if ($currentLocality !== null) {
-                    Cache::put('locality:priceHistory:v2:cat' . $ppd . ':' . $currentLocality, collect($bucket), $ttl);
-                    $bar->setMessage('Price: ' . $currentLocality);
+                    Cache::put('locality:priceHistory:v2:cat'.$ppd.':'.$currentLocality, collect($bucket), $ttl);
+                    $bar->setMessage('Price: '.$currentLocality);
                     $bar->advance();
                 }
 
                 // v3: per-property-type locality price history (flush per (locality,type))
                 $cursorByType = DB::table('land_registry')
-                    ->selectRaw('TRIM(Locality) AS locality, PropertyType, YearDate AS year, ROUND(AVG(Price)) AS avg_price')
+                    ->selectRaw("{$trimLocalityExpression} AS locality, {$propertyTypeColumn} as property_type, {$yearDateColumn} AS year, ROUND(AVG({$priceColumn})) AS avg_price")
                     ->where('PPDCategoryType', $ppd)
                     ->whereNotNull('Locality')
-                    ->whereRaw("TRIM(Locality) <> ''")
-                    ->groupBy('locality', 'PropertyType', 'YearDate')
-                    ->orderBy('locality')
-                    ->orderBy('PropertyType')
+                    ->whereRaw("{$trimLocalityExpression} <> ''")
+                    ->groupBy(DB::raw($trimLocalityExpression), DB::raw($propertyTypeColumn), 'YearDate')
+                    ->orderByRaw($trimLocalityExpression)
+                    ->orderByRaw($propertyTypeColumn)
                     ->orderBy('YearDate')
                     ->cursor();
 
@@ -224,7 +239,7 @@ class WarmAllLocalityCaches extends Command
 
                 foreach ($cursorByType as $row) {
                     $loc = trim((string) $row->locality);
-                    $type = (string) $row->PropertyType;
+                    $type = (string) $row->property_type;
 
                     if ($currentLocality === null) {
                         $currentLocality = $loc;
@@ -234,7 +249,7 @@ class WarmAllLocalityCaches extends Command
                     if ($loc !== $currentLocality || $type !== $currentType) {
                         if ($currentLocality !== null && $currentType !== null) {
                             Cache::put(
-                                'locality:priceHistory:v3:cat' . $ppd . ':' . $currentLocality . ':type:' . $currentType,
+                                'locality:priceHistory:v3:cat'.$ppd.':'.$currentLocality.':type:'.$currentType,
                                 collect($bucket)->values(),
                                 $ttl
                             );
@@ -250,7 +265,7 @@ class WarmAllLocalityCaches extends Command
 
                 if ($currentLocality !== null && $currentType !== null) {
                     Cache::put(
-                        'locality:priceHistory:v3:cat' . $ppd . ':' . $currentLocality . ':type:' . $currentType,
+                        'locality:priceHistory:v3:cat'.$ppd.':'.$currentLocality.':type:'.$currentType,
                         collect($bucket)->values(),
                         $ttl
                     );
@@ -261,12 +276,12 @@ class WarmAllLocalityCaches extends Command
             if ($only === 'all' || $only === 'sales') {
                 // v2: locality sales history (flush per-locality)
                 $cursor = DB::table('land_registry')
-                    ->selectRaw('TRIM(Locality) AS locality, YearDate AS year, COUNT(*) AS total_sales')
+                    ->selectRaw("{$trimLocalityExpression} AS locality, {$yearDateColumn} AS year, COUNT(*) AS total_sales")
                     ->where('PPDCategoryType', $ppd)
                     ->whereNotNull('Locality')
-                    ->whereRaw("TRIM(Locality) <> ''")
-                    ->groupBy('locality', 'YearDate')
-                    ->orderBy('locality')
+                    ->whereRaw("{$trimLocalityExpression} <> ''")
+                    ->groupBy(DB::raw($trimLocalityExpression), 'YearDate')
+                    ->orderByRaw($trimLocalityExpression)
                     ->orderBy('YearDate')
                     ->cursor();
 
@@ -281,8 +296,8 @@ class WarmAllLocalityCaches extends Command
                     }
 
                     if ($loc !== $currentLocality) {
-                        Cache::put('locality:salesHistory:v2:cat' . $ppd . ':' . $currentLocality, collect($bucket), $ttl);
-                        $bar->setMessage('Sales: ' . $currentLocality);
+                        Cache::put('locality:salesHistory:v2:cat'.$ppd.':'.$currentLocality, collect($bucket), $ttl);
+                        $bar->setMessage('Sales: '.$currentLocality);
                         $bar->advance();
 
                         $currentLocality = $loc;
@@ -293,20 +308,20 @@ class WarmAllLocalityCaches extends Command
                 }
 
                 if ($currentLocality !== null) {
-                    Cache::put('locality:salesHistory:v2:cat' . $ppd . ':' . $currentLocality, collect($bucket), $ttl);
-                    $bar->setMessage('Sales: ' . $currentLocality);
+                    Cache::put('locality:salesHistory:v2:cat'.$ppd.':'.$currentLocality, collect($bucket), $ttl);
+                    $bar->setMessage('Sales: '.$currentLocality);
                     $bar->advance();
                 }
 
                 // v3: per-property-type locality sales history (flush per (locality,type))
                 $cursorByType = DB::table('land_registry')
-                    ->selectRaw('TRIM(Locality) AS locality, PropertyType, YearDate AS year, COUNT(*) AS total_sales')
+                    ->selectRaw("{$trimLocalityExpression} AS locality, {$propertyTypeColumn} as property_type, {$yearDateColumn} AS year, COUNT(*) AS total_sales")
                     ->where('PPDCategoryType', $ppd)
                     ->whereNotNull('Locality')
-                    ->whereRaw("TRIM(Locality) <> ''")
-                    ->groupBy('locality', 'PropertyType', 'YearDate')
-                    ->orderBy('locality')
-                    ->orderBy('PropertyType')
+                    ->whereRaw("{$trimLocalityExpression} <> ''")
+                    ->groupBy(DB::raw($trimLocalityExpression), DB::raw($propertyTypeColumn), 'YearDate')
+                    ->orderByRaw($trimLocalityExpression)
+                    ->orderByRaw($propertyTypeColumn)
                     ->orderBy('YearDate')
                     ->cursor();
 
@@ -316,7 +331,7 @@ class WarmAllLocalityCaches extends Command
 
                 foreach ($cursorByType as $row) {
                     $loc = trim((string) $row->locality);
-                    $type = (string) $row->PropertyType;
+                    $type = (string) $row->property_type;
 
                     if ($currentLocality === null) {
                         $currentLocality = $loc;
@@ -326,7 +341,7 @@ class WarmAllLocalityCaches extends Command
                     if ($loc !== $currentLocality || $type !== $currentType) {
                         if ($currentLocality !== null && $currentType !== null) {
                             Cache::put(
-                                'locality:salesHistory:v3:cat' . $ppd . ':' . $currentLocality . ':type:' . $currentType,
+                                'locality:salesHistory:v3:cat'.$ppd.':'.$currentLocality.':type:'.$currentType,
                                 collect($bucket)->values(),
                                 $ttl
                             );
@@ -342,7 +357,7 @@ class WarmAllLocalityCaches extends Command
 
                 if ($currentLocality !== null && $currentType !== null) {
                     Cache::put(
-                        'locality:salesHistory:v3:cat' . $ppd . ':' . $currentLocality . ':type:' . $currentType,
+                        'locality:salesHistory:v3:cat'.$ppd.':'.$currentLocality.':type:'.$currentType,
                         collect($bucket)->values(),
                         $ttl
                     );
@@ -360,13 +375,13 @@ class WarmAllLocalityCaches extends Command
                 ];
 
                 $cursor = DB::table('land_registry')
-                    ->selectRaw('TRIM(Locality) AS locality, PropertyType, COUNT(*) AS property_count')
+                    ->selectRaw("{$trimLocalityExpression} AS locality, {$propertyTypeColumn} as property_type, COUNT(*) AS property_count")
                     ->where('PPDCategoryType', $ppd)
                     ->whereNotNull('Locality')
-                    ->whereRaw("TRIM(Locality) <> ''")
-                    ->groupBy('locality', 'PropertyType')
-                    ->orderBy('locality')
-                    ->orderBy('PropertyType')
+                    ->whereRaw("{$trimLocalityExpression} <> ''")
+                    ->groupBy(DB::raw($trimLocalityExpression), DB::raw($propertyTypeColumn))
+                    ->orderByRaw($trimLocalityExpression)
+                    ->orderByRaw($propertyTypeColumn)
                     ->cursor();
 
                 $currentLocality = null;
@@ -382,13 +397,13 @@ class WarmAllLocalityCaches extends Command
                     if ($loc !== $currentLocality) {
                         $mapped = collect($bucket)->map(function ($r) use ($map) {
                             return [
-                                'label' => $map[$r->PropertyType] ?? $r->PropertyType,
+                                'label' => $map[$r->property_type] ?? $r->property_type,
                                 'value' => (int) $r->property_count,
                             ];
                         });
 
-                        Cache::put('locality:types:v2:cat' . $ppd . ':' . $currentLocality, $mapped, $ttl);
-                        $bar->setMessage('Types: ' . $currentLocality);
+                        Cache::put('locality:types:v2:cat'.$ppd.':'.$currentLocality, $mapped, $ttl);
+                        $bar->setMessage('Types: '.$currentLocality);
                         $bar->advance();
 
                         $currentLocality = $loc;
@@ -401,18 +416,19 @@ class WarmAllLocalityCaches extends Command
                 if ($currentLocality !== null) {
                     $mapped = collect($bucket)->map(function ($r) use ($map) {
                         return [
-                            'label' => $map[$r->PropertyType] ?? $r->PropertyType,
+                            'label' => $map[$r->property_type] ?? $r->property_type,
                             'value' => (int) $r->property_count,
                         ];
                     });
 
-                    Cache::put('locality:types:v2:cat' . $ppd . ':' . $currentLocality, $mapped, $ttl);
-                    $bar->setMessage('Types: ' . $currentLocality);
+                    Cache::put('locality:types:v2:cat'.$ppd.':'.$currentLocality, $mapped, $ttl);
+                    $bar->setMessage('Types: '.$currentLocality);
                     $bar->advance();
                 }
             }
         }
 
+        Cache::put('locality:v2:last_warm', now()->toIso8601String(), $ttl);
         $bar->finish();
         $this->newLine(2);
         $this->info('Locality cache warm complete.');

@@ -23,10 +23,10 @@ class HpiDashboardController extends Controller
 
         // Build time series for UK + each nation (12m%Change over time)
         $areas = [
-            'United Kingdom'   => 'K02000001',
-            'England'          => 'E92000001',
-            'Scotland'         => 'S92000003',
-            'Wales'            => 'W92000004',
+            'United Kingdom' => 'K02000001',
+            'England' => 'E92000001',
+            'Scotland' => 'S92000003',
+            'Wales' => 'W92000004',
             'Northern Ireland' => 'N92000002',
         ];
 
@@ -35,7 +35,7 @@ class HpiDashboardController extends Controller
             $rows = HpiMonthly::query()
                 ->select([
                     'Date',
-                    \Illuminate\Support\Facades\DB::raw('`12m%Change` as twelve_m_change')
+                    DB::raw('"12m%Change" as twelve_m_change'),
                 ])
                 ->where('AreaCode', $code)
                 ->orderBy('Date')
@@ -44,37 +44,37 @@ class HpiDashboardController extends Controller
             $seriesByArea[] = [
                 'name' => $name,
                 'code' => $code,
-                'dates' => $rows->pluck('Date')->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m'))->all(),
-                'twelve_m_change' => $rows->pluck('twelve_m_change')->map(fn($v) => is_null($v) ? null : (float)$v)->all(),
+                'dates' => $rows->pluck('Date')->map(fn ($d) => \Carbon\Carbon::parse($d)->format('Y-m'))->all(),
+                'twelve_m_change' => $rows->pluck('twelve_m_change')->map(fn ($v) => is_null($v) ? null : (float) $v)->all(),
             ];
         }
 
         // Movers – top 15 areas by 12m%Change at their latest date
         $latest = HpiMonthly::latestDate(); // global max date
         $movers = HpiMonthly::query()
-            ->select('RegionName','AreaCode','AveragePrice','12m%Change')
+            ->select('RegionName', 'AreaCode', 'AveragePrice', '12m%Change')
             ->where('Date', $latest)
             ->whereNotIn('AreaCode', array_values(HpiMonthly::nationCodes()))
-            ->orderByDesc(DB::raw('`12m%Change`'))
+            ->orderByDesc('12m%Change')
             ->limit(30)
             ->get();
 
         // Losers – bottom 15 areas by 12m%Change at the latest global date
         $losers = HpiMonthly::query()
-            ->select('RegionName','AreaCode','AveragePrice','12m%Change')
+            ->select('RegionName', 'AreaCode', 'AveragePrice', '12m%Change')
             ->where('Date', $latest)
             ->whereNotIn('AreaCode', array_values(HpiMonthly::nationCodes()))
-            ->orderBy(DB::raw('`12m%Change`'))
+            ->orderBy('12m%Change')
             ->limit(30)
             ->get();
 
         return view('hpi.dashboard', [
             'latestGlobal' => $latestGlobal,
-            'ukSeries'     => $ukSeries,
-            'nations'      => $nations,
-            'movers'       => $movers,
+            'ukSeries' => $ukSeries,
+            'nations' => $nations,
+            'movers' => $movers,
             'seriesByArea' => $seriesByArea,
-            'losers'       => $losers,
+            'losers' => $losers,
             'typePriceSeries' => $typePriceSeries,
         ]);
     }
@@ -87,7 +87,7 @@ class HpiDashboardController extends Controller
             ->select([
                 'Date',
                 'AveragePrice',
-                DB::raw('`12m%Change` as twelve_m_change'),
+                DB::raw('"12m%Change" as twelve_m_change'),
             ])
             ->where('AreaCode', 'K02000001') // United Kingdom
             ->orderBy('Date')

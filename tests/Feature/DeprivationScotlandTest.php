@@ -45,7 +45,7 @@ class DeprivationScotlandTest extends TestCase
         $simdTotalQuery = Mockery::mock();
         $simdTotalQuery->shouldReceive('selectRaw')
             ->once()
-            ->with("MAX(CAST(REPLACE(SIMD2020v2_Rank, ',', '') AS UNSIGNED)) as max_rank")
+            ->with("MAX(CAST(NULLIF(REPLACE(\"SIMD2020v2_Rank\", ',', ''), '') AS INTEGER)) as max_rank")
             ->andReturnSelf();
         $simdTotalQuery->shouldReceive('first')
             ->once()

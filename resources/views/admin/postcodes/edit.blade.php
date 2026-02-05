@@ -26,6 +26,7 @@
                         required>
                     <option value="Prime Central" {{ old('category', $postcode->category) == 'Prime Central' ? 'selected' : '' }}>Prime Central</option>
                     <option value="Ultra Prime" {{ old('category', $postcode->category) == 'Ultra Prime' ? 'selected' : '' }}>Ultra Prime</option>
+                    <option value="Outer Prime London" {{ old('category', $postcode->category) == 'Outer Prime London' ? 'selected' : '' }}>Outer Prime London</option>
                 </select>
                 @error('category') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
