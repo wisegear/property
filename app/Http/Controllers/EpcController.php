@@ -246,6 +246,17 @@ class EpcController extends Controller
     // Search for EPC certificates by postcode (exact match)
     public function search(Request $request)
     {
+        $epcTable = 'epc_certificates';
+        $epcPostcodeColumn = $this->resolveColumn($epcTable, ['POSTCODE', 'postcode']);
+        $epcLmkColumn = $this->resolveColumn($epcTable, ['LMK_KEY', 'lmk_key']);
+        $epcAddressColumn = $this->resolveColumn($epcTable, ['ADDRESS', 'address']);
+        $epcLodgementColumn = $this->resolveColumn($epcTable, ['LODGEMENT_DATE', 'lodgement_date']);
+        $epcCurrentRatingColumn = $this->resolveColumn($epcTable, ['CURRENT_ENERGY_RATING', 'current_energy_rating']);
+        $epcPotentialRatingColumn = $this->resolveColumn($epcTable, ['POTENTIAL_ENERGY_RATING', 'potential_energy_rating']);
+        $epcPropertyTypeColumn = $this->resolveColumn($epcTable, ['PROPERTY_TYPE', 'property_type']);
+        $epcFloorAreaColumn = $this->resolveColumn($epcTable, ['TOTAL_FLOOR_AREA', 'total_floor_area']);
+        $epcLocalAuthorityColumn = $this->resolveColumn($epcTable, ['LOCAL_AUTHORITY_LABEL', 'local_authority_label']);
+
         // If no postcode provided, just render the form
         $postcodeInput = (string) $request->query('postcode', '');
         if (trim($postcodeInput) === '') {
@@ -264,26 +275,34 @@ class EpcController extends Controller
 
         // Sorting (whitelist fields to avoid SQL injection)
         $allowedSorts = [
-            'lodgement_date' => 'lodgement_date',
-            'address' => 'address',
-            'current_energy_rating' => 'current_energy_rating',
-            'potential_energy_rating' => 'potential_energy_rating',
-            'property_type' => 'property_type',
-            'total_floor_area' => 'total_floor_area',
+            'lodgement_date' => $epcLodgementColumn,
+            'address' => $epcAddressColumn,
+            'current_energy_rating' => $epcCurrentRatingColumn,
+            'potential_energy_rating' => $epcPotentialRatingColumn,
+            'property_type' => $epcPropertyTypeColumn,
+            'total_floor_area' => $epcFloorAreaColumn,
         ];
         $sort = $request->query('sort', 'lodgement_date');
         $dir = strtolower($request->query('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
-        $sortCol = $allowedSorts[$sort] ?? 'lodgement_date';
+        $sortCol = $allowedSorts[$sort] ?? $epcLodgementColumn;
 
         // Query by postcode only with dynamic sorting
-        $query = DB::table('epc_certificates')
-            ->select('lmk_key', 'address', 'postcode', 'lodgement_date', 'current_energy_rating', 'potential_energy_rating', 'property_type', 'total_floor_area', 'local_authority_label')
-            ->where('postcode', $postcode)
+        $query = DB::table($epcTable)
+            ->selectRaw($this->wrapColumn($epcLmkColumn).' as lmk_key')
+            ->selectRaw($this->wrapColumn($epcAddressColumn).' as address')
+            ->selectRaw($this->wrapColumn($epcPostcodeColumn).' as postcode')
+            ->selectRaw($this->wrapColumn($epcLodgementColumn).' as lodgement_date')
+            ->selectRaw($this->wrapColumn($epcCurrentRatingColumn).' as current_energy_rating')
+            ->selectRaw($this->wrapColumn($epcPotentialRatingColumn).' as potential_energy_rating')
+            ->selectRaw($this->wrapColumn($epcPropertyTypeColumn).' as property_type')
+            ->selectRaw($this->wrapColumn($epcFloorAreaColumn).' as total_floor_area')
+            ->selectRaw($this->wrapColumn($epcLocalAuthorityColumn).' as local_authority_label')
+            ->where($epcPostcodeColumn, $postcode)
             ->orderBy($sortCol, $dir);
 
         // Secondary tiebreaker to keep results stable
-        if ($sortCol !== 'lodgement_date') {
-            $query->orderBy('lodgement_date', 'desc');
+        if ($sortCol !== $epcLodgementColumn) {
+            $query->orderBy($epcLodgementColumn, 'desc');
         }
 
         $results = $query->paginate(50)->withQueryString();
@@ -561,6 +580,20 @@ class EpcController extends Controller
     // Scotland: Search EPC certificates by postcode (exact match)
     public function searchScotland(Request $request)
     {
+        $scotTable = 'epc_certificates_scotland';
+        $scotPostcodeColumn = $this->resolveColumn($scotTable, ['POSTCODE', 'postcode']);
+        $scotRrnColumn = $this->resolveColumn($scotTable, ['REPORT_REFERENCE_NUMBER', 'report_reference_number']);
+        $scotBuildingColumn = $this->resolveColumn($scotTable, ['BUILDING_REFERENCE_NUMBER', 'building_reference_number']);
+        $scotAddress1Column = $this->resolveColumn($scotTable, ['ADDRESS1', 'address1']);
+        $scotAddress2Column = $this->resolveColumn($scotTable, ['ADDRESS2', 'address2']);
+        $scotAddress3Column = $this->resolveColumn($scotTable, ['ADDRESS3', 'address3']);
+        $scotLodgementColumn = $this->resolveColumn($scotTable, ['LODGEMENT_DATE', 'lodgement_date']);
+        $scotCurrentRatingColumn = $this->resolveColumn($scotTable, ['CURRENT_ENERGY_RATING', 'current_energy_rating']);
+        $scotPotentialRatingColumn = $this->resolveColumn($scotTable, ['POTENTIAL_ENERGY_RATING', 'potential_energy_rating']);
+        $scotPropertyTypeColumn = $this->resolveColumn($scotTable, ['PROPERTY_TYPE', 'property_type']);
+        $scotFloorAreaColumn = $this->resolveColumn($scotTable, ['TOTAL_FLOOR_AREA', 'total_floor_area']);
+        $scotLocalAuthorityColumn = $this->resolveColumn($scotTable, ['LOCAL_AUTHORITY_LABEL', 'local_authority_label']);
+
         // If no postcode provided, just render the Scotland form
         $postcodeInput = (string) $request->query('postcode', '');
         if (trim($postcodeInput) === '') {
@@ -579,42 +612,47 @@ class EpcController extends Controller
 
         // Sorting (whitelist fields)
         $allowedSorts = [
-            'lodgement_date' => 'lodgement_date',
+            'lodgement_date' => $scotLodgementColumn,
             'address' => 'address',
-            'current_energy_rating' => 'current_energy_rating',
-            'potential_energy_rating' => 'potential_energy_rating',
-            'property_type' => 'property_type',
-            'total_floor_area' => 'total_floor_area',
+            'current_energy_rating' => $scotCurrentRatingColumn,
+            'potential_energy_rating' => $scotPotentialRatingColumn,
+            'property_type' => $scotPropertyTypeColumn,
+            'total_floor_area' => $scotFloorAreaColumn,
         ];
         $sort = $request->query('sort', 'lodgement_date');
         $dir = strtolower($request->query('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
-        $sortCol = $allowedSorts[$sort] ?? 'lodgement_date';
+        $sortCol = $allowedSorts[$sort] ?? $scotLodgementColumn;
 
         // Build address expression that works whether Scotland data has a single `address` column
-        $addressExpr = DB::raw("NULLIF(TRIM(CONCAT_WS(', ',
-            NULLIF(ADDRESS1, ''),
-            NULLIF(ADDRESS2, ''),
-            NULLIF(ADDRESS3, '')
-        )), '') as address");
+        $addressExpr = DB::raw(sprintf(
+            "NULLIF(TRIM(CONCAT_WS(', ',
+                NULLIF(%s, ''),
+                NULLIF(%s, ''),
+                NULLIF(%s, '')
+            )), '') as address",
+            $this->wrapColumn($scotAddress1Column),
+            $this->wrapColumn($scotAddress2Column),
+            $this->wrapColumn($scotAddress3Column)
+        ));
 
-        $resultsQuery = DB::table('epc_certificates_scotland')
+        $resultsQuery = DB::table($scotTable)
             ->select([
-                DB::raw('REPORT_REFERENCE_NUMBER as report_reference_number'),
-                DB::raw('BUILDING_REFERENCE_NUMBER as building_reference_number'),
-                DB::raw('POSTCODE as postcode'),
-                DB::raw('LODGEMENT_DATE as lodgement_date'),
-                DB::raw('CURRENT_ENERGY_RATING as current_energy_rating'),
-                DB::raw('POTENTIAL_ENERGY_RATING as potential_energy_rating'),
-                DB::raw('PROPERTY_TYPE as property_type'),
-                DB::raw('TOTAL_FLOOR_AREA as total_floor_area'),
-                DB::raw('LOCAL_AUTHORITY_LABEL as local_authority_label'),
+                DB::raw($this->wrapColumn($scotRrnColumn).' as report_reference_number'),
+                DB::raw($this->wrapColumn($scotBuildingColumn).' as building_reference_number'),
+                DB::raw($this->wrapColumn($scotPostcodeColumn).' as postcode'),
+                DB::raw($this->wrapColumn($scotLodgementColumn).' as lodgement_date'),
+                DB::raw($this->wrapColumn($scotCurrentRatingColumn).' as current_energy_rating'),
+                DB::raw($this->wrapColumn($scotPotentialRatingColumn).' as potential_energy_rating'),
+                DB::raw($this->wrapColumn($scotPropertyTypeColumn).' as property_type'),
+                DB::raw($this->wrapColumn($scotFloorAreaColumn).' as total_floor_area'),
+                DB::raw($this->wrapColumn($scotLocalAuthorityColumn).' as local_authority_label'),
                 $addressExpr,
             ])
-            ->where('POSTCODE', $postcode)
+            ->where($scotPostcodeColumn, $postcode)
             ->orderBy($sortCol, $dir);
 
-        if ($sortCol !== 'lodgement_date') {
-            $resultsQuery->orderBy('lodgement_date', 'desc');
+        if ($sortCol !== $scotLodgementColumn) {
+            $resultsQuery->orderBy($scotLodgementColumn, 'desc');
         }
 
         $results = $resultsQuery->paginate(50)->withQueryString();
@@ -645,8 +683,10 @@ class EpcController extends Controller
         $fallbackEW = route('epc.search');
 
         // --- Try Scotland first
-        $scot = DB::table('epc_certificates_scotland')
-            ->where('BUILDING_REFERENCE_NUMBER', $lmk)
+        $scotTable = 'epc_certificates_scotland';
+        $scotBuildingColumn = $this->resolveColumn($scotTable, ['BUILDING_REFERENCE_NUMBER', 'building_reference_number']);
+        $scot = DB::table($scotTable)
+            ->where($scotBuildingColumn, $lmk)
             ->first();
 
         if ($scot) {
@@ -671,8 +711,10 @@ class EpcController extends Controller
         }
 
         // --- Fall back to England & Wales
-        $ew = DB::table('epc_certificates')
-            ->where('lmk_key', $lmk)
+        $ewTable = 'epc_certificates';
+        $ewLmkColumn = $this->resolveColumn($ewTable, ['LMK_KEY', 'lmk_key']);
+        $ew = DB::table($ewTable)
+            ->where($ewLmkColumn, $lmk)
             ->first();
 
         if ($ew) {
@@ -719,8 +761,10 @@ class EpcController extends Controller
 
         $backUrl = $decoded ?: route('epc.search_scotland');
 
-        $scot = DB::table('epc_certificates_scotland')
-            ->where('REPORT_REFERENCE_NUMBER', $rrn)
+        $scotTable = 'epc_certificates_scotland';
+        $scotRrnColumn = $this->resolveColumn($scotTable, ['REPORT_REFERENCE_NUMBER', 'report_reference_number']);
+        $scot = DB::table($scotTable)
+            ->where($scotRrnColumn, $rrn)
             ->first();
 
         abort_if(! $scot, 404);
