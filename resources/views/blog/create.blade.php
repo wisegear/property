@@ -4,6 +4,17 @@
     <h2 class="text-2xl text-center font-bold mb-10">Create a New Post</h2>
 
     <div class="w-3/4 mx-auto space-y-8">
+        @if($errors->any())
+            <div class="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <p class="font-semibold">Please fix the following issues:</p>
+                <ul class="list-disc pl-5">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form method="POST" action="/blog" enctype="multipart/form-data">
             @csrf
 
@@ -13,6 +24,9 @@
                 <input type="file" name="image" id="image" accept="image/*" required
                        onchange="previewImage(event)"
                        class="border rounded p-2">
+                @if($errors->has('image'))
+                    <div class="mt-2 text-red-500">{{ $errors->first('image') }}</div>
+                @endif
             </div>
 
             <!-- Featured Image Preview -->
@@ -69,6 +83,12 @@
                 <input type="file" name="images[]" id="images" multiple
                        class="border rounded p-2 mt-2"
                        onchange="previewMultipleImages(event, 'inpost-preview')">
+                @if($errors->has('images'))
+                    <div class="mt-2 text-red-500">{{ $errors->first('images') }}</div>
+                @endif
+                @if($errors->has('images.*'))
+                    <div class="mt-2 text-red-500">{{ $errors->first('images.*') }}</div>
+                @endif
                 <!-- Container to preview selected in-post images -->
                 <div id="inpost-preview" class="mt-2 flex flex-wrap"></div>
             </div>
@@ -102,6 +122,12 @@
                     <input type="file" name="gallery_images[]" id="gallery_images" multiple
                            class="border rounded p-2"
                            onchange="previewMultipleImages(event, 'gallery-preview')">
+                    @if($errors->has('gallery_images'))
+                        <div class="mt-2 text-red-500">{{ $errors->first('gallery_images') }}</div>
+                    @endif
+                    @if($errors->has('gallery_images.*'))
+                        <div class="mt-2 text-red-500">{{ $errors->first('gallery_images.*') }}</div>
+                    @endif
                     <!-- Container to preview selected gallery images -->
                     <div id="gallery-preview" class="mt-2 flex flex-wrap"></div>
                 </div>
