@@ -2,20 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\BlogPosts;
+use App\Models\Comment;
 use App\Models\User;
 use App\Models\UserRoles;
-use App\Models\BlogPosts;
-use App\Models\BlogCategories;
-use App\Models\BlogTags;
-use App\Models\Comment;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Intervention\Image\Laravel\Facades\Image;
-use Illuminate\Support\Str;
-use App\Services\ImageService;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Gate;
+use Intervention\Image\Laravel\Facades\Image;
 
 class ProfileController extends Controller
 {
@@ -38,10 +33,7 @@ class ProfileController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        
-    }
+    public function store(Request $request) {}
 
     /**
      * Display the specified resource.
@@ -66,7 +58,7 @@ class ProfileController extends Controller
             ->with([
                 'commentable' => function ($q) {
                     $q->select('id', 'title', 'slug');
-                }
+                },
             ])
             ->orderBy('created_at', 'desc')
             ->limit(5)
@@ -93,13 +85,12 @@ class ProfileController extends Controller
     public function edit(string $name_slug)
     {
 
-        if (Auth::user()->name_slug === $name_slug Or Gate::authorize('Admin'))
-        {
+        if (Auth::user()->name_slug === $name_slug || Gate::allows('Admin')) {
             $user = User::where('name_slug', $name_slug)->first();
             $roles = UserRoles::all();
 
             return view('profile.edit', compact('user', 'roles'));
-        
+
         } else {
 
             return back();
@@ -112,51 +103,52 @@ class ProfileController extends Controller
     public function update(Request $request, $name_slug)
     {
 
-        Gate::authorize('Member');
+        if (! Gate::allows('Member') && ! Gate::allows('Admin')) {
+            abort(403);
+        }
 
         $user = User::where('name_slug', $name_slug)->first();
 
         // Check if there is a new avatar
 
-        if ($request->hasFile('image'))
-        {
+        if ($request->hasFile('image')) {
 
-            //Find the old file and delete it unless it is the defailt image
+            // Find the old file and delete it unless it is the defailt image
 
             if ($user->avatar && $user->avatar != 'default.png') {
-                $avatarPath = public_path('assets/images/avatars/' . $user->avatar);
-                
+                $avatarPath = public_path('assets/images/avatars/'.$user->avatar);
+
                 if (File::exists($avatarPath)) {
                     File::delete($avatarPath);
                 }
             }
 
-            //Get the new image and assign it to a variable called $pic
+            // Get the new image and assign it to a variable called $pic
 
             $pic = $request->file('image');
 
-            //Assign a unique name to the new avatar
+            // Assign a unique name to the new avatar
 
-            $pic_name = time() . '-' . $pic->getClientOriginalName();
+            $pic_name = time().'-'.$pic->getClientOriginalName();
 
-            //Move the file to the avatars directory and rename it.
+            // Move the file to the avatars directory and rename it.
 
-            $pic->move(public_path() . '/assets/images/avatars/', $pic_name);
+            $pic->move(public_path().'/assets/images/avatars/', $pic_name);
 
-            //Crop or upsize the image to fit the 100x100 requirement
+            // Crop or upsize the image to fit the 100x100 requirement
 
-            $resize = Image::read(sprintf(public_path() . '/assets/images/avatars/' . '%s', $pic_name))
-                ->resize(100,100, function($constraint) {
+            $resize = Image::read(sprintf(public_path().'/assets/images/avatars/'.'%s', $pic_name))
+                ->resize(100, 100, function ($constraint) {
                     // $constraint->aspectRatio();
                     // $constraint->upsize();
                 })
-            ->save(public_path() . '/assets/images/avatars/' . $pic_name);
+                ->save(public_path().'/assets/images/avatars/'.$pic_name);
 
-            //Update the avatar name in the user model
+            // Update the avatar name in the user model
 
             $user->avatar = $pic_name;
 
-        }        
+        }
 
         $user->email = $request->email;
         $user->website = $request->website;
@@ -166,55 +158,54 @@ class ProfileController extends Controller
         $user->facebook = $request->facebook;
         $user->x = $request->x;
 
-            //Check if the email is to be displayed.
-            if (isset($request->email_visible)) {
+        // Check if the email is to be displayed.
+        if (isset($request->email_visible)) {
 
-                $user->email_visible = 1;
+            $user->email_visible = 1;
+
+        } else {
+
+            $user->email_visible = 0;
+
+        }
+
+        // Only an Admin can update these.
+
+        if (Gate::allows('Admin')) {
+
+            // Check if the user is trusted.
+            if (isset($request->trusted)) {
+
+                $user->trusted = 1;
 
             } else {
 
-                $user->email_visible = 0;
+                $user->trusted = 0;
 
             }
 
-            // Only an Admin can update these.
+            // Check if the user is locked.
+            if (isset($request->lock)) {
 
-            if (Gate::allows('Admin')) {
-        
-                //Check if the user is trusted.
-                if (isset($request->trusted)) {
+                $user->lock = 1;
 
-                    $user->trusted = 1;
+            } else {
 
-                } else {
-
-                    $user->trusted = 0;
-
-                }
-
-                //Check if the user is locked.
-                if (isset($request->lock)) {
-
-                    $user->lock = 1;
-
-                } else {
-
-                    $user->lock = 0;
-
-                }
-
-
-                $user->notes = $request->notes;
-
-                //Sync Roles only if user is Admin
-
-                    $user->user_roles()->sync($request->roles);
+                $user->lock = 0;
 
             }
 
-                $user->save();
+            $user->notes = $request->notes;
 
-                return back()->with('status', 'User Profile has been updated.');
+            // Sync Roles only if user is Admin
+
+            $user->user_roles()->sync($request->roles);
+
+        }
+
+        $user->save();
+
+        return back()->with('status', 'User Profile has been updated.');
 
     }
 
