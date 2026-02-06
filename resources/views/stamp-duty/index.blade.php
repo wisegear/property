@@ -50,12 +50,12 @@
 
                     <div class="space-y-2">
                         <label class="inline-flex items-center">
-                            <input type="checkbox" id="additional_property" name="additional_property" class="mr-2">
+                            <input type="checkbox" id="additional_property" name="additional_property" value="1" class="mr-2">
                             <span>Second home/additional property?</span>
                         </label>
                         <div id="nr-wrap" class="hidden">
                             <label class="inline-flex items-center">
-                                <input type="checkbox" id="non_resident" name="non_resident" class="mr-2">
+                                <input type="checkbox" id="non_resident" name="non_resident" value="1" class="mr-2">
                                 <span>Non‑resident? (SDLT only)</span>
                             </label>
                         </div>

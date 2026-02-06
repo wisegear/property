@@ -163,11 +163,11 @@
                 <h3 class="font-semibold text-gray-700 mb-2">Post Options:</h3>
                 <div class="flex gap-6 border rounded border-gray-300 py-2 px-4">
                     <div class="flex items-center">
-                        <input type="checkbox" id="published" name="published" class="mr-2">
+                        <input type="checkbox" id="published" name="published" value="1" class="mr-2">
                         <label for="published">Publish?</label>
                     </div>
                     <div class="flex items-center">
-                        <input type="checkbox" id="featured" name="featured" class="mr-2">
+                        <input type="checkbox" id="featured" name="featured" value="1" class="mr-2">
                         <label for="featured">Featured?</label>
                     </div>
                 </div>
