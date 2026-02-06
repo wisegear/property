@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BlogPostStoreRequest;
+use App\Http\Requests\BlogPostUpdateRequest;
 use App\Models\BlogCategories;
 use App\Models\BlogPosts;
 use App\Models\BlogTags;
@@ -99,7 +101,7 @@ class BlogController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, ImageService $imageService)
+    public function store(BlogPostStoreRequest $request, ImageService $imageService)
     {
         Gate::authorize('Admin');
 
@@ -224,7 +226,7 @@ class BlogController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id, ImageService $imageService)
+    public function update(BlogPostUpdateRequest $request, string $id, ImageService $imageService)
     {
         Gate::authorize('Admin');
 

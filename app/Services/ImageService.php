@@ -36,16 +36,21 @@ class ImageService
         // Create resized versions based on the original image
         $originalPath = self::FEATURED_PATH.$imageName;
         $disk->putFileAs(self::FEATURED_PATH, $image, $imageName);
+        $sourcePath = $image->getRealPath();
+
+        if ($sourcePath === false) {
+            throw new \RuntimeException('Uploaded image is not readable.');
+        }
 
         // Small image: 350x200, 50% quality
-        Image::read($disk->path($originalPath))
+        Image::read($sourcePath)
             ->cover(350, 200, 'center')
             ->save($disk->path(self::FEATURED_PATH.$smallImageName), 50);
 
         // Medium image: 800x300, 75% quality
         // No cropping. Force the image into the exact 800x300 frame (may squish if aspect ratio differs).
         // Prevent upscaling beyond the source.
-        $medium = Image::read($disk->path($originalPath));
+        $medium = Image::read($sourcePath);
         if ($medium->width() > 800 || $medium->height() > 300) {
             $medium->resize(800, 300);
         }
@@ -54,7 +59,7 @@ class ImageService
         // Large image: 1200x400, 75% quality
         // No cropping. Force the image into the exact 1200x400 frame (may squish if aspect ratio differs).
         // Prevent upscaling beyond the source.
-        $large = Image::read($disk->path($originalPath));
+        $large = Image::read($sourcePath);
         if ($large->width() > 1200 || $large->height() > 400) {
             $large->resize(1200, 400);
         }
