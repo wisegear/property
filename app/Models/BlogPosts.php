@@ -112,7 +112,7 @@ class BlogPosts extends Model
         $path = "blog/featured/{$size}_{$this->original_image}";
 
         if (Storage::disk('public')->exists($path)) {
-            return Storage::url($path);
+            return Storage::disk('public')->url($path);
         }
 
         return asset("assets/images/uploads/{$size}_{$this->original_image}");
@@ -123,7 +123,7 @@ class BlogPosts extends Model
         $path = "blog/galleries/{$filename}";
 
         if (Storage::disk('public')->exists($path)) {
-            return Storage::url($path);
+            return Storage::disk('public')->url($path);
         }
 
         return asset("assets/images/uploads/galleries/{$filename}");
@@ -137,6 +137,6 @@ class BlogPosts extends Model
             return asset($normalizedPath);
         }
 
-        return Storage::url($normalizedPath);
+        return Storage::disk('public')->url($normalizedPath);
     }
 }
