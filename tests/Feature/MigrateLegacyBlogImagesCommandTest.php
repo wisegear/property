@@ -65,13 +65,13 @@ class MigrateLegacyBlogImagesCommandTest extends TestCase
             ->assertExitCode(0);
 
         $this->assertFalse(File::exists($legacyBase.'/inline-test.jpg'));
-        Storage::disk('public')->assertExists('blog/inline/inline-test.jpg');
-        Storage::disk('public')->assertExists('blog/featured/featured.jpg');
-        Storage::disk('public')->assertExists('blog/featured/small_featured.jpg');
-        Storage::disk('public')->assertExists('blog/galleries/gallery.jpg');
+        Storage::disk('public')->assertExists('assets/images/uploads/inline-test.jpg');
+        Storage::disk('public')->assertExists('assets/images/uploads/featured.jpg');
+        Storage::disk('public')->assertExists('assets/images/uploads/small_featured.jpg');
+        Storage::disk('public')->assertExists('assets/images/uploads/galleries/gallery.jpg');
 
         $post = DB::table('blog_posts')->first();
-        $this->assertSame(['blog/inline/inline-test.jpg'], json_decode($post->images, true));
-        $this->assertStringContainsString('/storage/blog/inline/inline-test.jpg', $post->body);
+        $this->assertSame(['/assets/images/uploads/inline-test.jpg'], json_decode($post->images, true));
+        $this->assertStringContainsString('/storage/assets/images/uploads/inline-test.jpg', $post->body);
     }
 }

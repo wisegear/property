@@ -30,9 +30,9 @@ class MigrateLegacyBlogImages extends Command
     {
         $dryRun = (bool) $this->option('dry-run');
         $legacyBase = public_path('assets/images/uploads');
-        $featuredTarget = 'blog/featured';
-        $galleryTarget = 'blog/galleries';
-        $inlineTarget = 'blog/inline';
+        $featuredTarget = 'assets/images/uploads';
+        $galleryTarget = 'assets/images/uploads/galleries';
+        $inlineTarget = 'assets/images/uploads';
 
         $this->info($dryRun ? 'Dry run: no changes will be written.' : 'Migrating legacy blog images...');
 
@@ -146,11 +146,6 @@ class MigrateLegacyBlogImages extends Command
                 $newPath = $inlineTarget.'/'.$filename;
                 $updated[] = $newPath;
 
-                if ($normalized === $newPath) {
-                    continue;
-                }
-
-                $changed = true;
                 $legacyPath = $legacyBase.'/'.$filename;
 
                 if (! $disk->exists($newPath) && File::exists($legacyPath)) {
@@ -159,6 +154,10 @@ class MigrateLegacyBlogImages extends Command
                         $disk->put($newPath, File::get($legacyPath));
                         File::delete($legacyPath);
                     }
+                }
+
+                if ($normalized !== $newPath) {
+                    $changed = true;
                 }
             }
 
@@ -183,7 +182,7 @@ class MigrateLegacyBlogImages extends Command
             ->get(['id', 'body']);
 
         foreach ($posts as $post) {
-            $updatedBody = str_replace($legacyPaths, $appUrl.'/storage/blog/inline/', $post->body);
+            $updatedBody = str_replace($legacyPaths, $appUrl.'/storage/assets/images/uploads/', $post->body);
 
             if ($updatedBody === $post->body) {
                 continue;

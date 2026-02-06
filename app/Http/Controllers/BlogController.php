@@ -241,7 +241,7 @@ class BlogController extends Controller
         $page->categories_id = $request->category;
 
         // Define your uploads paths (these should match your ImageService)
-        $featuredPath = 'blog/featured/';
+        $featuredPath = 'assets/images/uploads/';
         $legacyFeaturedPath = '/assets/images/uploads/';
 
         // Process the featured image
@@ -290,7 +290,7 @@ class BlogController extends Controller
                 $existingGalleryImages = json_decode($page->gallery_images, true) ?? [];
                 foreach ($existingGalleryImages as $galleryImage) {
                     // Each gallery image contains an 'original' and a 'thumbnail'
-                    $galleryPath = 'blog/galleries/';
+                    $galleryPath = 'assets/images/uploads/galleries/';
                     $legacyGalleryPath = '/assets/images/uploads/galleries/';
                     $imageService->deleteImage([
                         $galleryPath.$galleryImage['original'],
@@ -340,7 +340,7 @@ class BlogController extends Controller
         $page = BlogPosts::findOrFail($id);
 
         // Define the uploads folder paths (should match what you use in your ImageService)
-        $featuredPath = 'blog/featured/';
+        $featuredPath = 'assets/images/uploads/';
         $legacyFeaturedPath = '/assets/images/uploads/';
 
         // Construct the full file paths for the featured image (original and resized versions)
@@ -371,7 +371,7 @@ class BlogController extends Controller
         if ($galleryImages) {
             foreach ($galleryImages as $galleryImage) {
                 // Each gallery image is expected to be an array with keys 'original' and 'thumbnail'
-                $galleryPath = 'blog/galleries/';
+                $galleryPath = 'assets/images/uploads/galleries/';
                 $legacyGalleryPath = '/assets/images/uploads/galleries/';
                 $imageService->deleteImage([
                     $galleryPath.$galleryImage['original'],

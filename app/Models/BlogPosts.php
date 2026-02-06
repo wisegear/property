@@ -109,14 +109,14 @@ class BlogPosts extends Model
             return null;
         }
 
-        $path = "blog/featured/{$size}_{$this->original_image}";
+        $path = "assets/images/uploads/{$size}_{$this->original_image}";
 
         return Storage::disk('public')->url($path);
     }
 
     public static function galleryImageUrl(string $filename): string
     {
-        $path = "blog/galleries/{$filename}";
+        $path = "assets/images/uploads/galleries/{$filename}";
 
         return Storage::disk('public')->url($path);
     }
@@ -129,6 +129,8 @@ class BlogPosts extends Model
             return asset($normalizedPath);
         }
 
-        return Storage::disk('public')->url($normalizedPath);
+        $path = 'assets/images/uploads/'.ltrim($normalizedPath, '/');
+
+        return Storage::disk('public')->url($path);
     }
 }

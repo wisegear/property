@@ -19,10 +19,10 @@ class ImageServiceTest extends TestCase
 
         $filename = $imageService->handleImageUpload($image);
 
-        Storage::disk('public')->assertExists("blog/featured/{$filename}");
-        Storage::disk('public')->assertExists("blog/featured/small_{$filename}");
-        Storage::disk('public')->assertExists("blog/featured/medium_{$filename}");
-        Storage::disk('public')->assertExists("blog/featured/large_{$filename}");
+        Storage::disk('public')->assertExists("assets/images/uploads/{$filename}");
+        Storage::disk('public')->assertExists("assets/images/uploads/small_{$filename}");
+        Storage::disk('public')->assertExists("assets/images/uploads/medium_{$filename}");
+        Storage::disk('public')->assertExists("assets/images/uploads/large_{$filename}");
     }
 
     public function test_optimize_and_save_image_returns_inline_storage_path(): void
@@ -34,7 +34,7 @@ class ImageServiceTest extends TestCase
 
         $path = $imageService->optimizeAndSaveImage($image);
 
-        $this->assertTrue(Str::startsWith($path, 'blog/inline/'));
+        $this->assertTrue(Str::startsWith($path, 'assets/images/uploads/'));
         Storage::disk('public')->assertExists($path);
     }
 
@@ -49,7 +49,7 @@ class ImageServiceTest extends TestCase
 
         $this->assertArrayHasKey('original', $result);
         $this->assertArrayHasKey('thumbnail', $result);
-        Storage::disk('public')->assertExists('blog/galleries/'.$result['original']);
-        Storage::disk('public')->assertExists('blog/galleries/'.$result['thumbnail']);
+        Storage::disk('public')->assertExists('assets/images/uploads/galleries/'.$result['original']);
+        Storage::disk('public')->assertExists('assets/images/uploads/galleries/'.$result['thumbnail']);
     }
 }

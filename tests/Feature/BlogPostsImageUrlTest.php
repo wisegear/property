@@ -17,7 +17,7 @@ class BlogPostsImageUrlTest extends TestCase
 
         $url = $post->featuredImageUrl('small');
 
-        $this->assertSame(Storage::disk('public')->url('blog/featured/small_example.jpg'), $url);
+        $this->assertSame(Storage::disk('public')->url('assets/images/uploads/small_example.jpg'), $url);
     }
 
     public function test_gallery_image_url_uses_public_storage_disk(): void
@@ -26,6 +26,6 @@ class BlogPostsImageUrlTest extends TestCase
 
         $url = BlogPosts::galleryImageUrl('gallery.jpg');
 
-        $this->assertSame(Storage::disk('public')->url('blog/galleries/gallery.jpg'), $url);
+        $this->assertSame(Storage::disk('public')->url('assets/images/uploads/galleries/gallery.jpg'), $url);
     }
 }

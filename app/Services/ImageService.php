@@ -11,13 +11,13 @@ use Intervention\Image\Laravel\Facades\Image;
 
 class ImageService
 {
-    private const FEATURED_PATH = 'blog/featured/';
+    private const FEATURED_PATH = 'assets/images/uploads/';
 
-    private const INLINE_PATH = 'blog/inline/';
+    private const INLINE_PATH = 'assets/images/uploads/';
 
-    private const GALLERY_PATH = 'blog/galleries/';
+    private const GALLERY_PATH = 'assets/images/uploads/galleries/';
 
-    private const LINK_PATH = 'blog/links/';
+    private const LINK_PATH = 'assets/images/uploads/';
 
     public function handleImageUpload(UploadedFile $image): string
     {
