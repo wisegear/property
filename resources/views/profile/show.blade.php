@@ -13,7 +13,7 @@
                 <h1 class="text-2xl font-bold tracking-tight text-zinc-900">{{ $user->name }}</h1>
                 <div class="mt-1 text-sm text-zinc-600">
                     {{-- Email visibility follows existing logic --}}
-                    @if($user->email_visible === 0)
+                    @if(! $user->email_visible)
                         Email Not shared
                     @else
                         {{ $user->email }}
@@ -128,7 +128,7 @@
                     <div class="flex justify-between gap-3">
                         <dt class="text-zinc-600">Email</dt>
                         <dd class="text-zinc-900">
-                            @if($user->email_visible === 0)
+                            @if(! $user->email_visible)
                                 Not shared
                             @else
                                 {{ $user->email }}

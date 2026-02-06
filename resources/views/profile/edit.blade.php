@@ -106,7 +106,7 @@
             </div>
 
             <div class="text-center">
-                <input type="checkbox" id="email_visible" name="email_visible" value="{{ $user->email_visible }}" @if ($user->email_visible == true) checked @endif>
+                <input type="checkbox" id="email_visible" name="email_visible" value="1" @if ($user->email_visible) checked @endif>
                 <label for="email_visible" class="text-sm text-zinc-700 ml-2">Display email publicly</label>
             </div>
 
