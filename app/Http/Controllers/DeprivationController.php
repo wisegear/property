@@ -193,6 +193,38 @@ class DeprivationController extends Controller
             return $data;
         });
 
+        if ($scoTop10->isEmpty()) {
+            $scoTop10 = DB::table('simd2020')
+                ->select([
+                    'Data_Zone as data_zone',
+                    'Intermediate_Zone',
+                    'Council_area',
+                    DB::raw("CAST(NULLIF(REPLACE(\"SIMD2020v2_Decile\", ',', ''), '') AS INTEGER) as decile"),
+                    DB::raw("CAST(NULLIF(REPLACE(\"SIMD2020v2_Rank\", ',', ''), '') AS INTEGER) as rank"),
+                ])
+                ->whereNotNull('SIMD2020v2_Rank')
+                ->orderByRaw("CAST(NULLIF(REPLACE(\"SIMD2020v2_Rank\", ',', ''), '') AS INTEGER) DESC")
+                ->limit(10)
+                ->get();
+            Cache::put('simd:top10', $scoTop10, $ttl);
+        }
+
+        if ($scoBottom10->isEmpty()) {
+            $scoBottom10 = DB::table('simd2020')
+                ->select([
+                    'Data_Zone as data_zone',
+                    'Intermediate_Zone',
+                    'Council_area',
+                    DB::raw("CAST(NULLIF(REPLACE(\"SIMD2020v2_Decile\", ',', ''), '') AS INTEGER) as decile"),
+                    DB::raw("CAST(NULLIF(REPLACE(\"SIMD2020v2_Rank\", ',', ''), '') AS INTEGER) as rank"),
+                ])
+                ->whereNotNull('SIMD2020v2_Rank')
+                ->orderByRaw("CAST(NULLIF(REPLACE(\"SIMD2020v2_Rank\", ',', ''), '') AS INTEGER) ASC")
+                ->limit(10)
+                ->get();
+            Cache::put('simd:bottom10', $scoBottom10, $ttl);
+        }
+
         // Wales — WIMD Top/Bottom 10 (by overall rank)
         $wimdBase = DB::table('wimd2019')
             ->select([
@@ -221,6 +253,22 @@ class DeprivationController extends Controller
 
             return $data;
         });
+
+        if ($walTop10->isEmpty()) {
+            $walTop10 = (clone $wimdBase)
+                ->orderByDesc('rank')
+                ->limit(10)
+                ->get();
+            Cache::put('wimd:top10', $walTop10, $ttl);
+        }
+
+        if ($walBottom10->isEmpty()) {
+            $walBottom10 = (clone $wimdBase)
+                ->orderBy('rank')
+                ->limit(10)
+                ->get();
+            Cache::put('wimd:bottom10', $walBottom10, $ttl);
+        }
 
         // Northern Ireland — total areas so we can calculate deciles
         $totalNI = Cache::rememberForever('nimdm.total_rank', function () {
@@ -290,6 +338,52 @@ class DeprivationController extends Controller
 
             return $data;
         });
+
+        if ($niTop10->isEmpty()) {
+            $niTop10 = (clone $niBase)
+                ->orderByDesc('rank')
+                ->limit(10)
+                ->get();
+
+            foreach ($niTop10 as $row) {
+                if (! is_null($row->rank)) {
+                    $row->decile = max(
+                        1,
+                        min(
+                            10,
+                            (int) floor((($row->rank - 1) / $totalNI) * 10) + 1
+                        )
+                    );
+                } else {
+                    $row->decile = null;
+                }
+            }
+
+            Cache::put('nimdm:top10', $niTop10, $ttl);
+        }
+
+        if ($niBottom10->isEmpty()) {
+            $niBottom10 = (clone $niBase)
+                ->orderBy('rank')
+                ->limit(10)
+                ->get();
+
+            foreach ($niBottom10 as $row) {
+                if (! is_null($row->rank)) {
+                    $row->decile = max(
+                        1,
+                        min(
+                            10,
+                            (int) floor((($row->rank - 1) / $totalNI) * 10) + 1
+                        )
+                    );
+                } else {
+                    $row->decile = null;
+                }
+            }
+
+            Cache::put('nimdm:bottom10', $niBottom10, $ttl);
+        }
 
         // Total ranks for contextual percentages (IMD 2025)
         $totalIMD = Cache::rememberForever('imd25.total_rank', function () {
