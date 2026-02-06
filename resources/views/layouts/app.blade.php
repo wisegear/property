@@ -35,12 +35,15 @@
 
     <!-- Social Media Meta Tags (Twitter & Open Graph) - Only shown when $page variable exists -->
     @isset($page)
+        @php
+            $featuredMetaImage = $page->featuredImageUrl('medium') ?? $metaImage;
+        @endphp
         <!-- Twitter Card Meta Tags -->
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@ukprores" />
         <meta name="twitter:title" content="{{ $page->title }}" />
         <meta name="twitter:description" content="{{ $page->summary }}" />
-        <meta name="twitter:image" content="{{ url('assets/images/uploads/' . 'medium_' . $page->original_image) }}" />
+        <meta name="twitter:image" content="{{ $featuredMetaImage }}" />
 
         <!-- Open Graph Meta Tags (Facebook, LinkedIn, etc.) -->
         <meta property="og:type" content="article" />
@@ -48,7 +51,7 @@
         <meta property="og:title" content="{{ $page->title }}" />
         <meta property="og:description" content="{{ $page->summary }}" />
         <meta property="og:url" content="{{ $metaUrl }}" />
-        <meta property="og:image" content="{{ url('assets/images/uploads/' . 'medium_' . $page->original_image) }}" />
+        <meta property="og:image" content="{{ $featuredMetaImage }}" />
         <meta property="og:image:width" content="800" />
         <meta property="og:image:height" content="300" />
         <meta property="og:locale" content="en_GB" />

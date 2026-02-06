@@ -288,7 +288,7 @@
                     <a href="/blog/{{ $post->slug }}"
                        class="group flex gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-md hover:border-zinc-300">
                         <div class="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-100">
-                            <img src="{{ '/assets/images/uploads/' . 'small_' . $post->original_image }}"
+                            <img src="{{ $post->featuredImageUrl('small') }}"
                                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                  alt="{{ $post->title }}">
                         </div>

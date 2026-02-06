@@ -240,21 +240,28 @@ class BlogController extends Controller
         $page->user_id = Auth::user()->id;
         $page->categories_id = $request->category;
 
-        // Define your uploads path (this should match your ImageService)
-        $uploadPath = '/assets/images/uploads/';
+        // Define your uploads paths (these should match your ImageService)
+        $featuredPath = 'blog/featured/';
+        $legacyFeaturedPath = '/assets/images/uploads/';
 
         // Process the featured image
         if ($request->hasFile('image')) {
             // Delete the old images (original and resized)
             $oldImageName = $page->original_image;
             if ($oldImageName) {
-                $originalPath = $uploadPath.$oldImageName;
-                $smallPath = $uploadPath.'small_'.$oldImageName;
-                $mediumPath = $uploadPath.'medium_'.$oldImageName;
-                $largePath = $uploadPath.'large_'.$oldImageName;
+                $paths = [
+                    $featuredPath.$oldImageName,
+                    $featuredPath.'small_'.$oldImageName,
+                    $featuredPath.'medium_'.$oldImageName,
+                    $featuredPath.'large_'.$oldImageName,
+                    $legacyFeaturedPath.$oldImageName,
+                    $legacyFeaturedPath.'small_'.$oldImageName,
+                    $legacyFeaturedPath.'medium_'.$oldImageName,
+                    $legacyFeaturedPath.'large_'.$oldImageName,
+                ];
 
                 // Delete all existing versions of the featured image
-                $imageService->deleteImage([$originalPath, $smallPath, $mediumPath, $largePath]);
+                $imageService->deleteImage($paths);
             }
 
             // Upload the new featured image and store its filename
@@ -283,9 +290,14 @@ class BlogController extends Controller
                 $existingGalleryImages = json_decode($page->gallery_images, true) ?? [];
                 foreach ($existingGalleryImages as $galleryImage) {
                     // Each gallery image contains an 'original' and a 'thumbnail'
-                    $originalGalleryPath = '/assets/images/uploads/galleries/'.$galleryImage['original'];
-                    $thumbnailGalleryPath = '/assets/images/uploads/galleries/'.$galleryImage['thumbnail'];
-                    $imageService->deleteImage([$originalGalleryPath, $thumbnailGalleryPath]);
+                    $galleryPath = 'blog/galleries/';
+                    $legacyGalleryPath = '/assets/images/uploads/galleries/';
+                    $imageService->deleteImage([
+                        $galleryPath.$galleryImage['original'],
+                        $galleryPath.$galleryImage['thumbnail'],
+                        $legacyGalleryPath.$galleryImage['original'],
+                        $legacyGalleryPath.$galleryImage['thumbnail'],
+                    ]);
                 }
                 // Reset existing gallery images if replacing
                 $existingGalleryImages = [];
@@ -327,22 +339,24 @@ class BlogController extends Controller
         // Retrieve the post by ID
         $page = BlogPosts::findOrFail($id);
 
-        // Define the uploads folder path (should match what you use in your ImageService)
-        $uploadPath = '/assets/images/uploads/';
+        // Define the uploads folder paths (should match what you use in your ImageService)
+        $featuredPath = 'blog/featured/';
+        $legacyFeaturedPath = '/assets/images/uploads/';
 
         // Construct the full file paths for the featured image (original and resized versions)
-        $originalImagePath = $uploadPath.$page->original_image;
-        $smallImagePath = $uploadPath.'small_'.$page->original_image;
-        $mediumImagePath = $uploadPath.'medium_'.$page->original_image;
-        $largeImagePath = $uploadPath.'large_'.$page->original_image;
+        $featuredImagePaths = [
+            $featuredPath.$page->original_image,
+            $featuredPath.'small_'.$page->original_image,
+            $featuredPath.'medium_'.$page->original_image,
+            $featuredPath.'large_'.$page->original_image,
+            $legacyFeaturedPath.$page->original_image,
+            $legacyFeaturedPath.'small_'.$page->original_image,
+            $legacyFeaturedPath.'medium_'.$page->original_image,
+            $legacyFeaturedPath.'large_'.$page->original_image,
+        ];
 
         // Delete the featured images
-        $imageService->deleteImage([
-            $originalImagePath,
-            $smallImagePath,
-            $mediumImagePath,
-            $largeImagePath,
-        ]);
+        $imageService->deleteImage($featuredImagePaths);
 
         // Delete additional in-post images stored in the 'images' JSON field, if they exist
         $additionalImages = json_decode($page->images);
@@ -357,9 +371,14 @@ class BlogController extends Controller
         if ($galleryImages) {
             foreach ($galleryImages as $galleryImage) {
                 // Each gallery image is expected to be an array with keys 'original' and 'thumbnail'
-                $originalGalleryPath = '/assets/images/uploads/galleries/'.$galleryImage['original'];
-                $thumbnailGalleryPath = '/assets/images/uploads/galleries/'.$galleryImage['thumbnail'];
-                $imageService->deleteImage([$originalGalleryPath, $thumbnailGalleryPath]);
+                $galleryPath = 'blog/galleries/';
+                $legacyGalleryPath = '/assets/images/uploads/galleries/';
+                $imageService->deleteImage([
+                    $galleryPath.$galleryImage['original'],
+                    $galleryPath.$galleryImage['thumbnail'],
+                    $legacyGalleryPath.$galleryImage['original'],
+                    $legacyGalleryPath.$galleryImage['thumbnail'],
+                ]);
             }
         }
 

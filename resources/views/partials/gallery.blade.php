@@ -7,11 +7,11 @@
     @foreach($galleryImages as $image)
         <div class="shadow-lg">
             {{-- VenoBox lightbox link: Opens full-size image in overlay --}}
-            <a href="{{ asset('assets/images/uploads/galleries/' . $image['original']) }}" 
+            <a href="{{ \App\Models\BlogPosts::galleryImageUrl($image['original']) }}" 
                class="venobox" 
                data-gall="gallery">
                 {{-- Thumbnail image with responsive sizing --}}
-                <img src="{{ asset('assets/images/uploads/galleries/' . $image['thumbnail']) }}" 
+                <img src="{{ \App\Models\BlogPosts::galleryImageUrl($image['thumbnail']) }}" 
                      alt="Gallery Image" 
                      class="w-full h-auto rounded shadow-lg border border-rounded border-gray-300">
             </a>

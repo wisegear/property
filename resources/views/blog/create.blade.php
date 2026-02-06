@@ -80,11 +80,11 @@
                     <h3 class="text-xl font-bold mb-4">Uploaded Gallery Images</h3>
                     @if(isset($post) && $post->gallery_images)
                         <div id="uploaded-gallery-images" class="grid grid-cols-2 gap-4">
-                            @foreach(json_decode($post->gallery_images) as $image)
+                            @foreach(json_decode($post->gallery_images, true) as $image)
                                 <div class="border p-2 rounded">
-                                    <img src="{{ asset($image) }}" class="w-full h-auto mb-2" alt="Gallery Image">
+                                    <img src="{{ \App\Models\BlogPosts::galleryImageUrl($image['original']) }}" class="w-full h-auto mb-2" alt="Gallery Image">
                                     <button type="button"
-                                            onclick="copyToClipboard('{{ asset($image) }}')"
+                                            onclick="copyToClipboard('{{ \App\Models\BlogPosts::galleryImageUrl($image['original']) }}')"
                                             class="bg-blue-500 text-white text-sm px-2 py-1 rounded">
                                         Copy URL
                                     </button>

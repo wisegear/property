@@ -36,7 +36,7 @@
                             <div class="max-w-3xl mx-auto mb-4">
                                 <div class="w-full max-w-[800px] mx-auto overflow-hidden rounded-xl border border-slate-200 bg-slate-50 h-[200px]">
                                     <img
-                                        src="{{ asset('assets/images/uploads/small_' . $post->original_image) }}"
+                                        src="{{ $post->featuredImageUrl('small') }}"
                                         alt="{{ $post->title }}"
                                         class="w-full h-full"
                                         loading="lazy"

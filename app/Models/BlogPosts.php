@@ -3,13 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class BlogPosts extends Model
 {
     use HasFactory;
+
     protected $table = 'blog_posts';
 
     protected $casts = [
@@ -21,58 +23,61 @@ class BlogPosts extends Model
         return $this->morphMany(Comment::class, 'commentable');
     }
 
-    public function Users() {
-        
+    public function Users()
+    {
+
         return $this->hasOne(User::class, 'id', 'user_id');
     }
 
-    public function blogCategories() {
+    public function blogCategories()
+    {
         return $this->hasOne(BlogCategories::class, 'id', 'categories_id');
     }
 
-    public function blogTags() {
-        return $this->belongsToMany(BlogTags::class, 'blog_post_tags', 'post_id', 'tag_id'); 
+    public function blogTags()
+    {
+        return $this->belongsToMany(BlogTags::class, 'blog_post_tags', 'post_id', 'tag_id');
     }
 
-    public static function getCategories($category) {
-        
-        return BlogPosts::whereHas('BlogCategories', function ($query) use ($category) 
-            {          
-                $query->where('name', $category);          
-            })
+    public static function getCategories($category)
+    {
+
+        return BlogPosts::whereHas('BlogCategories', function ($query) use ($category) {
+            $query->where('name', $category);
+        })
             ->where('published', true)
             ->with('blogCategories', 'Users', 'BlogTags')
             ->orderBy('created_at', 'desc')
-            ->paginate(6);  
+            ->paginate(6);
     }
 
-    public static function GetTags($tag) {
+    public static function GetTags($tag)
+    {
 
-        return BlogPosts::whereHas('BlogTags', function ($query) use ($tag) 
-            {          
-                $query->where('name', $tag);          
-            })
-        
+        return BlogPosts::whereHas('BlogTags', function ($query) use ($tag) {
+            $query->where('name', $tag);
+        })
+
             ->where('published', true)
             ->with('BlogCategories', 'Users', 'BlogTags')
-            ->orderBy('created_at', 'desc'); 
+            ->orderBy('created_at', 'desc');
     }
 
     // Used to create table of contents for the blog posts.
 
     public function getBodyHeadings($tag = 'h2')
     {
-        $dom = new \DOMDocument();
-    
+        $dom = new \DOMDocument;
+
         // Suppress warnings and add proper HTML structure
-        @$dom->loadHTML('<html><body>' . $this->body . '</body></html>');
-    
+        @$dom->loadHTML('<html><body>'.$this->body.'</body></html>');
+
         $headings = [];
-    
+
         foreach ($dom->getElementsByTagName($tag) as $heading) {
             $headings[] = $heading->nodeValue;
         }
-    
+
         return $headings;
     }
 
@@ -98,4 +103,40 @@ class BlogPosts extends Model
         return $contentWithAnchors;
     }
 
+    public function featuredImageUrl(string $size): ?string
+    {
+        if (! $this->original_image) {
+            return null;
+        }
+
+        $path = "blog/featured/{$size}_{$this->original_image}";
+
+        if (Storage::disk('public')->exists($path)) {
+            return Storage::url($path);
+        }
+
+        return asset("assets/images/uploads/{$size}_{$this->original_image}");
+    }
+
+    public static function galleryImageUrl(string $filename): string
+    {
+        $path = "blog/galleries/{$filename}";
+
+        if (Storage::disk('public')->exists($path)) {
+            return Storage::url($path);
+        }
+
+        return asset("assets/images/uploads/galleries/{$filename}");
+    }
+
+    public static function contentImageUrl(string $path): string
+    {
+        $normalizedPath = ltrim($path, '/');
+
+        if (Str::startsWith($normalizedPath, ['assets/', 'storage/'])) {
+            return asset($normalizedPath);
+        }
+
+        return Storage::url($normalizedPath);
+    }
 }

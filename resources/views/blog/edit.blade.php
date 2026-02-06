@@ -28,7 +28,7 @@
                 <div class="md:w-1/2">
                     <h2 class="font-bold text-lg mb-4">Existing Featured Image</h2>
                     @if($page->original_image)
-                        <img src="{{ '/assets/images/uploads/' . 'small_' . $page->original_image }}"
+                        <img src="{{ $page->featuredImageUrl('small') }}"
                              class="w-full h-[350px] object-cover" alt="Featured Image">
                     @else
                         <p class="text-gray-600">No featured image available</p>
@@ -93,8 +93,8 @@
                     <div class="grid grid-cols-4 gap-4">
                         @foreach(json_decode($page->images) as $image)
                             <div class="border space-y-4 p-2">
-                                <img src="{{ asset($image) }}" class="h-[100px] w-full object-cover">
-                                <button type="button" onclick="copyToClipboard('{{ asset($image) }}')"
+                                <img src="{{ \App\Models\BlogPosts::contentImageUrl($image) }}" class="h-[100px] w-full object-cover">
+                                <button type="button" onclick="copyToClipboard('{{ \App\Models\BlogPosts::contentImageUrl($image) }}')"
                                         class="py-1 px-2 border rounded">
                                     <i class="fa-regular fa-clipboard"></i>
                                 </button>
@@ -115,10 +115,10 @@
                         <div id="existing-gallery-images" class="grid grid-cols-2 gap-4">
                             @foreach(json_decode($page->gallery_images, true) as $galleryImage)
                                 <div class="border p-2 rounded">
-                                    <img src="{{ asset('/assets/images/uploads/galleries/' . $galleryImage['original']) }}"
+                                    <img src="{{ \App\Models\BlogPosts::galleryImageUrl($galleryImage['original']) }}"
                                          class="w-full h-auto mb-2" alt="Gallery Image">
                                     <button type="button"
-                                            onclick="copyToClipboard('{{ asset('/assets/images/uploads/galleries/' . $galleryImage['original']) }}')"
+                                            onclick="copyToClipboard('{{ \App\Models\BlogPosts::galleryImageUrl($galleryImage['original']) }}')"
                                             class="bg-blue-500 text-white text-sm px-2 py-1 rounded">
                                         Copy URL
                                     </button>

@@ -13,7 +13,7 @@
 
             <!-- Post image -->
             <div class="max-w-4xl mx-auto">
-                <img src="{{ '/assets/images/uploads/' . 'large_' . $page->original_image }}" class="rounded-lg border border-zinc-200 mx-auto h-[200px] md:h-[400px]" alt="blog-post-picture">
+                <img src="{{ $page->featuredImageUrl('large') }}" class="rounded-lg border border-zinc-200 mx-auto h-[200px] md:h-[400px]" alt="blog-post-picture">
             </div>      
             
             <!-- page body -->
@@ -105,7 +105,7 @@
                 @if ($previousPage)
                     <a href="{{ url('/blog/' . $previousPage->slug) }}" 
                     class="flex items-center space-x-4 group hover:bg-gray-100 p-4 rounded-lg transition">
-                        <img src="{{ '/assets/images/uploads/small_' . $previousPage->original_image }}" 
+                        <img src="{{ $previousPage->featuredImageUrl('small') }}" 
                             alt="{{ $previousPage->title }}" 
                             class="w-20 h-20 object-cover rounded-lg shadow-sm hidden md:block border border-slate-300">
                         <div>
@@ -128,7 +128,7 @@
                                 {{ $nextPage->title }}
                             </h3>
                         </div>
-                        <img src="{{ '/assets/images/uploads/small_' . $nextPage->original_image }}" 
+                        <img src="{{ $nextPage->featuredImageUrl('small') }}" 
                             alt="{{ $nextPage->title }}" 
                             class="w-20 h-20 object-cover rounded-lg shadow-sm hidden md:block border border-slate-300">
                     </a>
