@@ -111,22 +111,14 @@ class BlogPosts extends Model
 
         $path = "blog/featured/{$size}_{$this->original_image}";
 
-        if (Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->url($path);
-        }
-
-        return asset("assets/images/uploads/{$size}_{$this->original_image}");
+        return Storage::disk('public')->url($path);
     }
 
     public static function galleryImageUrl(string $filename): string
     {
         $path = "blog/galleries/{$filename}";
 
-        if (Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->url($path);
-        }
-
-        return asset("assets/images/uploads/galleries/{$filename}");
+        return Storage::disk('public')->url($path);
     }
 
     public static function contentImageUrl(string $path): string
