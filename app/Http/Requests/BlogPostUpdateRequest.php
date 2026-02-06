@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class BlogPostUpdateRequest extends FormRequest
 {
@@ -33,8 +34,8 @@ class BlogPostUpdateRequest extends FormRequest
             'images.*' => ['image', 'mimes:jpeg,jpg,png,gif', 'max:5120'],
             'gallery_images' => ['nullable', 'array'],
             'gallery_images.*' => ['image', 'mimes:jpeg,jpg,png,gif', 'max:5120'],
-            'published' => ['nullable', 'boolean'],
-            'featured' => ['nullable', 'boolean'],
+            'published' => ['nullable', Rule::in(['on', '1', 1, true, 'true'])],
+            'featured' => ['nullable', Rule::in(['on', '1', 1, true, 'true'])],
         ];
     }
 }

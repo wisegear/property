@@ -16,6 +16,8 @@ class BlogPostRequestRulesTest extends TestCase
         $this->assertArrayHasKey('image', $rules);
         $this->assertContains('required', $rules['image']);
         $this->assertContains('image', $rules['image']);
+        $this->assertArrayHasKey('published', $rules);
+        $this->assertArrayHasKey('featured', $rules);
     }
 
     public function test_blog_post_update_request_has_optional_image_rules(): void
@@ -26,5 +28,7 @@ class BlogPostRequestRulesTest extends TestCase
         $this->assertArrayHasKey('image', $rules);
         $this->assertContains('nullable', $rules['image']);
         $this->assertContains('image', $rules['image']);
+        $this->assertArrayHasKey('published', $rules);
+        $this->assertArrayHasKey('featured', $rules);
     }
 }
