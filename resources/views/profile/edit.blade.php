@@ -37,11 +37,11 @@
 
             <div class="flex justify-center gap-6 mb-4 text-sm">
                 <label class="flex items-center gap-2">
-                    <input type="checkbox" id="trusted" name="trusted" @if ($user->trusted === 1) checked @endif>
+                    <input type="checkbox" id="trusted" name="trusted" value="1" @if ($user->trusted) checked @endif>
                     <span>Trusted Member?</span>
                 </label>
                 <label class="flex items-center gap-2">
-                    <input type="checkbox" id="lock" name="lock" @if ($user->lock === 1) checked @endif>
+                    <input type="checkbox" id="lock" name="lock" value="1" @if ($user->lock) checked @endif>
                     <span>User Locked?</span>
                 </label>
             </div>

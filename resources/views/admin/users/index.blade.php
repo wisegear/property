@@ -80,7 +80,7 @@
                             <form action="/admin/users/{{ $user->id}}" method="post" onsubmit="return confirm('Do you really want to delete this user? ');">
                                 @csrf
                                 @method('DELETE')
-                                @if ($user->lock === 1)
+                                @if ($user->lock)
                                     <button class="inline-flex items-center gap-2 cursor-not-allowed rounded-md bg-orange-200 px-2.5 py-1.5 text-xs font-semibold text-orange-800" type="submit" disabled>Locked</button>
                                 @else
                                     <button class="inline-flex items-center gap-2 rounded-md bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-700" type="submit">Delete</button>
