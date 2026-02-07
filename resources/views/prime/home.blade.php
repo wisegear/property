@@ -190,6 +190,12 @@
         const TYPE_LABELS = { D: 'Detached', S: 'Semi', T: 'Terraced', F: 'Flat', O: 'Other' };
         const fmtGBP = (v) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(v);
         const fmtNum = (v) => new Intl.NumberFormat('en-GB').format(v);
+        const fmtDate = (v) => {
+            if (!v) return 'Unknown date';
+            const d = new Date(v);
+            if (Number.isNaN(d.getTime())) return 'Unknown date';
+            return d.toLocaleDateString('en-GB');
+        };
         const baseColors = ['#60a5fa','#f472b6','#fbbf24','#34d399','#a78bfa'];
 
         window.__renderedDistricts = window.__renderedDistricts || new Set();
@@ -207,9 +213,9 @@
             const topSalePerYear = (data.topSalePerYear || []).map(r => ({year: Number(r.year), top_sale: Number(r.top_sale)}));
             const top3PerYear = (data.top3PerYear || []).map(r => ({
                 year: Number(r.year),
-                Date: r.Date,
-                Postcode: r.Postcode,
-                Price: Number(r.Price),
+                date: r.Date ?? r.date ?? null,
+                postcode: r.Postcode ?? r.postcode ?? '',
+                price: Number(r.Price ?? r.price),
                 rn: Number(r.rn)
             }));
             // Expected from controller: [{ year: 2020, type: 'D', avg_price: 1234567 }, ...]
@@ -770,9 +776,11 @@
                                             return `Year ${year}: ${fmtGBP(ctx.raw.y)}`;
                                         }
                                         const header = `Year ${year}: ${fmtGBP(ctx.raw.y)}`;
-                                        const lines = rows.map(r =>
-                                            `#${r.rn} ${fmtGBP(r.Price)} – ${r.Postcode} (${new Date(r.Date).toLocaleDateString('en-GB')})`
-                                        );
+                                        const lines = rows.map((r) => {
+                                            const price = Number.isFinite(r.price) ? fmtGBP(r.price) : 'Price unavailable';
+                                            const postcode = r.postcode || 'Unknown postcode';
+                                            return `#${r.rn} ${price} – ${postcode} (${fmtDate(r.date)})`;
+                                        });
                                         return [header, ...lines];
                                     }
                                 }
