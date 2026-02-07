@@ -34,6 +34,7 @@ class EpcMatcherTest extends TestCase
 
         $this->assertNotEmpty($matches);
         $this->assertSame('LMK-MATCH-1', $matches[0]['row']->lmk_key);
+        $this->assertSame(100.0, $matches[0]['score']);
     }
 
     private function ensureEpcSchema(): void

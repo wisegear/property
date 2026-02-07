@@ -318,13 +318,15 @@
         <div class="w-full flex flex-col">
             @if(empty($filteredEpcMatches))
                 <div class="rounded border border-zinc-200 bg-white p-4 shadow-lg text-sm text-zinc-600 flex-1">
-                    <p class="mb-4">Due to inconsistency between the Land Registry &amp; EPC dataset, address matching is not perfect mostly due to the EPC dataset. As a result I am using a fuzzy matching approach based on the Levenshtein ratio with scoring. The higher the Match score the more likely it relates to this property.</p>
+                    <p class="mb-4">EPC records are first filtered to the same postcode, then ranked using PostgreSQL fuzzy matching across address components (PAON, SAON/unit, street and locality). The Match score reflects this weighted address similarity, and higher scores indicate stronger confidence the EPC belongs to this property.
+                        Need to do this due to inconsistencies and errors in the EPC address data.
+                    </p>
                     <p class="m-0 font-semibold text-rose-400">No EPC certificates found for this property.</p>
                 </div>
             @else
                 <div class="rounded border border-zinc-200 bg-white p-4 shadow-lg flex-1 flex flex-col">
                     <h2 class="text-lg font-bold text-zinc-600 mb-2">Matched EPC Certificates</h2>
-                    <p class="text-xs text-zinc-600 mb-4">Due to inconsistency between the Land Registry &amp; EPC dataset, address matching is not perfect mostly due to the EPC dataset. As a result I am using a fuzzy matching approach based on the Levenshtein ratio with scoring. The higher the Match score the more likely it relates to this property.</p>
+                    <p class="text-xs text-zinc-600 mb-4">EPC records are first filtered to the same postcode, then ranked using PostgreSQL fuzzy matching across address components (PAON, SAON/unit, street and locality). The Match score reflects this weighted address similarity, and higher scores indicate stronger confidence the EPC belongs to this property.</p>
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm">
                             <thead class="bg-zinc-100">
