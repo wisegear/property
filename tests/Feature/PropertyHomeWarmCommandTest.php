@@ -48,6 +48,24 @@ class PropertyHomeWarmCommandTest extends TestCase
         $this->assertContains(1, $cached[1]);
     }
 
+    public function test_it_warms_median_price_cache_for_each_year(): void
+    {
+        DB::table('land_registry')->insert([
+            $this->landRegistryRow('55555555-5555-5555-5555-55555555555555', 100000, '2024-01-15 00:00:00'),
+            $this->landRegistryRow('66666666-6666-6666-6666-66666666666666', 200000, '2024-02-15 00:00:00'),
+            $this->landRegistryRow('77777777-7777-7777-7777-77777777777777', 300000, '2024-03-15 00:00:00'),
+            $this->landRegistryRow('88888888-8888-8888-8888-88888888888888', 1000000, '2024-04-15 00:00:00'),
+        ]);
+
+        $this->artisan('property:home-warm', ['--task' => 'avgPrice'])->assertExitCode(0);
+
+        $cached = Cache::get('land_registry_avg_price_by_year:catA:v3');
+        $this->assertNotNull($cached);
+        $this->assertSame(1, $cached->count());
+        $expected = DB::connection()->getDriverName() === 'pgsql' ? 250000 : 400000;
+        $this->assertSame($expected, (int) $cached->first()->avg_price);
+    }
+
     private function landRegistryRow(string $transactionId, int $price, string $date): array
     {
         $row = [

@@ -133,6 +133,7 @@
         <canvas id="topSaleChart" class="w-full h-full"></canvas>
     </div>
     <div class="border p-4 bg-white rounded-lg shadow h-80 md:col-span-2 overflow-hidden">
+        <p class="mb-2 text-xs text-zinc-500 text-center">Method: median for broad price level, average for top 5% tail activity.</p>
         <canvas id="p90AvgTop5Chart" class="w-full h-full"></canvas>
     </div>
     <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
@@ -140,7 +141,7 @@
         <canvas id="propertyTypeSplitChart" class="w-full h-full"></canvas>
     </div>
     <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Average price by property type (yearly)</h3>
+        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Median price by property type (yearly)</h3>
         <canvas id="avgPriceByTypeChart" class="w-full h-full"></canvas>
     </div>
     <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
@@ -159,7 +160,7 @@
         <canvas id="salesYoyBar" class="w-full h-full"></canvas>
     </div>
     <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Avg Price YoY % Change</h3>
+        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Median Price YoY % Change</h3>
         <canvas id="avgYoyBar" class="w-full h-full"></canvas>
     </div>
     <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
@@ -168,6 +169,7 @@
     </div>
     <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
         <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Top 5% Avg YoY % Change</h3>
+        <p class="mb-2 text-xs text-zinc-500 text-center">Top 5% uses average to preserve high-end outlier signal.</p>
         <canvas id="top5YoyBar" class="w-full h-full"></canvas>
     </div>
 </div>
@@ -281,11 +283,15 @@
     $typeSeriesT = $typeYears->map(fn($y) => (int) (($typeByYear[$y]['T'] ?? 0)));
     $typeSeriesF = $typeYears->map(fn($y) => (int) (($typeByYear[$y]['F'] ?? 0)));
 
-    // === Average price by property type (England & Wales, Cat A) ===
+    // === Median price by property type (England & Wales, Cat A) ===
     // Prefer warmed cache; fallback to live query if missing.
-    $avgTypeRows = \Illuminate\Support\Facades\Cache::remember('ew:avgPriceByTypeByYear:catA:v1', $homeCacheTtl, function () use ($ewYearExpr) {
+    $avgTypeRows = \Illuminate\Support\Facades\Cache::remember('ew:avgPriceByTypeByYear:catA:v2', $homeCacheTtl, function () use ($ewYearExpr) {
+        $medianExpr = DB::connection()->getDriverName() === 'pgsql'
+            ? 'PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "Price")'
+            : 'AVG("Price")';
+
         return DB::table('land_registry')
-            ->selectRaw("{$ewYearExpr} as year, \"PropertyType\" as type, ROUND(AVG(\"Price\")) as avg_price")
+            ->selectRaw("{$ewYearExpr} as year, \"PropertyType\" as type, ROUND({$medianExpr}) as avg_price")
             ->where('PPDCategoryType', 'A')
             ->whereIn('PropertyType', ['D','S','T','F'])
             ->whereNotNull('Price')
@@ -551,7 +557,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
             labels: {!! json_encode($avgPriceByYear->pluck('year')) !!},
             datasets: [
                 {
-                    label: 'Average Sale Price',
+                    label: 'Median Sale Price',
                     data: {!! json_encode($avgPriceByYear->pluck('avg_price')) !!},
                     borderColor: 'rgb(54, 162, 235)',
                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
@@ -693,7 +699,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
     // Build charts
     (function(){
         // Average
-        makeYoyBar('avgYoyBar', avgSeriesYoY, 'Avg Price YoY %');
+        makeYoyBar('avgYoyBar', avgSeriesYoY, 'Median Price YoY %');
         // Patch dataset with the right series inside the function-created chart
         // 90th Percentile
         const ctxP90 = document.getElementById('p90YoyBar').getContext('2d');

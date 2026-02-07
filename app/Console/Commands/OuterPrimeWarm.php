@@ -108,11 +108,10 @@ class OuterPrimeWarm extends Command
 
         $allSeries = $this->buildSeries($districts);
         foreach ($allSeries as $name => $value) {
-            Cache::put('outerprime:v2:catA:ALL:'.$name, $value, $ttl);
+            Cache::put('outerprime:v3:catA:ALL:'.$name, $value, $ttl);
         }
 
-        Cache::put('outerprime:v2:catA:last_warm', now()->toIso8601String(), $ttl);
-        Cache::put('outerprime:v1:catA:last_warm', now()->toIso8601String(), $ttl);
+        Cache::put('outerprime:v3:catA:last_warm', now()->toIso8601String(), $ttl);
 
         $this->newLine(2);
         $this->info('Outer Prime London warming complete.');
@@ -125,7 +124,7 @@ class OuterPrimeWarm extends Command
         $series = $this->buildSeries([$district]);
 
         foreach ($series as $name => $value) {
-            Cache::put('outerprime:v1:catA:'.$district.':'.$name, $value, $ttl);
+            Cache::put('outerprime:v3:catA:'.$district.':'.$name, $value, $ttl);
         }
     }
 
@@ -133,9 +132,10 @@ class OuterPrimeWarm extends Command
     {
         $yearExpr = $this->yearExpression();
         $base = $this->baseQueryForDistricts($districts);
+        $medianPriceExpr = $this->medianPriceExpression($this->column('Price'));
 
         $avgPrice = (clone $base)
-            ->selectRaw("{$yearExpr} as year, ROUND(AVG(".$this->column('Price').')) as avg_price')
+            ->selectRaw("{$yearExpr} as year, ROUND({$medianPriceExpr}) as avg_price")
             ->groupByRaw($yearExpr)
             ->orderBy('year')
             ->get();
@@ -153,7 +153,7 @@ class OuterPrimeWarm extends Command
             ->get();
 
         $avgPriceByType = (clone $base)
-            ->selectRaw("{$yearExpr} as year, SUBSTR(".$this->column('PropertyType').', 1, 1) as type, ROUND(AVG('.$this->column('Price').')) as avg_price')
+            ->selectRaw("{$yearExpr} as year, SUBSTR(".$this->column('PropertyType').", 1, 1) as type, ROUND({$medianPriceExpr}) as avg_price")
             ->whereNotNull('PropertyType')
             ->whereNotNull('Price')
             ->where('Price', '>', 0)
@@ -281,5 +281,14 @@ class OuterPrimeWarm extends Command
     private function column(string $name): string
     {
         return '"'.$name.'"';
+    }
+
+    private function medianPriceExpression(string $columnExpression): string
+    {
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            return "PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY {$columnExpression})";
+        }
+
+        return "AVG({$columnExpression})";
     }
 }

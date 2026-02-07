@@ -127,11 +127,12 @@ class PropertyHomeWarm extends Command
                 break;
 
             case 'avgPrice':
+                $medianExpr = $this->medianPriceExpression();
                 $data = DB::table('land_registry')
-                    ->selectRaw("{$yearExpr} as year, ROUND(AVG(\"Price\")) as avg_price")
+                    ->selectRaw("{$yearExpr} as year, ROUND({$medianExpr}) as avg_price")
                     ->where('PPDCategoryType', 'A')
                     ->groupByRaw($yearExpr)->orderBy('year')->get();
-                Cache::put('land_registry_avg_price_by_year:catA:v2', $data, $ttl);
+                Cache::put('land_registry_avg_price_by_year:catA:v3', $data, $ttl);
                 break;
 
             case 'p90':
@@ -272,10 +273,11 @@ class PropertyHomeWarm extends Command
                 break;
 
             case 'avgPriceByType':
-                // Average price by property type by year (England & Wales, Cat A)
+                // Median price by property type by year (England & Wales, Cat A)
                 // D = Detached, S = Semi-detached, T = Terraced, F = Flat
+                $medianExpr = $this->medianPriceExpression();
                 $data = DB::table('land_registry')
-                    ->selectRaw("{$yearExpr} as year, \"PropertyType\" as type, ROUND(AVG(\"Price\")) as avg_price")
+                    ->selectRaw("{$yearExpr} as year, \"PropertyType\" as type, ROUND({$medianExpr}) as avg_price")
                     ->where('PPDCategoryType', 'A')
                     ->whereIn('PropertyType', ['D', 'S', 'T', 'F'])
                     ->whereNotNull('Price')
@@ -284,7 +286,7 @@ class PropertyHomeWarm extends Command
                     ->orderBy('year')
                     ->get();
 
-                Cache::put('ew:avgPriceByTypeByYear:catA:v1', $data, $ttl);
+                Cache::put('ew:avgPriceByTypeByYear:catA:v2', $data, $ttl);
                 break;
 
             default:
@@ -316,5 +318,16 @@ class PropertyHomeWarm extends Command
         }
 
         return "TO_CHAR(DATE_TRUNC('month', \"Date\"), 'YYYY-MM-01')";
+    }
+
+    private function medianPriceExpression(): string
+    {
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'pgsql') {
+            return 'PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "Price")';
+        }
+
+        return 'AVG("Price")';
     }
 }

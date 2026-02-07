@@ -466,7 +466,7 @@
     </div>
     <div class="my-6 grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
-            <h2 class="text-base font-semibold mb-3">Average Price of a {{ $propertyTypeLabel }} in {{ $postcode }}</h2>
+            <h2 class="text-base font-semibold mb-3">Median Price of a {{ $propertyTypeLabel }} in {{ $postcode }}</h2>
             <canvas id="postcodePriceChart" class="block w-full"></canvas>
         </div>
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
@@ -477,13 +477,23 @@
     <div class="my-6 grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Locality Charts (moved up) -->
         @if($showLocalityCharts)
+        @if(!empty($localityAreaLink))
+        <div class="md:col-span-3 flex justify-end">
+            <a
+                href="{{ $localityAreaLink }}"
+                class="inner-button"
+            >
+                View {{ ucfirst(strtolower($locality)) }} Area Dashboard
+            </a>
+        </div>
+        @endif
         <!-- Locality Charts (shown only when locality is present and distinct) -->
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
             <h2 class="text-base font-semibold mb-3">Property Types in {{ ucfirst(strtolower($locality)) }}</h2>
             <canvas id="localityPropertyTypesChart" class="block w-full"></canvas>
         </div>
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
-            <h2 class="text-base font-semibold mb-3">Average Price of a {{ $propertyTypeLabel }} in {{ ucfirst(strtolower($locality)) }}</h2>
+            <h2 class="text-base font-semibold mb-3">Median Price of a {{ $propertyTypeLabel }} in {{ ucfirst(strtolower($locality)) }}</h2>
             <canvas id="localityPriceChart" class="block w-full"></canvas>
         </div>
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
@@ -492,13 +502,23 @@
         </div>
         @endif
         @if($showTownCharts)
+        @if(!empty($townAreaLink))
+        <div class="md:col-span-3 flex justify-end">
+            <a
+                href="{{ $townAreaLink }}"
+                class="inner-button"
+            >
+                View {{ ucfirst(strtolower($town)) }} Area Dashboard
+            </a>
+        </div>
+        @endif
         <!-- Town/City Charts -->
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
             <h2 class="text-base font-semibold mb-3">Property Types in {{ ucfirst(strtolower($town)) }}</h2>
             <canvas id="townPropertyTypesChart" class="block w-full"></canvas>
         </div>
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
-            <h2 class="text-base font-semibold mb-3">Average Price of a {{ $propertyTypeLabel }} in {{ ucfirst(strtolower($town)) }}</h2>
+            <h2 class="text-base font-semibold mb-3">Median Price of a {{ $propertyTypeLabel }} in {{ ucfirst(strtolower($town)) }}</h2>
             <canvas id="townPriceChart" class="block w-full"></canvas>
         </div>
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
@@ -508,12 +528,22 @@
         @endif
         <!-- District Charts -->
         @if($showDistrictCharts)
+        @if(!empty($districtAreaLink))
+        <div class="md:col-span-3 flex justify-end">
+            <a
+                href="{{ $districtAreaLink }}"
+                class="inner-button"
+            >
+                View {{ ucfirst(strtolower($district)) }} Area Dashboard
+            </a>
+        </div>
+        @endif
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
             <h2 class="text-base font-semibold mb-3">Property Types in {{ $district !== '' ? ucfirst(strtolower($district)) : ucfirst(strtolower($county)) }}</h2>
             <canvas id="districtPropertyTypesChart" class="block w-full"></canvas>
         </div>
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
-            <h2 class="text-base font-semibold mb-3">Average Price of a {{ $propertyTypeLabel }} in {{ $district !== '' ? ucfirst(strtolower($district)) : ucfirst(strtolower($county)) }}</h2>
+            <h2 class="text-base font-semibold mb-3">Median Price of a {{ $propertyTypeLabel }} in {{ $district !== '' ? ucfirst(strtolower($district)) : ucfirst(strtolower($county)) }}</h2>
             <canvas id="districtPriceChart" class="block w-full"></canvas>
         </div>
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
@@ -522,13 +552,23 @@
         </div>
         @endif
         @if(!empty($county))
+        @if(!empty($countyAreaLink))
+        <div class="md:col-span-3 flex justify-end">
+            <a
+                href="{{ $countyAreaLink }}"
+                class="inner-button"
+            >
+                View {{ ucfirst(strtolower($county)) }} Area Dashboard
+            </a>
+        </div>
+        @endif
         <!-- County Charts -->
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
             <h2 class="text-base font-semibold mb-3">Property Types in {{ ucfirst(strtolower($county)) }}</h2>
             <canvas id="countyPropertyTypesChart" class="block w-full"></canvas>
         </div>
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
-            <h2 class="text-base font-semibold mb-3">Average Price of a {{ $propertyTypeLabel }} in {{ ucfirst(strtolower($county)) }}</h2>
+            <h2 class="text-base font-semibold mb-3">Median Price of a {{ $propertyTypeLabel }} in {{ ucfirst(strtolower($county)) }}</h2>
             <canvas id="countyPriceChart" class="block w-full"></canvas>
         </div>
         <div class="border border-zinc-200 rounded-md p-2 bg-white shadow-lg">
@@ -549,7 +589,7 @@ new Chart(ctxPostcode, {
     data: {
         labels: @json(($postcodePriceHistory ?? collect())->pluck('year')),
         datasets: [{
-            label: 'Average Price (£)',
+            label: 'Median Price (£)',
             data: postcodePriceData,
             borderColor: 'rgba(54, 162, 235, 1)',
             backgroundColor: 'rgba(54, 162, 235, 0.2)',
@@ -617,7 +657,7 @@ new Chart(ctxPostcode, {
     data: {
         labels: @json(($districtPriceHistory ?? $countyPriceHistory ?? collect())->pluck('year')),
         datasets: [{
-            label: 'Average Price (£)',
+            label: 'Median Price (£)',
             data: districtPriceData,
             borderColor: 'rgba(54, 162, 235, 1)',
             backgroundColor: 'rgba(54, 162, 235, 0.2)',
@@ -676,7 +716,7 @@ new Chart(ctxCountyPrice, {
     data: {
         labels: @json(($countyPriceHistory ?? collect())->pluck('year')),
         datasets: [{
-            label: 'Average Price (£)',
+            label: 'Median Price (£)',
             data: countyPriceData,
             borderColor: 'rgba(54, 162, 235, 1)',
             backgroundColor: 'rgba(54, 162, 235, 0.2)',
@@ -732,7 +772,7 @@ new Chart(ctxTownPrice, {
     data: {
         labels: @json(($townPriceHistory ?? collect())->pluck('year')),
         datasets: [{
-            label: 'Average Price (£)',
+            label: 'Median Price (£)',
             data: townPriceData,
             borderColor: 'rgba(54, 162, 235, 1)',
             backgroundColor: 'rgba(54, 162, 235, 0.2)',
@@ -791,7 +831,7 @@ new Chart(ctxLocality, {
     data: {
         labels: @json(($localityPriceHistory ?? $districtPriceHistory ?? $countyPriceHistory ?? collect())->pluck('year')),
         datasets: [{
-            label: 'Average Price (£)',
+            label: 'Median Price (£)',
             data: localityPriceData,
             borderColor: 'rgba(54, 162, 235, 1)',
             backgroundColor: 'rgba(54, 162, 235, 0.2)',

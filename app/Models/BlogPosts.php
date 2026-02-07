@@ -123,13 +123,21 @@ class BlogPosts extends Model
 
     public static function contentImageUrl(string $path): string
     {
-        $normalizedPath = ltrim($path, '/');
-
-        if (Str::startsWith($normalizedPath, ['assets/', 'storage/'])) {
-            return asset($normalizedPath);
+        if (Str::startsWith($path, ['http://', 'https://'])) {
+            return $path;
         }
 
-        $path = 'assets/images/uploads/'.ltrim($normalizedPath, '/');
+        $normalizedPath = str_replace('\\', '/', ltrim($path, '/'));
+
+        if (Str::startsWith($normalizedPath, 'storage/')) {
+            $normalizedPath = Str::after($normalizedPath, 'storage/');
+        }
+
+        if (Str::startsWith($normalizedPath, 'assets/')) {
+            return Storage::disk('public')->url($normalizedPath);
+        }
+
+        $path = 'assets/images/uploads/'.$normalizedPath;
 
         return Storage::disk('public')->url($path);
     }

@@ -52,4 +52,17 @@ class ImageServiceTest extends TestCase
         Storage::disk('public')->assertExists('assets/images/uploads/galleries/'.$result['original']);
         Storage::disk('public')->assertExists('assets/images/uploads/galleries/'.$result['thumbnail']);
     }
+
+    public function test_delete_image_removes_assets_path_from_public_storage_disk(): void
+    {
+        Storage::fake('public');
+
+        $path = 'assets/images/uploads/delete-me.jpg';
+        Storage::disk('public')->put($path, 'test');
+
+        $imageService = app(ImageService::class);
+        $imageService->deleteImage($path);
+
+        Storage::disk('public')->assertMissing($path);
+    }
 }

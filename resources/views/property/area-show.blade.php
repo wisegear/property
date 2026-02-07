@@ -8,7 +8,7 @@
     $metaSales = $salesCount ? number_format($salesCount) : '0';
     $metaAvg = isset($summary) && !is_null($summary->avg_price ?? null) ? '£' . number_format((float) $summary->avg_price, 0) : 'n/a';
     $metaYears = $yearsCount ? $yearsCount . ' years' : 'limited history';
-    $metaDesc = "{$areaTitle} house price stats: average {$metaAvg}, {$metaSales} sales, {$metaYears} of data. Trends, types, and tenure breakdowns.";
+    $metaDesc = "{$areaTitle} house price stats: median {$metaAvg}, {$metaSales} sales, {$metaYears} of data. Trends, types, and tenure breakdowns.";
     $areaLabel = ucfirst(strtolower($areaName));
     $typeLabel = ucfirst($type);
 
@@ -29,7 +29,7 @@
     if (! empty($byYear) && $byYear->count() > 0) {
         $latest = $byYear->last();
         $prev = $byYear->count() > 1 ? $byYear->get($byYear->count() - 2) : null;
-        $overallInsight = "In {$latest->year}, the average {$typeLabel} sale price in {$areaLabel} was {$formatMoney($latest->avg_price)} across {$formatCount($latest->sales_count)} sales";
+        $overallInsight = "In {$latest->year}, the median {$typeLabel} sale price in {$areaLabel} was {$formatMoney($latest->avg_price)} across {$formatCount($latest->sales_count)} sales";
         $pct = $prev ? $percentChange($latest->avg_price ?? null, $prev->avg_price ?? null) : null;
         if (! is_null($pct)) {
             $overallInsight .= ', ' . ($pct >= 0 ? 'up ' : 'down ') . number_format(abs($pct), 1) . '% vs ' . (int) $prev->year . '.';
@@ -45,7 +45,7 @@
         $series = collect($series);
         $latest = $series->last();
         $prev = $series->count() > 1 ? $series->get($series->count() - 2) : null;
-        $text = "In {$latest->year}, {$label} homes in {$areaLabel} averaged {$formatMoney($latest->avg_price)} across {$formatCount($latest->sales_count)} sales";
+        $text = "In {$latest->year}, {$label} homes in {$areaLabel} had a median sale price of {$formatMoney($latest->avg_price)} across {$formatCount($latest->sales_count)} sales";
         $pct = $prev ? $percentChange($latest->avg_price ?? null, $prev->avg_price ?? null) : null;
         if (! is_null($pct)) {
             $text .= ', ' . ($pct >= 0 ? 'up ' : 'down ') . number_format(abs($pct), 1) . '% vs ' . (int) $prev->year . '.';
@@ -131,7 +131,7 @@
                 </div>
             </div>
             <div class="border rounded p-3 bg-white shadow-lg">
-                <div class="text-xs text-zinc-500">Average price</div>
+                <div class="text-xs text-zinc-500">Median price</div>
                 <div class="text-lg font-semibold">
                     £{{ number_format((float) $summary->avg_price, 0) }}
                 </div>
@@ -155,7 +155,7 @@
 
         <div class="border rounded bg-white p-4 shadow-lg">
             <div class="mb-2">
-                <h3 class="text-base font-semibold text-gray-900 text-center">Average sale price and number of sales per year for {{ $typeLabel }} in {{ $areaLabel }}</h3>
+                <h3 class="text-base font-semibold text-gray-900 text-center">Median sale price and number of sales per year for {{ $typeLabel }} in {{ $areaLabel }}</h3>
                 <p class="text-xs text-zinc-600 text-center">{{ $overallInsight }}</p>
             </div>
             <div class="w-full">
@@ -192,7 +192,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="border rounded bg-white p-4 shadow-lg">
                 <div class="mb-2">
-                    <h3 class="text-base font-semibold text-gray-900 text-center">Detached homes in {{ $areaLabel }} - average price and number of sales</h3>
+                    <h3 class="text-base font-semibold text-gray-900 text-center">Detached homes in {{ $areaLabel }} - median price and number of sales</h3>
                     <p class="text-xs text-zinc-600 text-center">{{ $typeInsights['detached'] ?? "No detached sales data is available yet for {$areaLabel}." }}</p>
                 </div>
                 <canvas id="areaTypeChart_detached" class="w-full max-h-[320px]"></canvas>
@@ -200,7 +200,7 @@
             </div>
             <div class="border rounded bg-white p-4 shadow-lg">
                 <div class="mb-2">
-                    <h3 class="text-base font-semibold text-gray-900 text-center">Semi-detached homes in {{ $areaLabel }} - average price and number of sales</h3>
+                    <h3 class="text-base font-semibold text-gray-900 text-center">Semi-detached homes in {{ $areaLabel }} - median price and number of sales</h3>
                     <p class="text-xs text-zinc-600 text-center">{{ $typeInsights['semi'] ?? "No semi-detached sales data is available yet for {$areaLabel}." }}</p>
                 </div>
                 <canvas id="areaTypeChart_semi" class="w-full max-h-[320px]"></canvas>
@@ -208,7 +208,7 @@
             </div>
             <div class="border rounded bg-white p-4 shadow-lg">
                 <div class="mb-2">
-                    <h3 class="text-base font-semibold text-gray-900 text-center">Terraced homes in {{ $areaLabel }} - average price and number of sales</h3>
+                    <h3 class="text-base font-semibold text-gray-900 text-center">Terraced homes in {{ $areaLabel }} - median price and number of sales</h3>
                     <p class="text-xs text-zinc-600 text-center">{{ $typeInsights['terraced'] ?? "No terraced sales data is available yet for {$areaLabel}." }}</p>
                 </div>
                 <canvas id="areaTypeChart_terraced" class="w-full max-h-[320px]"></canvas>
@@ -216,7 +216,7 @@
             </div>
             <div class="border rounded bg-white p-4 shadow-lg">
                 <div class="mb-2">
-                    <h3 class="text-base font-semibold text-gray-900 text-center">Flats in {{ $areaLabel }} - average price and number of sales</h3>
+                    <h3 class="text-base font-semibold text-gray-900 text-center">Flats in {{ $areaLabel }} - median price and number of sales</h3>
                     <p class="text-xs text-zinc-600 text-center">{{ $typeInsights['flat'] ?? "No flat sales data is available yet for {$areaLabel}." }}</p>
                 </div>
                 <canvas id="areaTypeChart_flat" class="w-full max-h-[320px]"></canvas>
@@ -282,7 +282,7 @@
                 datasets: [
                     {
                         type: 'line',
-                        label: 'Average price',
+                        label: 'Median price',
                         data: avgPrices,
                         yAxisID: 'y1',
                         borderWidth: 2,
@@ -377,7 +377,7 @@
                         position: 'right',
                         title: {
                             display: true,
-                            text: 'Average price (£)'
+                            text: 'Median price (£)'
                         },
                         grid: {
                             drawOnChartArea: false
@@ -426,7 +426,7 @@
                     datasets: [
                         {
                             type: 'line',
-                            label: 'Average price',
+                            label: 'Median price',
                             data: cfg.avgPrices,
                             yAxisID: 'y1',
                             borderWidth: 2,
@@ -521,7 +521,7 @@
                             position: 'right',
                             title: {
                                 display: true,
-                                text: 'Average price (£)'
+                                text: 'Median price (£)'
                             },
                             grid: {
                                 drawOnChartArea: false

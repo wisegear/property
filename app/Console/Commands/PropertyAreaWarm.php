@@ -77,7 +77,7 @@ class PropertyAreaWarm extends Command
             }
 
             $slug = Str::slug($areaName);
-            $cacheKey = 'area:v1:'.$type.':'.$slug;
+            $cacheKey = 'area:v2:'.$type.':'.$slug;
 
             // Build payload using the same logic as the controller
             $payload = $controller->buildAreaPayload($column, $areaName);
@@ -92,7 +92,7 @@ class PropertyAreaWarm extends Command
             }
         }
 
-        Cache::put('area:v1:last_warm', now()->toIso8601String(), $ttl);
+        Cache::put('area:v2:last_warm', now()->toIso8601String(), $ttl);
         $this->info("Finished. Warmed {$count} areas.");
 
         return self::SUCCESS;

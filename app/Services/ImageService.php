@@ -162,9 +162,11 @@ class ImageService
             return;
         }
 
-        $normalizedPath = ltrim($imagePath, '/');
+        $normalizedPath = str_replace('\\', '/', ltrim($imagePath, '/'));
 
-        if (Str::startsWith($normalizedPath, ['assets/', 'assets\\'])) {
+        if (Str::startsWith($normalizedPath, 'assets/')) {
+            $disk->delete($normalizedPath);
+
             $publicPath = public_path($normalizedPath);
             if (File::exists($publicPath)) {
                 File::delete($publicPath);
@@ -173,7 +175,7 @@ class ImageService
             return;
         }
 
-        if (Str::startsWith($normalizedPath, ['storage/', 'storage\\'])) {
+        if (Str::startsWith($normalizedPath, 'storage/')) {
             $normalizedPath = Str::after($normalizedPath, 'storage/');
         }
 

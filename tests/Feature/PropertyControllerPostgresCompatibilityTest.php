@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class PropertyControllerPostgresCompatibilityTest extends TestCase
@@ -25,6 +27,54 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
         ]);
 
         $this->get('/property')->assertOk();
+    }
+
+    public function test_property_home_uses_median_price_series_for_chart_data(): void
+    {
+        Cache::forget('land_registry_avg_price_by_year:catA:v3');
+
+        DB::table('land_registry')->insert([
+            $this->landRegistryRow(
+                transactionId: '33333333-3333-3333-3333-33333333333333',
+                price: 100000,
+                date: '2024-01-15 00:00:00',
+                postcode: 'AB1 2CD',
+                paon: '1',
+                street: 'HIGH STREET'
+            ),
+            $this->landRegistryRow(
+                transactionId: '44444444-4444-4444-4444-44444444444444',
+                price: 200000,
+                date: '2024-02-15 00:00:00',
+                postcode: 'AB1 2CD',
+                paon: '2',
+                street: 'HIGH STREET'
+            ),
+            $this->landRegistryRow(
+                transactionId: '55555555-5555-5555-5555-55555555555555',
+                price: 300000,
+                date: '2024-03-15 00:00:00',
+                postcode: 'AB1 2CD',
+                paon: '3',
+                street: 'HIGH STREET'
+            ),
+            $this->landRegistryRow(
+                transactionId: '66666666-6666-6666-6666-66666666666666',
+                price: 1000000,
+                date: '2024-04-15 00:00:00',
+                postcode: 'AB1 2CD',
+                paon: '4',
+                street: 'HIGH STREET'
+            ),
+        ]);
+
+        $this->get('/property')
+            ->assertOk()
+            ->assertViewHas('avgPriceByYear', function ($series) {
+                $expected = DB::connection()->getDriverName() === 'pgsql' ? 250000 : 400000;
+
+                return (int) $series->first()->avg_price === $expected;
+            });
     }
 
     public function test_property_show_route_loads_without_mysql_index_hints(): void
@@ -48,6 +98,109 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
 
         $this->get('/property/show?postcode=AB1%202CD&paon=10&street=MARKET ROAD')
             ->assertOk();
+    }
+
+    public function test_property_show_route_uses_median_price_series_for_charts(): void
+    {
+        Cache::forget('postcode:AB1 2CD:type:D:priceHistory:v4:catA');
+
+        DB::table('land_registry')->insert([
+            $this->landRegistryRow(
+                transactionId: '77777777-7777-7777-7777-77777777777777',
+                price: 100000,
+                date: '2024-01-15 00:00:00',
+                postcode: 'AB1 2CD',
+                paon: '10',
+                street: 'MARKET ROAD'
+            ),
+            $this->landRegistryRow(
+                transactionId: '88888888-8888-8888-8888-88888888888888',
+                price: 200000,
+                date: '2024-02-15 00:00:00',
+                postcode: 'AB1 2CD',
+                paon: '11',
+                street: 'MARKET ROAD'
+            ),
+            $this->landRegistryRow(
+                transactionId: '99999999-9999-9999-9999-99999999999999',
+                price: 300000,
+                date: '2024-03-15 00:00:00',
+                postcode: 'AB1 2CD',
+                paon: '12',
+                street: 'MARKET ROAD'
+            ),
+            $this->landRegistryRow(
+                transactionId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaaaa',
+                price: 1000000,
+                date: '2024-04-15 00:00:00',
+                postcode: 'AB1 2CD',
+                paon: '13',
+                street: 'MARKET ROAD'
+            ),
+        ]);
+
+        DB::table('onspd')->insert([
+            'pcds' => 'AB1 2CD',
+            'lat' => 52.123456,
+            'long' => -1.123456,
+        ]);
+
+        $expected = DB::connection()->getDriverName() === 'pgsql' ? 250000 : 400000;
+
+        $this->get('/property/show?postcode=AB1%202CD&paon=10&street=MARKET ROAD')
+            ->assertOk()
+            ->assertViewHas('postcodePriceHistory', function ($series) use ($expected) {
+                return (int) ($series->first()->avg_price ?? 0) === $expected;
+            });
+    }
+
+    public function test_property_show_displays_area_link_only_when_area_exists_in_index(): void
+    {
+        Cache::forget('property:area:index:v1');
+
+        $areas = json_decode(file_get_contents(public_path('data/property_districts.json')), true) ?? [];
+        $districtArea = collect($areas)->first(function ($item) {
+            return is_array($item)
+                && (($item['type'] ?? null) === 'district')
+                && ! empty($item['name'] ?? $item['label'] ?? null);
+        });
+
+        if (! $districtArea) {
+            $this->markTestSkipped('No district area found in property_districts.json.');
+        }
+
+        $districtName = (string) ($districtArea['name'] ?? $districtArea['label']);
+        $districtSlug = Str::slug($districtName);
+        $expectedAreaUrl = route('property.area.show', [
+            'type' => 'district',
+            'slug' => $districtSlug,
+        ], absolute: false);
+
+        DB::table('land_registry')->insert([
+            array_merge($this->landRegistryRow(
+                transactionId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbbbb',
+                price: 350000,
+                date: '2025-03-01 00:00:00',
+                postcode: 'AB1 2CD',
+                paon: '10',
+                street: 'MARKET ROAD'
+            ), [
+                'District' => $districtName,
+                'County' => 'Different County',
+                'TownCity' => '',
+                'Locality' => '',
+            ]),
+        ]);
+
+        DB::table('onspd')->insert([
+            'pcds' => 'AB1 2CD',
+            'lat' => 52.123456,
+            'long' => -1.123456,
+        ]);
+
+        $this->get('/property/show?postcode=AB1%202CD&paon=10&street=MARKET ROAD')
+            ->assertOk()
+            ->assertViewHas('districtAreaLink', $expectedAreaUrl);
     }
 
     private function landRegistryRow(

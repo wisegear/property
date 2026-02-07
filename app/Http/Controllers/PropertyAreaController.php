@@ -59,7 +59,7 @@ class PropertyAreaController extends Controller
         $column = $columnMap[$type];
 
         // Cache key + TTL must match the warmer
-        $cacheKey = 'area:v1:'.$type.':'.Str::slug($areaName);
+        $cacheKey = 'area:v2:'.$type.':'.Str::slug($areaName);
         $ttl = now()->addDays(45);
 
         // Use Laravel's cache normally now that config is fixed
@@ -82,6 +82,7 @@ class PropertyAreaController extends Controller
     public function buildAreaPayload(string $column, string $areaName): array
     {
         $yearExpr = $this->yearExpression();
+        $medianExpr = $this->medianPriceExpression();
 
         // High-level summary
         $summary = DB::table('land_registry')
@@ -89,7 +90,7 @@ class PropertyAreaController extends Controller
                 COUNT(*)   as sales_count,
                 MIN("Price") as min_price,
                 MAX("Price") as max_price,
-                AVG("Price") as avg_price
+                '.$medianExpr.' as avg_price
             ')
             ->where($column, $areaName)
             ->where('PPDCategoryType', '<>', 'B')
@@ -100,7 +101,7 @@ class PropertyAreaController extends Controller
             ->selectRaw("
                 {$yearExpr}   as year,
                 COUNT(*)      as sales_count,
-                AVG(\"Price\") as avg_price
+                {$medianExpr} as avg_price
             ")
             ->where($column, $areaName)
             ->where('PPDCategoryType', '<>', 'B')
@@ -123,7 +124,7 @@ class PropertyAreaController extends Controller
                 ->selectRaw("
                     {$yearExpr}   as year,
                     COUNT(*)      as sales_count,
-                    AVG(\"Price\") as avg_price
+                    {$medianExpr} as avg_price
                 ")
                 ->where($column, $areaName)
                 ->where('PPDCategoryType', '<>', 'B')
@@ -236,5 +237,14 @@ class PropertyAreaController extends Controller
         }
 
         return 'EXTRACT(YEAR FROM "Date")::int';
+    }
+
+    private function medianPriceExpression(): string
+    {
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            return 'PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "Price")';
+        }
+
+        return 'AVG("Price")';
     }
 }

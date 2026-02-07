@@ -45,8 +45,8 @@ class OuterPrimeLondonController extends Controller
         $charts = [];
 
         foreach ($allDistricts as $district) {
-            // Key base (namespace): keep per-district in v1 for compatibility; use v2 for ALL aggregate
-            $keyBase = $district === 'ALL' ? 'outerprime:v2:catA:ALL:' : 'outerprime:v1:catA:'.$district.':';
+            // Key base (namespace): v3 ensures median-based data does not reuse average caches.
+            $keyBase = $district === 'ALL' ? 'outerprime:v3:catA:ALL:' : 'outerprime:v3:catA:'.$district.':';
 
             if ($district === 'ALL') {
                 // ===== Aggregate across ALL Outer Prime London outward codes (prefix join) =====
@@ -55,10 +55,10 @@ class OuterPrimeLondonController extends Controller
                         DB::raw("REPLACE(lr.Postcode, ' ', '')"), 'LIKE', DB::raw("(pp.postcode || '%')"))
                     ->where('lr.PPDCategoryType', 'A');
 
-                // Average price by year
+                // Median price by year
                 $avgPrice = Cache::remember($keyBase.'avgPrice', $ttl, function () use ($baseAll) {
                     return (clone $baseAll)
-                        ->selectRaw('lr.YearDate as year, ROUND(AVG(lr.Price)) as avg_price')
+                        ->selectRaw('lr.YearDate as year, ROUND('.$this->medianPriceExpression('lr.Price').') as avg_price')
                         ->groupBy('lr.YearDate')
                         ->orderBy('lr.YearDate')
                         ->get();
@@ -82,10 +82,10 @@ class OuterPrimeLondonController extends Controller
                         ->get();
                 });
 
-                // Average price by property type (D/S/T/F) per year
+                // Median price by property type (D/S/T/F) per year
                 $avgPriceByType = Cache::remember($keyBase.'avgPriceByType', $ttl, function () use ($baseAll) {
                     return (clone $baseAll)
-                        ->selectRaw('lr.YearDate as year, SUBSTR(lr.PropertyType, 1, 1) as type, ROUND(AVG(lr.Price)) as avg_price')
+                        ->selectRaw('lr.YearDate as year, SUBSTR(lr.PropertyType, 1, 1) as type, ROUND('.$this->medianPriceExpression('lr.Price').') as avg_price')
                         ->whereNotNull('lr.PropertyType')
                         ->whereRaw("SUBSTR(lr.PropertyType, 1, 1) IN ('D','S','T','F')")
                         ->groupBy('lr.YearDate', 'type')
@@ -175,10 +175,10 @@ class OuterPrimeLondonController extends Controller
                 });
             } else {
                 // ===== Per-district (existing logic) =====
-                // Average price by year
+                // Median price by year
                 $avgPrice = Cache::remember($keyBase.'avgPrice', $ttl, function () use ($district) {
                     return DB::table('land_registry')
-                        ->selectRaw('YearDate as year, ROUND(AVG(Price)) as avg_price')
+                        ->selectRaw('YearDate as year, ROUND('.$this->medianPriceExpression('Price').') as avg_price')
                         ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->groupBy('YearDate')
@@ -208,10 +208,10 @@ class OuterPrimeLondonController extends Controller
                         ->get();
                 });
 
-                // Average price by property type (D/S/T/F) per year
+                // Median price by property type (D/S/T/F) per year
                 $avgPriceByType = Cache::remember($keyBase.'avgPriceByType', $ttl, function () use ($district) {
                     return DB::table('land_registry')
-                        ->selectRaw('YearDate as year, SUBSTR(PropertyType, 1, 1) as type, ROUND(AVG(Price)) as avg_price')
+                        ->selectRaw('YearDate as year, SUBSTR(PropertyType, 1, 1) as type, ROUND('.$this->medianPriceExpression('Price').') as avg_price')
                         ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->whereNotNull('PropertyType')
@@ -350,5 +350,14 @@ class OuterPrimeLondonController extends Controller
             'charts' => $charts,
             'notes' => $notes,
         ]);
+    }
+
+    private function medianPriceExpression(string $columnExpression = 'Price'): string
+    {
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            return "PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY {$columnExpression})";
+        }
+
+        return "AVG({$columnExpression})";
     }
 }

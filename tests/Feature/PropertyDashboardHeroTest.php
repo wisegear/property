@@ -10,7 +10,7 @@ class PropertyDashboardHeroTest extends TestCase
     public function test_property_dashboard_hero_includes_search_button_before_outer_prime_link(): void
     {
         Cache::put('ew:propertyTypeSplitByYear:catA:v1', collect());
-        Cache::put('ew:avgPriceByTypeByYear:catA:v1', collect());
+        Cache::put('ew:avgPriceByTypeByYear:catA:v2', collect());
         Cache::put('ew:newBuildSplitByYear:catA:v1', collect());
         Cache::put('ew:durationSplitByYear:catA:v1', collect());
 

@@ -18,6 +18,7 @@
                     Data last cached:
                     @php
                         $ts = $lastCachedAt
+                            ?? \Illuminate\Support\Facades\Cache::get('pcl:v4:catA:last_warm')
                             ?? \Illuminate\Support\Facades\Cache::get('pcl:v3:catA:last_warm')
                             ?? \Illuminate\Support\Facades\Cache::get('pcl:v2:catA:last_warm');
                     @endphp
@@ -87,7 +88,7 @@
                     </div>
                     <!-- Average Price (line) -->
                     <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="font-semibold mb-2">Average Price of property in {{ $__label }}</h3>
+                        <h3 class="font-semibold mb-2">Median Price of property in {{ $__label }}</h3>
                         <canvas id="ap_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
 
@@ -98,9 +99,9 @@
                         <canvas id="pt_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
 
-                    <!-- Average Price by Property Type (line) -->
+                    <!-- Median Price by Property Type (line) -->
                     <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="font-semibold mb-2">Average Price by Property Type in {{ $__label }}</h3>
+                        <h3 class="font-semibold mb-2">Median Price by Property Type in {{ $__label }}</h3>
                         <canvas id="apt_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
 
@@ -124,7 +125,8 @@
 
                     <!-- Average + Prime Indicators (line) -->
                     <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72 col-span-2">
-                        <h3 class="font-semibold mb-2">Average & Prime Indicators in {{ $__label }}</h3>
+                        <h3 class="font-semibold mb-2">Median & Prime Indicators in {{ $__label }}</h3>
+                        <p class="mb-2 text-xs text-zinc-500">Method: median for broad price level, average for top 5% tail activity.</p>
                         <canvas id="api_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
                     <!-- YoY % Change Charts -->
@@ -137,11 +139,12 @@
                         <canvas id="yoy_p90_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
                     <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="text-sm font-medium text-zinc-700 mb-2">YoY % Change – Average Price in {{ $__label }}</h3>
+                        <h3 class="text-sm font-medium text-zinc-700 mb-2">YoY % Change – Median Price in {{ $__label }}</h3>
                         <canvas id="yoy_avg_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
                     <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
                         <h3 class="text-sm font-medium text-zinc-700 mb-2">YoY % Change – Top 5% Avg in {{ $__label }}</h3>
+                        <p class="mb-2 text-xs text-zinc-500">Top 5% uses average to preserve high-end outlier signal.</p>
                         <canvas id="yoy_top5_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
                 </div>
@@ -311,7 +314,7 @@
                         labels: years,
                         datasets: [
                             {
-                                label: 'Average Price (£)',
+                                label: 'Median Price (£)',
                                 data: apData,
                                 pointRadius: 3,
                                 tension: 0.2
@@ -476,7 +479,7 @@
                 ptCtx.style.backgroundColor = '#ffffff';
             }
 
-            // Average Price by Property Type (line)
+            // Median Price by Property Type (line)
             const aptCtx = document.getElementById(`apt_${district}`);
             if (aptCtx) {
                 const aptId = `apt_${district}`;
@@ -488,7 +491,7 @@
                     const card = aptCtx.parentElement;
                     const note = document.createElement('p');
                     note.className = 'mt-2 text-xs text-neutral-500';
-                    note.textContent = 'No per-property-type average price series found (controller needs to provide avgPriceByType).';
+                    note.textContent = 'No per-property-type median price series found (controller needs to provide avgPriceByType).';
                     card.appendChild(note);
                     window.__renderedDistricts.add(district);
                 } else {
@@ -503,7 +506,7 @@
                     const presentTypes = typeOrder.filter(t => avgPriceByType.some(r => r.type === t));
 
                     const datasets = presentTypes.map((t, i) => ({
-                        label: `${TYPE_LABELS[t] || t} Avg (£)`,
+                        label: `${TYPE_LABELS[t] || t} Median (£)`,
                         data: years.map(y => (yearTypeAvg.get(y)?.get(t)) ?? null),
                         pointRadius: 2,
                         tension: 0.2,
@@ -818,7 +821,7 @@
                         labels: years,
                         datasets: [
                             {
-                                label: 'Average Price (£)',
+                                label: 'Median Price (£)',
                                 data: apData,
                                 pointRadius: 3,
                                 tension: 0.2
@@ -831,7 +834,7 @@
                                 tension: 0.1
                             },
                             {
-                                label: 'Top 5% Average (£)',
+                                label: 'Top 5% Avg (£)',
                                 data: top5Data,
                                 pointRadius: 2,
                                 borderWidth: 1,

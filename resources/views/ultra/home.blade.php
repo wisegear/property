@@ -17,7 +17,9 @@
                 <span class="ml-2 text-neutral-600">|
                     Data last cached:
                     @php
-                        $ts = $lastCachedAt ?? \Illuminate\Support\Facades\Cache::get('upcl:v5:catA:last_warm');
+                        $ts = $lastCachedAt
+                            ?? \Illuminate\Support\Facades\Cache::get('upcl:v6:catA:last_warm')
+                            ?? \Illuminate\Support\Facades\Cache::get('upcl:v5:catA:last_warm');
                     @endphp
                     @if(!empty($ts))
                         {{ \Carbon\Carbon::parse($ts)->timezone(config('app.timezone'))->format('j M Y, H:i') }}
@@ -87,7 +89,7 @@
 
                     <!-- Average Price (line) -->
                     <div class="rounded-xl border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="font-semibold mb-2">Average Price of property in {{ $__label }}</h3>
+                        <h3 class="font-semibold mb-2">Median Price of property in {{ $__label }}</h3>
                         <canvas id="ap_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
 
@@ -97,9 +99,9 @@
                         <canvas id="pt_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
 
-                    <!-- Average Price by Property Type (line) -->
+                    <!-- Median Price by Property Type (line) -->
                     <div class="rounded-xl border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="font-semibold mb-2">Average Price by Property Type in {{ $__label }}</h3>
+                        <h3 class="font-semibold mb-2">Median Price by Property Type in {{ $__label }}</h3>
                         <canvas id="apt_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
 
@@ -123,7 +125,8 @@
 
                     <!-- Average + Prime Indicators (line) -->
                     <div class="rounded-xl border p-4 bg-white col-span-2 overflow-hidden h-64 sm:h-72 md:h-80">
-                        <h3 class="font-semibold mb-2">Average & Prime Indicators in {{ $__label }}</h3>
+                        <h3 class="font-semibold mb-2">Median & Prime Indicators in {{ $__label }}</h3>
+                        <p class="mb-2 text-xs text-zinc-500">Method: median for broad price level, average for top 5% tail activity.</p>
                         <canvas id="api_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
 
@@ -137,11 +140,12 @@
                         <canvas id="yoy_p90_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
                     <div class="rounded-xl border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="text-sm font-medium text-zinc-700 mb-2">YoY % Change – Average Price in {{ $__label }}</h3>
+                        <h3 class="text-sm font-medium text-zinc-700 mb-2">YoY % Change – Median Price in {{ $__label }}</h3>
                         <canvas id="yoy_avg_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
                     <div class="rounded-xl border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
                         <h3 class="text-sm font-medium text-zinc-700 mb-2">YoY % Change – Top 5% Avg in {{ $__label }}</h3>
+                        <p class="mb-2 text-xs text-zinc-500">Top 5% uses average to preserve high-end outlier signal.</p>
                         <canvas id="yoy_top5_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
                 </div>
@@ -287,7 +291,7 @@
                     plugins: [whiteBgPlugin],
                     data: {
                         labels: years,
-                        datasets: [{ label: 'Average Price (£)', data: apData, pointRadius: 3, tension: 0.2 }]
+                        datasets: [{ label: 'Median Price (£)', data: apData, pointRadius: 3, tension: 0.2 }]
                     },
                     options: {
                         animation: false,
@@ -331,9 +335,9 @@
                     data: {
                         labels: yearsPrime,
                         datasets: [
-                            { label: 'Average Price (£)', data: apData2, pointRadius: 3, tension: 0.2 },
+                            { label: 'Median Price (£)', data: apData2, pointRadius: 3, tension: 0.2 },
                             { label: '90th Percentile (£)', data: p90Data, pointRadius: 2, pointHoverRadius: 5, pointHitRadius: 6, borderDash: [6,4], tension: 0.1 },
-                            { label: 'Top 5% Average (£)', data: top5Data, pointRadius: 2, pointHoverRadius: 5, pointHitRadius: 6, borderWidth: 1, tension: 0.15 }
+                            { label: 'Top 5% Avg (£)', data: top5Data, pointRadius: 2, pointHoverRadius: 5, pointHitRadius: 6, borderWidth: 1, tension: 0.15 }
                         ]
                     },
                     options: {
@@ -475,7 +479,7 @@
                 ptCtx.style.backgroundColor = '#ffffff';
             }
 
-            // Average Price by Property Type (line)
+            // Median Price by Property Type (line)
             const aptCtx = document.getElementById(`apt_${district}`);
             if (aptCtx) {
                 const aptId = `apt_${district}`;
@@ -487,7 +491,7 @@
                     const card = aptCtx.parentElement;
                     const note = document.createElement('p');
                     note.className = 'mt-2 text-xs text-neutral-500';
-                    note.textContent = 'No per-property-type average price series found (controller/warmer needs to provide avgPriceByType).';
+                    note.textContent = 'No per-property-type median price series found (controller/warmer needs to provide avgPriceByType).';
                     card.appendChild(note);
                 } else {
                     // Build year -> type -> avg map
@@ -501,7 +505,7 @@
                     const presentTypes = typeOrder.filter(t => avgPriceByType.some(r => r.type === t));
 
                     const datasets = presentTypes.map((t, i) => ({
-                        label: `${TYPE_LABELS[t] || t} Avg (£)`,
+                        label: `${TYPE_LABELS[t] || t} Median (£)`,
                         data: years.map(y => (yearTypeAvg.get(y)?.get(t)) ?? null),
                         pointRadius: 2,
                         tension: 0.2,

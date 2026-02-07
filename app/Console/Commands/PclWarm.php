@@ -108,10 +108,10 @@ class PclWarm extends Command
 
         $allSeries = $this->buildSeries($districts);
         foreach ($allSeries as $name => $value) {
-            Cache::put('pcl:v3:catA:ALL:'.$name, $value, $ttl);
+            Cache::put('pcl:v4:catA:ALL:'.$name, $value, $ttl);
         }
 
-        Cache::put('pcl:v3:catA:last_warm', now()->toIso8601String(), $ttl);
+        Cache::put('pcl:v4:catA:last_warm', now()->toIso8601String(), $ttl);
 
         $this->newLine(2);
         $this->info('Prime Central cache warm complete.');
@@ -124,7 +124,7 @@ class PclWarm extends Command
         $series = $this->buildSeries([$district]);
 
         foreach ($series as $name => $value) {
-            Cache::put('pcl:v3:catA:'.$district.':'.$name, $value, $ttl);
+            Cache::put('pcl:v4:catA:'.$district.':'.$name, $value, $ttl);
         }
     }
 
@@ -132,9 +132,10 @@ class PclWarm extends Command
     {
         $yearExpr = $this->yearExpression();
         $base = $this->baseQueryForDistricts($districts);
+        $medianPriceExpr = $this->medianPriceExpression($this->column('Price'));
 
         $avgPrice = (clone $base)
-            ->selectRaw("{$yearExpr} as year, ROUND(AVG(".$this->column('Price').')) as avg_price')
+            ->selectRaw("{$yearExpr} as year, ROUND({$medianPriceExpr}) as avg_price")
             ->groupByRaw($yearExpr)
             ->orderBy('year')
             ->get();
@@ -152,7 +153,7 @@ class PclWarm extends Command
             ->get();
 
         $avgPriceByType = (clone $base)
-            ->selectRaw("{$yearExpr} as year, SUBSTR(".$this->column('PropertyType').', 1, 1) as type, ROUND(AVG('.$this->column('Price').')) as avg_price')
+            ->selectRaw("{$yearExpr} as year, SUBSTR(".$this->column('PropertyType').", 1, 1) as type, ROUND({$medianPriceExpr}) as avg_price")
             ->whereNotNull('PropertyType')
             ->whereNotNull('Price')
             ->where('Price', '>', 0)
@@ -280,5 +281,14 @@ class PclWarm extends Command
     private function column(string $name): string
     {
         return '"'.$name.'"';
+    }
+
+    private function medianPriceExpression(string $columnExpression): string
+    {
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            return "PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY {$columnExpression})";
+        }
+
+        return "AVG({$columnExpression})";
     }
 }

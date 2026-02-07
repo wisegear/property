@@ -28,4 +28,22 @@ class BlogPostsImageUrlTest extends TestCase
 
         $this->assertSame(Storage::disk('public')->url('assets/images/uploads/galleries/gallery.jpg'), $url);
     }
+
+    public function test_content_image_url_uses_public_storage_disk_for_assets_path(): void
+    {
+        Storage::fake('public');
+
+        $url = BlogPosts::contentImageUrl('/assets/images/uploads/inline.jpg');
+
+        $this->assertSame(Storage::disk('public')->url('assets/images/uploads/inline.jpg'), $url);
+    }
+
+    public function test_content_image_url_uses_public_storage_disk_for_relative_filename(): void
+    {
+        Storage::fake('public');
+
+        $url = BlogPosts::contentImageUrl('inline.jpg');
+
+        $this->assertSame(Storage::disk('public')->url('assets/images/uploads/inline.jpg'), $url);
+    }
 }

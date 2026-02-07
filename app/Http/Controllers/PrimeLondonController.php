@@ -30,7 +30,7 @@ class PrimeLondonController extends Controller
 
         foreach ($allDistricts as $district) {
             // Build a cache key base (ALL uses a dedicated namespace)
-            $keyBase = $district === 'ALL' ? 'pcl:v3:catA:ALL:' : 'pcl:v3:catA:'.$district.':';
+            $keyBase = $district === 'ALL' ? 'pcl:v4:catA:ALL:' : 'pcl:v4:catA:'.$district.':';
 
             if ($district === 'ALL') {
                 // Treat ALL PCL as one area by joining to prime_postcodes (avoids IN/prefix mismatches)
@@ -47,10 +47,10 @@ class PrimeLondonController extends Controller
                 };
 
                 // ***** Aggregate across ALL Prime Central districts *****
-                // Average price by year (YearDate)
+                // Median price by year (YearDate)
                 $avgPrice = Cache::remember($keyBase.'avgPrice', $ttl, function () use ($applyAllPcl) {
                     return DB::table('land_registry')
-                        ->selectRaw('YearDate as year, ROUND(AVG(Price)) as avg_price')
+                        ->selectRaw('YearDate as year, ROUND('.$this->medianPriceExpression('Price').') as avg_price')
                         ->where('PPDCategoryType', 'A')
                         ->when(true, $applyAllPcl)
                         ->groupBy('YearDate')
@@ -80,10 +80,10 @@ class PrimeLondonController extends Controller
                         ->get();
                 });
 
-                // Average price by property type by year (D/S/T/F)
+                // Median price by property type by year (D/S/T/F)
                 $avgPriceByType = Cache::remember($keyBase.'avgPriceByType', $ttl, function () use ($applyAllPcl) {
                     return DB::table('land_registry')
-                        ->selectRaw('YearDate as year, SUBSTR(PropertyType, 1, 1) as type, ROUND(AVG(Price)) as avg_price')
+                        ->selectRaw('YearDate as year, SUBSTR(PropertyType, 1, 1) as type, ROUND('.$this->medianPriceExpression('Price').') as avg_price')
                         ->where('PPDCategoryType', 'A')
                         ->whereNotNull('PropertyType')
                         ->whereNotNull('Price')
@@ -202,10 +202,10 @@ class PrimeLondonController extends Controller
 
             } else {
                 // ***** Per-district (existing logic) *****
-                // Average price by year (YearDate)
+                // Median price by year (YearDate)
                 $avgPrice = Cache::remember($keyBase.'avgPrice', $ttl, function () use ($district) {
                     return DB::table('land_registry')
-                        ->selectRaw('YearDate as year, ROUND(AVG(Price)) as avg_price')
+                        ->selectRaw('YearDate as year, ROUND('.$this->medianPriceExpression('Price').') as avg_price')
                         ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->groupBy('YearDate')
@@ -235,10 +235,10 @@ class PrimeLondonController extends Controller
                         ->get();
                 });
 
-                // Average price by property type by year (D/S/T/F)
+                // Median price by property type by year (D/S/T/F)
                 $avgPriceByType = Cache::remember($keyBase.'avgPriceByType', $ttl, function () use ($district) {
                     return DB::table('land_registry')
-                        ->selectRaw('YearDate as year, SUBSTR(PropertyType, 1, 1) as type, ROUND(AVG(Price)) as avg_price')
+                        ->selectRaw('YearDate as year, SUBSTR(PropertyType, 1, 1) as type, ROUND('.$this->medianPriceExpression('Price').') as avg_price')
                         ->whereRaw("REPLACE(Postcode, ' ', '') LIKE (? || '%')", [$district])
                         ->where('PPDCategoryType', 'A')
                         ->whereNotNull('PropertyType')
@@ -376,5 +376,14 @@ class PrimeLondonController extends Controller
             'charts' => $charts,
             'notes' => $notesByPostcode,
         ]);
+    }
+
+    private function medianPriceExpression(string $columnExpression = 'Price'): string
+    {
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            return "PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY {$columnExpression})";
+        }
+
+        return "AVG({$columnExpression})";
     }
 }

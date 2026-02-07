@@ -34,11 +34,12 @@ class PropertyController extends Controller
                 ->get();
         });
 
-        // Yearly average price (all categories)
-        $avgPriceByYear = Cache::remember('land_registry_avg_price_by_year:catA:v2', self::CACHE_TTL, function () {
+        // Yearly median price (all categories)
+        $avgPriceByYear = Cache::remember('land_registry_avg_price_by_year:catA:v3', self::CACHE_TTL, function () {
             $yearExpr = $this->yearExpression();
+            $medianExpr = $this->medianPriceExpression();
 
-            return LandRegistry::selectRaw("{$yearExpr} as year, ROUND(AVG(\"Price\")) as avg_price")
+            return LandRegistry::selectRaw("{$yearExpr} as year, ROUND({$medianExpr}) as avg_price")
                 ->where('PPDCategoryType', 'A')
                 ->groupByRaw($yearExpr)
                 ->orderBy('year')
@@ -891,6 +892,7 @@ class PropertyController extends Controller
             && ($norm($locality) !== $norm($districtName))
             && ($norm($locality) !== $norm($countyName));
         $yearExpr = $this->yearExpression();
+        $medianExpr = $this->medianPriceExpression();
 
         // Fallback: Always define district datasets if county==district, even if hidden
         if ($isSameCountyDistrict) {
@@ -903,9 +905,11 @@ class PropertyController extends Controller
         $showTownCharts = ($town !== '')
             && ($norm($town) !== $norm($districtName))
             && ($norm($town) !== $norm($countyName));
+        $showDistrictCharts = ($districtName !== '')
+            && ($norm($districtName) !== $norm($countyName));
 
         $priceHistoryQuery = DB::table('land_registry')
-            ->selectRaw("{$yearExpr} as year, ROUND(AVG(\"Price\")) as avg_price")
+            ->selectRaw("{$yearExpr} as year, ROUND({$medianExpr}) as avg_price")
             ->where('Postcode', $postcode)
             ->where('PAON', $paon)
             ->where('Street', $street);
@@ -920,7 +924,7 @@ class PropertyController extends Controller
         $priceHistoryQuery->where('PPDCategoryType', 'A');
 
         $priceHistory = Cache::remember(
-            $propertyCacheKeyBase.':priceHistory:v2:catA',
+            $propertyCacheKeyBase.':priceHistory:v4:catA',
             self::CACHE_TTL,
             function () use ($priceHistoryQuery, $yearExpr) {
                 return $priceHistoryQuery->groupByRaw($yearExpr)->orderBy('year', 'asc')->get();
@@ -928,11 +932,11 @@ class PropertyController extends Controller
         );
 
         $postcodePriceHistory = Cache::remember(
-            'postcode:'.$postcode.':type:'.$propertyTypeCode.':priceHistory:v3:catA',
+            'postcode:'.$postcode.':type:'.$propertyTypeCode.':priceHistory:v4:catA',
             self::CACHE_TTL,
-            function () use ($postcode, $propertyTypeCode, $yearExpr) {
+            function () use ($postcode, $propertyTypeCode, $yearExpr, $medianExpr) {
                 return DB::table('land_registry')
-                    ->selectRaw("{$yearExpr} as year, ROUND(AVG(\"Price\")) as avg_price")
+                    ->selectRaw("{$yearExpr} as year, ROUND({$medianExpr}) as avg_price")
                     ->where('Postcode', $postcode)
                     ->where('PropertyType', $propertyTypeCode)
                     ->where('PPDCategoryType', 'A')
@@ -958,11 +962,11 @@ class PropertyController extends Controller
         );
 
         $countyPriceHistory = Cache::remember(
-            'county:priceHistory:v3:catA:'.$countyKey.':type:'.$propertyTypeCode,
+            'county:priceHistory:v4:catA:'.$countyKey.':type:'.$propertyTypeCode,
             self::CACHE_TTL,
-            function () use ($countyKey, $propertyTypeCode, $yearExpr) {
+            function () use ($countyKey, $propertyTypeCode, $yearExpr, $medianExpr) {
                 return DB::table('land_registry')
-                    ->selectRaw("{$yearExpr} as year, ROUND(AVG(\"Price\")) as avg_price")
+                    ->selectRaw("{$yearExpr} as year, ROUND({$medianExpr}) as avg_price")
                     ->where('County', $countyKey)
                     ->where('PropertyType', $propertyTypeCode)
                     ->where('PPDCategoryType', 'A')
@@ -977,11 +981,11 @@ class PropertyController extends Controller
             $districtPriceHistory = $countyPriceHistory;
         } else {
             $districtPriceHistory = Cache::remember(
-                'district:priceHistory:v3:catA:'.$districtKey.':type:'.$propertyTypeCode,
+                'district:priceHistory:v4:catA:'.$districtKey.':type:'.$propertyTypeCode,
                 self::CACHE_TTL,
-                function () use ($districtKey, $propertyTypeCode, $yearExpr) {
+                function () use ($districtKey, $propertyTypeCode, $yearExpr, $medianExpr) {
                     return DB::table('land_registry')
-                        ->selectRaw("{$yearExpr} as year, ROUND(AVG(\"Price\")) as avg_price")
+                        ->selectRaw("{$yearExpr} as year, ROUND({$medianExpr}) as avg_price")
                         ->where('District', $districtKey)
                         ->where('PropertyType', $propertyTypeCode)
                         ->where('PPDCategoryType', 'A')
@@ -1075,11 +1079,11 @@ class PropertyController extends Controller
         // --- Town/City datasets (mirrors district/locality structures) ---
         if ($showTownCharts) {
             $townPriceHistory = Cache::remember(
-                'town:priceHistory:v3:catA:'.$townKey.':type:'.$propertyTypeCode,
+                'town:priceHistory:v4:catA:'.$townKey.':type:'.$propertyTypeCode,
                 self::CACHE_TTL,
-                function () use ($townKey, $propertyTypeCode, $yearExpr) {
+                function () use ($townKey, $propertyTypeCode, $yearExpr, $medianExpr) {
                     return DB::table('land_registry')
-                        ->selectRaw("{$yearExpr} as year, ROUND(AVG(\"Price\")) as avg_price")
+                        ->selectRaw("{$yearExpr} as year, ROUND({$medianExpr}) as avg_price")
                         ->where('TownCity', $townKey)
                         ->where('PropertyType', $propertyTypeCode)
                         ->where('PPDCategoryType', 'A')
@@ -1133,11 +1137,11 @@ class PropertyController extends Controller
         // Locality datasets (only compute when locality is meaningful & distinct)
         if ($showLocalityCharts) {
             $localityPriceHistory = Cache::remember(
-                'locality:priceHistory:v3:catA:'.$localityKey.':type:'.$propertyTypeCode,
+                'locality:priceHistory:v4:catA:'.$localityKey.':type:'.$propertyTypeCode,
                 self::CACHE_TTL,
-                function () use ($localityKey, $propertyTypeCode, $yearExpr) {
+                function () use ($localityKey, $propertyTypeCode, $yearExpr, $medianExpr) {
                     return DB::table('land_registry')
-                        ->selectRaw("{$yearExpr} as year, ROUND(AVG(\"Price\")) as avg_price")
+                        ->selectRaw("{$yearExpr} as year, ROUND({$medianExpr}) as avg_price")
                         ->where('Locality', $localityKey)
                         ->where('PropertyType', $propertyTypeCode)
                         ->where('PPDCategoryType', 'A')
@@ -1188,6 +1192,11 @@ class PropertyController extends Controller
             $localityPropertyTypes = collect();
         }
 
+        $localityAreaLink = $showLocalityCharts ? $this->resolvePropertyAreaLink('locality', $locality) : null;
+        $townAreaLink = $showTownCharts ? $this->resolvePropertyAreaLink('town', $town) : null;
+        $districtAreaLink = $showDistrictCharts ? $this->resolvePropertyAreaLink('district', $districtName) : null;
+        $countyAreaLink = ! empty($countyName) ? $this->resolvePropertyAreaLink('county', $countyName) : null;
+
         return view('property.show', [
             'results' => $records,
             'address' => $address,
@@ -1215,6 +1224,10 @@ class PropertyController extends Controller
             'depr' => $depr,
             'deprMsg' => $deprMsg,
             'lsoaLink' => $lsoaLink,
+            'localityAreaLink' => $localityAreaLink,
+            'townAreaLink' => $townAreaLink,
+            'districtAreaLink' => $districtAreaLink,
+            'countyAreaLink' => $countyAreaLink,
         ]);
 
     }
@@ -1243,5 +1256,63 @@ class PropertyController extends Controller
         }
 
         return "TO_CHAR(DATE_TRUNC('month', \"Date\"), 'YYYY-MM-01')";
+    }
+
+    private function medianPriceExpression(): string
+    {
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'pgsql') {
+            return 'PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "Price")';
+        }
+
+        return 'AVG("Price")';
+    }
+
+    private function resolvePropertyAreaLink(string $type, string $name): ?string
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return null;
+        }
+
+        $index = Cache::remember('property:area:index:v1', self::CACHE_TTL, function () {
+            $jsonPath = public_path('data/property_districts.json');
+            if (! file_exists($jsonPath)) {
+                return [];
+            }
+
+            $areas = json_decode(file_get_contents($jsonPath), true) ?? [];
+            $lookup = [];
+
+            foreach ($areas as $area) {
+                if (! is_array($area)) {
+                    continue;
+                }
+
+                $areaType = strtolower((string) ($area['type'] ?? ''));
+                $areaName = (string) ($area['name'] ?? $area['label'] ?? '');
+
+                if ($areaType === '' || $areaName === '') {
+                    continue;
+                }
+
+                $lookup[$areaType][strtolower($areaName)] = true;
+            }
+
+            return $lookup;
+        });
+
+        $normalizedType = strtolower($type);
+        $normalizedName = strtolower($name);
+
+        if (! isset($index[$normalizedType][$normalizedName])) {
+            return null;
+        }
+
+        return route('property.area.show', [
+            'type' => $normalizedType,
+            'slug' => \Illuminate\Support\Str::slug($name),
+        ], absolute: false);
     }
 }
