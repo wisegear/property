@@ -35,14 +35,12 @@ use App\Http\Controllers\SupportController;
 
 use App\Http\Controllers\UltraLondonController;
 use App\Http\Controllers\UnemploymentController;
-use App\Models\BlogPosts;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
-use Spatie\Sitemap\Sitemap;
-use Spatie\Sitemap\Tags\Url;
 
 // Base Pages
 
@@ -183,6 +181,39 @@ Route::middleware('auth')->group(function () {
 
 // Sitemap by Spatie - Need to run generate-sitemap
 
+Route::get('/sitemap.xml', function () {
+    $path = public_path('sitemap.xml');
+    if (! File::exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/xml; charset=UTF-8',
+    ]);
+})->name('sitemap.index');
+
+Route::get('/sitemap-index.xml', function () {
+    $path = public_path('sitemap-index.xml');
+    if (! File::exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/xml; charset=UTF-8',
+    ]);
+})->name('sitemap.master-index');
+
+Route::get('/sitemap-{chunk}.xml', function (string $chunk) {
+    $path = public_path("sitemap-{$chunk}.xml");
+    if (! File::exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/xml; charset=UTF-8',
+    ]);
+})->whereNumber('chunk')->name('sitemap.chunk');
+
 Route::get('/sitemap-epc-postcodes.xml', function () {
     $path = public_path('sitemap-epc-postcodes.xml');
     if (! File::exists($path)) {
@@ -194,49 +225,23 @@ Route::get('/sitemap-epc-postcodes.xml', function () {
     ]);
 })->name('sitemap.epc-postcodes');
 
-Route::get('/generate-sitemap', function () {
-    try {
-        $sitemap = Sitemap::create()
-            ->add(Url::create('/'))
-            ->add(Url::create('/blog'))
-            ->add(Url::create('/about'));
-
-        $posts = BlogPosts::where('published', true)->get();
-
-        Illuminate\Support\Facades\Log::info('Sitemap generation: blog post count', ['count' => $posts->count()]);
-
-        if ($posts->isEmpty()) {
-            return response('No blog posts found to add to sitemap.', 200);
-        }
-
-        foreach ($posts as $post) {
-            $sitemap->add(
-                Url::create("/blog/{$post->slug}")
-                    ->setLastModificationDate($post->updated_at)
-            );
-        }
-
-        $areaFile = public_path('data/property_districts.json');
-        if (File::exists($areaFile)) {
-            $areas = json_decode(File::get($areaFile), true);
-            if (is_array($areas)) {
-                foreach ($areas as $area) {
-                    $path = $area['path'] ?? null;
-                    if ($path) {
-                        $sitemap->add(Url::create($path));
-                    }
-                }
-            }
-        }
-
-        $sitemap->writeToFile(public_path('sitemap.xml'));
-
-        return 'Sitemap generated!';
-    } catch (\Exception $e) {
-        Illuminate\Support\Facades\Log::error('Sitemap generation failed', ['error' => $e]);
-
-        return response('Sitemap generation failed. Check logs.', 500);
+Route::get('/sitemap-epc-postcodes-{chunk}.xml', function (string $chunk) {
+    $path = public_path("sitemap-epc-postcodes-{$chunk}.xml");
+    if (! File::exists($path)) {
+        abort(404);
     }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/xml; charset=UTF-8',
+    ]);
+})->whereNumber('chunk')->name('sitemap.epc-postcodes.chunk');
+
+Route::get('/generate-sitemap', function () {
+    Artisan::call('sitemap:generate');
+
+    return response(Artisan::output(), 200, [
+        'Content-Type' => 'text/plain; charset=UTF-8',
+    ]);
 });
 
 require __DIR__.'/auth.php';

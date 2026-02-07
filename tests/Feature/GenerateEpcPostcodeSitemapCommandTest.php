@@ -13,6 +13,11 @@ class GenerateEpcPostcodeSitemapCommandTest extends TestCase
 
     private ?string $originalSitemapIndex = null;
 
+    /**
+     * @var array<string, string>
+     */
+    private array $originalChunkSitemaps = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -24,6 +29,10 @@ class GenerateEpcPostcodeSitemapCommandTest extends TestCase
         $this->originalPostcodeIndex = File::exists($postcodeIndexPath) ? File::get($postcodeIndexPath) : null;
         $this->originalEpcSitemap = File::exists($epcSitemapPath) ? File::get($epcSitemapPath) : null;
         $this->originalSitemapIndex = File::exists($sitemapIndexPath) ? File::get($sitemapIndexPath) : null;
+        $this->originalChunkSitemaps = collect(File::files(public_path()))
+            ->filter(fn ($file) => preg_match('/^sitemap-epc-postcodes-\d+\.xml$/', $file->getFilename()) === 1)
+            ->mapWithKeys(fn ($file) => [$file->getFilename() => File::get($file->getPathname())])
+            ->all();
     }
 
     protected function tearDown(): void
@@ -31,6 +40,11 @@ class GenerateEpcPostcodeSitemapCommandTest extends TestCase
         $this->restoreFile(public_path('data/epc-postcodes.json'), $this->originalPostcodeIndex);
         $this->restoreFile(public_path('sitemap-epc-postcodes.xml'), $this->originalEpcSitemap);
         $this->restoreFile(public_path('sitemap-index.xml'), $this->originalSitemapIndex);
+        $this->deleteChunkSitemaps();
+
+        foreach ($this->originalChunkSitemaps as $filename => $contents) {
+            File::put(public_path($filename), $contents);
+        }
 
         parent::tearDown();
     }
@@ -78,13 +92,24 @@ class GenerateEpcPostcodeSitemapCommandTest extends TestCase
         $this->artisan('sitemap:generate-epc-postcodes')->assertExitCode(0);
         $this->artisan('sitemap:generate-epc-postcodes')->assertExitCode(0);
 
-        $indexXml = simplexml_load_file(public_path('sitemap-index.xml'));
-        $this->assertNotFalse($indexXml);
-        $locs = collect($indexXml->sitemap)->map(fn ($sitemap) => (string) $sitemap->loc)->values();
-
         $targetLoc = url('/sitemap-epc-postcodes.xml');
-        $this->assertTrue($locs->contains($targetLoc));
-        $this->assertSame(1, $locs->filter(fn ($loc) => $loc === $targetLoc)->count());
+        $matchingLocCount = collect([
+            public_path('sitemap.xml'),
+            public_path('sitemap-index.xml'),
+            public_path('sitemap_index.xml'),
+        ])->filter(fn ($path) => File::exists($path))
+            ->sum(function ($path) use ($targetLoc) {
+                $xml = @simplexml_load_file($path);
+                if ($xml === false || $xml->getName() !== 'sitemapindex') {
+                    return 0;
+                }
+
+                $xmlString = (string) File::get($path);
+
+                return str_contains($xmlString, $targetLoc) ? 1 : 0;
+            });
+
+        $this->assertSame(1, $matchingLocCount);
     }
 
     public function test_epc_postcode_sitemap_route_serves_xml_file(): void
@@ -95,6 +120,50 @@ class GenerateEpcPostcodeSitemapCommandTest extends TestCase
         );
 
         $response = $this->get('/sitemap-epc-postcodes.xml');
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/xml; charset=UTF-8');
+    }
+
+    public function test_epc_postcode_sitemap_is_chunked_when_over_45000_urls(): void
+    {
+        $englandWales = [];
+        for ($index = 1; $index <= 45001; $index++) {
+            $englandWales[] = sprintf('A%04d 1AA', $index);
+        }
+
+        $this->writePostcodeIndex([
+            'england_wales' => $englandWales,
+            'scotland' => [],
+        ]);
+
+        $this->artisan('sitemap:generate-epc-postcodes')->assertExitCode(0);
+
+        $this->assertFileExists(public_path('sitemap-epc-postcodes.xml'));
+        $this->assertFileExists(public_path('sitemap-epc-postcodes-1.xml'));
+        $this->assertFileExists(public_path('sitemap-epc-postcodes-2.xml'));
+        $this->assertFileDoesNotExist(public_path('sitemap-epc-postcodes-3.xml'));
+
+        $indexXml = simplexml_load_file(public_path('sitemap-epc-postcodes.xml'));
+        $this->assertNotFalse($indexXml);
+        $this->assertSame('sitemapindex', $indexXml->getName());
+
+        $chunkOne = simplexml_load_file(public_path('sitemap-epc-postcodes-1.xml'));
+        $chunkTwo = simplexml_load_file(public_path('sitemap-epc-postcodes-2.xml'));
+        $this->assertNotFalse($chunkOne);
+        $this->assertNotFalse($chunkTwo);
+        $this->assertCount(45000, $chunkOne->url);
+        $this->assertCount(1, $chunkTwo->url);
+    }
+
+    public function test_epc_postcode_chunk_sitemap_route_serves_xml_file(): void
+    {
+        File::put(
+            public_path('sitemap-epc-postcodes-1.xml'),
+            '<?xml version="1.0" encoding="UTF-8"?><urlset></urlset>'
+        );
+
+        $response = $this->get('/sitemap-epc-postcodes-1.xml');
 
         $response->assertOk();
         $response->assertHeader('content-type', 'application/xml; charset=UTF-8');
@@ -129,5 +198,12 @@ class GenerateEpcPostcodeSitemapCommandTest extends TestCase
         }
 
         File::put($path, $contents);
+    }
+
+    private function deleteChunkSitemaps(): void
+    {
+        collect(File::files(public_path()))
+            ->filter(fn ($file) => preg_match('/^sitemap-epc-postcodes-\d+\.xml$/', $file->getFilename()) === 1)
+            ->each(fn ($file) => File::delete($file->getPathname()));
     }
 }

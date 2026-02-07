@@ -5,20 +5,25 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\SitemapGenerator;
+use Spatie\Sitemap\SitemapIndex;
+use Spatie\Sitemap\Tags\Sitemap as SitemapTag;
 use Spatie\Sitemap\Tags\Url;
 
 class GenerateSitemap extends Command
 {
+    private const MAX_URLS_PER_SITEMAP = 45000;
+
     protected $signature = 'sitemap:generate';
 
-    protected $description = 'Generate sitemap.xml';
+    protected $description = 'Generate sitemap.xml and sitemap-index.xml with chunked files';
 
     public function handle(): int
     {
-        $this->info('Generating sitemap...');
+        $this->info('Generating sitemap.xml and sitemap-index.xml...');
+
         $sitemap = SitemapGenerator::create(config('app.url'))
-            // Exclude admin or noisy routes if you want:
             ->shouldCrawl(function ($url) {
                 foreach (['/admin', '/login'] as $exclude) {
                     if (str_contains($url, $exclude)) {
@@ -43,12 +48,52 @@ class GenerateSitemap extends Command
             }
         }
 
-        $sitemap->writeToFile(public_path('sitemap.xml'));
+        $generatedAt = now();
+        $this->deleteExistingChunkSitemaps();
+
+        $tags = collect($sitemap->getTags())
+            ->filter(fn ($tag) => $tag instanceof Url && filled($tag->url))
+            ->unique(fn (Url $tag) => $tag->url)
+            ->values();
+
+        $chunks = $tags->chunk(self::MAX_URLS_PER_SITEMAP);
+        $sitemapIndex = SitemapIndex::create();
+
+        foreach ($chunks as $index => $chunk) {
+            $chunkNumber = $index + 1;
+            $chunkFilename = $chunkNumber === 1 ? 'sitemap.xml' : "sitemap-{$chunkNumber}.xml";
+            $chunkPath = public_path($chunkFilename);
+
+            Sitemap::create()
+                ->add($chunk->all())
+                ->writeToFile($chunkPath);
+
+            $sitemapIndex->add(
+                SitemapTag::create(url("/{$chunkFilename}"))
+                    ->setLastModificationDate($generatedAt)
+            );
+        }
+
+        $sitemapIndex->writeToFile(public_path('sitemap-index.xml'));
+
         Artisan::call('sitemap:generate-epc-postcodes');
         $this->line(trim(Artisan::output()));
 
         $this->info('Done: public/sitemap.xml');
+        $this->line('Done: public/sitemap-index.xml');
+        $this->line('Chunk files generated: '.number_format($chunks->count()));
+        $this->line('URLs indexed: '.number_format($tags->count()));
 
         return self::SUCCESS;
+    }
+
+    private function deleteExistingChunkSitemaps(): void
+    {
+        $existingChunkSitemaps = collect(File::files(public_path()))
+            ->filter(fn ($file) => preg_match('/^sitemap-(?!index)(?:\d+)\.xml$/', $file->getFilename()) === 1);
+
+        foreach ($existingChunkSitemaps as $file) {
+            File::delete($file->getPathname());
+        }
     }
 }
