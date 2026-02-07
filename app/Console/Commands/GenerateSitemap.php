@@ -3,13 +3,15 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Spatie\Sitemap\SitemapGenerator;
 use Spatie\Sitemap\Tags\Url;
-use Illuminate\Support\Facades\File;
 
 class GenerateSitemap extends Command
 {
     protected $signature = 'sitemap:generate';
+
     protected $description = 'Generate sitemap.xml';
 
     public function handle(): int
@@ -23,6 +25,7 @@ class GenerateSitemap extends Command
                         return false;
                     }
                 }
+
                 return true;
             })
             ->getSitemap();
@@ -41,8 +44,11 @@ class GenerateSitemap extends Command
         }
 
         $sitemap->writeToFile(public_path('sitemap.xml'));
+        Artisan::call('sitemap:generate-epc-postcodes');
+        $this->line(trim(Artisan::output()));
 
         $this->info('Done: public/sitemap.xml');
+
         return self::SUCCESS;
     }
 }

@@ -713,9 +713,16 @@ class EpcController extends Controller
         // --- Fall back to England & Wales
         $ewTable = 'epc_certificates';
         $ewLmkColumn = $this->resolveColumn($ewTable, ['LMK_KEY', 'lmk_key']);
+        $ewBuildingColumn = $this->resolveColumn($ewTable, ['BUILDING_REFERENCE_NUMBER', 'building_reference_number']);
         $ew = DB::table($ewTable)
             ->where($ewLmkColumn, $lmk)
             ->first();
+
+        if (! $ew && $ewBuildingColumn !== null) {
+            $ew = DB::table($ewTable)
+                ->where($ewBuildingColumn, $lmk)
+                ->first();
+        }
 
         if ($ew) {
             $record = (array) $ew;

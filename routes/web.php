@@ -1,52 +1,48 @@
 <?php
 
-use App\Http\Controllers\PagesController;
-use App\Http\Controllers\PropertyController;
-use App\Http\Controllers\PrimeLondonController;
-use App\Http\Controllers\OuterPrimeLondonController;
-use App\Http\Controllers\UltraLondonController;
-use App\Http\Controllers\RepossessionsController;
-use App\Http\Controllers\InterestRateController;
-use App\Http\Controllers\MortgageApprovalController;
-use App\Http\Controllers\UnemploymentController;
-use App\Http\Controllers\MortgageCalcController;
-use App\Http\Controllers\StampDutyController;
-use App\Http\Controllers\EpcController;
-use App\Http\Controllers\HpiDashboardController;
-use App\Http\Controllers\NewOldController;
-use App\Http\Controllers\BlogController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\CommentsController;
-use App\Http\Controllers\AffordabilityController;
-use App\Http\Controllers\DeprivationController;
-use App\Http\Controllers\MlarArrearsController;
-use App\Http\Controllers\SupportController;
-use App\Http\Controllers\RentalController;
 use App\Http\Controllers\Admin\DataUpdateController;
-use App\Http\Controllers\PropertyAreaController;
-use App\Http\Controllers\LocalAuthorityController;
-
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\File;
-
-
-// 3rd Party packages 
-
-use Spatie\Sitemap\Sitemap;
-use Spatie\Sitemap\Tags\Url;
-use App\Models\BlogPosts;
-
-use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminBlogController;
-use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminInflationController;
 use App\Http\Controllers\AdminPostCodesController;
 use App\Http\Controllers\AdminSupportController;
-use App\Http\Controllers\AdminInflationController;
 use App\Http\Controllers\AdminUnemploymentController;
+use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AffordabilityController;
+use App\Http\Controllers\BlogController;
+use App\Http\Controllers\CommentsController;
+use App\Http\Controllers\DeprivationController;
+use App\Http\Controllers\EpcController;
+use App\Http\Controllers\EpcPostcodeController;
+use App\Http\Controllers\HpiDashboardController;
+use App\Http\Controllers\InterestRateController;
+use App\Http\Controllers\LocalAuthorityController;
+use App\Http\Controllers\MlarArrearsController;
+use App\Http\Controllers\MortgageApprovalController;
+use App\Http\Controllers\MortgageCalcController;
+use App\Http\Controllers\NewOldController;
+use App\Http\Controllers\OuterPrimeLondonController;
+use App\Http\Controllers\PagesController;
+use App\Http\Controllers\PrimeLondonController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PropertyAreaController;
+use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\RentalController;
+use App\Http\Controllers\RepossessionsController;
+use App\Http\Controllers\StampDutyController;
+use App\Http\Controllers\SupportController;
+// 3rd Party packages
 
+use App\Http\Controllers\UltraLondonController;
+use App\Http\Controllers\UnemploymentController;
+use App\Models\BlogPosts;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Session;
+use Spatie\Sitemap\Sitemap;
+use Spatie\Sitemap\Tags\Url;
 
 // Base Pages
 
@@ -70,6 +66,10 @@ Route::get('/epc', [EpcController::class, 'home'])->name('epc.home');
 Route::get('/epc/search', [EpcController::class, 'search'])->name('epc.search');
 Route::get('/epc/points', [EpcController::class, 'points'])->name('epc.points');
 Route::get('/epc/points_scotland', [EpcController::class, 'pointsScotland'])->name('epc.points_scotland');
+Route::get('/epc/postcode/{postcode}', [EpcPostcodeController::class, 'englandWales'])
+    ->where('postcode', '[A-Z0-9\-]+');
+Route::get('/epc/scotland/postcode/{postcode}', [EpcPostcodeController::class, 'scotland'])
+    ->where('postcode', '[A-Z0-9\-]+');
 // routes/web.php
 Route::get('/epc/search_scotland', [\App\Http\Controllers\EpcController::class, 'searchScotland'])
     ->name('epc.search_scotland');
@@ -89,7 +89,6 @@ Route::match(['get', 'post'], '/mortgage-calculator', [MortgageCalcController::c
 Route::get('/stamp-duty', [StampDutyController::class, 'index']);
 Route::post('/stamp-duty/calc', [StampDutyController::class, 'calculate']);
 
-
 Route::get('/interest-rates', [InterestRateController::class, 'home'])->name('interest.home');
 Route::get('/unemployment', [UnemploymentController::class, 'index'])->name('unemployment.home');
 Route::get('/inflation', [\App\Http\Controllers\InflationController::class, 'index'])->name('inflation.home');
@@ -97,7 +96,7 @@ Route::get('/wage-growth', [\App\Http\Controllers\WageGrowthController::class, '
 Route::get('/hpi-overview', [HpiDashboardController::class, 'overview'])->name('hpi.overview');
 Route::get('/economic-dashboard', [\App\Http\Controllers\EconomicDashboardController::class, 'index'])->name('economic.dashboard');
 Route::get('/approvals', [MortgageApprovalController::class, 'home'])->name('mortgages.home');
-Route::get('/repossessions/local-authority/{slug}',[RepossessionsController::class, 'localAuthority'])->name('repossessions.local-authority');
+Route::get('/repossessions/local-authority/{slug}', [RepossessionsController::class, 'localAuthority'])->name('repossessions.local-authority');
 Route::get('/repossessions', [RepossessionsController::class, 'index'])->name('repossessions.index');
 Route::get('/arrears', [MlarArrearsController::class, 'index'])->name('arrears.index');
 
@@ -171,17 +170,29 @@ Route::middleware('auth')->group(function () {
             Route::delete('/approvals/{id}', [\App\Http\Controllers\AdminMortgageApprovalController::class, 'destroy'])->name('approvals.destroy');
         });
 
-// Logout route to clear session.
+    // Logout route to clear session.
 
-Route::get('/logout', function(){
-    Session::flush();
-    Auth::logout();
-    return Redirect::to("/");
-});
+    Route::get('/logout', function () {
+        Session::flush();
+        Auth::logout();
+
+        return Redirect::to('/');
+    });
 
 });
 
 // Sitemap by Spatie - Need to run generate-sitemap
+
+Route::get('/sitemap-epc-postcodes.xml', function () {
+    $path = public_path('sitemap-epc-postcodes.xml');
+    if (! File::exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/xml; charset=UTF-8',
+    ]);
+})->name('sitemap.epc-postcodes');
 
 Route::get('/generate-sitemap', function () {
     try {
@@ -192,7 +203,7 @@ Route::get('/generate-sitemap', function () {
 
         $posts = BlogPosts::where('published', true)->get();
 
-       Illuminate\Support\Facades\Log::info('Sitemap generation: blog post count', ['count' => $posts->count()]);
+        Illuminate\Support\Facades\Log::info('Sitemap generation: blog post count', ['count' => $posts->count()]);
 
         if ($posts->isEmpty()) {
             return response('No blog posts found to add to sitemap.', 200);
@@ -222,7 +233,8 @@ Route::get('/generate-sitemap', function () {
 
         return 'Sitemap generated!';
     } catch (\Exception $e) {
-       Illuminate\Support\Facades\Log::error('Sitemap generation failed', ['error' => $e]);
+        Illuminate\Support\Facades\Log::error('Sitemap generation failed', ['error' => $e]);
+
         return response('Sitemap generation failed. Check logs.', 500);
     }
 });
