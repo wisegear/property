@@ -2,6 +2,12 @@
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
+        <p class="mb-6 text-sm text-zinc-600 ">
+            Registration is only required if you wish to comment on blog posts or use the support system to get in touch.  There are no parts of this site
+            hidden behind a login, so you can browse freely without an account.  Privacy is key, the only personal information we require is your email address, 
+            and that is only used for account management and support purposes.
+        </p>
+
         <!-- Name -->
         <div>
             <x-input-label for="name" :value="__('Name')" />

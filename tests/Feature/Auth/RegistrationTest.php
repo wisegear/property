@@ -14,6 +14,8 @@ class RegistrationTest extends TestCase
         $response = $this->get('/register');
 
         $response->assertStatus(200);
+        $response->assertSee('PropertyResearch');
+        $response->assertSee('Registration is only required if you wish to comment on blog posts or use the support system to get in touch.');
     }
 
     public function test_new_users_can_register(): void
