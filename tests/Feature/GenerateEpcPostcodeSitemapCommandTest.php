@@ -74,7 +74,7 @@ class GenerateEpcPostcodeSitemapCommandTest extends TestCase
         $this->assertStringNotContainsString('<lastmod>', $xmlString);
     }
 
-    public function test_command_adds_epc_sitemap_to_existing_sitemap_index(): void
+    public function test_command_replaces_sitemap_index_with_epc_sitemap_entries_only(): void
     {
         $this->writePostcodeIndex([
             'england_wales' => ['AL1 1BH'],
@@ -92,24 +92,17 @@ class GenerateEpcPostcodeSitemapCommandTest extends TestCase
         $this->artisan('sitemap:generate-epc-postcodes')->assertExitCode(0);
         $this->artisan('sitemap:generate-epc-postcodes')->assertExitCode(0);
 
-        $targetLoc = url('/sitemap-epc-postcodes.xml');
-        $matchingLocCount = collect([
-            public_path('sitemap.xml'),
-            public_path('sitemap-index.xml'),
-            public_path('sitemap_index.xml'),
-        ])->filter(fn ($path) => File::exists($path))
-            ->sum(function ($path) use ($targetLoc) {
-                $xml = @simplexml_load_file($path);
-                if ($xml === false || $xml->getName() !== 'sitemapindex') {
-                    return 0;
-                }
+        $indexPath = public_path('sitemap-index.xml');
+        $this->assertFileExists($indexPath);
 
-                $xmlString = (string) File::get($path);
+        $indexXml = simplexml_load_file($indexPath);
+        $this->assertNotFalse($indexXml);
+        $this->assertSame('sitemapindex', $indexXml->getName());
+        $this->assertCount(1, $indexXml->sitemap);
 
-                return str_contains($xmlString, $targetLoc) ? 1 : 0;
-            });
-
-        $this->assertSame(1, $matchingLocCount);
+        $indexXmlString = (string) File::get($indexPath);
+        $this->assertStringContainsString(url('/sitemap-epc-postcodes.xml'), $indexXmlString);
+        $this->assertStringNotContainsString(url('/sitemap.xml'), $indexXmlString);
     }
 
     public function test_epc_postcode_sitemap_route_serves_xml_file(): void

@@ -154,15 +154,7 @@ class GenerateEpcPostcodeSitemap extends Command
                     }
 
                     foreach ($nodes as $sitemapNode) {
-                        $locNode = $xpath->query('./sm:loc', $sitemapNode)?->item(0);
-                        if (! $locNode) {
-                            continue;
-                        }
-
-                        $path = parse_url((string) $locNode->textContent, PHP_URL_PATH) ?? '';
-                        if (preg_match('/^\/sitemap-epc-postcodes(?:-\d+)?\.xml$/', $path) === 1) {
-                            $sitemapNode->parentNode?->removeChild($sitemapNode);
-                        }
+                        $sitemapNode->parentNode?->removeChild($sitemapNode);
                     }
                 }
 
