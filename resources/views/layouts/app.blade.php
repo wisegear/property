@@ -377,12 +377,6 @@
                                class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
                                 Stamp Duty Calculator
                             </a>
-                            <a href="{{ url('/affordability') }}" 
-                               role="menuitem" 
-                               tabindex="-1" 
-                               class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                Affordability Calculator
-                            </a>
                         </div>
                     </div>
                     
@@ -626,10 +620,6 @@
                         <a href="{{ url('/stamp-duty') }}" 
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
                             Stamp Duty Calculator
-                        </a>
-                        <a href="{{ url('/affordability') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Affordability Calculator
                         </a>
                     </div>
                 </div>
