@@ -175,9 +175,7 @@ class FormAnalyticsTrackingTest extends TestCase
         $type = (string) $selected['type'];
         $name = (string) ($selected['name'] ?? $selected['label']);
         $slug = Str::slug($name);
-        $expectedTitle = $type === 'town'
-            ? "House Prices in {$name}"
-            : 'House Prices in the '.ucfirst($type)." of {$name}";
+        $expectedTitle = "House Prices in {$name}";
 
         $response = $this->get(route('property.area.show', ['type' => $type, 'slug' => $slug], absolute: false));
 
