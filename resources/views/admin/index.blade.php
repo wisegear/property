@@ -22,6 +22,42 @@
         </div>
     </section>
 
+    <section class="mt-8 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-zinc-800">Form Event Analytics</h2>
+            <span class="inline-flex items-center rounded-md bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-700 ring-1 ring-inset ring-violet-600/20">
+                {{ $form_event_metrics->count() }} form keys
+            </span>
+        </div>
+
+        @if($form_event_metrics->isEmpty())
+            <p class="mt-5 text-sm text-zinc-600">No form events have been recorded yet.</p>
+        @else
+            <div class="mt-5 overflow-x-auto">
+                <table class="min-w-full divide-y divide-zinc-200 text-sm">
+                    <thead>
+                        <tr class="text-left text-zinc-500">
+                            <th scope="col" class="py-2 pr-4 font-medium">Form key</th>
+                            <th scope="col" class="py-2 pr-4 font-medium">Total events</th>
+                            <th scope="col" class="py-2 pr-4 font-medium">Last 24 hours</th>
+                            <th scope="col" class="py-2 pr-4 font-medium">Unique visits</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-100">
+                        @foreach($form_event_metrics as $metric)
+                            <tr class="text-zinc-700">
+                                <td class="py-3 pr-4 font-medium text-zinc-900">{{ $metric->form_key }}</td>
+                                <td class="py-3 pr-4">{{ number_format((int) $metric->total_events) }}</td>
+                                <td class="py-3 pr-4">{{ number_format((int) $metric->events_last_24h) }}</td>
+                                <td class="py-3 pr-4">{{ number_format((int) $metric->unique_visits) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </section>
+
     {{-- Stats --}}
     <section class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         {{-- Users Card --}}

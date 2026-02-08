@@ -2,19 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\BlogPosts;
+use App\Models\DataUpdate;
+use App\Models\FormEvent;
+use App\Models\Support;
 use App\Models\User;
 use App\Models\UserRolesPivot;
-use App\Models\BlogPosts;
-use App\Models\Support;
-use App\Models\DataUpdate;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class AdminController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index() {
+    public function index(): View
+    {
+        $twentyFourHoursAgo = now()->subDay();
 
         // User info
         $users = User::all();
@@ -47,7 +51,7 @@ class AdminController extends Controller
         $tickets_closed = $tickets->filter(function ($ticket) {
             return strcasecmp($ticket->status, 'Closed') === 0;
         })->count();
-        //Blog info
+        // Blog info
         $blogposts = BlogPosts::all();
         $blogunpublished = BlogPosts::where('published', false)->get();
 
@@ -58,7 +62,17 @@ class AdminController extends Controller
             ->take(3)
             ->get();
 
-        $data = array(
+        $form_event_metrics = FormEvent::query()
+            ->select('form_key')
+            ->selectRaw('COUNT(*) as total_events')
+            ->selectRaw('SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as events_last_24h', [$twentyFourHoursAgo])
+            ->selectRaw('COUNT(DISTINCT anon_visit_id) as unique_visits')
+            ->groupBy('form_key')
+            ->orderByDesc('total_events')
+            ->orderBy('form_key')
+            ->get();
+
+        $data = [
 
             'users' => $users,
             'users_pending' => $users_pending,
@@ -73,9 +87,10 @@ class AdminController extends Controller
             'tickets_pending' => $tickets_pending,
             'tickets_awaiting' => $tickets_awaiting,
             'tickets_closed' => $tickets_closed,
-        );
+            'form_event_metrics' => $form_event_metrics,
+        ];
 
-        return view ('admin.index')->with($data);
+        return view('admin.index')->with($data);
     }
 
     /**
@@ -126,4 +141,3 @@ class AdminController extends Controller
         //
     }
 }
-
