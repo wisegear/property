@@ -31,6 +31,14 @@ class FormAnalyticsTrackingTest extends TestCase
         $response->assertCookie('pr_avid');
     }
 
+    public function test_area_search_page_sets_cookie_when_missing(): void
+    {
+        $response = $this->get('/property/search');
+
+        $response->assertOk();
+        $response->assertCookie('pr_avid');
+    }
+
     public function test_two_submissions_with_same_cookie_share_anon_visit_id(): void
     {
         $anonVisitId = (string) Str::uuid();
@@ -171,12 +179,31 @@ class FormAnalyticsTrackingTest extends TestCase
         $response = $this->get(route('property.area.show', ['type' => $type, 'slug' => $slug], absolute: false));
 
         $response->assertOk();
+        $response->assertCookie('pr_avid');
         $event = DB::table('form_events')->where('form_key', 'property_area_search')->first();
         $this->assertNotNull($event);
 
         $payload = $this->decodePayload($event->payload);
         $this->assertSame($type, $payload['area_type'] ?? null);
         $this->assertSame($name, $payload['area_name'] ?? null);
+    }
+
+    public function test_form_submission_uses_existing_anon_visit_cookie(): void
+    {
+        $anonVisitId = (string) Str::uuid();
+
+        $response = $this->withCookie('pr_avid', $anonVisitId)
+            ->post('/mortgage-calculator', [
+                'amount' => '250,000',
+                'term' => 30,
+                'rate' => '4.5',
+            ]);
+
+        $response->assertOk();
+        $event = DB::table('form_events')->where('form_key', 'mortgage_calculator')->first();
+
+        $this->assertNotNull($event);
+        $this->assertSame($anonVisitId, $event->anon_visit_id);
     }
 
     public function test_deprivation_northern_ireland_area_selection_records_form_event(): void
