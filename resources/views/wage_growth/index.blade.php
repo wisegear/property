@@ -67,9 +67,9 @@
 
         {{-- Hero image --}}
         <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('assets/images/site/wages.svg') }}" 
+            <img src="{{ asset('assets/images/site/wage_growth.jpg') }}" 
                  alt="Wage Growth" 
-                 class="w-64 h-auto">
+                 class="w-72 h-auto">
         </div>
     </section>
 

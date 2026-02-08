@@ -36,6 +36,7 @@ class HpiDashboardControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('UK House Price Index');
+        $response->assertSee('assets/images/site/hpi.jpg', false);
     }
 
     protected function seedHpiRows(): void

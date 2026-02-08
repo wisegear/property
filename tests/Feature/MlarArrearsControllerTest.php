@@ -30,6 +30,7 @@ class MlarArrearsControllerTest extends TestCase
         $response = $this->get(route('arrears.index', absolute: false));
 
         $response->assertOk();
+        $response->assertSee('assets/images/site/arrears.jpg', false);
         $this->assertSame(
             ['2024 Q1', '2024 Q2', '2024 Q3', '2024 Q4', '2025 Q1', '2025 Q4'],
             $response->viewData('periods')->all()
