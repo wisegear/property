@@ -144,6 +144,7 @@ class EconomicDashboardTest extends TestCase
         $response = $this->get(route('economic.dashboard', absolute: false));
 
         $response->assertOk();
+        $response->assertDontSee('sticky top-0 z-40 backdrop-blur-sm bg-white/95', false);
 
         $sparklines = $response->viewData('sparklines');
         $approvals = $response->viewData('approvals');
