@@ -10,6 +10,7 @@ class FormEvent extends Model
 
     protected $fillable = [
         'form_key',
+        'anon_visit_id',
         'payload',
         'created_at',
     ];

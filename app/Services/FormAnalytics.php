@@ -11,9 +11,11 @@ class FormAnalytics
     {
         try {
             $safePayload = self::sanitizePayload($payload);
+            $anonVisitId = self::resolveAnonVisitId();
 
             FormEvent::query()->create([
                 'form_key' => substr(trim($formKey), 0, 50),
+                'anon_visit_id' => $anonVisitId,
                 'payload' => $safePayload === [] ? null : $safePayload,
                 'created_at' => now(),
             ]);
@@ -55,5 +57,19 @@ class FormAnalytics
     private static function looksIdentifyingKey(string $key): bool
     {
         return (bool) preg_match('/(email|ip|session|cookie|header|token|user_?id|identifier)/i', $key);
+    }
+
+    private static function resolveAnonVisitId(): ?string
+    {
+        if (! app()->bound('request')) {
+            return null;
+        }
+
+        $anonVisitId = app('request')->cookie('pr_avid');
+        if (! is_string($anonVisitId) || trim($anonVisitId) === '') {
+            return null;
+        }
+
+        return mb_substr(trim($anonVisitId), 0, 36);
     }
 }

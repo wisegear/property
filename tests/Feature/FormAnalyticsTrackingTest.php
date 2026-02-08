@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -20,6 +21,37 @@ class FormAnalyticsTrackingTest extends TestCase
 
         $this->assertNotNull($event);
         $this->assertSame('WR5 3EU', $this->decodePayload($event->payload)['postcode'] ?? null);
+    }
+
+    public function test_tracked_form_sets_cookie_when_missing(): void
+    {
+        $response = $this->get('/property/search?postcode=WR5+3EU');
+
+        $response->assertOk();
+        $response->assertCookie('pr_avid');
+    }
+
+    public function test_two_submissions_with_same_cookie_share_anon_visit_id(): void
+    {
+        $anonVisitId = (string) Str::uuid();
+
+        $firstResponse = $this->withCookie('pr_avid', $anonVisitId)
+            ->get('/property/search?postcode=WR5+3EU');
+
+        $firstResponse->assertOk();
+
+        $secondResponse = $this->withCookie('pr_avid', $anonVisitId)
+            ->get('/epc/search?postcode=WR5+3EU');
+
+        $secondResponse->assertOk();
+
+        $propertyEvent = DB::table('form_events')->where('form_key', 'property_search')->first();
+        $epcEvent = DB::table('form_events')->where('form_key', 'epc_england_wales')->first();
+
+        $this->assertNotNull($propertyEvent);
+        $this->assertNotNull($epcEvent);
+        $this->assertSame($anonVisitId, $propertyEvent->anon_visit_id);
+        $this->assertSame($anonVisitId, $epcEvent->anon_visit_id);
     }
 
     public function test_epc_search_records_form_event_after_validation(): void
@@ -169,6 +201,27 @@ class FormAnalyticsTrackingTest extends TestCase
         $payload = $this->decodePayload($event->payload);
         $this->assertSame('N00000001', $payload['area_code'] ?? null);
         $this->assertSame('nimdm_2017', $payload['index_version'] ?? null);
+    }
+
+    public function test_no_ip_user_agent_or_session_id_is_stored(): void
+    {
+        $response = $this->withHeader('User-Agent', 'Test-Agent/1.0')
+            ->get('/property/search?postcode=WR5+3EU');
+
+        $response->assertOk();
+
+        $this->assertFalse(Schema::hasColumn('form_events', 'ip'));
+        $this->assertFalse(Schema::hasColumn('form_events', 'ip_address'));
+        $this->assertFalse(Schema::hasColumn('form_events', 'user_agent'));
+        $this->assertFalse(Schema::hasColumn('form_events', 'session_id'));
+
+        $event = DB::table('form_events')->where('form_key', 'property_search')->first();
+        $this->assertNotNull($event);
+        $payload = $this->decodePayload($event->payload);
+        $this->assertArrayNotHasKey('ip', $payload);
+        $this->assertArrayNotHasKey('ip_address', $payload);
+        $this->assertArrayNotHasKey('user_agent', $payload);
+        $this->assertArrayNotHasKey('session_id', $payload);
     }
 
     private function decodePayload(mixed $payload): array
