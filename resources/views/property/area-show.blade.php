@@ -1,7 +1,11 @@
 @extends('layouts.app')
 
 @php
-    $areaTitle = ucfirst($type) . ': ' . ucfirst(strtolower($areaName));
+    $areaLabel = trim((string) $areaName);
+    $typeLabel = ucfirst($type);
+    $areaTitle = $type === 'town'
+        ? "House Prices in {$areaLabel}"
+        : "House Prices in the {$typeLabel} of {$areaLabel}";
     $yearsCount = isset($byYear) ? (is_countable($byYear) ? count($byYear) : $byYear->count()) : 0;
     $salesCount = isset($summary) ? (int) ($summary->sales_count ?? 0) : 0;
     $canIndex = $salesCount > 0 && $yearsCount > 0;
@@ -9,8 +13,6 @@
     $metaAvg = isset($summary) && !is_null($summary->avg_price ?? null) ? '£' . number_format((float) $summary->avg_price, 0) : 'n/a';
     $metaYears = $yearsCount ? $yearsCount . ' years' : 'limited history';
     $metaDesc = "{$areaTitle} house price stats: median {$metaAvg}, {$metaSales} sales, {$metaYears} of data. Trends, types, and tenure breakdowns.";
-    $areaLabel = ucfirst(strtolower($areaName));
-    $typeLabel = ucfirst($type);
 
     $formatMoney = function ($value) {
         return is_null($value) ? 'n/a' : '£' . number_format((float) $value, 0);
@@ -114,8 +116,12 @@
     <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
         @include('partials.hero-background')
         <div class="max-w-6xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900"><span class="text-lime-600">{{ ucfirst($type) }}</span>: {{ ucfirst(strtolower($areaName)) }}</h1>
-            <p class="mt-2 text-sm leading-6 text-gray-700">This page provides a detailed breakdown of historical property sales, prices, and market composition for {{ ucfirst(strtolower($areaName)) }}, based on Land Registry transaction data.</p>
+            @if($type === 'town')
+                <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">House Prices in {{ $areaLabel }}</h1>
+            @else
+                <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">House Prices in the <span class="text-gray-900">{{ $typeLabel }}</span> of {{ $areaLabel }}</h1>
+            @endif
+            <p class="mt-2 text-sm leading-6 text-gray-700">This page provides a detailed breakdown of historical property sales, prices, and market composition for {{ $areaLabel }}, based on Land Registry transaction data.</p>
         </div>
         <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
             <img src="{{ asset('assets/images/site/propertysearch.jpg') }}" alt="Area" class="w-72 h-auto">

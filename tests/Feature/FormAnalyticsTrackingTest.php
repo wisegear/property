@@ -175,10 +175,14 @@ class FormAnalyticsTrackingTest extends TestCase
         $type = (string) $selected['type'];
         $name = (string) ($selected['name'] ?? $selected['label']);
         $slug = Str::slug($name);
+        $expectedTitle = $type === 'town'
+            ? "House Prices in {$name}"
+            : 'House Prices in the '.ucfirst($type)." of {$name}";
 
         $response = $this->get(route('property.area.show', ['type' => $type, 'slug' => $slug], absolute: false));
 
         $response->assertOk();
+        $response->assertSee($expectedTitle);
         $response->assertCookie('pr_avid');
         $event = DB::table('form_events')->where('form_key', 'property_area_search')->first();
         $this->assertNotNull($event);
