@@ -70,8 +70,8 @@ class GenerateEpcPostcodeSitemapCommandTest extends TestCase
         $this->assertStringContainsString('/epc/postcode/AL1-1BH', $xmlString);
         $this->assertStringContainsString('/epc/postcode/KA7-3XY', $xmlString);
         $this->assertStringContainsString('/epc/scotland/postcode/EH1-1YZ', $xmlString);
-        $this->assertStringContainsString('<changefreq>monthly</changefreq>', $xmlString);
-        $this->assertMatchesRegularExpression('/<lastmod>'.preg_quote(now()->toDateString(), '/').'.*<\/lastmod>/', $xmlString);
+        $this->assertStringNotContainsString('<changefreq>', $xmlString);
+        $this->assertStringNotContainsString('<lastmod>', $xmlString);
     }
 
     public function test_command_adds_epc_sitemap_to_existing_sitemap_index(): void

@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use DOMDocument;
+use DOMXPath;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -10,6 +12,7 @@ use Spatie\Sitemap\SitemapGenerator;
 use Spatie\Sitemap\SitemapIndex;
 use Spatie\Sitemap\Tags\Sitemap as SitemapTag;
 use Spatie\Sitemap\Tags\Url;
+use Throwable;
 
 class GenerateSitemap extends Command
 {
@@ -48,7 +51,6 @@ class GenerateSitemap extends Command
             }
         }
 
-        $generatedAt = now();
         $this->deleteExistingChunkSitemaps();
 
         $tags = collect($sitemap->getTags())
@@ -68,13 +70,11 @@ class GenerateSitemap extends Command
                 ->add($chunk->all())
                 ->writeToFile($chunkPath);
 
-            $sitemapIndex->add(
-                SitemapTag::create(url("/{$chunkFilename}"))
-                    ->setLastModificationDate($generatedAt)
-            );
+            $sitemapIndex->add(SitemapTag::create(url("/{$chunkFilename}")));
         }
 
         $sitemapIndex->writeToFile(public_path('sitemap-index.xml'));
+        $this->removeLastModElementsFromSitemapIndex(public_path('sitemap-index.xml'));
 
         Artisan::call('sitemap:generate-epc-postcodes');
         $this->line(trim(Artisan::output()));
@@ -85,6 +85,48 @@ class GenerateSitemap extends Command
         $this->line('URLs indexed: '.number_format($tags->count()));
 
         return self::SUCCESS;
+    }
+
+    private function removeLastModElementsFromSitemapIndex(string $sitemapIndexPath): void
+    {
+        try {
+            if (! File::exists($sitemapIndexPath)) {
+                return;
+            }
+
+            $dom = new DOMDocument('1.0', 'UTF-8');
+            $dom->preserveWhiteSpace = false;
+            $dom->formatOutput = false;
+
+            if (! $dom->load($sitemapIndexPath)) {
+                return;
+            }
+
+            if ($dom->documentElement?->localName !== 'sitemapindex') {
+                return;
+            }
+
+            $namespace = $dom->documentElement->namespaceURI ?: 'http://www.sitemaps.org/schemas/sitemap/0.9';
+            $xpath = new DOMXPath($dom);
+            $xpath->registerNamespace('sm', $namespace);
+
+            $lastModNodes = $xpath->query('//sm:lastmod');
+            if ($lastModNodes === false) {
+                return;
+            }
+
+            $nodes = [];
+            foreach ($lastModNodes as $node) {
+                $nodes[] = $node;
+            }
+
+            foreach ($nodes as $node) {
+                $node->parentNode?->removeChild($node);
+            }
+
+            $dom->save($sitemapIndexPath);
+        } catch (Throwable) {
+        }
     }
 
     private function deleteExistingChunkSitemaps(): void

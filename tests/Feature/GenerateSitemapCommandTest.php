@@ -105,6 +105,7 @@ class GenerateSitemapCommandTest extends TestCase
         $indexXml = (string) File::get(public_path('sitemap-index.xml'));
         $this->assertStringContainsString(url('/sitemap.xml'), $indexXml);
         $this->assertStringContainsString(url('/sitemap-2.xml'), $indexXml);
+        $this->assertStringNotContainsString('<lastmod>', $indexXml);
     }
 
     public function test_command_removes_stale_chunk_sitemaps_before_writing_new_chunks(): void

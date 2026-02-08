@@ -36,7 +36,6 @@ class GenerateEpcPostcodeSitemap extends Command
             return self::FAILURE;
         }
 
-        $generatedAt = now();
         $this->deleteExistingChunkedSitemaps();
         $urls = [];
 
@@ -44,15 +43,11 @@ class GenerateEpcPostcodeSitemap extends Command
         $scotlandPostcodes = $this->normalisePostcodes((array) data_get($payload, 'postcodes.scotland', []));
 
         foreach ($englandWalesPostcodes as $postcode) {
-            $urls[] = Url::create('/epc/postcode/'.$this->slugPostcode($postcode))
-                ->setChangeFrequency(Url::CHANGE_FREQUENCY_MONTHLY)
-                ->setLastModificationDate($generatedAt);
+            $urls[] = Url::create('/epc/postcode/'.$this->slugPostcode($postcode));
         }
 
         foreach ($scotlandPostcodes as $postcode) {
-            $urls[] = Url::create('/epc/scotland/postcode/'.$this->slugPostcode($postcode))
-                ->setChangeFrequency(Url::CHANGE_FREQUENCY_MONTHLY)
-                ->setLastModificationDate($generatedAt);
+            $urls[] = Url::create('/epc/scotland/postcode/'.$this->slugPostcode($postcode));
         }
 
         $sitemapLocations = [];
@@ -77,19 +72,15 @@ class GenerateEpcPostcodeSitemap extends Command
                     ->add($chunk->all())
                     ->writeToFile($chunkPath);
 
-                $epcSitemapIndex->add(
-                    SitemapTag::create($chunkLocation)->setLastModificationDate($generatedAt)
-                );
+                $epcSitemapIndex->add(SitemapTag::create($chunkLocation));
                 $sitemapLocations[] = $chunkLocation;
             }
 
             $epcSitemapIndex->writeToFile($epcSitemapPath);
+            $this->removeLastModElementsFromSitemapIndex($epcSitemapPath);
         }
 
-        $indexUpdated = $this->updateExistingSitemapIndexIfPresent(
-            $generatedAt->toDateString(),
-            $sitemapLocations
-        );
+        $indexUpdated = $this->updateExistingSitemapIndexIfPresent($sitemapLocations);
 
         $this->info('Done: public/sitemap-epc-postcodes.xml');
         $this->line('England & Wales URLs: '.number_format(count($englandWalesPostcodes)));
@@ -126,7 +117,7 @@ class GenerateEpcPostcodeSitemap extends Command
     /**
      * @param  array<int, string>  $sitemapLocations
      */
-    private function updateExistingSitemapIndexIfPresent(string $lastModDate, array $sitemapLocations): bool
+    private function updateExistingSitemapIndexIfPresent(array $sitemapLocations): bool
     {
         $indexCandidates = [
             public_path('sitemap.xml'),
@@ -175,12 +166,22 @@ class GenerateEpcPostcodeSitemap extends Command
                     }
                 }
 
+                $lastModNodes = $xpath->query('//sm:lastmod');
+                if ($lastModNodes !== false) {
+                    $nodes = [];
+                    foreach ($lastModNodes as $node) {
+                        $nodes[] = $node;
+                    }
+
+                    foreach ($nodes as $node) {
+                        $node->parentNode?->removeChild($node);
+                    }
+                }
+
                 foreach ($sitemapLocations as $location) {
                     $sitemapElement = $dom->createElementNS($namespace, 'sitemap');
                     $locElement = $dom->createElementNS($namespace, 'loc', $location);
-                    $lastModElement = $dom->createElementNS($namespace, 'lastmod', $lastModDate);
                     $sitemapElement->appendChild($locElement);
-                    $sitemapElement->appendChild($lastModElement);
                     $dom->documentElement->appendChild($sitemapElement);
                 }
 
@@ -193,6 +194,47 @@ class GenerateEpcPostcodeSitemap extends Command
         }
 
         return false;
+    }
+
+    private function removeLastModElementsFromSitemapIndex(string $sitemapIndexPath): void
+    {
+        try {
+            if (! File::exists($sitemapIndexPath)) {
+                return;
+            }
+
+            $dom = new DOMDocument('1.0', 'UTF-8');
+            $dom->preserveWhiteSpace = false;
+            $dom->formatOutput = false;
+            if (! $dom->load($sitemapIndexPath)) {
+                return;
+            }
+
+            if ($dom->documentElement?->localName !== 'sitemapindex') {
+                return;
+            }
+
+            $namespace = $dom->documentElement->namespaceURI ?: 'http://www.sitemaps.org/schemas/sitemap/0.9';
+            $xpath = new DOMXPath($dom);
+            $xpath->registerNamespace('sm', $namespace);
+
+            $lastModNodes = $xpath->query('//sm:lastmod');
+            if ($lastModNodes === false) {
+                return;
+            }
+
+            $nodes = [];
+            foreach ($lastModNodes as $node) {
+                $nodes[] = $node;
+            }
+
+            foreach ($nodes as $node) {
+                $node->parentNode?->removeChild($node);
+            }
+
+            $dom->save($sitemapIndexPath);
+        } catch (Throwable) {
+        }
     }
 
     private function deleteExistingChunkedSitemaps(): void
