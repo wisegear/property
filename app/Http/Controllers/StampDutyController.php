@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\FormAnalytics;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -15,8 +16,9 @@ class StampDutyController extends Controller
     {
         // Return a view if you create one, else a tiny helper message
         return view('stamp-duty.index');
+
         return response()->json([
-            'message' => 'POST to /stamp-duty/calc with {price, region, buyer_type, additional_property, non_resident} to get calculations.'
+            'message' => 'POST to /stamp-duty/calc with {price, region, buyer_type, additional_property, non_resident} to get calculations.',
         ]);
     }
 
@@ -32,11 +34,11 @@ class StampDutyController extends Controller
     public function calculate(Request $request)
     {
         $data = $request->validate([
-            'price' => ['required','numeric','min:0'],
-            'region' => ['required', Rule::in(['eng-ni','scotland','wales'])],
-            'buyer_type' => ['required', Rule::in(['main','first_time'])],
-            'additional_property' => ['required','boolean'],
-            'non_resident' => ['required','boolean'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'region' => ['required', Rule::in(['eng-ni', 'scotland', 'wales'])],
+            'buyer_type' => ['required', Rule::in(['main', 'first_time'])],
+            'additional_property' => ['required', 'boolean'],
+            'non_resident' => ['required', 'boolean'],
         ]);
 
         $price = (float) $data['price'];
@@ -63,6 +65,11 @@ class StampDutyController extends Controller
             default:
                 abort(422, 'Unsupported region');
         }
+        FormAnalytics::record('stamp_duty', [
+            'price' => $price,
+            'buyer_type' => $buyerType,
+            'region' => $region,
+        ]);
 
         return response()->json($result);
     }
@@ -86,14 +93,16 @@ class StampDutyController extends Controller
                 $tax += $portionTax;
                 $breakdown[] = [
                     'band_from' => $lastCap,
-                    'band_to'   => $cap,
-                    'rate_pct'  => $rate,
-                    'amount'    => $portion,
-                    'tax'       => $portionTax,
+                    'band_to' => $cap,
+                    'rate_pct' => $rate,
+                    'amount' => $portion,
+                    'tax' => $portionTax,
                 ];
             }
             $lastCap = $cap;
-            if ($lastCap >= $price) break;
+            if ($lastCap >= $price) {
+                break;
+            }
         }
 
         return ['tax' => round($tax, 2), 'bands' => $breakdown];
@@ -146,7 +155,7 @@ class StampDutyController extends Controller
 
         return [
             'jurisdiction' => 'SDLT (England & Northern Ireland)',
-            'inputs' => compact('price','buyerType','isAdditional','isNonResident'),
+            'inputs' => compact('price', 'buyerType', 'isAdditional', 'isNonResident'),
             'base_tax' => $base['tax'],
             'base_breakdown' => $base['bands'],
             'surcharges' => $surcharges,
@@ -193,7 +202,7 @@ class StampDutyController extends Controller
 
         return [
             'jurisdiction' => 'LBTT (Scotland)',
-            'inputs' => compact('price','buyerType','isAdditional'),
+            'inputs' => compact('price', 'buyerType', 'isAdditional'),
             'base_tax' => $base['tax'],
             'base_breakdown' => $base['bands'],
             'surcharges' => $surcharges,
@@ -233,7 +242,7 @@ class StampDutyController extends Controller
 
         return [
             'jurisdiction' => 'LTT (Wales)',
-            'inputs' => compact('price','buyerType','isAdditional'),
+            'inputs' => compact('price', 'buyerType', 'isAdditional'),
             'base_tax' => $base['tax'],
             'base_breakdown' => $base['bands'],
             'surcharges' => [],

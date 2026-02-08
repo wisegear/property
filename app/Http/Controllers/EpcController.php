@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\FormAnalytics;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -272,6 +273,9 @@ class EpcController extends Controller
 
         // Normalise to canonical form: uppercase and single space before last 3 chars
         $postcode = $this->normalisePostcode($postcodeInput);
+        FormAnalytics::record('epc_england_wales', [
+            'postcode' => $postcode,
+        ]);
 
         // Sorting (whitelist fields to avoid SQL injection)
         $allowedSorts = [
@@ -609,6 +613,9 @@ class EpcController extends Controller
 
         // Normalise to canonical form: uppercase and single space before last 3 chars
         $postcode = $this->normalisePostcode($postcodeInput);
+        FormAnalytics::record('epc_scotland', [
+            'postcode' => $postcode,
+        ]);
 
         // Sorting (whitelist fields)
         $allowedSorts = [
