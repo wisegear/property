@@ -72,6 +72,11 @@ class PropertyAreaController extends Controller
             return $this->buildAreaPayload($column, $areaName);
         });
 
+        if (! array_key_exists('yearOverYearSummary', $data)) {
+            $data['yearOverYearSummary'] = $this->buildYearOverYearSummary($column, $areaName);
+            Cache::put($cacheKey, $data, $ttl);
+        }
+
         return view('property.area-show', array_merge([
             'type' => $type,
             'areaName' => $areaName,
@@ -219,14 +224,63 @@ class PropertyAreaController extends Controller
             $newBuildSplit['series'][$flag]['counts'][$idx] = (int) $row->sales_count;
         }
 
+        $yearOverYearSummary = $this->buildYearOverYearSummary($column, $areaName);
+
         return [
             'summary' => $summary,
             'byYear' => $byYear,
             'byType' => $byType,
             'propertyTypeSplit' => $propertyTypeSplit,
             'newBuildSplit' => $newBuildSplit,
+            'yearOverYearSummary' => $yearOverYearSummary,
             'generated_at' => now()->toIso8601String(),
         ];
+    }
+
+    private function buildYearOverYearSummary(string $column, string $areaName): string
+    {
+        $periodEnd = now();
+        $currentPeriodStart = $periodEnd->copy()->subYear();
+        $previousPeriodStart = $currentPeriodStart->copy()->subYear();
+
+        $currentPeriodMedian = DB::table('land_registry')
+            ->selectRaw($this->medianPriceExpression().' as period_price')
+            ->where($column, $areaName)
+            ->where('PPDCategoryType', '<>', 'B')
+            ->whereBetween('Date', [$currentPeriodStart, $periodEnd])
+            ->value('period_price');
+
+        $previousPeriodMedian = DB::table('land_registry')
+            ->selectRaw($this->medianPriceExpression().' as period_price')
+            ->where($column, $areaName)
+            ->where('PPDCategoryType', '<>', 'B')
+            ->whereBetween('Date', [$previousPeriodStart, $currentPeriodStart])
+            ->value('period_price');
+
+        $areaLabel = trim((string) $areaName);
+        if ($currentPeriodMedian === null || $previousPeriodMedian === null || (float) $previousPeriodMedian <= 0) {
+            return "House price movement over the past year for {$areaLabel} is not available, based on current Land Registry data.";
+        }
+
+        $percentChange = (((float) $currentPeriodMedian - (float) $previousPeriodMedian) / (float) $previousPeriodMedian) * 100;
+
+        if ($percentChange >= 1) {
+            return sprintf(
+                'House prices in %s have increased by %.1f%% over the past 12 months, based on Land Registry sales data.',
+                $areaLabel,
+                $percentChange
+            );
+        }
+
+        if ($percentChange <= -1) {
+            return sprintf(
+                'House prices in %s have fallen by %.1f%% over the past 12 months, based on Land Registry sales data.',
+                $areaLabel,
+                abs($percentChange)
+            );
+        }
+
+        return "House prices in {$areaLabel} have remained broadly flat over the past 12 months, based on Land Registry sales data.";
     }
 
     private function yearExpression(): string

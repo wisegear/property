@@ -115,7 +115,7 @@
         @include('partials.hero-background')
         <div class="max-w-6xl">
             <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">House Prices in {{ $areaLabel }}</h1>
-            <p class="mt-2 text-sm leading-6 text-gray-700">This page provides a detailed breakdown of historical property sales, prices, and market composition for {{ $areaLabel }}, based on Land Registry transaction data.</p>
+            <p class="mt-2 text-sm leading-6 text-gray-700">{{ $yearOverYearSummary ?? "House price movement over the past year for {$areaLabel} is not available, based on current Land Registry data." }}</p>
         </div>
         <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
             <img src="{{ asset('assets/images/site/propertysearch.jpg') }}" alt="Area" class="w-72 h-auto">
