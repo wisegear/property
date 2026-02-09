@@ -498,7 +498,7 @@
                          alt="PropertyResearch.uk logo" 
                          class="h-10 w-auto">
                     <span class="text-lg font-semibold tracking-tight text-slate-800">
-                        PropertyResearch<span class="text-lime-600 text-sm">.uk</span>
+                        PropertyResearch<span class="text-lime-900 text-sm">.uk</span>
                     </span>
                 </a>
                 
