@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\FormAnalytics;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -53,6 +54,11 @@ class EpcPostcodeController extends Controller
         }
 
         $data = $this->warmPostcodeCache($regime, $canonicalPostcode);
+
+        FormAnalytics::record(
+            $regime === 'scotland' ? '/epc/scotland/postcode/' : '/epc/postcode/',
+            ['postcode' => $canonicalPostcode]
+        );
 
         return view('epc.postcode', $data);
     }

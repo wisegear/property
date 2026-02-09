@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -82,6 +83,36 @@ class FormAnalyticsTrackingTest extends TestCase
 
         $this->assertNotNull($event);
         $this->assertSame('EH1 1AA', $this->decodePayload($event->payload)['postcode'] ?? null);
+    }
+
+    public function test_epc_programmatic_england_wales_postcode_page_records_form_event_hit(): void
+    {
+        $postcode = $this->firstIndexedEpcPostcode('england_wales');
+        if ($postcode === null) {
+            $this->markTestSkipped('No England & Wales EPC postcode available in index.');
+        }
+
+        $response = $this->get('/epc/postcode/'.str_replace(' ', '-', $postcode));
+
+        $response->assertOk();
+        $event = DB::table('form_events')->where('form_key', '/epc/postcode/')->first();
+        $this->assertNotNull($event);
+        $this->assertSame($postcode, $this->decodePayload($event->payload)['postcode'] ?? null);
+    }
+
+    public function test_epc_programmatic_scotland_postcode_page_records_form_event_hit(): void
+    {
+        $postcode = $this->firstIndexedEpcPostcode('scotland');
+        if ($postcode === null) {
+            $this->markTestSkipped('No Scotland EPC postcode available in index.');
+        }
+
+        $response = $this->get('/epc/scotland/postcode/'.str_replace(' ', '-', $postcode));
+
+        $response->assertOk();
+        $event = DB::table('form_events')->where('form_key', '/epc/scotland/postcode/')->first();
+        $this->assertNotNull($event);
+        $this->assertSame($postcode, $this->decodePayload($event->payload)['postcode'] ?? null);
     }
 
     public function test_stamp_duty_calculation_records_analytics_event(): void
@@ -266,5 +297,31 @@ class FormAnalyticsTrackingTest extends TestCase
         $decoded = json_decode($payload, true);
 
         return is_array($decoded) ? $decoded : [];
+    }
+
+    private function firstIndexedEpcPostcode(string $regime): ?string
+    {
+        $indexPath = public_path('data/epc-postcodes.json');
+        if (! File::exists($indexPath)) {
+            return null;
+        }
+
+        $payload = json_decode((string) File::get($indexPath), true);
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        $postcodes = data_get($payload, 'postcodes.'.$regime);
+        if (! is_array($postcodes)) {
+            return null;
+        }
+
+        foreach ($postcodes as $postcode) {
+            if (is_string($postcode) && trim($postcode) !== '') {
+                return strtoupper(trim($postcode));
+            }
+        }
+
+        return null;
     }
 }

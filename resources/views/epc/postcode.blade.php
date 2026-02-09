@@ -139,7 +139,7 @@
                                     aria-label="View EPC report for {{ $certificate['address'] ?? '' }}"
                                     title="View report"
                                 >
-                                    <svg class="inline-block h-[1.5em] w-[1.5em] leading-none align-middle pt-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <svg class="inline-block h-[2em] w-[2em] leading-none align-middle pt-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                         <path fill-rule="evenodd" d="M11 3a8 8 0 1 0 5.026 14.225l4.374 4.374a.75.75 0 1 0 1.06-1.06l-4.374-4.375A8 8 0 0 0 11 3Zm-6.5 8a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0Z" clip-rule="evenodd"/>
                                         <path d="M8.25 10.5a.75.75 0 0 1 .75-.75h3.19l-1.22-1.22a.75.75 0 1 1 1.06-1.06l2.5 2.5a.75.75 0 0 1 0 1.06l-2.5 2.5a.75.75 0 0 1-1.06-1.06l1.22-1.22H9a.75.75 0 0 1-.75-.75Z"/>
                                     </svg>

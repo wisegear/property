@@ -44,19 +44,39 @@ class AdminDashboardFormAnalyticsTest extends TestCase
             'created_at' => now()->subHours(40),
         ]);
 
+        FormEvent::query()->create([
+            'form_key' => '/epc/postcode/',
+            'anon_visit_id' => 'visit-4',
+            'payload' => ['postcode' => 'SW7 5PH'],
+            'created_at' => now()->subHours(3),
+        ]);
+
+        FormEvent::query()->create([
+            'form_key' => '/epc/scotland/postcode/',
+            'anon_visit_id' => 'visit-5',
+            'payload' => ['postcode' => 'FK7 8YY'],
+            'created_at' => now()->subHours(5),
+        ]);
+
         $response = $this->actingAs($admin)->get('/admin');
 
         $response->assertOk();
         $response->assertViewHas('form_event_metrics', function ($metrics) {
             $metricsByFormKey = $metrics->keyBy('form_key');
 
-            return $metricsByFormKey->count() === 2
+            return $metricsByFormKey->count() === 4
                 && (int) $metricsByFormKey->get('property_search')->total_events === 3
                 && (int) $metricsByFormKey->get('property_search')->events_last_24h === 2
                 && (int) $metricsByFormKey->get('property_search')->unique_visits === 2
                 && (int) $metricsByFormKey->get('epc_england_wales')->total_events === 1
                 && (int) $metricsByFormKey->get('epc_england_wales')->events_last_24h === 0
-                && (int) $metricsByFormKey->get('epc_england_wales')->unique_visits === 1;
+                && (int) $metricsByFormKey->get('epc_england_wales')->unique_visits === 1
+                && (int) $metricsByFormKey->get('/epc/postcode/')->total_events === 1
+                && (int) $metricsByFormKey->get('/epc/postcode/')->events_last_24h === 1
+                && (int) $metricsByFormKey->get('/epc/postcode/')->unique_visits === 1
+                && (int) $metricsByFormKey->get('/epc/scotland/postcode/')->total_events === 1
+                && (int) $metricsByFormKey->get('/epc/scotland/postcode/')->events_last_24h === 1
+                && (int) $metricsByFormKey->get('/epc/scotland/postcode/')->unique_visits === 1;
         });
     }
 
