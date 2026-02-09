@@ -86,9 +86,6 @@
     <!-- Chart.js Library for Data Visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- FontAwesome Icons - Loaded asynchronously for better performance -->
-    <script async src="https://kit.fontawesome.com/0ff5084395.js" crossorigin="anonymous"></script>
-
     <!-- Bunny Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
     <link rel="preload" as="style" href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap">
@@ -116,21 +113,27 @@
                            class="inline-flex items-center justify-center w-8 h-8 rounded
                             border border-zinc-300 bg-white/80 text-[#0A66C2] hover:bg-zinc-100 transition shadow-sm"
                            aria-label="LinkedIn profile">
-                            <i class="fa-brands fa-linkedin-in text-sm"></i>
+                            <svg class="inline-block h-[1em] w-[1em] text-sm" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                                <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.473 0 16 .513 16 1.146v13.708c0 .633-.527 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146Zm4.943 12.248V6.169H2.542v7.225h2.401ZM3.743 5.182c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.225 2.4 3.934c0 .694.506 1.248 1.327 1.248Zm1.945 8.212h2.401V9.359c0-.216.016-.432.08-.586.175-.431.576-.878 1.25-.878.883 0 1.237.662 1.237 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225Z"/>
+                            </svg>
                         </a>
                         
                         <!-- Facebook -->
                         <a href="https://www.facebook.com/lee.wisener" target="_blank" rel="noopener"
                            class="inline-flex items-center justify-center w-8 h-8 rounded border border-zinc-300 bg-white/80 text-[#1877F2] hover:bg-zinc-100 transition shadow-sm"
                            aria-label="Facebook profile">
-                            <i class="fa-brands fa-square-facebook text-sm"></i>
+                            <svg class="inline-block h-[1em] w-[1em] text-sm" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                                <path d="M16 8.049C16 3.604 12.418 0 8 0S0 3.604 0 8.049C0 12.07 2.925 15.401 6.75 16v-5.625H4.719V8.049H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98H10.554c-.993 0-1.304.621-1.304 1.258v1.51h2.219l-.354 2.326H9.25V16C13.075 15.401 16 12.07 16 8.049Z"/>
+                            </svg>
                         </a>
                         
                         <!-- WhatsApp -->
                         <a href="https://wa.me/447720868799?text=Hi%20Lee%2C%20I%27m%20contacting%20you%20about%20propertyresearch.uk" target="_blank" rel="noopener"
                            class="inline-flex items-center justify-center w-8 h-8 rounded border border-zinc-300 bg-white/80 text-[#25D366] hover:bg-zinc-100 transition shadow-sm"
                            aria-label="WhatsApp chat">
-                            <i class="fa-brands fa-whatsapp text-sm"></i>
+                            <svg class="inline-block h-[1em] w-[1em] text-sm" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                                <path d="M13.601 2.326A7.854 7.854 0 0 0 8.003 0C3.58 0 .001 3.577 0 8a7.94 7.94 0 0 0 1.143 4.08L0 16l4.02-1.055A7.964 7.964 0 0 0 8.003 16c4.423 0 8-3.577 8-8 0-2.136-.832-4.146-2.399-5.674ZM8.003 14.5a6.5 6.5 0 0 1-3.317-.908l-.237-.14-2.387.626.637-2.327-.154-.24A6.5 6.5 0 1 1 8.003 14.5Zm3.566-4.844c-.194-.097-1.148-.567-1.326-.631-.177-.065-.307-.097-.437.097-.129.194-.501.63-.614.76-.113.129-.226.145-.42.048-.194-.097-.819-.302-1.56-.962-.576-.513-.964-1.146-1.077-1.34-.113-.194-.012-.299.085-.395.087-.086.194-.226.291-.339.097-.113.129-.194.194-.323.065-.129.032-.242-.016-.339-.048-.097-.437-1.052-.598-1.44-.157-.377-.317-.326-.437-.332l-.372-.006a.713.713 0 0 0-.517.242c-.178.194-.679.663-.679 1.617 0 .954.695 1.876.792 2.005.097.129 1.37 2.092 3.32 2.932.464.2.825.319 1.107.408.465.148.888.127 1.222.077.373-.056 1.148-.469 1.31-.923.162-.453.162-.841.113-.923-.048-.081-.177-.129-.371-.226Z"/>
+                            </svg>
                         </a>
                     </div>
                 </div>
@@ -701,7 +704,9 @@
                            rel="noopener"
                            class="inline-flex items-center justify-center w-8 h-8 rounded-full border border-zinc-300 bg-white text-[#0A66C2] hover:bg-zinc-100 transition shadow-sm"
                            aria-label="LinkedIn profile">
-                            <i class="fa-brands fa-linkedin-in text-sm"></i>
+                            <svg class="inline-block h-[1em] w-[1em] text-sm" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                                <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.473 0 16 .513 16 1.146v13.708c0 .633-.527 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146Zm4.943 12.248V6.169H2.542v7.225h2.401ZM3.743 5.182c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.225 2.4 3.934c0 .694.506 1.248 1.327 1.248Zm1.945 8.212h2.401V9.359c0-.216.016-.432.08-.586.175-.431.576-.878 1.25-.878.883 0 1.237.662 1.237 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225Z"/>
+                            </svg>
                         </a>
                         
                         <!-- Facebook -->
@@ -710,7 +715,9 @@
                            rel="noopener"
                            class="inline-flex items-center justify-center w-8 h-8 rounded-full border border-zinc-300 bg-white text-[#1877F2] hover:bg-zinc-100 transition shadow-sm"
                            aria-label="Facebook profile">
-                            <i class="fa-brands fa-square-facebook text-sm"></i>
+                            <svg class="inline-block h-[1em] w-[1em] text-sm" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                                <path d="M16 8.049C16 3.604 12.418 0 8 0S0 3.604 0 8.049C0 12.07 2.925 15.401 6.75 16v-5.625H4.719V8.049H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98H10.554c-.993 0-1.304.621-1.304 1.258v1.51h2.219l-.354 2.326H9.25V16C13.075 15.401 16 12.07 16 8.049Z"/>
+                            </svg>
                         </a>
                         
                         <!-- WhatsApp -->
@@ -719,7 +726,9 @@
                            rel="noopener"
                            class="inline-flex items-center justify-center w-8 h-8 rounded-full border border-zinc-300 bg-white text-[#25D366] hover:bg-zinc-100 transition shadow-sm"
                            aria-label="WhatsApp chat">
-                            <i class="fa-brands fa-whatsapp text-sm"></i>
+                            <svg class="inline-block h-[1em] w-[1em] text-sm" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                                <path d="M13.601 2.326A7.854 7.854 0 0 0 8.003 0C3.58 0 .001 3.577 0 8a7.94 7.94 0 0 0 1.143 4.08L0 16l4.02-1.055A7.964 7.964 0 0 0 8.003 16c4.423 0 8-3.577 8-8 0-2.136-.832-4.146-2.399-5.674ZM8.003 14.5a6.5 6.5 0 0 1-3.317-.908l-.237-.14-2.387.626.637-2.327-.154-.24A6.5 6.5 0 1 1 8.003 14.5Zm3.566-4.844c-.194-.097-1.148-.567-1.326-.631-.177-.065-.307-.097-.437.097-.129.194-.501.63-.614.76-.113.129-.226.145-.42.048-.194-.097-.819-.302-1.56-.962-.576-.513-.964-1.146-1.077-1.34-.113-.194-.012-.299.085-.395.087-.086.194-.226.291-.339.097-.113.129-.194.194-.323.065-.129.032-.242-.016-.339-.048-.097-.437-1.052-.598-1.44-.157-.377-.317-.326-.437-.332l-.372-.006a.713.713 0 0 0-.517.242c-.178.194-.679.663-.679 1.617 0 .954.695 1.876.792 2.005.097.129 1.37 2.092 3.32 2.932.464.2.825.319 1.107.408.465.148.888.127 1.222.077.373-.056 1.148-.469 1.31-.923.162-.453.162-.841.113-.923-.048-.081-.177-.129-.371-.226Z"/>
+                            </svg>
                         </a>
                     </div>
                 </div>

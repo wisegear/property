@@ -116,7 +116,9 @@
                                 <img src="{{ \App\Models\BlogPosts::contentImageUrl($image) }}" class="h-[100px] w-full object-cover">
                                 <button type="button" onclick="copyToClipboard('{{ \App\Models\BlogPosts::contentImageUrl($image) }}')"
                                         class="py-1 px-2 border rounded">
-                                    <i class="fa-regular fa-clipboard"></i>
+                                    <svg class="inline-block h-[1em] w-[1em]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M8.5 3A1.5 1.5 0 0 0 7 4.5v15A1.5 1.5 0 0 0 8.5 21h7a1.5 1.5 0 0 0 1.5-1.5v-15A1.5 1.5 0 0 0 15.5 3h-1.378a2.25 2.25 0 0 0-4.244 0H8.5Zm2.75 0a.75.75 0 0 1 1.5 0v.75h-1.5V3Zm-2.5 5.25A.75.75 0 0 1 9.5 7.5h5a.75.75 0 0 1 0 1.5h-5a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd"/>
+                                    </svg>
                                 </button>
                             </div>
                         @endforeach

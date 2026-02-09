@@ -125,7 +125,7 @@
                         <h2 class="text-lg font-bold mb-2">Search the archive</h2>
                         <div class="relative">
                             <input type="text" class="border border-slate-300 rounded-md w-full text-sm pl-3 p-2.5 bg-white" id="search" name="search" placeholder="Enter a topic or keyword">
-                            <button class=" absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            <button class=" absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"><svg class="inline-block h-[1em] w-[1em]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.5 3a7.5 7.5 0 1 0 4.79 13.29l4.71 4.71a.75.75 0 1 0 1.06-1.06l-4.71-4.71A7.5 7.5 0 0 0 10.5 3Zm-6 7.5a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" clip-rule="evenodd"/></svg></button>
                         </div>
                     </form>
                 </div>
@@ -154,7 +154,7 @@
                 @can('Admin')
                     <!-- Admin -->
                     <div class="hidden md:block my-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <h2 class="text-xl font-bold text-red-500 border-b border-gray-200 mb-4"><i class="fa-solid fa-user-secret text-red-500"></i> Admin Tools</h2>
+                        <h2 class="text-xl font-bold text-red-500 border-b border-gray-200 mb-4"><svg class="inline-block h-[1em] w-[1em] text-red-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5Zm-4.5 16.157a8.25 8.25 0 0 1 9 0 8.22 8.22 0 0 1-9 0Zm7.5-1.13a6.72 6.72 0 0 0-6 0 6.75 6.75 0 1 1 6 0ZM12 6.75a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5Z" clip-rule="evenodd"/></svg> Admin Tools</h2>
                         <div class="flex justify-center">
                             <a href="/blog/create" class="standard-button">Create New Post</a>
                         </div>

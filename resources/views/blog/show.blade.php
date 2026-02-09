@@ -28,7 +28,10 @@
                 @if(count($page->getBodyHeadings('h2')) > 2)
                     <div class="toc my-10">
                         <p id="toc-title" class=" mb-2 border-b border-gray-300 font-bold cursor-pointer">
-                            <i class="fa-solid fa-arrow-down-short-wide text-lime-700"></i> 
+                            <svg class="inline-block h-[1em] w-[1em] text-lime-700" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M12 4.5a.75.75 0 0 1 .75.75v10.19l2.22-2.22a.75.75 0 1 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 1 1 1.06-1.06l2.22 2.22V5.25A.75.75 0 0 1 12 4.5Z"/>
+                                <path d="M5.25 6a.75.75 0 0 1 .75-.75h2a.75.75 0 0 1 0 1.5H6A.75.75 0 0 1 5.25 6Zm0 4a.75.75 0 0 1 .75-.75h4a.75.75 0 0 1 0 1.5H6A.75.75 0 0 1 5.25 10Zm0 4a.75.75 0 0 1 .75-.75h6a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1-.75-.75Z"/>
+                            </svg> 
                                 Table of contents
                             <span id="toc-arrow" class="ml-2 transform transition-transform duration-200"></span>
                         </p>

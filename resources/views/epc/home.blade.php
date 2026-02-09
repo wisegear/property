@@ -26,10 +26,16 @@
             </p>
             <div class="mt-4 flex flex-wrap gap-2">
                 <a href="/epc/search" class="inner-button inline-flex items-center gap-2 whitespace-nowrap">
-                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                <svg class="inline-block h-[1em] w-[1em]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10.5 3a7.5 7.5 0 1 0 4.79 13.29l4.71 4.71a.75.75 0 1 0 1.06-1.06l-4.71-4.71A7.5 7.5 0 0 0 10.5 3Zm-6 7.5a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" clip-rule="evenodd"/>
+                    <path d="M8.25 12.75a.75.75 0 0 1 .53-.22h.02a.75.75 0 0 1 .53.22l1.2 1.2 1.95-1.95a.75.75 0 0 1 1.06 1.06l-2.48 2.47a.75.75 0 0 1-1.06 0l-1.2-1.2-1.42 1.42a.75.75 0 0 1-1.06-1.06l1.93-1.94Z"/>
+                </svg>
                   Search England & Wales</a>
                 <a href="/epc/search_scotland" class="inner-button inline-flex items-center gap-2 whitespace-nowrap">
-                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                <svg class="inline-block h-[1em] w-[1em]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10.5 3a7.5 7.5 0 1 0 4.79 13.29l4.71 4.71a.75.75 0 1 0 1.06-1.06l-4.71-4.71A7.5 7.5 0 0 0 10.5 3Zm-6 7.5a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" clip-rule="evenodd"/>
+                    <path d="M8.25 12.75a.75.75 0 0 1 .53-.22h.02a.75.75 0 0 1 .53.22l1.2 1.2 1.95-1.95a.75.75 0 0 1 1.06 1.06l-2.48 2.47a.75.75 0 0 1-1.06 0l-1.2-1.2-1.42 1.42a.75.75 0 0 1-1.06-1.06l1.93-1.94Z"/>
+                </svg>
                   Search Scotland</a>
             </div>
         </div>
@@ -43,13 +49,19 @@
         <a href="{{ url('/epc?nation=ew') }}"
            class="inner-button inline-flex items-center gap-2 whitespace-nowrap {{ (($nation ?? 'ew') === 'ew') ? 'bg-lime-600 text-white' : '' }}"
            aria-current="{{ (($nation ?? 'ew') === 'ew') ? 'page' : 'false' }}">
-          <i class="fa-solid fa-chart-line"></i>
+          <svg class="inline-block h-[1em] w-[1em]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M3 3.75A.75.75 0 0 1 3.75 3h16.5a.75.75 0 0 1 0 1.5H4.5v15.75a.75.75 0 0 1-1.5 0V3.75Z"/>
+              <path d="M19.28 8.22a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0L11.25 11.31l-3.97 3.97a.75.75 0 0 1-1.06-1.06l4.5-4.5a.75.75 0 0 1 1.06 0l2.47 2.47 3.97-3.97a.75.75 0 0 1 1.06 0Z"/>
+          </svg>
            England &amp; Wales
         </a>
         <a href="{{ url('/epc?nation=scotland') }}"
            class="inner-button inline-flex items-center gap-2 whitespace-nowrap {{ (($nation ?? 'ew') === 'scotland') ? 'bg-lime-600 text-white' : '' }}"
            aria-current="{{ (($nation ?? 'ew') === 'scotland') ? 'page' : 'false' }}">
-          <i class="fa-solid fa-chart-line"></i>
+          <svg class="inline-block h-[1em] w-[1em]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M3 3.75A.75.75 0 0 1 3.75 3h16.5a.75.75 0 0 1 0 1.5H4.5v15.75a.75.75 0 0 1-1.5 0V3.75Z"/>
+              <path d="M19.28 8.22a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0L11.25 11.31l-3.97 3.97a.75.75 0 0 1-1.06-1.06l4.5-4.5a.75.75 0 0 1 1.06 0l2.47 2.47 3.97-3.97a.75.75 0 0 1 1.06 0Z"/>
+          </svg>
            Scotland
         </a>
     </div>

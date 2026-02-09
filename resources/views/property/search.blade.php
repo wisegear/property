@@ -28,7 +28,7 @@
 
             {{-- Search by postcode (specific properties) --}}
             <div class="rounded border border-zinc-200 bg-white/80 p-6">
-                <h2 class="text-base font-semibold mb-2"><i class="fa-solid fa-magnifying-glass-chart text-lime-600"></i> Search by postcode</h2>
+                <h2 class="text-base font-semibold mb-2"><svg class="inline-block h-[1em] w-[1em] text-lime-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.5 3a7.5 7.5 0 1 0 4.79 13.29l4.71 4.71a.75.75 0 1 0 1.06-1.06l-4.71-4.71A7.5 7.5 0 0 0 10.5 3Zm-6 7.5a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" clip-rule="evenodd"/><path d="M8.25 12.75a.75.75 0 0 1 .53-.22h.02a.75.75 0 0 1 .53.22l1.2 1.2 1.95-1.95a.75.75 0 0 1 1.06 1.06l-2.48 2.47a.75.75 0 0 1-1.06 0l-1.2-1.2-1.42 1.42a.75.75 0 0 1-1.06-1.06l1.93-1.94Z"/></svg> Search by postcode</h2>
                 <p class="text-xs text-zinc-600 mb-4">
                     Enter a full postcode to see every sale in that postcode from 1995 onwards. This is best when you
                     want to look at a specific street or a small cluster of properties.  Property results are show in a table below once you click 'Search postcode'.
@@ -59,7 +59,7 @@
 
             {{-- Search by area (summary dashboards) --}}
             <div class="rounded border border-zinc-200 bg-white/80 p-6">
-                <h2 class="text-base font-semibold mb-2"><i class="fa-solid fa-magnifying-glass-location text-lime-600"></i> Search by area</h2>
+                <h2 class="text-base font-semibold mb-2"><svg class="inline-block h-[1em] w-[1em] text-lime-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.5 3a7.5 7.5 0 1 0 4.79 13.29l4.71 4.71a.75.75 0 1 0 1.06-1.06l-4.71-4.71A7.5 7.5 0 0 0 10.5 3Zm-6 7.5a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M10.54 14.351a.75.75 0 0 0 .92 0c1.993-1.663 3.04-3.084 3.04-4.351a2.96 2.96 0 1 0-5.92 0c0 1.267 1.047 2.688 3.04 4.351ZM11 10.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd"/></svg> Search by area</h2>
                 <p class="text-xs text-zinc-600 mb-4">
                     Start typing the name of a locality, town/city, district or county in England &amp; Wales. Choose one
                     of the suggestions to go straight to an area dashboard showing prices, sales and property types.
@@ -293,7 +293,7 @@
             <div class="flex items-start justify-between gap-6 flex-col md:flex-row">
                 <div>
                     <h2 class="text-base font-semibold mb-2">
-                        <i class="fa-solid fa-map-location-dot text-lime-600"></i> Land Registry points (England &amp; Wales)
+                        <svg class="inline-block h-[1em] w-[1em] text-lime-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M11.54 22.351a.75.75 0 0 0 .92 0c4.472-3.73 6.79-7.003 6.79-9.851a7.25 7.25 0 1 0-14.5 0c0 2.848 2.318 6.12 6.79 9.851ZM12 14a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z" clip-rule="evenodd"/></svg> Land Registry points (England &amp; Wales)
                     </h2>
                     <p class="text-xs text-zinc-600">
                         View all Land Registry properties on the map below.  The more you zoom in, the more points will load, right down to street level.  At the lowest level, green dots show

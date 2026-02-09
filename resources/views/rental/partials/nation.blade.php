@@ -21,7 +21,9 @@
             @endif
             <div class="mt-4 flex flex-wrap gap-2 text-sm">
                 <a href="{{ route('rental.index') }}" class="inner-button" aria-label="Rental index">
-                    <i class="fa-solid fa-house"></i>
+                    <svg class="inline-block h-[1em] w-[1em]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M12 3.172a1 1 0 0 1 .707.293l7 7A1 1 0 0 1 19 12h-1v7a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-4h-2v4a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-7H5a1 1 0 0 1-.707-1.707l7-7A1 1 0 0 1 12 3.172Z"/>
+                    </svg>
                 </a>
                 @if($nationName !== 'England')
                     <a href="{{ route('rental.england') }}" class="inner-button">

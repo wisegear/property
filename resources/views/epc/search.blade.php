@@ -47,7 +47,9 @@
         <div class="flex items-start justify-between gap-6 flex-col md:flex-row">
             <div>
                 <h2 class="text-base font-semibold mb-2">
-                    <i class="fa-solid fa-map-location-dot text-lime-600"></i> EPC locations (England & Wales)
+                    <svg class="inline-block h-[1em] w-[1em] text-lime-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M11.54 22.351a.75.75 0 0 0 .92 0c4.472-3.73 6.79-7.003 6.79-9.851a7.25 7.25 0 1 0-14.5 0c0 2.848 2.318 6.12 6.79 9.851ZM12 14a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z" clip-rule="evenodd"/>
+                    </svg> EPC locations (England & Wales)
                 </h2>
                 <p class="text-xs text-zinc-600">
                     Zoom in to see EPC certificates as pins. Click a pin to open the EPC report.  Note that this data is only as good as the EPC Register's UPRN matching.  It's ok, but not
@@ -223,7 +225,10 @@
                                             title="View report"
                                             aria-label="View EPC report for {{ $row->address }}, {{ $row->postcode }}"
                                         >
-                                            <i class="fa-solid fa-magnifying-glass-arrow-right fa-xl leading-none align-middle pt-3"></i>
+                                            <svg class="inline-block h-[1.5em] w-[1.5em] leading-none align-middle pt-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M11 3a8 8 0 1 0 5.026 14.225l4.374 4.374a.75.75 0 1 0 1.06-1.06l-4.374-4.375A8 8 0 0 0 11 3Zm-6.5 8a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0Z" clip-rule="evenodd"/>
+                                                <path d="M8.25 10.5a.75.75 0 0 1 .75-.75h3.19l-1.22-1.22a.75.75 0 1 1 1.06-1.06l2.5 2.5a.75.75 0 0 1 0 1.06l-2.5 2.5a.75.75 0 0 1-1.06-1.06l1.22-1.22H9a.75.75 0 0 1-.75-.75Z"/>
+                                            </svg>
                                             <span class="sr-only">View</span>
                                         </a>
                                     @else
