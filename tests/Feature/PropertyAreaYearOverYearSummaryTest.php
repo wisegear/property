@@ -24,6 +24,7 @@ class PropertyAreaYearOverYearSummaryTest extends TestCase
 
         $response->assertOk();
         $response->assertSee("House prices in {$name} have increased by 20.0% over the past 12 months, based on Land Registry sales data.");
+        $response->assertSee('Data provided for informational and research purposes.');
     }
 
     public function test_area_page_shows_fallen_summary_when_change_is_at_most_negative_one_percent(): void
