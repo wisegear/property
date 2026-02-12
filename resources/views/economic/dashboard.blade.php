@@ -448,7 +448,7 @@
             <div class="relative z-10">
                 <div class="flex items-start justify-between mb-1">
                     <div>
-                        <div class="text-xs uppercase tracking-wide text-gray-500 font-semibold">Wage Growth</div>
+                        <div class="text-xs uppercase tracking-wide text-gray-500 font-semibold">Wage Growth (incl bonuses)</div>
                         <p class="text-[11px] text-gray-600">Higher real wage growth is positive; negative real wages are a drag.</p>
                     </div>
                     <div class="ml-3 flex h-11 w-11 items-center justify-center rounded-full">
