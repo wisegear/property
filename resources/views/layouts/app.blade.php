@@ -781,7 +781,7 @@
             <p>
                 &copy; Lee Wisener - PropertyResearch.uk. 
                 Built with&nbsp;<a href="https://laravel.com" class="text-rose-700 hover:text-rose-900">Laravel</a>. 
-                Hosted on&nbsp;<a href="https://hetzner.cloud/?ref=rfLEdCP3iIfx" class="text-rose-700 hover:text-rose-900">Hetzner Cloud.</a>
+                Hosted on&nbsp;<a href="https:/ovh.co.uk" class="text-rose-700 hover:text-rose-900">OVH Dedicated.</a>
             </p>
         </footer>
     </div>
