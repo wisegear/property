@@ -7,64 +7,83 @@
     @php
         // Helper function to calculate indicator level based on consecutive bad periods
         // This consolidates the repeated streak calculation logic used throughout the file
-        function calculateStreakLevel($values, $direction = 'up') {
-            if (!is_array($values) || count($values) < 2) {
-                return 'na';
-            }
-
-            $n = count($values);
-            $badStreak = 0;
-
-            // Count consecutive bad periods from latest backwards
-            for ($i = $n - 1; $i >= 1; $i--) {
-                $cur = (float) $values[$i];
-                $prev = (float) $values[$i - 1];
-                
-                $isBad = ($direction === 'up') ? ($cur > $prev) : ($cur < $prev);
-                
-                if ($isBad) {
-                    $badStreak++;
-                } else {
-                    break;
+        if (! function_exists('calculateStreakLevel')) {
+            function calculateStreakLevel($values, $direction = 'up')
+            {
+                if (! is_array($values) || count($values) < 2) {
+                    return 'na';
                 }
-            }
 
-            // Convert streak to level
-            if ($badStreak === 0) return 'green';
-            if ($badStreak === 1) return 'amber';
-            if ($badStreak === 2 || $badStreak === 3) return 'red';
-            return 'deep'; // 4+ consecutive bad periods
+                $n = count($values);
+                $badStreak = 0;
+
+                // Count consecutive bad periods from latest backwards
+                for ($i = $n - 1; $i >= 1; $i--) {
+                    $cur = (float) $values[$i];
+                    $prev = (float) $values[$i - 1];
+
+                    $isBad = ($direction === 'up') ? ($cur > $prev) : ($cur < $prev);
+
+                    if ($isBad) {
+                        $badStreak++;
+                    } else {
+                        break;
+                    }
+                }
+
+                // Convert streak to level
+                if ($badStreak === 0) {
+                    return 'green';
+                }
+                if ($badStreak === 1) {
+                    return 'amber';
+                }
+                if ($badStreak === 2 || $badStreak === 3) {
+                    return 'red';
+                }
+
+                return 'deep'; // 4+ consecutive bad periods
+            }
         }
 
         // Helper function to get CSS classes for level
-        function getLevelClasses($level) {
-            return match($level) {
-                'green' => 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white',
-                'amber' => 'border-amber-200 bg-gradient-to-br from-amber-50 via-white to-white',
-                'red' => 'border-rose-200 bg-gradient-to-br from-rose-50 via-white to-white',
-                'deep' => 'border-rose-400 bg-gradient-to-br from-rose-100 via-white to-white',
-                default => 'border-gray-200 bg-white',
-            };
+        if (! function_exists('getLevelClasses')) {
+            function getLevelClasses($level)
+            {
+                return match ($level) {
+                    'green' => 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white',
+                    'amber' => 'border-amber-200 bg-gradient-to-br from-amber-50 via-white to-white',
+                    'red' => 'border-rose-200 bg-gradient-to-br from-rose-50 via-white to-white',
+                    'deep' => 'border-rose-400 bg-gradient-to-br from-rose-100 via-white to-white',
+                    default => 'border-gray-200 bg-white',
+                };
+            }
         }
 
-        function getLevelAccentClasses($level) {
-            return match($level) {
-                'green' => 'bg-emerald-200/60',
-                'amber' => 'bg-amber-200/60',
-                'red' => 'bg-rose-200/60',
-                'deep' => 'bg-rose-300/70',
-                default => 'bg-gray-200/60',
-            };
+        if (! function_exists('getLevelAccentClasses')) {
+            function getLevelAccentClasses($level)
+            {
+                return match ($level) {
+                    'green' => 'bg-emerald-200/60',
+                    'amber' => 'bg-amber-200/60',
+                    'red' => 'bg-rose-200/60',
+                    'deep' => 'bg-rose-300/70',
+                    default => 'bg-gray-200/60',
+                };
+            }
         }
 
-        function getLevelNeedleRotation($level) {
-            return match($level) {
-                'green' => -60,
-                'amber' => -15,
-                'red' => 20,
-                'deep' => 55,
-                default => -60,
-            };
+        if (! function_exists('getLevelNeedleRotation')) {
+            function getLevelNeedleRotation($level)
+            {
+                return match ($level) {
+                    'green' => -60,
+                    'amber' => -15,
+                    'red' => 20,
+                    'deep' => 55,
+                    default => -60,
+                };
+            }
         }
 
         // Calculate levels for all indicators
@@ -82,22 +101,26 @@
         $realVals = [];
         if (count($wageVals) === count($inflVals)) {
             for ($i = 0; $i < count($wageVals); $i++) {
-                $realVals[] = (float)$wageVals[$i] - (float)$inflVals[$i];
+                $realVals[] = (float) $wageVals[$i] - (float) $inflVals[$i];
             }
         }
-        if (!empty($realVals)) {
+        if (! empty($realVals)) {
             $latest = end($realVals);
             if ($latest >= 0) {
                 $levels['wages'] = 'green';
             } else {
                 $streak = 1;
                 for ($i = count($realVals) - 2; $i >= 0; $i--) {
-                    if ($realVals[$i] < 0) $streak++; else break;
+                    if ($realVals[$i] < 0) {
+                        $streak++;
+                    } else {
+                        break;
+                    }
                 }
-                $levels['wages'] = match(true) {
+                $levels['wages'] = match (true) {
                     $streak === 1 => 'amber',
                     $streak === 2 => 'red',
-                    default => 'deep'
+                    default => 'deep',
                 };
             }
         } else {
@@ -105,7 +128,7 @@
         }
 
         // Repossessions level from controller
-        $levels['repossessions'] = match($repossDirection ?? null) {
+        $levels['repossessions'] = match ($repossDirection ?? null) {
             0 => 'green',
             1 => 'amber',
             2 => 'red',
@@ -114,7 +137,7 @@
         };
 
         // Arrears level from controller
-        $levels['arrears'] = match($arrearsPanel['direction'] ?? null) {
+        $levels['arrears'] = match ($arrearsPanel['direction'] ?? null) {
             0 => 'green',
             1 => 'amber',
             2 => 'red',
@@ -315,7 +338,7 @@
                 @if($hpi)
                     <div class="text-2xl font-semibold">£{{ number_format($hpi->AveragePrice, 0) }}</div>
                     <div class="text-sm text-gray-600 mt-1">
-                        {{ \Carbon\Carbon::parse($hpi->Date)->format('M Y') }}
+                        {{ $hpiDateLabel ?? \Carbon\Carbon::parse($hpi->Date)->format('M Y') }}
                         @if(!empty($sparklines['hpi']['values'] ?? []))
                             <div class="h-28 pt-8"><canvas id="spark-hpi"></canvas></div>
                         @endif

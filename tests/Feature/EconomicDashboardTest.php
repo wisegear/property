@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MortgageApproval;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -152,5 +153,31 @@ class EconomicDashboardTest extends TestCase
         $this->assertSame([100.0, 110.0, 120.0], $sparklines['approvals']['values']);
         $this->assertSame(120.0, (float) $approvals->value);
         $this->assertSame('2025-03-01', Carbon::parse($approvals->period)->toDateString());
+    }
+
+    public function test_hpi_panel_uses_normalized_month_label_for_legacy_y_d_m_date_format(): void
+    {
+        DB::table('hpi_monthly')->insert([
+            [
+                'AreaCode' => 'K02000001',
+                'Date' => '2025-01-11',
+                'AveragePrice' => 300000,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'AreaCode' => 'K02000001',
+                'Date' => '2025-01-12',
+                'AveragePrice' => 301000,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
+        $response = $this->get(route('economic.dashboard', absolute: false));
+
+        $response->assertOk();
+        $response->assertSee('Dec 2025');
+        $this->assertSame('Dec 2025', $response->viewData('hpiDateLabel'));
     }
 }

@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class EconomicDashboardController extends Controller
 {
-    public function index()
+    public function index(): \Illuminate\View\View
     {
         $ttl = now()->addHours(6);
         $approvalsSeriesCode = 'LPMVTVX';
@@ -102,7 +103,7 @@ class EconomicDashboardController extends Controller
         $sparklines = [];
 
         // Helper: build monthly sparkline (values + labels) from a dated collection
-        $makeMonthlySeries = function ($collection, string $dateField, callable $valueCallback) {
+        $makeMonthlySeries = function ($collection, string $dateField, callable $valueCallback, ?callable $dateParser = null) {
             $values = [];
             $labels = [];
 
@@ -111,7 +112,14 @@ class EconomicDashboardController extends Controller
                     continue;
                 }
                 try {
-                    $date = \Carbon\Carbon::parse($row->{$dateField});
+                    if ($dateParser) {
+                        $date = $dateParser((string) $row->{$dateField});
+                        if (! $date instanceof Carbon) {
+                            continue;
+                        }
+                    } else {
+                        $date = Carbon::parse($row->{$dateField});
+                    }
                 } catch (\Throwable $e) {
                     continue;
                 }
@@ -245,8 +253,17 @@ class EconomicDashboardController extends Controller
         $sparklines['hpi'] = $makeMonthlySeries(
             $hpiSeries,
             'Date',
-            fn ($r) => $r->AveragePrice
+            fn ($r) => $r->AveragePrice,
+            fn (string $date) => $this->parseHpiMonthlyDate($date)
         );
+
+        $hpiDateLabel = null;
+        if ($hpi && ! empty($hpi->Date)) {
+            $hpiDate = $this->parseHpiMonthlyDate((string) $hpi->Date);
+            if ($hpiDate instanceof Carbon) {
+                $hpiDateLabel = $hpiDate->format('M Y');
+            }
+        }
 
         $arrearsPanel = null;
         $repossDirection = null;
@@ -482,10 +499,33 @@ class EconomicDashboardController extends Controller
             'reposs' => $reposs,
             'repossDirection' => $repossDirection,
             'hpi' => $hpi,
+            'hpiDateLabel' => $hpiDateLabel,
             'sparklines' => $sparklines,
             'stress' => $stress,
             'totalStress' => $totalStress,
             'arrearsPanel' => $arrearsPanel,
         ]);
+    }
+
+    private function parseHpiMonthlyDate(string $date): ?Carbon
+    {
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $date, $matches) === 1) {
+            $middlePart = $matches[2];
+            $lastPart = (int) $matches[3];
+
+            if ($middlePart === '01' && $lastPart >= 1 && $lastPart <= 12) {
+                try {
+                    return Carbon::createFromFormat('Y-d-m', $date);
+                } catch (\Throwable $e) {
+                    return null;
+                }
+            }
+        }
+
+        try {
+            return Carbon::parse($date);
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }
