@@ -146,18 +146,6 @@ class GenerateEpcPostcodeSitemap extends Command
                 $xpath = new DOMXPath($dom);
                 $xpath->registerNamespace('sm', $namespace);
 
-                $sitemapNodes = $xpath->query('//sm:sitemap');
-                if ($sitemapNodes !== false) {
-                    $nodes = [];
-                    foreach ($sitemapNodes as $node) {
-                        $nodes[] = $node;
-                    }
-
-                    foreach ($nodes as $sitemapNode) {
-                        $sitemapNode->parentNode?->removeChild($sitemapNode);
-                    }
-                }
-
                 $lastModNodes = $xpath->query('//sm:lastmod');
                 if ($lastModNodes !== false) {
                     $nodes = [];
@@ -170,7 +158,35 @@ class GenerateEpcPostcodeSitemap extends Command
                     }
                 }
 
+                $existingLocs = [];
+                $sitemapNodes = $xpath->query('//sm:sitemap');
+                if ($sitemapNodes !== false) {
+                    foreach ($sitemapNodes as $sitemapNode) {
+                        $locNode = $xpath->query('sm:loc', $sitemapNode)?->item(0);
+                        if (! $locNode) {
+                            continue;
+                        }
+
+                        $loc = trim((string) $locNode->textContent);
+                        if ($loc === '') {
+                            continue;
+                        }
+
+                        if (str_contains($loc, '/sitemap-epc-postcodes')) {
+                            $sitemapNode->parentNode?->removeChild($sitemapNode);
+
+                            continue;
+                        }
+
+                        $existingLocs[$loc] = true;
+                    }
+                }
+
                 foreach ($sitemapLocations as $location) {
+                    if (isset($existingLocs[$location])) {
+                        continue;
+                    }
+
                     $sitemapElement = $dom->createElementNS($namespace, 'sitemap');
                     $locElement = $dom->createElementNS($namespace, 'loc', $location);
                     $sitemapElement->appendChild($locElement);

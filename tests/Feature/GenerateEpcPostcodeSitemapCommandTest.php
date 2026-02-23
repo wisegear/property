@@ -74,7 +74,7 @@ class GenerateEpcPostcodeSitemapCommandTest extends TestCase
         $this->assertStringNotContainsString('<lastmod>', $xmlString);
     }
 
-    public function test_command_replaces_sitemap_index_with_epc_sitemap_entries_only(): void
+    public function test_command_merges_epc_sitemap_entries_into_existing_sitemap_index(): void
     {
         $this->writePostcodeIndex([
             'england_wales' => ['AL1 1BH'],
@@ -98,11 +98,11 @@ class GenerateEpcPostcodeSitemapCommandTest extends TestCase
         $indexXml = simplexml_load_file($indexPath);
         $this->assertNotFalse($indexXml);
         $this->assertSame('sitemapindex', $indexXml->getName());
-        $this->assertCount(1, $indexXml->sitemap);
+        $this->assertCount(2, $indexXml->sitemap);
 
         $indexXmlString = (string) File::get($indexPath);
         $this->assertStringContainsString(url('/sitemap-epc-postcodes.xml'), $indexXmlString);
-        $this->assertStringNotContainsString(url('/sitemap.xml'), $indexXmlString);
+        $this->assertStringContainsString(url('/sitemap.xml'), $indexXmlString);
     }
 
     public function test_epc_postcode_sitemap_route_serves_xml_file(): void
