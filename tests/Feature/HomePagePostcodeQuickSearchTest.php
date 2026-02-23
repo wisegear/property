@@ -27,6 +27,9 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee($searchUrl, false);
         $view->assertSee('name="postcode"', false);
         $view->assertSee('placeholder="e.g. SW7 5PH"', false);
+        $view->assertSee('md:grid-cols-2 lg:grid-cols-3', false);
+        $view->assertSee('flex h-full flex-col', false);
+        $view->assertSee('mt-auto inline-flex items-center pt-4', false);
         $view->assertSeeInOrder(['Quick postcode search', 'Market Stress Score guide']);
     }
 }

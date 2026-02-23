@@ -170,9 +170,9 @@
     </div>
 
     {{-- Explore panels --}}
-    <section class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <section class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <a href="{{ Route::has('property.home') ? route('property.home') : url('/property') }}"
-           class="group block rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-zinc-900">Property Sales</h2>
                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -187,12 +187,12 @@
                 </svg>
             </div>
             <p class="mt-2 text-sm text-zinc-700">Drill into transactions by postcode, street or any area.  Now you can browse properties in a map. Yearly trends &amp; quick summaries.</p>
-            <div class="mt-4 inline-flex items-center text-sm font-medium text-lime-700 group-hover:underline">Open Property Dashboard
+            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open Property Dashboard
             </div>
         </a>
 
         <a href="{{ Route::has('repossessions.index') ? route('repossessions.index') : url('/repossessions') }}"
-           class="group block rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-zinc-900">Repossessions Dashboard</h2>
                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -207,12 +207,12 @@
                 </svg>
             </div>
             <p class="mt-2 text-sm text-zinc-700">An overview of Claims made across England & Wales, see who is making claims and all of the stages.  Search individual local authorities.</p>
-            <div class="mt-4 inline-flex items-center text-sm font-medium text-lime-700 group-hover:underline">Open Repossessions
+            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open Repossessions
             </div>
         </a>
 
         <a href="{{ Route::has('mortgages.home') ? route('mortgages.home') : url('/approvals') }}"
-           class="group block rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-zinc-900">Mortgage Approvals</h2>
                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -227,14 +227,14 @@
                 </svg>
             </div>
             <p class="mt-2 text-sm text-zinc-700">Monthly BoE approvals for house purchases, remortgaging and other secured lending.</p>
-            <div class="mt-4 inline-flex items-center text-sm font-medium text-lime-700 group-hover:underline">Open Mortgage Approvals
+            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open Mortgage Approvals
             </div>
         </a>
 
         <a href="{{ Route::has('epc.home') ? route('epc.home') : url('/epc') }}"
-           class="group block rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">Energy Performance Certificates - EPC</h2>
+                <h2 class="text-lg font-semibold text-zinc-900">Energy Performance Certificates</h2>
                 <svg xmlns="http://www.w3.org/2000/svg"
                      fill="none"
                      viewBox="0 0 24 24"
@@ -247,12 +247,12 @@
                 </svg>
             </div>
             <p class="mt-2 text-sm text-zinc-700">EPC report details for England, Wales and Scotland.  Dashboard contains some information not available from the Land Registry</p>
-            <div class="mt-4 inline-flex items-center text-sm font-medium text-lime-700 group-hover:underline">Open EPC Dashboard
+            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open EPC Dashboard
             </div>
         </a>
 
         <a href="{{ Route::has('hpi.home') ? route('hpi.home') : url('/hpi') }}"
-           class="group block rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-zinc-900">House Price Index - HPI</h2>
                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -266,13 +266,13 @@
                           d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3" />
                 </svg>
             </div>
-            <p class="mt-2 text-sm text-zinc-700">House price index as UK and individual Nation dating back to 1968 for all nations.</p>
-            <div class="mt-4 inline-flex items-center text-sm font-medium text-lime-700 group-hover:underline">Open HPI Dashboard
+            <p class="mt-2 text-sm text-zinc-700">House price index as UK and individual Nation dating back to 1968 for all nations.  See how house prices have evolved over time.</p>
+            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open HPI Dashboard
             </div>
         </a>
 
         <a href="{{ Route::has('deprivation.index') ? route('deprivation.index') : url('/deprivation') }}"
-           class="group block rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-zinc-900">Deprivation Indexes</h2>
                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -286,8 +286,8 @@
                           d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
                 </svg>
             </div>
-            <p class="mt-2 text-sm text-zinc-700">Explore the Index of Multiple Deprivation at LSOA level. Search by postcode and see domain breakdowns.  Scotland, England, Wales and Northern Ireland.</p>
-            <div class="mt-4 inline-flex items-center text-sm font-medium text-lime-700 group-hover:underline">Open Deprivation Dashboard
+            <p class="mt-2 text-sm text-zinc-700">Explore the Deprivation indexes. Search by postcode and see domain breakdowns.  Scotland, England, Wales and Northern Ireland.</p>
+            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open Deprivation Dashboard
             </div>
         </a>
 
