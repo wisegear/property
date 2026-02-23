@@ -136,6 +136,34 @@
 
     </section>
 
+    {{-- Quick postcode search --}}
+    <section class="mt-8 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="max-w-3xl">
+                <h2 class="text-lg font-semibold text-zinc-900">Quick postcode search</h2>
+                <p class="mt-1 text-sm text-zinc-600">
+                    Jump straight to the Property Search page for a postcode, for example SW7 5PH.
+                </p>
+            </div>
+
+            <form method="GET" action="{{ route('property.search') }}" class="w-full md:w-auto">
+                <div class="flex w-full flex-col gap-3 sm:flex-row">
+                    <input
+                        id="home-postcode"
+                        name="postcode"
+                        type="text"
+                        value="{{ old('postcode', request('postcode', '')) }}"
+                        placeholder="e.g. SW7 5PH"
+                        class="w-full min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500 sm:min-w-72"
+                    />
+                    <button type="submit" class="inner-button whitespace-nowrap">
+                        Search postcode
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
     {{-- Property Stress Index --}}
     <div class="mt-8">
         @include('partials.stress-score-panel', ['totalStress' => $totalStress ?? null, 'isSticky' => false, 'showDashboardLink' => true])
