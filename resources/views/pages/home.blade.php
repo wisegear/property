@@ -140,7 +140,7 @@
     <section class="mt-8 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div class="max-w-3xl">
-                <h2 class="text-lg font-semibold text-zinc-900">Quick postcode search (England & Wales Only)</h2>
+                <h2 class="text-lg font-semibold text-zinc-900">Quick postcode search <span class="text-sm text-zinc-500">(England & Wales Only)</span></h2>
                 <p class="mt-1 text-sm text-zinc-600">
                     Jump straight to the Property Search page for a postcode, for example SW7 5PH.
                 </p>
