@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\SitemapGenerator;
@@ -75,9 +74,6 @@ class GenerateSitemap extends Command
 
         $sitemapIndex->writeToFile(public_path('sitemap-index.xml'));
         $this->removeLastModElementsFromSitemapIndex(public_path('sitemap-index.xml'));
-
-        Artisan::call('sitemap:generate-epc-postcodes');
-        $this->line(trim(Artisan::output()));
 
         $this->info('Done: public/sitemap.xml');
         $this->line('Done: public/sitemap-index.xml');

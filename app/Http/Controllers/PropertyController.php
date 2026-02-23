@@ -301,6 +301,19 @@ class PropertyController extends Controller
             }
         }
 
+        if ($results !== null) {
+            $results->getCollection()->transform(function (LandRegistry $row) {
+                $row->property_slug = $this->buildPropertySlug(
+                    (string) ($row->Postcode ?? ''),
+                    (string) ($row->PAON ?? ''),
+                    (string) ($row->Street ?? ''),
+                    $row->SAON !== null ? (string) $row->SAON : null
+                );
+
+                return $row;
+            });
+        }
+
         // =========================================================
         // 2) CACHED AGGREGATES FOR HOMEPAGE CHARTS
         //    These are cached for 1 day (86400s). When new monthly
@@ -397,11 +410,8 @@ class PropertyController extends Controller
                     'address' => trim($paon.' '.$street),
                     'postcode' => $postcode,
                     'category' => (string) ($row->PPDCategoryType ?? ''),
-                    'url' => route('property.show', [
-                        'postcode' => $postcode,
-                        'paon' => $paon,
-                        'street' => $street,
-                        'saon' => $saon,
+                    'url' => route('property.show.slug', [
+                        'slug' => $this->buildPropertySlug($postcode, $paon, $street, $saon),
                     ], false),
                 ];
             })->values();
@@ -417,11 +427,28 @@ class PropertyController extends Controller
 
     public function show(Request $request)
     {
+        $postcodeInput = (string) $request->input('postcode', '');
+        $paonInput = (string) $request->input('paon', '');
+        $streetInput = (string) $request->input('street', '');
+        $saonInput = $request->input('saon');
+        $saonValue = $saonInput !== null ? (string) $saonInput : null;
+
+        if (! $request->boolean('_from_slug')) {
+            if (trim($postcodeInput) === '' || trim($paonInput) === '' || trim($streetInput) === '') {
+                abort(404, 'Property not found');
+            }
+
+            $slug = $this->buildPropertySlug($postcodeInput, $paonInput, $streetInput, $saonValue);
+
+            return redirect()->route('property.show.slug', ['slug' => $slug], 301);
+        }
+
         // Full match on address parts
-        $postcode = strtoupper(trim($request->input('postcode')));
-        $paon = strtoupper(trim($request->input('paon')));
-        $street = strtoupper(trim($request->input('street')));
-        $saon = $request->filled('saon') ? strtoupper(trim($request->input('saon'))) : null;
+        $postcode = strtoupper(trim($postcodeInput));
+        $paon = strtoupper(trim($paonInput));
+        $street = strtoupper(trim($streetInput));
+        $saon = $saonValue !== null && trim($saonValue) !== '' ? strtoupper(trim($saonValue)) : null;
+        $slug = $this->buildPropertySlug($postcode, $paon, $street, $saon);
 
         $query = DB::table('land_registry')
             ->select('Date', 'Price', 'PropertyType', 'NewBuild', 'Duration', 'PAON', 'SAON', 'Street', 'Postcode', 'Locality', 'TownCity', 'District', 'County', 'PPDCategoryType')
@@ -1203,6 +1230,7 @@ class PropertyController extends Controller
 
         return view('property.show', [
             'results' => $records,
+            'slug' => $slug,
             'address' => $address,
             'priceHistory' => $priceHistory,
             'postcodePriceHistory' => $postcodePriceHistory,
@@ -1234,6 +1262,25 @@ class PropertyController extends Controller
             'countyAreaLink' => $countyAreaLink,
         ]);
 
+    }
+
+    public function showBySlug(string $slug)
+    {
+        $resolved = $this->resolveAddressFromSlug($slug);
+
+        if ($resolved === null) {
+            abort(404, 'Property not found');
+        }
+
+        $request = Request::create('/property/show', 'GET', [
+            'postcode' => $resolved['postcode'],
+            'paon' => $resolved['paon'],
+            'street' => $resolved['street'],
+            'saon' => $resolved['saon'],
+            '_from_slug' => 1,
+        ]);
+
+        return $this->show($request);
     }
 
     private function yearExpression(): string
@@ -1271,6 +1318,111 @@ class PropertyController extends Controller
         }
 
         return 'AVG("Price")';
+    }
+
+    private function buildPropertySlug(string $postcode, string $paon, string $street, ?string $saon = null): string
+    {
+        $parts = [
+            $this->normalizeSlugPart($postcode),
+            $this->normalizeSlugPart($paon),
+            $this->normalizeSlugPart($street),
+        ];
+
+        if ($saon !== null && trim($saon) !== '') {
+            $parts[] = $this->normalizeSlugPart($saon);
+        }
+
+        $parts = array_values(array_filter($parts, fn (string $part) => $part !== ''));
+
+        return preg_replace('/-+/', '-', implode('-', $parts)) ?? '';
+    }
+
+    private function normalizeSlugPart(string $value): string
+    {
+        $normalized = strtolower(trim($value));
+        $normalized = str_replace(',', '', $normalized);
+        $normalized = preg_replace('/\s+/', '-', $normalized) ?? '';
+        $normalized = preg_replace('/-+/', '-', $normalized) ?? '';
+
+        return trim($normalized, '-');
+    }
+
+    private function resolveAddressFromSlug(string $slug): ?array
+    {
+        $normalizedSlug = $this->normalizeSlugPart($slug);
+        $segments = array_values(array_filter(explode('-', $normalizedSlug), fn (string $segment) => $segment !== ''));
+
+        if (count($segments) < 4) {
+            return null;
+        }
+
+        $postcode = strtoupper($segments[0].' '.$segments[1]);
+        $rows = DB::table('land_registry')
+            ->select('Postcode', 'PAON', 'Street', 'SAON')
+            ->where('Postcode', $postcode)
+            ->whereIn('PPDCategoryType', ['A', 'B'])
+            ->orderByDesc('Date')
+            ->get();
+
+        foreach ($rows as $row) {
+            $candidateSlug = $this->buildPropertySlug(
+                (string) ($row->Postcode ?? ''),
+                (string) ($row->PAON ?? ''),
+                (string) ($row->Street ?? ''),
+                $row->SAON !== null ? (string) $row->SAON : null
+            );
+
+            if ($candidateSlug === $normalizedSlug) {
+                return [
+                    'postcode' => (string) ($row->Postcode ?? ''),
+                    'paon' => (string) ($row->PAON ?? ''),
+                    'street' => (string) ($row->Street ?? ''),
+                    'saon' => $row->SAON !== null ? (string) $row->SAON : null,
+                ];
+            }
+        }
+
+        $paon = strtoupper((string) ($segments[2] ?? ''));
+        $addressSegments = array_slice($segments, 3);
+        $addressSegmentCount = count($addressSegments);
+
+        if ($paon === '' || $addressSegmentCount === 0) {
+            return null;
+        }
+
+        for ($streetLength = $addressSegmentCount; $streetLength >= 1; $streetLength--) {
+            $street = strtoupper(implode(' ', array_slice($addressSegments, 0, $streetLength)));
+            $saonParts = array_slice($addressSegments, $streetLength);
+            $saon = count($saonParts) > 0 ? strtoupper(implode(' ', $saonParts)) : null;
+
+            $query = DB::table('land_registry')
+                ->select('Postcode', 'PAON', 'Street', 'SAON')
+                ->where('Postcode', $postcode)
+                ->where('PAON', $paon)
+                ->where('Street', $street)
+                ->whereIn('PPDCategoryType', ['A', 'B']);
+
+            if ($saon !== null) {
+                $query->where('SAON', $saon);
+            } else {
+                $query->where(function ($builder) {
+                    $builder->whereNull('SAON')->orWhere('SAON', '');
+                });
+            }
+
+            $match = $query->orderByDesc('Date')->first();
+
+            if ($match) {
+                return [
+                    'postcode' => (string) ($match->Postcode ?? ''),
+                    'paon' => (string) ($match->PAON ?? ''),
+                    'street' => (string) ($match->Street ?? ''),
+                    'saon' => $match->SAON !== null ? (string) $match->SAON : null,
+                ];
+            }
+        }
+
+        return null;
     }
 
     private function resolvePropertyAreaLink(string $type, string $name): ?string

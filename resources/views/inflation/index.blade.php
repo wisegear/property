@@ -48,7 +48,7 @@
 
         {{-- Hero image --}}
         <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('assets/images/site/inflation.jpg') }}" 
+            <img src="{{ asset('assets/images/site/wage_growth.jpg') }}" 
                  alt="Inflation" 
                  class="w-72">
         </div>

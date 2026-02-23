@@ -96,7 +96,13 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             'long' => -1.123456,
         ]);
 
+        $slug = 'ab1-2cd-10-market-road';
+
         $this->get('/property/show?postcode=AB1%202CD&paon=10&street=MARKET ROAD')
+            ->assertStatus(301)
+            ->assertRedirectToRoute('property.show.slug', ['slug' => $slug]);
+
+        $this->get(route('property.show.slug', ['slug' => $slug], false))
             ->assertOk();
     }
 
@@ -147,7 +153,7 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
 
         $expected = DB::connection()->getDriverName() === 'pgsql' ? 250000 : 400000;
 
-        $this->get('/property/show?postcode=AB1%202CD&paon=10&street=MARKET ROAD')
+        $this->get('/property/ab1-2cd-10-market-road')
             ->assertOk()
             ->assertViewHas('postcodePriceHistory', function ($series) use ($expected) {
                 return (int) ($series->first()->avg_price ?? 0) === $expected;
@@ -198,9 +204,71 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             'long' => -1.123456,
         ]);
 
-        $this->get('/property/show?postcode=AB1%202CD&paon=10&street=MARKET ROAD')
+        $this->get('/property/ab1-2cd-10-market-road')
             ->assertOk()
             ->assertViewHas('districtAreaLink', $expectedAreaUrl);
+    }
+
+    public function test_property_show_route_redirects_to_slug_with_saon_and_normalized_values(): void
+    {
+        DB::table('land_registry')->insert([
+            array_merge($this->landRegistryRow(
+                transactionId: 'cccccccc-cccc-cccc-cccc-cccccccccccccc',
+                price: 450000,
+                date: '2025-03-10 00:00:00',
+                postcode: 'SW7 5PH',
+                paon: '36',
+                street: 'QUEENS  GATE TERRACE'
+            ), [
+                'SAON' => 'SECOND FLOOR FLAT',
+            ]),
+        ]);
+
+        DB::table('onspd')->insert([
+            'pcds' => 'SW7 5PH',
+            'lat' => 51.4994,
+            'long' => -0.1792,
+        ]);
+
+        $slug = 'sw7-5ph-36-queens-gate-terrace-second-floor-flat';
+
+        $this->get('/property/show?postcode=sw7%205ph&paon=36&street=Queens%20%20Gate%20Terrace&saon=Second%20Floor%20Flat')
+            ->assertStatus(301)
+            ->assertRedirectToRoute('property.show.slug', ['slug' => $slug]);
+
+        $this->get(route('property.show.slug', ['slug' => $slug], false))
+            ->assertOk()
+            ->assertViewHas('slug', $slug);
+    }
+
+    public function test_property_show_route_redirects_to_slug_without_saon(): void
+    {
+        DB::table('land_registry')->insert([
+            $this->landRegistryRow(
+                transactionId: 'dddddddd-dddd-dddd-dddd-dddddddddddddd',
+                price: 275000,
+                date: '2025-02-01 00:00:00',
+                postcode: 'AB1 2CD',
+                paon: '12',
+                street: 'HIGH  STREET'
+            ),
+        ]);
+
+        DB::table('onspd')->insert([
+            'pcds' => 'AB1 2CD',
+            'lat' => 52.123456,
+            'long' => -1.123456,
+        ]);
+
+        $slug = 'ab1-2cd-12-high-street';
+
+        $this->get('/property/show?postcode=AB1%202CD&paon=12&street=HIGH%20%20STREET')
+            ->assertStatus(301)
+            ->assertRedirectToRoute('property.show.slug', ['slug' => $slug]);
+
+        $this->get(route('property.show.slug', ['slug' => $slug], false))
+            ->assertOk()
+            ->assertViewHas('slug', $slug);
     }
 
     private function landRegistryRow(

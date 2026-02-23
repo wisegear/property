@@ -45,6 +45,7 @@ use Illuminate\Support\Facades\Session;
 
 Route::get('/', [PagesController::class, 'home'])->name('home');
 Route::get('/about', [PagesController::class, 'about'])->name('about');
+Route::get('/dashboard', fn () => redirect('/'))->name('dashboard');
 
 Route::get('/property', [PropertyController::class, 'home'])->name('property.home');
 Route::get('/property/search', [PropertyController::class, 'search'])->name('property.search');
@@ -108,13 +109,23 @@ Route::resource('/blog', BlogController::class);
 Route::get('/property/area/{type}/{slug}', [PropertyAreaController::class, 'show'])
     ->whereIn('type', ['locality', 'town', 'district', 'county'])
     ->name('property.area.show');
+Route::get('/property/{slug}', [PropertyController::class, 'showBySlug'])
+    ->where('slug', '[a-z0-9\-]+')
+    ->name('property.show.slug');
 
 // Routes first protected by Auth
 
 Route::middleware('auth')->group(function () {
 
-    // Standard Routes that require login to access
-    Route::resource('/profile', ProfileController::class);
+    // Account profile endpoints (Breeze-style)
+    Route::get('/profile', [ProfileController::class, 'index']);
+    Route::patch('/profile', [ProfileController::class, 'updateAuthenticated'])->name('profile.account.update');
+    Route::delete('/profile', [ProfileController::class, 'destroyAuthenticated'])->name('profile.destroy');
+
+    // Public/member profile endpoints by slug
+    Route::get('/profile/{name_slug}', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile/{name_slug}/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile/{name_slug}', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/comments', [CommentsController::class, 'store'])->name('comments.store');
     Route::resource('support', SupportController::class);
 

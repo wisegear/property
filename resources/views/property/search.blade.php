@@ -251,12 +251,7 @@
                                 </td>
                                 <td class="px-3 py-2">
                                     <a
-                                        href="{{ route('property.show', [
-                                            'postcode' => $row->Postcode ?? '',
-                                            'paon'     => $row->PAON,
-                                            'street'   => $row->Street ?? '',
-                                            'saon'     => $row->SAON ?? ''
-                                        ]) }}"
+                                        href="{{ route('property.show.slug', ['slug' => $row->property_slug]) }}"
                                         class="bg-zinc-700 hover:bg-zinc-400 text-white p-2 rounded inline-flex items-center"
                                         title="View property details"
                                     >

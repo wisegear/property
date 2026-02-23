@@ -12,7 +12,7 @@ class BuildEpcPostcodeIndex extends Command
 
     protected $description = 'Build postcode index JSON for EPC England/Wales and Scotland datasets.';
 
-    private const MIN_CERTIFICATES = 40;
+    private const MIN_CERTIFICATES = 30;
 
     private const FROM_DATE = '2015-01-01';
 

@@ -30,6 +30,8 @@ class EnsureAnonVisitId
             'lax'
         );
 
-        return $response->withCookie($cookie);
+        $response->headers->setCookie($cookie);
+
+        return $response;
     }
 }

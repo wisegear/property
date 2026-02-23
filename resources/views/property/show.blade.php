@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@section('meta')
+    <link rel="canonical" href="{{ route('property.show.slug', ['slug' => $slug]) }}">
+@endsection
+
 @section('content')
 <div class="max-w-7xl mx-auto">
 

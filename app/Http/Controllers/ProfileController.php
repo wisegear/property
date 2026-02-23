@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Intervention\Image\Laravel\Facades\Image;
 
 class ProfileController extends Controller
@@ -19,7 +21,13 @@ class ProfileController extends Controller
      */
     public function index()
     {
-        //
+        $user = Auth::user();
+        abort_unless($user !== null, 403);
+
+        return view('profile.edit', [
+            'user' => $user,
+            'roles' => UserRoles::all(),
+        ]);
     }
 
     /**
@@ -215,5 +223,49 @@ class ProfileController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function updateAuthenticated(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($user !== null, 403);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+        ]);
+
+        $emailChanged = $validated['email'] !== $user->email;
+
+        $user->fill($validated);
+        if ($emailChanged) {
+            $user->email_verified_at = null;
+        }
+        $user->save();
+
+        return redirect('/profile');
+    }
+
+    public function destroyAuthenticated(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($user !== null, 403);
+
+        try {
+            $request->validateWithBag('userDeletion', [
+                'password' => ['required', 'current_password'],
+            ]);
+        } catch (ValidationException $exception) {
+            return redirect('/profile')->withErrors($exception->errors(), 'userDeletion');
+        }
+
+        Auth::logout();
+
+        $user->delete();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/');
     }
 }
