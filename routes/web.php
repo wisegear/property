@@ -51,6 +51,8 @@ Route::get('/property', [PropertyController::class, 'home'])->name('property.hom
 Route::get('/property/search', [PropertyController::class, 'search'])->name('property.search');
 Route::get('/property/heatmap', [PropertyController::class, 'heatmap'])->name('property.heatmap');
 Route::get('/property/points', [PropertyController::class, 'points'])->name('property.points');
+// Legacy property detail URL (query-string based) kept temporarily for backward compatibility.
+// PropertyController@show performs a 301 redirect to the slug route below.
 Route::get('/property/show', [PropertyController::class, 'show'])->name('property.show');
 Route::get('/property/prime-central-london', [PrimeLondonController::class, 'home'])->name('property.pcl');
 Route::get('/property/outer-prime-london', [OuterPrimeLondonController::class, 'home'])->name('property.outer');
@@ -59,15 +61,11 @@ Route::get('/epc', [EpcController::class, 'home'])->name('epc.home');
 Route::get('/epc/search', [EpcController::class, 'search'])->name('epc.search');
 Route::get('/epc/points', [EpcController::class, 'points'])->name('epc.points');
 Route::get('/epc/points_scotland', [EpcController::class, 'pointsScotland'])->name('epc.points_scotland');
-Route::get('/epc/postcode/{postcode}', [EpcPostcodeController::class, 'englandWales'])
-    ->where('postcode', '[A-Z0-9\-]+');
-Route::get('/epc/scotland/postcode/{postcode}', [EpcPostcodeController::class, 'scotland'])
-    ->where('postcode', '[A-Z0-9\-]+');
+Route::get('/epc/postcode/{postcode}', [EpcPostcodeController::class, 'englandWales'])->where('postcode', '[A-Z0-9\-]+');
+Route::get('/epc/scotland/postcode/{postcode}', [EpcPostcodeController::class, 'scotland'])->where('postcode', '[A-Z0-9\-]+');
 // routes/web.php
-Route::get('/epc/search_scotland', [\App\Http\Controllers\EpcController::class, 'searchScotland'])
-    ->name('epc.search_scotland');
-Route::get('/epc/scotland/{rrn}', [\App\Http\Controllers\EpcController::class, 'showScotland'])
-    ->name('epc.scotland.show');
+Route::get('/epc/search_scotland', [\App\Http\Controllers\EpcController::class, 'searchScotland'])->name('epc.search_scotland');
+Route::get('/epc/scotland/{rrn}', [\App\Http\Controllers\EpcController::class, 'showScotland'])->name('epc.scotland.show');
 Route::get('/epc/{lmk}', [EpcController::class, 'show'])->name('epc.show');
 Route::get('/hpi', [HpiDashboardController::class, 'index'])->name('hpi.home');
 Route::get('/rental', [RentalController::class, 'index'])->name('rental.index');
@@ -109,6 +107,7 @@ Route::resource('/blog', BlogController::class);
 Route::get('/property/area/{type}/{slug}', [PropertyAreaController::class, 'show'])
     ->whereIn('type', ['locality', 'town', 'district', 'county'])
     ->name('property.area.show');
+// Canonical property detail route used by all new/internal links.
 Route::get('/property/{slug}', [PropertyController::class, 'showBySlug'])
     ->where('slug', '[a-z0-9\-]+')
     ->name('property.show.slug');
@@ -118,11 +117,13 @@ Route::get('/property/{slug}', [PropertyController::class, 'showBySlug'])
 Route::middleware('auth')->group(function () {
 
     // Account profile endpoints (Breeze-style)
+    // These use the authenticated user's own profile (no name slug in URL).
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::patch('/profile', [ProfileController::class, 'updateAuthenticated'])->name('profile.account.update');
     Route::delete('/profile', [ProfileController::class, 'destroyAuthenticated'])->name('profile.destroy');
 
     // Public/member profile endpoints by slug
+    // These support viewing/editing specific member profiles by `name_slug`.
     Route::get('/profile/{name_slug}', [ProfileController::class, 'show'])->name('profile.show');
     Route::get('/profile/{name_slug}/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile/{name_slug}', [ProfileController::class, 'update'])->name('profile.update');
@@ -185,6 +186,9 @@ Route::middleware('auth')->group(function () {
 });
 
 // Sitemap by Spatie - Need to run generate-sitemap
+// `sitemap.xml` serves main site URLs (and chunk files when URL count is high).
+// `sitemap-epc-postcodes.xml` serves EPC postcode URLs (also chunked when needed).
+// `sitemap-index.xml` is the master index intended for robots/search engines.
 
 Route::get('/sitemap.xml', function () {
     $path = public_path('sitemap.xml');
@@ -242,6 +246,7 @@ Route::get('/sitemap-epc-postcodes-{chunk}.xml', function (string $chunk) {
 })->whereNumber('chunk')->name('sitemap.epc-postcodes.chunk');
 
 Route::get('/generate-sitemap', function () {
+    // Convenience endpoint to regenerate main sitemap + index from the browser.
     Artisan::call('sitemap:generate');
 
     return response(Artisan::output(), 200, [

@@ -18,6 +18,9 @@ class BlogPostRequestRulesTest extends TestCase
         $this->assertContains('image', $rules['image']);
         $this->assertArrayHasKey('published', $rules);
         $this->assertArrayHasKey('featured', $rules);
+        $this->assertArrayHasKey('subscriber_only', $rules);
+        $this->assertContains('nullable', $rules['subscriber_only']);
+        $this->assertContains('boolean', $rules['subscriber_only']);
     }
 
     public function test_blog_post_update_request_has_optional_image_rules(): void
@@ -30,5 +33,8 @@ class BlogPostRequestRulesTest extends TestCase
         $this->assertContains('image', $rules['image']);
         $this->assertArrayHasKey('published', $rules);
         $this->assertArrayHasKey('featured', $rules);
+        $this->assertArrayHasKey('subscriber_only', $rules);
+        $this->assertContains('nullable', $rules['subscriber_only']);
+        $this->assertContains('boolean', $rules['subscriber_only']);
     }
 }

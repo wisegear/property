@@ -154,6 +154,7 @@ class BlogController extends Controller
 
         // Check whether the post is featured
         $page->featured = $request->has('featured') ? 1 : 0;
+        $page->subscriber_only = $request->boolean('subscriber_only');
 
         // Save the post to the database
         $page->save();
@@ -321,6 +322,7 @@ class BlogController extends Controller
         // Set publication and featured options
         $page->published = $request->has('published') ? 1 : 0;
         $page->featured = $request->has('featured') ? 1 : 0;
+        $page->subscriber_only = $request->boolean('subscriber_only');
 
         // Save the updated post
         $page->save();

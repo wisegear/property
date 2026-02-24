@@ -14,8 +14,13 @@ class BlogPosts extends Model
 
     protected $table = 'blog_posts';
 
+    protected $fillable = [
+        'subscriber_only',
+    ];
+
     protected $casts = [
         'date' => 'date', // or 'datetime' depending on your needs
+        'subscriber_only' => 'boolean',
     ];
 
     public function comments(): MorphMany

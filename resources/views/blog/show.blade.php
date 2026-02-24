@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+    @php use Illuminate\Support\Str; @endphp
 
    <div class="mt-10">
 
@@ -46,9 +47,33 @@
 
             <!-- Post text, separate from other content.  We do this as wise1text is used for formatting -->
 
-            <div class="wise1text mt-10">
-                {!! $page->addAnchorLinkstoHeadings() !!}
-            </div>
+            @if($page->subscriber_only && ! auth()->check())
+                <div class="prose">
+                    {!! Str::limit(strip_tags($page->body), 600) !!}
+                </div>
+
+                <div class="mt-6 p-6 bg-gray-100 rounded-xl text-center border">
+                    <p class="text-lg font-semibold">This article is free for registered users.</p>
+                    <p class="mt-2 text-sm text-gray-600">
+                        Log in or register to continue reading the full article.
+                    </p>
+
+                    <div class="mt-4 flex items-center justify-center gap-3">
+                        <a href="{{ route('login') }}"
+                           class="border p-2 bg-lime-400 rounded text-sm text-black! no-underline! hover:bg-lime-300">
+                            Log in
+                        </a>
+                        <a href="{{ route('register') }}"
+                           class="border p-2 bg-lime-400 rounded text-sm text-black! no-underline! hover:bg-lime-300">
+                            Register
+                        </a>
+                    </div>
+                </div>
+            @else
+                <div class="wise1text mt-10">
+                    {!! $page->addAnchorLinkstoHeadings() !!}
+                </div>
+            @endif
 
             <!-- Share Buttons -->
             <div class="mt-10 text-center flex justify-center gap-4">

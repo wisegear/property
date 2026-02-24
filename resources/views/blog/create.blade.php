@@ -171,6 +171,11 @@
                         <label for="featured">Featured?</label>
                     </div>
                 </div>
+                <label class="flex items-center gap-2 mt-4">
+                    <input type="checkbox" name="subscriber_only" value="1"
+                           {{ old('subscriber_only', false) ? 'checked' : '' }}>
+                    Subscriber Content (requires login to read full article)
+                </label>
             </div>
 
             <!-- Submit Button -->

@@ -36,6 +36,7 @@ class BlogPostUpdateRequest extends FormRequest
             'gallery_images.*' => ['image', 'mimes:jpeg,jpg,png,gif', 'max:5120'],
             'published' => ['nullable', Rule::in(['on', '1', 1, true, 'true'])],
             'featured' => ['nullable', Rule::in(['on', '1', 1, true, 'true'])],
+            'subscriber_only' => ['nullable', 'boolean'],
         ];
     }
 }

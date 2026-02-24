@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class BlogControllerTest extends TestCase
@@ -66,12 +68,40 @@ class BlogControllerTest extends TestCase
         $this->assertSame('source-notes', $posts->first()->slug);
     }
 
+    public function test_blog_show_displays_preview_for_guest_on_subscriber_only_posts(): void
+    {
+        $this->seedBlogFixtures();
+
+        $response = $this->get(route('blog.show', ['blog' => 'subscriber-update'], absolute: false));
+
+        $response->assertOk();
+        $response->assertSee('Subscriber Update');
+        $response->assertSee('This is subscriber-only content.');
+        $response->assertSee('Log in to continue reading the full article.');
+        $response->assertSee('Register');
+        $response->assertDontSee('FULL_CONTENT_ONLY_MARKER');
+    }
+
+    public function test_blog_show_displays_full_content_for_logged_in_user_on_subscriber_only_posts(): void
+    {
+        $this->seedBlogFixtures();
+        $user = User::query()->findOrFail(1);
+
+        $response = $this->actingAs($user)->get(route('blog.show', ['blog' => 'subscriber-update'], absolute: false));
+
+        $response->assertOk();
+        $response->assertSee('FULL_CONTENT_ONLY_MARKER');
+        $response->assertDontSee('This is subscriber-only content.');
+    }
+
     protected function seedBlogFixtures(): void
     {
         DB::table('blog_post_tags')->delete();
         DB::table('blog_posts')->delete();
         DB::table('blog_tags')->delete();
         DB::table('blog_categories')->delete();
+        DB::table('user_roles_pivot')->delete();
+        DB::table('user_roles')->delete();
         DB::table('comments')->delete();
         DB::table('users')->delete();
 
@@ -96,6 +126,11 @@ class BlogControllerTest extends TestCase
             'name' => 'Source',
         ]);
 
+        DB::table('user_roles')->insert([
+            'id' => 1,
+            'name' => 'Member',
+        ]);
+
         DB::table('blog_tags')->insert([
             'id' => 1,
             'name' => 'Housing',
@@ -111,6 +146,7 @@ class BlogControllerTest extends TestCase
                 'summary' => 'Older summary.',
                 'featured' => false,
                 'published' => true,
+                'subscriber_only' => false,
                 'body' => 'Historical market view.',
                 'images' => json_encode([]),
                 'user_id' => 1,
@@ -127,6 +163,7 @@ class BlogControllerTest extends TestCase
                 'summary' => 'Current summary.',
                 'featured' => true,
                 'published' => true,
+                'subscriber_only' => false,
                 'body' => 'Latest MARKET numbers.',
                 'images' => json_encode([]),
                 'user_id' => 1,
@@ -143,6 +180,7 @@ class BlogControllerTest extends TestCase
                 'summary' => 'Rental summary.',
                 'featured' => false,
                 'published' => true,
+                'subscriber_only' => false,
                 'body' => 'Rental and affordability insights.',
                 'images' => json_encode([]),
                 'user_id' => 1,
@@ -159,10 +197,28 @@ class BlogControllerTest extends TestCase
                 'summary' => 'Source summary.',
                 'featured' => false,
                 'published' => true,
+                'subscriber_only' => false,
                 'body' => 'Source material references.',
                 'images' => json_encode([]),
                 'user_id' => 1,
                 'categories_id' => 2,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 5,
+                'original_image' => 'five.jpg',
+                'title' => 'Subscriber Update',
+                'slug' => 'subscriber-update',
+                'date' => '2025-05-10',
+                'summary' => 'Subscriber summary.',
+                'featured' => false,
+                'published' => true,
+                'subscriber_only' => true,
+                'body' => Str::repeat('Preview text ', 80).' FULL_CONTENT_ONLY_MARKER',
+                'images' => json_encode([]),
+                'user_id' => 1,
+                'categories_id' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -171,6 +227,11 @@ class BlogControllerTest extends TestCase
         DB::table('blog_post_tags')->insert([
             ['tag_id' => 1, 'post_id' => 1],
             ['tag_id' => 1, 'post_id' => 2],
+        ]);
+
+        DB::table('user_roles_pivot')->insert([
+            'user_id' => 1,
+            'role_id' => 1,
         ]);
     }
 
@@ -205,12 +266,17 @@ class BlogControllerTest extends TestCase
                 $table->text('summary')->nullable();
                 $table->boolean('featured')->default(false);
                 $table->boolean('published')->default(true);
+                $table->boolean('subscriber_only')->default(false);
                 $table->text('body');
                 $table->json('images')->nullable();
                 $table->unsignedBigInteger('user_id');
                 $table->unsignedBigInteger('categories_id');
                 $table->json('gallery_images')->nullable();
                 $table->timestamps();
+            });
+        } elseif (! Schema::hasColumn('blog_posts', 'subscriber_only')) {
+            Schema::table('blog_posts', function (Blueprint $table) {
+                $table->boolean('subscriber_only')->default(false)->after('published');
             });
         }
 
@@ -237,6 +303,20 @@ class BlogControllerTest extends TestCase
                 $table->unsignedBigInteger('commentable_id');
                 $table->text('body')->nullable();
                 $table->timestamps();
+            });
+        }
+
+        if (! Schema::hasTable('user_roles')) {
+            Schema::create('user_roles', function (Blueprint $table) {
+                $table->id();
+                $table->string('name', 100);
+            });
+        }
+
+        if (! Schema::hasTable('user_roles_pivot')) {
+            Schema::create('user_roles_pivot', function (Blueprint $table) {
+                $table->unsignedBigInteger('user_id');
+                $table->unsignedBigInteger('role_id');
             });
         }
     }
