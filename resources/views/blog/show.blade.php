@@ -48,7 +48,7 @@
             <!-- Post text, separate from other content.  We do this as wise1text is used for formatting -->
 
             @if($page->subscriber_only && ! auth()->check())
-                <div class="prose">
+                <div class="wise1text">
                     {!! Str::limit(strip_tags($page->body), 600) !!}
                 </div>
 

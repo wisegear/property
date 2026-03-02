@@ -76,8 +76,8 @@ class BlogControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Subscriber Update');
-        $response->assertSee('This is subscriber-only content.');
-        $response->assertSee('Log in to continue reading the full article.');
+        $response->assertSee('This article is free for registered users.');
+        $response->assertSee('Log in or register to continue reading the full article.');
         $response->assertSee('Register');
         $response->assertDontSee('FULL_CONTENT_ONLY_MARKER');
     }
