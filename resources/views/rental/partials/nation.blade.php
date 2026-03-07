@@ -87,6 +87,29 @@
         const PRICE = '#2563eb';
         const CHANGE = '#16a34a';
 
+        const formatQuarterTick = (value, index, ticks, scale) => {
+            const label = scale.getLabelForValue(value);
+
+            if (!label) {
+                return '';
+            }
+
+            const quarterMatch = label.match(/^(\d{4})-Q([1-4])$/);
+            const isLastTick = index === ticks.length - 1;
+
+            if (!quarterMatch) {
+                return isLastTick ? label : '';
+            }
+
+            const [, year, quarter] = quarterMatch;
+
+            if (quarter === '1' || isLastTick) {
+                return year;
+            }
+
+            return '';
+        };
+
         const renderChart = (el, labels, prices, changes) => {
             if (!el || !labels || !labels.length) return;
             new Chart(el.getContext('2d'), {
@@ -157,6 +180,16 @@
                         },
                     },
                     scales: {
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 0,
+                                minRotation: 0,
+                                callback: function (value, index, ticks) {
+                                    return formatQuarterTick(value, index, ticks, this);
+                                },
+                            },
+                        },
                         y: {
                             position: 'left',
                             title: {

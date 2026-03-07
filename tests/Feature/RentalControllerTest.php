@@ -73,12 +73,44 @@ class RentalControllerTest extends TestCase
         $response = $this->get(route('rental.england', absolute: false));
 
         $response->assertOk();
+        $response->assertSee('return year;', false);
 
         $typeSeries = collect($response->viewData('typeSeries'));
         $oneBedSeries = $typeSeries->firstWhere('key', 'one_bed');
 
         $this->assertSame(['2024-Q1', '2024-Q2'], $oneBedSeries['labels']);
         $this->assertSame([1100.0, 1200.0], $oneBedSeries['prices']);
+    }
+
+    public function test_england_page_includes_quarter_string_periods_in_type_series(): void
+    {
+        RentalCost::query()->create([
+            'time_period' => 'Q4-2025',
+            'area_name' => 'England',
+            'monthly_change' => 0.2,
+            'rental_price' => 1400,
+            'monthly_change_one_bed' => 0.4,
+            'rental_price_one_bed' => 1150,
+        ]);
+
+        RentalCost::query()->create([
+            'time_period' => 'Q1-2026',
+            'area_name' => 'England',
+            'monthly_change' => 0.5,
+            'rental_price' => 1425,
+            'monthly_change_one_bed' => 0.6,
+            'rental_price_one_bed' => 1185,
+        ]);
+
+        $response = $this->get(route('rental.england', absolute: false));
+
+        $response->assertOk();
+
+        $typeSeries = collect($response->viewData('typeSeries'));
+        $oneBedSeries = $typeSeries->firstWhere('key', 'one_bed');
+
+        $this->assertSame(['2025-Q4', '2026-Q1'], $oneBedSeries['labels']);
+        $this->assertSame([1150.0, 1185.0], $oneBedSeries['prices']);
     }
 
     protected function ensureRentalCostsTableExists(): void

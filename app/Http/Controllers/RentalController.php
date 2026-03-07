@@ -60,6 +60,14 @@ class RentalController extends Controller
             return $this->excelSerialToDateTime((float) $trimmed);
         }
 
+        if (preg_match('/^Q([1-4])[-\s\/]?(\d{4})$/i', $trimmed, $matches) === 1) {
+            return $this->quarterToDate((int) $matches[2], (int) $matches[1]);
+        }
+
+        if (preg_match('/^(\d{4})[-\s\/]?Q([1-4])$/i', $trimmed, $matches) === 1) {
+            return $this->quarterToDate((int) $matches[1], (int) $matches[2]);
+        }
+
         $formats = ['M-Y', 'Y-m', 'Y-m-d'];
         foreach ($formats as $format) {
             $date = \DateTimeImmutable::createFromFormat($format, $trimmed, new \DateTimeZone('UTC'));
@@ -89,6 +97,17 @@ class RentalController extends Controller
         }
 
         return $date;
+    }
+
+    private function quarterToDate(int $year, int $quarter): ?\DateTimeImmutable
+    {
+        if ($quarter < 1 || $quarter > 4) {
+            return null;
+        }
+
+        $month = (($quarter - 1) * 3) + 1;
+
+        return new \DateTimeImmutable(sprintf('%04d-%02d-01', $year, $month), new \DateTimeZone('UTC'));
     }
 
     private function latestTimePeriod(?string $areaName = null): ?string
