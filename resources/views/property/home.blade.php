@@ -167,10 +167,10 @@
         <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">90th Percentile YoY % Change</h3>
         <canvas id="p90YoyBar" class="w-full h-full"></canvas>
     </div>
-    <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
+    <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden flex flex-col">
         <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Top 5% Avg YoY % Change</h3>
         <p class="mb-2 text-xs text-zinc-500 text-center">Top 5% uses average to preserve high-end outlier signal.</p>
-        <canvas id="top5YoyBar" class="w-full h-full"></canvas>
+        <canvas id="top5YoyBar" class="w-full flex-1 min-h-0"></canvas>
     </div>
 </div>
 
@@ -405,6 +405,70 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
     const salesMinVal   = {!! json_encode($salesMinVal) !!};
     const topSaleMinVal = {!! json_encode($topSaleMinVal) !!};
     const p90BlockMinVal = {!! json_encode($p90BlockMinVal) !!};
+    const salesYearTitle = buildYearRangeTitle({!! json_encode($salesByYear->pluck('year')) !!});
+    const avgPriceYearTitle = buildYearRangeTitle({!! json_encode($avgPriceByYear->pluck('year')) !!});
+
+    function buildYearLabels(labels) {
+        return labels.map((label) => String(label).replace(/,/g, ''));
+    }
+
+    function buildYearRangeTitle(labels) {
+        const years = buildYearLabels(labels);
+        const hoverHint = ' (Hover over bars for yearly data)';
+
+        if (! years.length) {
+            return `Years${hoverHint}`;
+        }
+
+        const firstYear = years[0];
+        const lastYear = years[years.length - 1];
+
+        return firstYear === lastYear
+            ? `Year: ${firstYear}${hoverHint}`
+            : `Years: ${firstYear} to ${lastYear}${hoverHint}`;
+    }
+
+    function buildYoYYearRangeTitle(labels) {
+        const years = buildYearLabels(labels);
+        const hoverHint = ' (Hover over bars for yearly data)';
+
+        if (years.length <= 1) {
+            return buildYearRangeTitle(years);
+        }
+
+        const firstComparableYear = years[1];
+        const lastYear = years[years.length - 1];
+
+        return firstComparableYear === lastYear
+            ? `YoY available: ${firstComparableYear}${hoverHint}`
+            : `YoY available: ${firstComparableYear} to ${lastYear}${hoverHint}`;
+    }
+
+    function buildCategoryYearTickCallback(labels) {
+        const years = buildYearLabels(labels);
+
+        return function(value, index) {
+            const label = years[index] ?? String(this.getLabelForValue(value)).replace(/,/g, '');
+
+            return label;
+        };
+    }
+
+    function buildLinearYearTickCallback(years) {
+        const cleanYears = buildYearLabels(years).map((year) => Number(year));
+        const yearIndexMap = new Map(cleanYears.map((year, index) => [year, index]));
+
+        return function(value) {
+            const numericValue = Number(value);
+            const index = yearIndexMap.get(numericValue);
+
+            if (typeof index === 'undefined') {
+                return '';
+            }
+
+            return String(cleanYears[index]);
+        };
+    }
 
     const ctx = document.getElementById('salesChart').getContext('2d');
 
@@ -435,16 +499,12 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
             scales: {
                 x: {
                     offset: false,
+                    title: {
+                        display: true,
+                        text: salesYearTitle
+                    },
                     ticks: {
-                        callback: function(value, index, ticks) {
-                            const lbl = this.getLabelForValue(value);
-                            const clean = String(lbl).replace(/,/g, '');
-                            // Show every second year only
-                            return (index % 2 === 0) ? clean : '';
-                        },
-                        padding: 4,
-                        maxRotation: 0,
-                        minRotation: 0,
+                        display: false,
                         autoSkip: false
                     }
                 },
@@ -530,12 +590,14 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     min: Math.min(...scatterYears),
                     max: Math.max(...scatterYears),
                     offset: false,
+                    title: {
+                        display: true,
+                        text: avgPriceYearTitle
+                    },
                     ticks: {
-                        stepSize: 2,
-                        callback: function(value) { return String(value); },
-                        padding: 4,
-                        maxRotation: 0,
-                        minRotation: 0,
+                        display: false,
+                        stepSize: 1,
+                        callback: buildLinearYearTickCallback({!! json_encode($avgPriceByYear->pluck('year')) !!}),
                         autoSkip: false,
                         precision: 0
                     }
@@ -594,16 +656,12 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
             scales: { 
                 x: { 
                     offset: false,
+                    title: {
+                        display: true,
+                        text: avgPriceYearTitle
+                    },
                     ticks: { 
-                        callback: function(value, index, ticks) {
-                            const lbl = this.getLabelForValue(value);
-                            const clean = String(lbl).replace(/,/g, '');
-                            // Show every second year only
-                            return (index % 2 === 0) ? clean : '';
-                        },
-                        padding: 4,
-                        maxRotation: 0,
-                        minRotation: 0,
+                        display: false,
                         autoSkip: false
                     } 
                 }, 
@@ -617,7 +675,8 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
 </script>
 
 <script>
-    const labelsYoY = {!! json_encode($ewYears) !!}.map(String).map(s => s.replace(/,/g,''));
+    const labelsYoY = buildYearLabels({!! json_encode($ewYears) !!});
+    const labelsYoYTitle = buildYoYYearRangeTitle(labelsYoY);
 
     function barColorsFrom(values) {
         return values.map(v => {
@@ -666,16 +725,12 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 },
                 scales: {
                     x: {
+                        title: {
+                            display: true,
+                            text: labelsYoYTitle
+                        },
                         ticks: {
-                            callback: function(value, index, ticks) {
-                                const lbl = this.getLabelForValue(value);
-                                const clean = String(lbl).replace(/,/g, '');
-                                // Show every second year only
-                                return (index % 2 === 0) ? clean : '';
-                            },
-                            padding: 12,
-                            maxRotation: 0,
-                            minRotation: 0,
+                            display: false,
                             autoSkip: false
                         }
                     },
@@ -721,14 +776,12 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c){ const v=c.parsed.y; if (v==null) return 'No prior year'; const s=v>=0?'+':''; return `${s}${v.toFixed(2)}%`; } } } },
                 scales: {
                     x: { 
+                        title: {
+                            display: true,
+                            text: labelsYoYTitle
+                        },
                         ticks: { 
-                            callback: function(value, index, ticks) {
-                                const lbl = this.getLabelForValue(value);
-                                const clean = String(lbl).replace(/,/g, '');
-                                // Show every second year only
-                                return (index % 2 === 0) ? clean : '';
-                            },
-                            padding: 12, maxRotation: 0, minRotation: 0, autoSkip: false 
+                            display: false, autoSkip: false 
                         } 
                     },
                     y: { beginAtZero: false, ticks: { callback: v => v + '%' } }
@@ -756,14 +809,12 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c){ const v=c.parsed.y; if (v==null) return 'No prior year'; const s=v>=0?'+':''; return `${s}${v.toFixed(2)}%`; } } } },
                 scales: {
                     x: { 
+                        title: {
+                            display: true,
+                            text: labelsYoYTitle
+                        },
                         ticks: { 
-                            callback: function(value, index, ticks) {
-                                const lbl = this.getLabelForValue(value);
-                                const clean = String(lbl).replace(/,/g, '');
-                                // Show every second year only
-                                return (index % 2 === 0) ? clean : '';
-                            },
-                            padding: 12, maxRotation: 0, minRotation: 0, autoSkip: false 
+                            display: false, autoSkip: false 
                         } 
                     },
                     y: { beginAtZero: false, ticks: { callback: v => v + '%' } }
@@ -778,8 +829,9 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
 
 <script>
     (function(){
-        const labels = {!! json_encode($typeYears ?? collect()) !!}.map(String).map(s => s.replace(/,/g,''));
+        const labels = buildYearLabels({!! json_encode($typeYears ?? collect()) !!});
         if (!labels.length) return;
+        const labelTitle = buildYearRangeTitle(labels);
 
         const dataD = {!! json_encode($typeSeriesD ?? collect()) !!};
         const dataS = {!! json_encode($typeSeriesS ?? collect()) !!};
@@ -820,15 +872,12 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 scales: {
                     x: {
                         stacked: true,
+                        title: {
+                            display: true,
+                            text: labelTitle
+                        },
                         ticks: {
-                            callback: function(value, index){
-                                const lbl = this.getLabelForValue(value);
-                                const clean = String(lbl).replace(/,/g, '');
-                                return (index % 2 === 0) ? clean : '';
-                            },
-                            padding: 12,
-                            maxRotation: 0,
-                            minRotation: 0,
+                            display: false,
                             autoSkip: false
                         }
                     },
@@ -847,8 +896,9 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
 
 <script>
     (function(){
-        const labels = {!! json_encode($avgTypeYears ?? collect()) !!}.map(String).map(s => s.replace(/,/g,''));
+        const labels = buildYearLabels({!! json_encode($avgTypeYears ?? collect()) !!});
         if (!labels.length) return;
+        const labelTitle = buildYearRangeTitle(labels);
 
         const d = {!! json_encode($avgTypeSeriesD ?? collect()) !!};
         const s = {!! json_encode($avgTypeSeriesS ?? collect()) !!};
@@ -889,15 +939,12 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 },
                 scales: {
                     x: {
+                        title: {
+                            display: true,
+                            text: labelTitle
+                        },
                         ticks: {
-                            callback: function(value, index){
-                                const lbl = this.getLabelForValue(value);
-                                const clean = String(lbl).replace(/,/g, '');
-                                return (index % 2 === 0) ? clean : '';
-                            },
-                            padding: 12,
-                            maxRotation: 0,
-                            minRotation: 0,
+                            display: false,
                             autoSkip: false
                         }
                     },
@@ -917,8 +964,9 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
 
 <script>
     (function(){
-        const labels = {!! json_encode($nbYears ?? collect()) !!}.map(String).map(s => s.replace(/,/g,''));
+        const labels = buildYearLabels({!! json_encode($nbYears ?? collect()) !!});
         if (!labels.length) return;
+        const labelTitle = buildYearRangeTitle(labels);
 
         const pctNew = {!! json_encode($nbPctNew ?? collect()) !!};
         const pctOld = {!! json_encode($nbPctExisting ?? collect()) !!};
@@ -955,15 +1003,12 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 scales: {
                     x: {
                         stacked: true,
+                        title: {
+                            display: true,
+                            text: labelTitle
+                        },
                         ticks: {
-                            callback: function(value, index){
-                                const lbl = this.getLabelForValue(value);
-                                const clean = String(lbl).replace(/,/g, '');
-                                return (index % 2 === 0) ? clean : '';
-                            },
-                            padding: 12,
-                            maxRotation: 0,
-                            minRotation: 0,
+                            display: false,
                             autoSkip: false
                         }
                     },
@@ -983,8 +1028,9 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
 
 <script>
     (function(){
-        const labels = {!! json_encode($durYears ?? collect()) !!}.map(String).map(s => s.replace(/,/g,''));
+        const labels = buildYearLabels({!! json_encode($durYears ?? collect()) !!});
         if (!labels.length) return;
+        const labelTitle = buildYearRangeTitle(labels);
 
         const pctF = {!! json_encode($durPctFreehold ?? collect()) !!};
         const pctL = {!! json_encode($durPctLeasehold ?? collect()) !!};
@@ -1021,15 +1067,12 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 scales: {
                     x: {
                         stacked: true,
+                        title: {
+                            display: true,
+                            text: labelTitle
+                        },
                         ticks: {
-                            callback: function(value, index){
-                                const lbl = this.getLabelForValue(value);
-                                const clean = String(lbl).replace(/,/g, '');
-                                return (index % 2 === 0) ? clean : '';
-                            },
-                            padding: 12,
-                            maxRotation: 0,
-                            minRotation: 0,
+                            display: false,
                             autoSkip: false
                         }
                     },

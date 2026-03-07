@@ -43,6 +43,15 @@ class PostgresControllerRouteSmokeTest extends TestCase
             });
     }
 
+    public function test_prime_london_chart_ticks_keep_the_latest_year_visible(): void
+    {
+        $this->seedPrimeDataset('Prime Central', 'AB1');
+
+        $this->get('/property/prime-central-london')
+            ->assertOk()
+            ->assertSee('text: yearRangeTitle', false);
+    }
+
     public function test_outer_prime_london_route_loads_without_mysql_specific_sql(): void
     {
         $this->get('/property/outer-prime-london')->assertOk();

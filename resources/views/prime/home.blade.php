@@ -1,26 +1,43 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $pageTitle = $pageTitle ?? 'Prime Central London';
+    $heroDescription = $heroDescription ?? 'Analysis of London\'s prestigious postcodes. <span class="font-semibold">Category A sales only</span>. This represents the widely accepted postcodes in the Prime areas. Some will refine that down further to specific streets or neighbourhoods, but for this site it\'s suitable for a broad overview.';
+    $lastWarmCacheKeys = $lastWarmCacheKeys ?? [
+        'pcl:v5:catA:last_warm',
+        'pcl:v4:catA:last_warm',
+        'pcl:v3:catA:last_warm',
+        'pcl:v2:catA:last_warm',
+    ];
+    $allDistrictLabel = $allDistrictLabel ?? 'All Prime Central';
+    $emptyDistrictMessage = $emptyDistrictMessage ?? 'No Prime Central districts found.';
+    $allDistrictOverviewTitle = $allDistrictOverviewTitle ?? 'All Prime Central – Overview';
+    $allDistrictOverviewDescription = $allDistrictOverviewDescription ?? 'This section aggregates <strong>all Prime Central London postcodes</strong> into a single area for year-by-year analysis.';
+@endphp
 <div class="mx-auto max-w-7xl px-4 py-8 md:py-12">
     {{-- Hero / summary card --}}
     <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
         @include('partials.hero-background')
         <div class="max-w-4xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">Prime Central London</h1>
+            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">{{ $pageTitle }}</h1>
             <p class="mt-2 text-sm leading-6 text-gray-700">
-                Analysis of London's prestigious postcodes.
-                <span class="font-semibold">Category A sales only</span>.  This represents the widely accepted postcodes in the Prime areas. 
-                Some will refine that down further to specific streets or neighbourhoods, but for this site it's suitable for a broad overview.
+                {!! $heroDescription !!}
             </p>
             <p class="mt-1 text-sm leading-6 text-gray-700">
                 30-year history • sourced from Land Registry
                 <span class="ml-2 text-neutral-600">|
                     Data last cached:
                     @php
-                        $ts = $lastCachedAt
-                            ?? \Illuminate\Support\Facades\Cache::get('pcl:v4:catA:last_warm')
-                            ?? \Illuminate\Support\Facades\Cache::get('pcl:v3:catA:last_warm')
-                            ?? \Illuminate\Support\Facades\Cache::get('pcl:v2:catA:last_warm');
+                        $ts = $lastCachedAt ?? null;
+                        if (empty($ts)) {
+                            foreach ($lastWarmCacheKeys as $cacheKey) {
+                                $ts = \Illuminate\Support\Facades\Cache::get($cacheKey);
+                                if (! empty($ts)) {
+                                    break;
+                                }
+                            }
+                        }
                     @endphp
                     @if(!empty($ts))
                         {{ \Carbon\Carbon::parse($ts)->timezone(config('app.timezone'))->format('j M Y, H:i') }}
@@ -31,7 +48,7 @@
             </p>
         </div>
         <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="Prime Central London" class="w-72 h-auto">
+            <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="{{ $pageTitle }}" class="w-72 h-auto">
         </div>
     </section>
 
@@ -44,7 +61,7 @@
                     class="inner-button"
                     data-district-filter="ALL"
                 >
-                    All Prime Central
+                    {{ $allDistrictLabel }}
                 </button>
             @endif
 
@@ -63,15 +80,15 @@
     </div>
 
     @if(($districts ?? collect())->isEmpty())
-        <div class="rounded border p-6 bg-neutral-50">No Prime Central districts found.</div>
+        <div class="rounded border p-6 bg-neutral-50">{{ $emptyDistrictMessage }}</div>
     @else
         @foreach($districts as $district)
-            @php $__label = ($district === 'ALL') ? 'All Prime Central' : $district; @endphp
+            @php $__label = ($district === 'ALL') ? $allDistrictLabel : $district; @endphp
             <section class="mb-10 district-section" data-district="{{ $district }}">
                 @if($district === 'ALL')
                     <div class="mb-4 rounded-md border border-zinc-200 bg-white p-4 text-sm text-neutral-700">
-                        <h2 class="text-lg font-semibold mb-2">All Prime Central – Overview</h2>
-                        <p>This section aggregates <strong>all Prime Central London postcodes</strong> into a single area for year-by-year analysis.</p>
+                        <h2 class="text-lg font-semibold mb-2">{{ $allDistrictOverviewTitle }}</h2>
+                        <p>{!! $allDistrictOverviewDescription !!}</p>
                     </div>
                 @elseif(!empty($notes[$district] ?? null))
                     <div class="mb-4 rounded-md border border-zinc-200 bg-white p-4 text-sm text-neutral-700">
@@ -142,10 +159,10 @@
                         <h3 class="text-sm font-medium text-zinc-700 mb-2">YoY % Change – Median Price in {{ $__label }}</h3>
                         <canvas id="yoy_avg_{{ $district }}" class="w-full h-full"></canvas>
                     </div>
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
+                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72 flex flex-col">
                         <h3 class="text-sm font-medium text-zinc-700 mb-2">YoY % Change – Top 5% Avg in {{ $__label }}</h3>
                         <p class="mb-2 text-xs text-zinc-500">Top 5% uses average to preserve high-end outlier signal.</p>
-                        <canvas id="yoy_top5_{{ $district }}" class="w-full h-full"></canvas>
+                        <canvas id="yoy_top5_{{ $district }}" class="w-full flex-1 min-h-0"></canvas>
                     </div>
                 </div>
             </section>
@@ -249,6 +266,14 @@
                 ...topSalePerYear.map(r => r.year),
                 ...top3PerYear.map(r => r.year)
             ])].sort((a,b) => a-b);
+            const yearLabels = years.map((year) => String(year));
+            const hoverHint = ' (Hover over bars for yearly data)';
+            const yearRangeTitle = years.length <= 1
+                ? `Year: ${yearLabels[0] ?? ''}${hoverHint}`
+                : `Years: ${yearLabels[0]} to ${yearLabels[yearLabels.length - 1]}${hoverHint}`;
+            const yoyRangeTitle = yearLabels.length <= 2
+                ? `YoY available: ${yearLabels[1] ?? yearLabels[0] ?? ''}${hoverHint}`
+                : `YoY available: ${yearLabels[1]} to ${yearLabels[yearLabels.length - 1]}${hoverHint}`;
 
             if (years.length === 0) {
                 const card = document.querySelector(`#pt_${district}`)?.parentElement;
@@ -281,11 +306,25 @@
                 return arr.map(v => (v == null) ? 'rgba(150,150,150,1)' : (v >= 0 ? 'rgba(34,197,94,1)' : 'rgba(239,68,68,1)'));
             }
 
-            // Show every other year on YoY charts (labels remain numeric years)
             const tickEveryN = (value, index) => {
-                // index corresponds to position in the labels array
-                return (index % 2 === 0) ? String(years[index] ?? value) : '';
+                const label = yearLabels[index] ?? String(value);
+
+                return label;
             };
+
+            const tickLinearYears = (() => {
+                const yearIndexMap = new Map(years.map((year, index) => [Number(year), index]));
+
+                return (value) => {
+                    const index = yearIndexMap.get(Number(value));
+
+                    if (typeof index === 'undefined') {
+                        return '';
+                    }
+
+                    return String(years[index]);
+                };
+            })();
 
             const apByYear_full = new Map(avgPrice.map(r => [r.year, r.avg_price]));
             const scByYear_full = new Map(sales.map(r => [r.year, r.sales]));
@@ -349,6 +388,16 @@
                             }
                         },
                         scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: yearRangeTitle
+                                },
+                                ticks: {
+                                    display: false,
+                                    autoSkip: false
+                                }
+                            },
                             y: {
                                 ticks: {
                                     callback: (v) => fmtGBP(v)
@@ -408,6 +457,16 @@
                             }
                         },
                         scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: yearRangeTitle
+                                },
+                                ticks: {
+                                    display: false,
+                                    autoSkip: false
+                                }
+                            },
                             y: {
                                 ticks: {
                                     callback: (v) => fmtNum(v)
@@ -473,7 +532,17 @@
                             }
                         },
                         scales: {
-                            x: { stacked: true },
+                            x: {
+                                stacked: true,
+                                title: {
+                                    display: true,
+                                    text: yearRangeTitle
+                                },
+                                ticks: {
+                                    display: false,
+                                    autoSkip: false
+                                }
+                            },
                             y: {
                                 stacked: true,
                                 ticks: { callback: (v) => fmtNum(v) }
@@ -549,6 +618,16 @@
                                 }
                             },
                             scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: yearRangeTitle
+                                    },
+                                    ticks: {
+                                        display: false,
+                                        autoSkip: false
+                                    }
+                                },
                                 y: {
                                     ticks: { callback: (v) => fmtGBP(v) }
                                 }
@@ -625,7 +704,17 @@
                                 }
                             },
                             scales: {
-                                x: { stacked: true },
+                                x: {
+                                    stacked: true,
+                                    title: {
+                                        display: true,
+                                        text: yearRangeTitle
+                                    },
+                                    ticks: {
+                                        display: false,
+                                        autoSkip: false
+                                    }
+                                },
                                 y: {
                                     stacked: true,
                                     min: 0,
@@ -705,7 +794,17 @@
                                 }
                             },
                             scales: {
-                                x: { stacked: true },
+                                x: {
+                                    stacked: true,
+                                    title: {
+                                        display: true,
+                                        text: yearRangeTitle
+                                    },
+                                    ticks: {
+                                        display: false,
+                                        autoSkip: false
+                                    }
+                                },
                                 y: {
                                     stacked: true,
                                     min: 0,
@@ -789,11 +888,16 @@
                         scales: {
                             x: {
                                 type: 'linear',
-                                ticks: {
-                                    stepSize: 1,
-                                    callback: (value) => value.toString()
+                                title: {
+                                    display: true,
+                                    text: yearRangeTitle
                                 },
-                                title: { display: false }
+                                ticks: {
+                                    display: false,
+                                    stepSize: 1,
+                                    callback: tickLinearYears,
+                                    autoSkip: false
+                                }
                             },
                             y: {
                                 ticks: { callback: (v) => fmtGBP(v) }
@@ -872,6 +976,16 @@
                             }
                         },
                         scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: yearRangeTitle
+                                },
+                                ticks: {
+                                    display: false,
+                                    autoSkip: false
+                                }
+                            },
                             y: {
                                 ticks: {
                                     callback: (v) => fmtGBP(v)
@@ -914,12 +1028,13 @@
                         },
                         scales: {
                             x: { 
+                                title: {
+                                    display: true,
+                                    text: yoyRangeTitle
+                                },
                                 ticks: { 
-                                    callback: tickEveryN,
-                                    autoSkip: false,
-                                    padding: 8,
-                                    maxRotation: 0,
-                                    minRotation: 0
+                                    display: false,
+                                    autoSkip: false
                                 } 
                             },
                             y: { ticks: { callback: (v) => v + '%' } }
@@ -960,12 +1075,13 @@
                         },
                         scales: {
                             x: { 
+                                title: {
+                                    display: true,
+                                    text: yoyRangeTitle
+                                },
                                 ticks: { 
-                                    callback: tickEveryN,
-                                    autoSkip: false,
-                                    padding: 8,
-                                    maxRotation: 0,
-                                    minRotation: 0
+                                    display: false,
+                                    autoSkip: false
                                 } 
                             },
                             y: { ticks: { callback: (v) => v + '%' } }
@@ -1006,12 +1122,13 @@
                         },
                         scales: {
                             x: { 
+                                title: {
+                                    display: true,
+                                    text: yoyRangeTitle
+                                },
                                 ticks: { 
-                                    callback: tickEveryN,
-                                    autoSkip: false,
-                                    padding: 8,
-                                    maxRotation: 0,
-                                    minRotation: 0
+                                    display: false,
+                                    autoSkip: false
                                 } 
                             },
                             y: { ticks: { callback: (v) => v + '%' } }
@@ -1052,12 +1169,13 @@
                         },
                         scales: {
                             x: { 
+                                title: {
+                                    display: true,
+                                    text: yoyRangeTitle
+                                },
                                 ticks: { 
-                                    callback: tickEveryN,
-                                    autoSkip: false,
-                                    padding: 8,
-                                    maxRotation: 0,
-                                    minRotation: 0
+                                    display: false,
+                                    autoSkip: false
                                 } 
                             },
                             y: { ticks: { callback: (v) => v + '%' } }

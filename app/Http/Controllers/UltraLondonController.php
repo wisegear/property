@@ -10,6 +10,16 @@ class UltraLondonController extends Controller
     // Ultra Prime Central London – Home
     public function home()
     {
+        $yearColumn = $this->quotedColumn('YearDate');
+        $priceColumn = $this->quotedColumn('Price');
+        $yearColumnAll = $this->quotedColumn('YearDate', 'lr');
+        $priceColumnAll = $this->quotedColumn('Price', 'lr');
+        $propertyTypeColumnAll = $this->quotedColumn('PropertyType', 'lr');
+        $newBuildColumnAll = $this->quotedColumn('NewBuild', 'lr');
+        $durationColumnAll = $this->quotedColumn('Duration', 'lr');
+        $dateColumnAll = $this->quotedColumn('Date', 'lr');
+        $postcodeColumnAll = $this->quotedColumn('Postcode', 'lr');
+
         // Ultra Prime districts from lookup table
         $districts = DB::table('prime_postcodes')
             ->where('category', 'Ultra Prime')
@@ -30,92 +40,92 @@ class UltraLondonController extends Controller
 
         foreach ($allDistricts as $district) {
             // Separate cache namespaces for ALL vs per-district
-            $keyBase = $district === 'ALL' ? 'upcl:v6:catA:ALL:' : 'upcl:v6:catA:'.$district.':';
+            $keyBase = $district === 'ALL' ? 'upcl:v7:catA:ALL:' : 'upcl:v7:catA:'.$district.':';
 
             if ($district === 'ALL') {
                 // ===== Aggregate across ALL Ultra Prime outward codes (prefix join) =====
                 // Base: land_registry joined to DISTINCT set of UPCL postcodes by prefix
                 $baseAll = DB::table('land_registry as lr')
                     ->join(DB::raw("(SELECT DISTINCT postcode FROM prime_postcodes WHERE category = 'Ultra Prime') as pp"),
-                        DB::raw("REPLACE(lr.Postcode, ' ', '')"), 'LIKE', DB::raw("(pp.postcode || '%')"))
+                        DB::raw($this->normalizedPostcodeExpression('lr')), 'LIKE', DB::raw("(pp.postcode || '%')"))
                     ->where('lr.PPDCategoryType', 'A');
 
                 // Median price by year
-                $avgPrice = Cache::remember($keyBase.'avgPrice', $ttl, function () use ($baseAll) {
+                $avgPrice = Cache::remember($keyBase.'avgPrice', $ttl, function () use ($baseAll, $yearColumnAll, $priceColumnAll) {
                     return (clone $baseAll)
-                        ->selectRaw('lr.YearDate as year, ROUND('.$this->medianPriceExpression('lr.Price').') as avg_price')
-                        ->groupBy('lr.YearDate')
-                        ->orderBy('lr.YearDate')
+                        ->selectRaw("{$yearColumnAll} as year, ROUND(".$this->medianPriceExpression($priceColumnAll).') as avg_price')
+                        ->groupBy(DB::raw($yearColumnAll))
+                        ->orderBy(DB::raw($yearColumnAll))
                         ->get();
                 });
 
                 // Sales count by year
-                $sales = Cache::remember($keyBase.'sales', $ttl, function () use ($baseAll) {
+                $sales = Cache::remember($keyBase.'sales', $ttl, function () use ($baseAll, $yearColumnAll) {
                     return (clone $baseAll)
-                        ->selectRaw('lr.YearDate as year, COUNT(*) as sales')
-                        ->groupBy('lr.YearDate')
-                        ->orderBy('lr.YearDate')
+                        ->selectRaw("{$yearColumnAll} as year, COUNT(*) as sales")
+                        ->groupBy(DB::raw($yearColumnAll))
+                        ->orderBy(DB::raw($yearColumnAll))
                         ->get();
                 });
 
                 // Property types by year
-                $propertyTypes = Cache::remember($keyBase.'propertyTypes', $ttl, function () use ($baseAll) {
+                $propertyTypes = Cache::remember($keyBase.'propertyTypes', $ttl, function () use ($baseAll, $yearColumnAll, $propertyTypeColumnAll) {
                     return (clone $baseAll)
-                        ->selectRaw('lr.YearDate as year, lr.PropertyType as type, COUNT(*) as count')
-                        ->groupBy('lr.YearDate', 'type')
-                        ->orderBy('lr.YearDate')
+                        ->selectRaw("{$yearColumnAll} as year, {$propertyTypeColumnAll} as type, COUNT(*) as count")
+                        ->groupBy(DB::raw($yearColumnAll), 'type')
+                        ->orderBy(DB::raw($yearColumnAll))
                         ->get();
                 });
 
                 // Median price by property type (D/S/T/F) per year
-                $avgPriceByType = Cache::remember($keyBase.'avgPriceByType', $ttl, function () use ($baseAll) {
+                $avgPriceByType = Cache::remember($keyBase.'avgPriceByType', $ttl, function () use ($baseAll, $yearColumnAll, $propertyTypeColumnAll, $priceColumnAll) {
                     return (clone $baseAll)
-                        ->selectRaw('lr.YearDate as year, SUBSTR(lr.PropertyType, 1, 1) as type, ROUND('.$this->medianPriceExpression('lr.Price').') as avg_price')
+                        ->selectRaw("{$yearColumnAll} as year, SUBSTR({$propertyTypeColumnAll}, 1, 1) as type, ROUND(".$this->medianPriceExpression($priceColumnAll).') as avg_price')
                         ->whereNotNull('lr.PropertyType')
-                        ->whereRaw("SUBSTR(lr.PropertyType, 1, 1) IN ('D','S','T','F')")
-                        ->groupBy('lr.YearDate', 'type')
-                        ->orderBy('lr.YearDate')
+                        ->whereRaw("SUBSTR({$propertyTypeColumnAll}, 1, 1) IN ('D','S','T','F')")
+                        ->groupBy(DB::raw($yearColumnAll), 'type')
+                        ->orderBy(DB::raw($yearColumnAll))
                         ->get();
                 });
 
                 // New build vs existing (% of sales) per year
-                $newBuildPct = Cache::remember($keyBase.'newBuildPct', $ttl, function () use ($baseAll) {
+                $newBuildPct = Cache::remember($keyBase.'newBuildPct', $ttl, function () use ($baseAll, $yearColumnAll, $newBuildColumnAll) {
                     return (clone $baseAll)
                         ->selectRaw(
-                            'lr.YearDate as year, '.
-                            "ROUND(100 * SUM(CASE WHEN lr.NewBuild = 'Y' THEN 1 ELSE 0 END) / COUNT(*), 1) as new_pct, ".
-                            "ROUND(100 * SUM(CASE WHEN lr.NewBuild = 'N' THEN 1 ELSE 0 END) / COUNT(*), 1) as existing_pct"
+                            "{$yearColumnAll} as year, ".
+                            "ROUND(100 * SUM(CASE WHEN {$newBuildColumnAll} = 'Y' THEN 1 ELSE 0 END) / COUNT(*), 1) as new_pct, ".
+                            "ROUND(100 * SUM(CASE WHEN {$newBuildColumnAll} = 'N' THEN 1 ELSE 0 END) / COUNT(*), 1) as existing_pct"
                         )
                         ->whereNotNull('lr.NewBuild')
                         ->whereIn('lr.NewBuild', ['Y', 'N'])
-                        ->groupBy('lr.YearDate')
-                        ->orderBy('lr.YearDate')
+                        ->groupBy(DB::raw($yearColumnAll))
+                        ->orderBy(DB::raw($yearColumnAll))
                         ->get();
                 });
 
                 // Freehold vs Leasehold (% of sales) per year (Duration: F/L)
-                $tenurePct = Cache::remember($keyBase.'tenurePct', $ttl, function () use ($baseAll) {
+                $tenurePct = Cache::remember($keyBase.'tenurePct', $ttl, function () use ($baseAll, $yearColumnAll, $durationColumnAll) {
                     return (clone $baseAll)
                         ->selectRaw(
-                            'lr.YearDate as year, '.
-                            "ROUND(100 * SUM(CASE WHEN lr.Duration = 'F' THEN 1 ELSE 0 END) / COUNT(*), 1) as free_pct, ".
-                            "ROUND(100 * SUM(CASE WHEN lr.Duration = 'L' THEN 1 ELSE 0 END) / COUNT(*), 1) as lease_pct"
+                            "{$yearColumnAll} as year, ".
+                            "ROUND(100 * SUM(CASE WHEN {$durationColumnAll} = 'F' THEN 1 ELSE 0 END) / COUNT(*), 1) as free_pct, ".
+                            "ROUND(100 * SUM(CASE WHEN {$durationColumnAll} = 'L' THEN 1 ELSE 0 END) / COUNT(*), 1) as lease_pct"
                         )
                         ->whereNotNull('lr.Duration')
                         ->whereIn('lr.Duration', ['F', 'L'])
-                        ->groupBy('lr.YearDate')
-                        ->orderBy('lr.YearDate')
+                        ->groupBy(DB::raw($yearColumnAll))
+                        ->orderBy(DB::raw($yearColumnAll))
                         ->get();
                 });
 
                 // 90th percentile (decile threshold) per year
-                $p90 = Cache::remember($keyBase.'p90', $ttl, function () use ($baseAll) {
+                $p90 = Cache::remember($keyBase.'p90', $ttl, function () use ($baseAll, $yearColumnAll, $priceColumnAll, $yearColumn, $priceColumn) {
                     $deciles = (clone $baseAll)
-                        ->selectRaw('lr.YearDate, lr.Price, NTILE(10) OVER (PARTITION BY lr.YearDate ORDER BY lr.Price) as decile');
+                        ->selectRaw("{$yearColumnAll}, {$priceColumnAll}, NTILE(10) OVER (PARTITION BY {$yearColumnAll} ORDER BY {$priceColumnAll}) as decile");
 
                     return DB::query()
                         ->fromSub($deciles, 't')
-                        ->selectRaw('YearDate as year, MIN(Price) as p90')
+                        ->selectRaw("{$yearColumn} as year, MIN({$priceColumn}) as p90")
                         ->where('decile', 10)
                         ->groupBy('year')
                         ->orderBy('year')
@@ -123,13 +133,13 @@ class UltraLondonController extends Controller
                 });
 
                 // Top 5% average per year
-                $top5 = Cache::remember($keyBase.'top5', $ttl, function () use ($baseAll) {
+                $top5 = Cache::remember($keyBase.'top5', $ttl, function () use ($baseAll, $yearColumnAll, $priceColumnAll, $yearColumn, $priceColumn) {
                     $ranked = (clone $baseAll)
-                        ->selectRaw('lr.YearDate, lr.Price, ROW_NUMBER() OVER (PARTITION BY lr.YearDate ORDER BY lr.Price DESC) as rn, COUNT(*) OVER (PARTITION BY lr.YearDate) as cnt');
+                        ->selectRaw("{$yearColumnAll}, {$priceColumnAll}, ROW_NUMBER() OVER (PARTITION BY {$yearColumnAll} ORDER BY {$priceColumnAll} DESC) as rn, COUNT(*) OVER (PARTITION BY {$yearColumnAll}) as cnt");
 
                     return DB::query()
                         ->fromSub($ranked, 'ranked')
-                        ->selectRaw('YearDate as year, ROUND(AVG(Price)) as top5_avg')
+                        ->selectRaw("{$yearColumn} as year, ROUND(AVG({$priceColumn})) as top5_avg")
                         ->whereRaw('rn <= ((cnt + 19) / 20)')
                         ->groupBy('year')
                         ->orderBy('year')
@@ -137,18 +147,18 @@ class UltraLondonController extends Controller
                 });
 
                 // Top sale per year
-                $topSalePerYear = Cache::remember($keyBase.'topSalePerYear', $ttl, function () use ($baseAll) {
+                $topSalePerYear = Cache::remember($keyBase.'topSalePerYear', $ttl, function () use ($baseAll, $yearColumnAll, $priceColumnAll) {
                     return (clone $baseAll)
-                        ->selectRaw('lr.YearDate as year, MAX(lr.Price) as top_sale')
-                        ->groupBy('lr.YearDate')
-                        ->orderBy('lr.YearDate')
+                        ->selectRaw("{$yearColumnAll} as year, MAX({$priceColumnAll}) as top_sale")
+                        ->groupBy(DB::raw($yearColumnAll))
+                        ->orderBy(DB::raw($yearColumnAll))
                         ->get();
                 });
 
                 // Top 3 sales per year (for tooltip)
-                $top3PerYear = Cache::remember($keyBase.'top3PerYear', $ttl, function () use ($baseAll) {
+                $top3PerYear = Cache::remember($keyBase.'top3PerYear', $ttl, function () use ($baseAll, $yearColumnAll, $dateColumnAll, $postcodeColumnAll, $priceColumnAll) {
                     $ranked = (clone $baseAll)
-                        ->selectRaw('lr.YearDate as year, lr.Date as Date, lr.Postcode as Postcode, lr.Price as Price, ROW_NUMBER() OVER (PARTITION BY lr.YearDate ORDER BY lr.Price DESC) as rn');
+                        ->selectRaw("{$yearColumnAll} as year, {$dateColumnAll} as Date, {$postcodeColumnAll} as Postcode, {$priceColumnAll} as Price, ROW_NUMBER() OVER (PARTITION BY {$yearColumnAll} ORDER BY {$priceColumnAll} DESC) as rn");
 
                     return DB::query()
                         ->fromSub($ranked, 'r')
@@ -323,11 +333,21 @@ class UltraLondonController extends Controller
             ];
         }
 
-        return view('ultra.home', [
+        return view('prime.home', [
             'pageTitle' => 'Ultra Prime Central London',
             'districts' => $allDistricts,
             'charts' => $charts,
             'notes' => $notesByPostcode,
+            'heroDescription' => 'Analysis of London\'s most prestigious postcodes. <span class="font-semibold">Category A sales only</span>. This represents the widely accepted postcodes in the Ultra Prime areas. Some will refine that down further to specific streets or neighbourhoods, but for this site it\'s suitable for a broad overview.',
+            'lastWarmCacheKeys' => [
+                'upcl:v7:catA:last_warm',
+                'upcl:v6:catA:last_warm',
+                'upcl:v5:catA:last_warm',
+            ],
+            'allDistrictLabel' => 'All Ultra Prime',
+            'emptyDistrictMessage' => 'No Ultra Prime districts found.',
+            'allDistrictOverviewTitle' => 'All Ultra Prime – Overview',
+            'allDistrictOverviewDescription' => 'This section aggregates <strong>all Ultra Prime London postcodes</strong> into a single area for year-by-year analysis.',
         ]);
     }
 
@@ -338,5 +358,21 @@ class UltraLondonController extends Controller
         }
 
         return "AVG({$columnExpression})";
+    }
+
+    private function quotedColumn(string $column, ?string $table = null): string
+    {
+        $prefix = $table ? $table.'.' : '';
+
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            return $prefix.'"'.$column.'"';
+        }
+
+        return $prefix.$column;
+    }
+
+    private function normalizedPostcodeExpression(?string $table = null): string
+    {
+        return 'REPLACE('.$this->quotedColumn('Postcode', $table).", ' ', '')";
     }
 }

@@ -18,6 +18,7 @@
                     Data last cached:
                     @php
                         $ts = $lastCachedAt
+                            ?? \Illuminate\Support\Facades\Cache::get('outerprime:v4:catA:last_warm')
                             ?? \Illuminate\Support\Facades\Cache::get('outerprime:v3:catA:last_warm')
                             ?? \Illuminate\Support\Facades\Cache::get('outerprime:v2:catA:last_warm')
                             ?? \Illuminate\Support\Facades\Cache::get('outerprime:v1:catA:last_warm');

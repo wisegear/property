@@ -77,6 +77,24 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             });
     }
 
+    public function test_property_home_chart_ticks_keep_the_latest_year_visible(): void
+    {
+        DB::table('land_registry')->insert([
+            $this->landRegistryRow(
+                transactionId: '12121212-1212-1212-1212-12121212121212',
+                price: 250000,
+                date: '2026-01-15 00:00:00',
+                postcode: 'AB1 2CD',
+                paon: '1',
+                street: 'HIGH STREET'
+            ),
+        ]);
+
+        $this->get('/property')
+            ->assertOk()
+            ->assertSee('text: salesYearTitle', false);
+    }
+
     public function test_property_show_route_loads_without_mysql_index_hints(): void
     {
         DB::table('land_registry')->insert([

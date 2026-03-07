@@ -108,10 +108,10 @@ class OuterPrimeWarm extends Command
 
         $allSeries = $this->buildSeries($districts);
         foreach ($allSeries as $name => $value) {
-            Cache::put('outerprime:v3:catA:ALL:'.$name, $value, $ttl);
+            Cache::put('outerprime:v4:catA:ALL:'.$name, $value, $ttl);
         }
 
-        Cache::put('outerprime:v3:catA:last_warm', now()->toIso8601String(), $ttl);
+        Cache::put('outerprime:v4:catA:last_warm', now()->toIso8601String(), $ttl);
 
         $this->newLine(2);
         $this->info('Outer Prime London warming complete.');
@@ -124,7 +124,7 @@ class OuterPrimeWarm extends Command
         $series = $this->buildSeries([$district]);
 
         foreach ($series as $name => $value) {
-            Cache::put('outerprime:v3:catA:'.$district.':'.$name, $value, $ttl);
+            Cache::put('outerprime:v4:catA:'.$district.':'.$name, $value, $ttl);
         }
     }
 

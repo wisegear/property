@@ -108,10 +108,10 @@ class PclWarm extends Command
 
         $allSeries = $this->buildSeries($districts);
         foreach ($allSeries as $name => $value) {
-            Cache::put('pcl:v4:catA:ALL:'.$name, $value, $ttl);
+            Cache::put('pcl:v5:catA:ALL:'.$name, $value, $ttl);
         }
 
-        Cache::put('pcl:v4:catA:last_warm', now()->toIso8601String(), $ttl);
+        Cache::put('pcl:v5:catA:last_warm', now()->toIso8601String(), $ttl);
 
         $this->newLine(2);
         $this->info('Prime Central cache warm complete.');
@@ -124,7 +124,7 @@ class PclWarm extends Command
         $series = $this->buildSeries([$district]);
 
         foreach ($series as $name => $value) {
-            Cache::put('pcl:v4:catA:'.$district.':'.$name, $value, $ttl);
+            Cache::put('pcl:v5:catA:'.$district.':'.$name, $value, $ttl);
         }
     }
 

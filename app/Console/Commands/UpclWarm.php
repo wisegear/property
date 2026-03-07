@@ -108,10 +108,10 @@ class UpclWarm extends Command
 
         $allSeries = $this->buildSeries($districts);
         foreach ($allSeries as $name => $value) {
-            Cache::put('upcl:v6:catA:ALL:'.$name, $value, $ttl);
+            Cache::put('upcl:v7:catA:ALL:'.$name, $value, $ttl);
         }
 
-        Cache::put('upcl:v6:catA:last_warm', now()->toIso8601String(), $ttl);
+        Cache::put('upcl:v7:catA:last_warm', now()->toIso8601String(), $ttl);
 
         $this->newLine(2);
         $this->info('Ultra Prime cache warm complete.');
@@ -124,7 +124,7 @@ class UpclWarm extends Command
         $series = $this->buildSeries([$district]);
 
         foreach ($series as $name => $value) {
-            Cache::put('upcl:v6:catA:'.$district.':'.$name, $value, $ttl);
+            Cache::put('upcl:v7:catA:'.$district.':'.$name, $value, $ttl);
         }
     }
 
