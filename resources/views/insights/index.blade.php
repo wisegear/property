@@ -19,9 +19,8 @@
                 Property Insights
             </div>
             <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Property Market Insights</h1>
-            <p class="mt-3 text-base leading-7 text-zinc-600">
-                Recent postcode and sector-level market signals generated from pricing anomalies, transaction drops,
-                and relative outperformance against the national HPI trend.
+            <p class="mt-3 text-xs leading-6 text-zinc-600">
+                <span class="font-semibold text-zinc-800">Price Spike</span> highlights unusually strong median price growth, <span class="font-semibold text-zinc-800">Demand Collapse</span> flags sharp transaction declines, <span class="font-semibold text-zinc-800">Sector Outperformance</span> shows sectors rising faster than the national HPI trend, and <span class="font-semibold text-zinc-800">Momentum Reversal</span> identifies areas where earlier strong price growth has turned into decline.
             </p>
             <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-zinc-600">
                 <span class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/80 px-3 py-1">
