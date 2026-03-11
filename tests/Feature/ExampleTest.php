@@ -19,5 +19,7 @@ class ExampleTest extends TestCase
             $renderedLayout
         );
         $this->assertStringNotContainsString('https://x.com/Propertyda03', $renderedLayout);
+        $this->assertStringContainsString('href="https://prop.test/insights"', $renderedLayout);
+        $this->assertSame(2, substr_count($renderedLayout, 'href="https://prop.test/insights"'));
     }
 }

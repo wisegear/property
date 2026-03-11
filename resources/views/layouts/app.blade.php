@@ -313,6 +313,12 @@
                         </div>
                     </div>
 
+                    <!-- Insights Link -->
+                    <a href="{{ url('/insights') }}"
+                       class="px-3 py-2 rounded {{ request()->is('insights') || request()->is('insights/search') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
+                        Insights
+                    </a>
+
                     <!-- Social Housing Dropdown Menu -->
                     <div class="relative">
                         <button id="socialHousingMenuButton"
@@ -576,6 +582,12 @@
                         </a>
                     </div>
                 </div>
+
+                <!-- Insights Link -->
+                <a href="{{ url('/insights') }}"
+                   class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                    Insights
+                </a>
 
                 <!-- Social Housing Dropdown (Mobile) -->
                 <div>

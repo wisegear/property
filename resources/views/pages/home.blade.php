@@ -136,32 +136,61 @@
 
     </section>
 
-    {{-- Quick postcode search --}}
-    <section class="mt-8 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div class="max-w-3xl">
-                <h2 class="text-lg font-semibold text-zinc-900">Quick postcode search <span class="text-sm text-zinc-500">(England & Wales Only)</span></h2>
-                <p class="mt-1 text-sm text-zinc-600">
-                    Jump straight to the Property Search page for a postcode, for example SW7 5PH.
-                </p>
-            </div>
-
-            <form method="GET" action="{{ route('property.search') }}" class="w-full md:w-auto">
-                <div class="flex w-full flex-col gap-3 sm:flex-row">
-                    <input
-                        id="home-postcode"
-                        name="postcode"
-                        type="text"
-                        value="{{ old('postcode', request('postcode', '')) }}"
-                        placeholder="e.g. SW7 5PH"
-                        class="w-full min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500 sm:min-w-72"
-                    />
-                    <button type="submit" class="inner-button whitespace-nowrap">
-                        Search postcode
-                    </button>
+    <section class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {{-- Quick postcode search --}}
+        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div class="flex h-full flex-col items-center justify-center gap-4 text-center">
+                <div class="max-w-3xl">
+                    <h2 class="text-lg font-semibold text-zinc-900">Quick postcode search <span class="text-sm text-zinc-500">(England & Wales Only)</span></h2>
+                    <p class="mt-1 text-sm text-zinc-600">
+                        Jump straight to the Property Search page for a postcode, for example SW7 5PH.
+                    </p>
                 </div>
-            </form>
+
+                <form method="GET" action="{{ route('property.search') }}" class="w-full max-w-xl">
+                    <div class="flex w-full flex-col justify-center gap-3 sm:flex-row">
+                        <input
+                            id="home-postcode"
+                            name="postcode"
+                            type="text"
+                            value="{{ old('postcode', request('postcode', '')) }}"
+                            placeholder="e.g. SW7 5PH"
+                            class="w-full min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500 sm:min-w-72"
+                        />
+                        <button type="submit" class="inner-button whitespace-nowrap">
+                            Search postcode
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
+
+        <a href="{{ route('insights.index') }}"
+           class="group rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+            <div class="flex h-full flex-col">
+                <div>
+                    <h2 class="mt-2 text-lg font-semibold text-zinc-900">Market Insights (New)</h2>
+                </div>
+
+                <p class="mt-3 text-sm leading-6 text-zinc-600">
+                    Browse price spikes, demand collapses, sector outperformance, and momentum reversal signals generated from the latest rolling 12 months of market data.
+                </p>
+
+                <div class="mt-4 flex flex-wrap gap-2 text-xs font-medium text-zinc-600">
+                    <span class="rounded-full bg-amber-100 px-3 py-1 text-amber-800">Price Spike</span>
+                    <span class="rounded-full bg-rose-100 px-3 py-1 text-rose-800">Demand Collapse</span>
+                    <span class="rounded-full bg-lime-100 px-3 py-1 text-lime-800">Sector Outperformance</span>
+                    <span class="rounded-full bg-sky-100 px-3 py-1 text-sky-800">Momentum Reversal</span>
+                </div>
+
+                <div class="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-medium text-lime-700 group-hover:underline">
+                    Open Insights
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                </div>
+            </div>
+        </a>
     </section>
 
     {{-- Property Stress Index --}}

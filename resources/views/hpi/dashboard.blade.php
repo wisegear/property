@@ -15,7 +15,7 @@
               versions of HPI from the Halifax, Nationwide, Rightmove etc but this is the official government data.  That is why figures may differ from other sources.
             </p>
             <p class="mt-1 text-sm leading-6 text-gray-700">
-                Data covers the period from 1969 to 2025 (November).  Next Update expected January 2026.
+                Data covers the period from 1969 to 2026 (January).  Next Update expected March 2026.
             </p>
         </div>
         <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">

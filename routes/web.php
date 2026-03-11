@@ -14,6 +14,7 @@ use App\Http\Controllers\DeprivationController;
 use App\Http\Controllers\EpcController;
 use App\Http\Controllers\EpcPostcodeController;
 use App\Http\Controllers\HpiDashboardController;
+use App\Http\Controllers\InsightsController;
 use App\Http\Controllers\InterestRateController;
 use App\Http\Controllers\LocalAuthorityController;
 use App\Http\Controllers\MlarArrearsController;
@@ -90,6 +91,8 @@ Route::get('/approvals', [MortgageApprovalController::class, 'home'])->name('mor
 Route::get('/repossessions/local-authority/{slug}', [RepossessionsController::class, 'localAuthority'])->name('repossessions.local-authority');
 Route::get('/repossessions', [RepossessionsController::class, 'index'])->name('repossessions.index');
 Route::get('/arrears', [MlarArrearsController::class, 'index'])->name('arrears.index');
+Route::get('/insights', [InsightsController::class, 'index'])->name('insights.index');
+Route::get('/insights/search', [InsightsController::class, 'search'])->name('insights.search');
 
 Route::get('/social-housing-scotland', [LocalAuthorityController::class, 'scotland'])->name('localauthority.scotland');
 Route::get('/social-housing-england', [LocalAuthorityController::class, 'england'])->name('localauthority.england');
