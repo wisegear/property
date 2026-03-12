@@ -20,9 +20,13 @@ class InsightsController extends Controller
     {
         return [
             'price_spike' => 'Price Spike',
+            'price_collapse' => 'Price Collapse',
             'demand_collapse' => 'Demand Collapse',
+            'liquidity_surge' => 'Liquidity Surge',
+            'market_freeze' => 'Market Freeze',
             'sector_outperformance' => 'Sector Outperformance',
             'momentum_reversal' => 'Momentum Reversal',
+            'unexpected_hotspot' => 'Unexpected Hotspot',
         ];
     }
 
@@ -41,12 +45,14 @@ class InsightsController extends Controller
         $query = $this->filteredInsights($request);
         $selectedType = $request->validated('type');
         $search = trim((string) $request->validated('search', ''));
+        $sort = $this->sortOption($request);
 
         return view('insights.index', [
             'query' => $query,
             'insightTypes' => $this->insightTypes(),
             'selectedType' => is_string($selectedType) ? $selectedType : '',
             'search' => $search,
+            'sort' => $sort,
         ]);
     }
 
@@ -54,6 +60,7 @@ class InsightsController extends Controller
     {
         $search = trim((string) $request->validated('search', ''));
         $type = (string) $request->validated('type', '');
+        $sort = $this->sortOption($request);
         $driver = DB::getDriverName();
         $likeOperator = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
 
@@ -69,14 +76,53 @@ class InsightsController extends Controller
                 });
             });
 
-        if ($driver === 'pgsql') {
-            $query->orderByRaw("regexp_replace(area_code, '[0-9].*$', '') ASC");
+        switch ($sort) {
+            case 'transactions_desc':
+                $query->orderByDesc('transactions')
+                    ->orderBy('area_code');
+                break;
+            case 'transactions_asc':
+                $query->orderBy('transactions')
+                    ->orderBy('area_code');
+                break;
+            case 'sector_desc':
+                if ($driver === 'pgsql') {
+                    $query->orderByRaw("regexp_replace(area_code, '[0-9].*$', '') DESC");
+                }
+
+                $query->orderByDesc('area_code')
+                    ->orderByDesc('period_end');
+                break;
+            case 'latest_period_desc':
+                $query->orderByDesc('period_end')
+                    ->orderBy('area_code');
+                break;
+            default:
+                if ($driver === 'pgsql') {
+                    $query->orderByRaw("regexp_replace(area_code, '[0-9].*$', '') ASC");
+                }
+
+                $query->orderBy('area_code')
+                    ->orderByDesc('period_end');
+                break;
         }
 
         return $query
-            ->orderBy('area_code')
-            ->orderByDesc('period_end')
             ->paginate(self::PER_PAGE)
-            ->withQueryString();
+            ->appends($request->query());
+    }
+
+    protected function sortOption(InsightsFilterRequest $request): string
+    {
+        $sort = (string) $request->query('sort', 'sector_asc');
+        $allowed = [
+            'sector_asc',
+            'sector_desc',
+            'transactions_desc',
+            'transactions_asc',
+            'latest_period_desc',
+        ];
+
+        return in_array($sort, $allowed, true) ? $sort : 'sector_asc';
     }
 }

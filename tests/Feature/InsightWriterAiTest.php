@@ -21,7 +21,7 @@ class InsightWriterAiTest extends TestCase
                         'content' => [
                             [
                                 'type' => 'output_text',
-                                'text' => 'Average property prices in NW8 increased 18% year-on-year based on 112 recorded transactions.',
+                                'text' => 'Median property prices in NW8 rose 18% in 01 Feb 2025 to 31 Jan 2026 based on 112 recorded sales.',
                             ],
                         ],
                     ],
@@ -41,7 +41,7 @@ class InsightWriterAiTest extends TestCase
         ]);
 
         $this->assertSame(
-            'Average property prices in NW8 increased 18% year-on-year based on 112 recorded transactions.',
+            'Median property prices in NW8 rose 18% in 01 Feb 2025 to 31 Jan 2026 based on 112 recorded sales.',
             $result
         );
     }
@@ -68,7 +68,7 @@ class InsightWriterAiTest extends TestCase
         ]);
 
         $this->assertSame(
-            'Average property prices in NW8 increased 18% year-on-year based on 112 recorded sales.',
+            'Median property prices in NW8 rose 18% in Feb 2026 based on 112 recorded sales.',
             $result
         );
     }

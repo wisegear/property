@@ -12,8 +12,9 @@ class InsightWriter
         $postcode = $this->value($row, 'postcode', 'area_code');
         $growth = $this->value($row, 'growth');
         $sales = $this->value($row, 'sales');
+        $periodLabel = $this->value($row, 'period_label');
 
-        return "Median property prices in {$postcode} rose {$growth}% year-on-year based on {$sales} recorded sales.";
+        return "Median property prices in {$postcode} rose {$growth}% in {$periodLabel} based on {$sales} recorded sales.";
     }
 
     public function demandCollapse(object|array $row): string
@@ -21,8 +22,35 @@ class InsightWriter
         $postcode = $this->value($row, 'postcode', 'area_code');
         $salesChange = $this->value($row, 'sales_change');
         $sales = $this->value($row, 'sales');
+        $periodLabel = $this->value($row, 'period_label');
 
-        return "Property transactions in {$postcode} fell {$salesChange}% year-on-year based on {$sales} recorded sales.";
+        return "Property transactions in {$postcode} fell {$salesChange}% in {$periodLabel} based on {$sales} recorded sales.";
+    }
+
+    public function priceCollapse(object|array $row): string
+    {
+        $sector = $this->value($row, 'sector', 'postcode', 'area_code');
+        $growth = $this->value($row, 'growth');
+        $previousPrice = $this->value($row, 'previous_price');
+        $currentPrice = $this->value($row, 'current_price');
+
+        return "Median property prices in postcode sector {$sector} fell {$growth}% over the last 12 months. Previous period median price: £{$previousPrice}. Current period median price: £{$currentPrice}.";
+    }
+
+    public function liquiditySurge(object|array $row): string
+    {
+        $sector = $this->value($row, 'sector', 'postcode', 'area_code');
+        $salesChange = $this->value($row, 'sales_change');
+
+        return "Property transactions in postcode sector {$sector} increased {$salesChange}% over the past 12 months compared with the previous year.";
+    }
+
+    public function marketFreeze(object|array $row): string
+    {
+        $sector = $this->value($row, 'sector', 'postcode', 'area_code');
+        $salesChange = $this->value($row, 'sales_change');
+
+        return "Property transactions in postcode sector {$sector} fell {$salesChange}% over the past 12 months, indicating a sharp slowdown in market activity.";
     }
 
     public function sectorOutperformance(object|array $row): string
@@ -31,18 +59,28 @@ class InsightWriter
         $sectorGrowth = $this->value($row, 'sector_growth');
         $ukGrowth = $this->value($row, 'uk_growth');
         $sales = $this->value($row, 'sales');
+        $periodLabel = $this->value($row, 'period_label');
 
-        return "Median property prices in {$sector} rose {$sectorGrowth}% year-on-year versus {$ukGrowth}% nationally based on {$sales} recorded sales.";
+        return "Median property prices in {$sector} rose {$sectorGrowth}% in {$periodLabel} versus {$ukGrowth}% nationally based on {$sales} recorded sales.";
     }
 
     public function momentumReversal(object|array $row): string
     {
         $sector = $this->value($row, 'sector', 'area_code');
         $sales = $this->value($row, 'sales');
-        $currentYear = $this->value($row, 'current_year');
-        $previousYear = $this->value($row, 'previous_year');
+        $currentPeriodLabel = $this->value($row, 'current_period_label', 'period_label');
+        $previousPeriodLabel = $this->value($row, 'previous_period_label');
 
-        return "Median property prices in {$sector} rose strongly in {$previousYear} but fell in {$currentYear}, indicating a possible reversal in local price momentum based on {$sales} recorded sales.";
+        return "Median property prices in {$sector} rose strongly in {$previousPeriodLabel} but fell in {$currentPeriodLabel}, indicating a possible reversal in local price momentum based on {$sales} recorded sales.";
+    }
+
+    public function unexpectedHotspot(object|array $row): string
+    {
+        $sector = $this->value($row, 'sector', 'postcode', 'area_code');
+        $sectorGrowth = $this->value($row, 'sector_growth');
+        $ukGrowth = $this->value($row, 'uk_growth');
+
+        return "Median property prices in postcode sector {$sector} rose {$sectorGrowth}% over the past 12 months, significantly outperforming the UK average increase of {$ukGrowth}%. Despite this surge, the sector's median price remains below the national average.";
     }
 
     public function generateWithAI(array $data): string
@@ -111,11 +149,35 @@ class InsightWriter
         $insightType = strtolower(trim((string) ($data['insight_type'] ?? '')));
         $metric = strtolower(trim((string) ($data['metric'] ?? '')));
 
+        if ($insightType === 'liquidity_surge') {
+            return $this->liquiditySurge([
+                'area_code' => $this->arrayValue($data, 'area', 'postcode', 'area_code'),
+                'sales_change' => $this->normaliseChange($this->arrayValue($data, 'change', 'sales_change')),
+            ]);
+        }
+
+        if ($insightType === 'market_freeze') {
+            return $this->marketFreeze([
+                'area_code' => $this->arrayValue($data, 'area', 'postcode', 'area_code'),
+                'sales_change' => $this->normaliseChange($this->arrayValue($data, 'change', 'sales_change')),
+            ]);
+        }
+
         if ($insightType === 'demand_collapse' || str_contains($metric, 'sales') || str_contains($metric, 'transaction')) {
             return $this->demandCollapse([
                 'area_code' => $this->arrayValue($data, 'area', 'postcode', 'area_code'),
                 'sales_change' => $this->normaliseChange($this->arrayValue($data, 'change', 'sales_change')),
                 'sales' => $this->arrayValue($data, 'transactions', 'sales'),
+                'period_label' => $this->arrayValue($data, 'period', 'period_label'),
+            ]);
+        }
+
+        if ($insightType === 'price_collapse') {
+            return $this->priceCollapse([
+                'area_code' => $this->arrayValue($data, 'area', 'postcode', 'area_code'),
+                'growth' => $this->normaliseChange($this->arrayValue($data, 'change', 'growth')),
+                'previous_price' => $this->arrayValue($data, 'previous_price'),
+                'current_price' => $this->arrayValue($data, 'current_price'),
             ]);
         }
 
@@ -125,6 +187,7 @@ class InsightWriter
                 'sector_growth' => $this->normaliseChange($this->arrayValue($data, 'change', 'sector_growth')),
                 'uk_growth' => $this->normaliseChange($this->arrayValue($data, 'benchmark', 'uk_growth')),
                 'sales' => $this->arrayValue($data, 'transactions', 'sales'),
+                'period_label' => $this->arrayValue($data, 'period', 'period_label'),
             ]);
         }
 
@@ -132,8 +195,16 @@ class InsightWriter
             return $this->momentumReversal([
                 'area_code' => $this->arrayValue($data, 'area', 'postcode', 'area_code'),
                 'sales' => $this->arrayValue($data, 'transactions', 'sales'),
-                'current_year' => $this->arrayValue($data, 'period', 'current_year'),
-                'previous_year' => $this->arrayValue($data, 'previous_year'),
+                'current_period_label' => $this->arrayValue($data, 'period', 'period_label'),
+                'previous_period_label' => $this->arrayValue($data, 'previous_period_label'),
+            ]);
+        }
+
+        if ($insightType === 'unexpected_hotspot') {
+            return $this->unexpectedHotspot([
+                'area_code' => $this->arrayValue($data, 'area', 'postcode', 'area_code'),
+                'sector_growth' => $this->normaliseChange($this->arrayValue($data, 'change', 'sector_growth')),
+                'uk_growth' => $this->normaliseChange($this->arrayValue($data, 'benchmark', 'uk_growth')),
             ]);
         }
 
@@ -142,6 +213,7 @@ class InsightWriter
                 'area_code' => $this->arrayValue($data, 'area', 'postcode', 'area_code'),
                 'growth' => $this->normaliseChange($this->arrayValue($data, 'change', 'growth')),
                 'sales' => $this->arrayValue($data, 'transactions', 'sales'),
+                'period_label' => $this->arrayValue($data, 'period', 'period_label'),
             ]);
         }
 

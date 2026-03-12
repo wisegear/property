@@ -33,6 +33,20 @@ class MarketInsightsMigrationTest extends TestCase
         $this->assertIndexExists('market_insights_area_type_area_code_index', ['area_type', 'area_code']);
         $this->assertIndexExists('market_insights_insight_type_index', ['insight_type']);
         $this->assertIndexExists('market_insights_period_end_index', ['period_end']);
+
+        if (Schema::getConnection()->getDriverName() === 'pgsql') {
+            $constraint = collect(DB::select("
+                SELECT conname, pg_get_constraintdef(oid) AS definition
+                FROM pg_constraint
+                WHERE conname = 'market_insights_insight_type_check'
+            "))->first();
+
+            $this->assertNotNull($constraint);
+            $this->assertStringContainsString("'price_collapse'", $constraint->definition);
+            $this->assertStringContainsString("'liquidity_surge'", $constraint->definition);
+            $this->assertStringContainsString("'market_freeze'", $constraint->definition);
+            $this->assertStringContainsString("'unexpected_hotspot'", $constraint->definition);
+        }
     }
 
     protected function assertIndexExists(string $indexName, array $expectedColumns): void

@@ -23,9 +23,13 @@ class InsightsFilterRequest extends FormRequest
             'search' => ['nullable', 'string', 'max:120'],
             'type' => ['nullable', 'string', Rule::in([
                 'price_spike',
+                'price_collapse',
                 'demand_collapse',
+                'liquidity_surge',
+                'market_freeze',
                 'sector_outperformance',
                 'momentum_reversal',
+                'unexpected_hotspot',
             ])],
         ];
     }
