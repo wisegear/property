@@ -173,15 +173,8 @@
                 </div>
 
                 <p class="mt-3 text-sm leading-6 text-zinc-600">
-                    Browse price spikes, demand collapses, sector outperformance, and momentum reversal signals generated from the latest rolling 12 months of market data.
+                    Browse price signals, market activity shifts, and longer-term trend signals generated from rolling 12-month Land Registry windows, with postcode sector detail pages and historical sales and price context for each insight.
                 </p>
-
-                <div class="mt-4 flex flex-wrap gap-2 text-xs font-medium text-zinc-600">
-                    <span class="rounded-full bg-amber-100 px-3 py-1 text-amber-800">Price Spike</span>
-                    <span class="rounded-full bg-rose-100 px-3 py-1 text-rose-800">Demand Collapse</span>
-                    <span class="rounded-full bg-lime-100 px-3 py-1 text-lime-800">Sector Outperformance</span>
-                    <span class="rounded-full bg-sky-100 px-3 py-1 text-sky-800">Momentum Reversal</span>
-                </div>
 
                 <div class="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-medium text-lime-700 group-hover:underline">
                     Open Insights
