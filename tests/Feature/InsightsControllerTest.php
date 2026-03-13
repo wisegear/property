@@ -153,6 +153,7 @@ class InsightsControllerTest extends TestCase
             'search' => 'Manchester',
             'sort' => 'transactions_desc',
         ]);
+        $rendered = $view->render();
 
         $view->assertSee('Property Market Insights');
         $view->assertSee('/insights/search', false);
@@ -174,6 +175,8 @@ class InsightsControllerTest extends TestCase
         $view->assertSee('31 Dec 2025');
         $view->assertSee('142');
         $view->assertSee(route('insights.show', ['sector' => 'manchester']), false);
+        $this->assertStringContainsString('min-h-[240px]', $rendered);
+        $this->assertStringNotContainsString('line-clamp-2', $rendered);
     }
 
     public function test_show_normalizes_sector_and_returns_insights_with_historical_data(): void

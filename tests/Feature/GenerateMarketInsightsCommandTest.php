@@ -185,12 +185,12 @@ class GenerateMarketInsightsCommandTest extends TestCase
         $rows = [];
 
         for ($i = 0; $i < 20; $i++) {
-            $rows[] = $this->landRegistryRow("pc-earlier-{$i}", 'PC1 1AA', 250000, '2023-06-01', 'A');
+            $rows[] = $this->landRegistryRow("pc-earlier-{$i}", 'PC1 1AA', 220000, '2023-06-01', 'A');
             $rows[] = $this->landRegistryRow("pc-prev-{$i}", 'PC1 1AA', 200000, '2024-06-01', 'A');
             $rows[] = $this->landRegistryRow("pc-curr-{$i}", 'PC1 1AA', 160000, '2025-06-01', 'A');
         }
 
-        for ($i = 0; $i < 14; $i++) {
+        for ($i = 0; $i < 15; $i++) {
             $rows[] = $this->landRegistryRow("ls-earlier-{$i}", 'LS1 1AA', 209000, '2023-07-01', 'A');
         }
 
@@ -202,11 +202,11 @@ class GenerateMarketInsightsCommandTest extends TestCase
             $rows[] = $this->landRegistryRow("ls-curr-{$i}", 'LS1 1AA', 212000, '2025-07-01', 'A');
         }
 
-        for ($i = 0; $i < 130; $i++) {
+        for ($i = 0; $i < 40; $i++) {
             $rows[] = $this->landRegistryRow("mf-earlier-{$i}", 'MF1 1AA', 229000, '2023-08-01', 'A');
         }
 
-        for ($i = 0; $i < 50; $i++) {
+        for ($i = 0; $i < 45; $i++) {
             $rows[] = $this->landRegistryRow("mf-prev-{$i}", 'MF1 1AA', 230000, '2024-08-01', 'A');
         }
 
@@ -224,9 +224,24 @@ class GenerateMarketInsightsCommandTest extends TestCase
         }
 
         for ($i = 0; $i < 20; $i++) {
+            $rows[] = $this->landRegistryRow("sm-earlier-{$i}", 'SM1 1AA', 100000, '2023-04-01', 'A');
+            $rows[] = $this->landRegistryRow("sm-prev-{$i}", 'SM1 1AA', 110000, '2024-04-01', 'A');
+            $rows[] = $this->landRegistryRow("sm-curr-{$i}", 'SM1 1AA', 116000, '2025-04-01', 'A');
+        }
+
+        for ($i = 0; $i < 20; $i++) {
             $rows[] = $this->landRegistryRow("oneoff-earlier-{$i}", 'ON1 1AA', 200000, '2023-11-01', 'A');
             $rows[] = $this->landRegistryRow("oneoff-prev-{$i}", 'ON1 1AA', 200000, '2024-11-01', 'A');
             $rows[] = $this->landRegistryRow("oneoff-curr-{$i}", 'ON1 1AA', 250000, '2025-11-01', 'A');
+        }
+
+        for ($i = 0; $i < 20; $i++) {
+            $rows[] = $this->landRegistryRow("mr-earlier-{$i}", 'MR1 1AA', 100000, '2023-12-01', 'A');
+            $rows[] = $this->landRegistryRow("mr-prev-{$i}", 'MR1 1AA', 120000, '2024-12-01', 'A');
+            $rows[] = $this->landRegistryRow("mr-curr-{$i}", 'MR1 1AA', 105000, '2025-12-01', 'A');
+            $rows[] = $this->landRegistryRow("wr-earlier-{$i}", 'WR1 1AA', 100000, '2023-03-01', 'A');
+            $rows[] = $this->landRegistryRow("wr-prev-{$i}", 'WR1 1AA', 112000, '2024-03-01', 'A');
+            $rows[] = $this->landRegistryRow("wr-curr-{$i}", 'WR1 1AA', 105000, '2025-03-01', 'A');
         }
 
         $rows[] = $this->landRegistryRow('latest-anchor', 'AL1 2AA', 225000, '2026-01-31', 'A');
@@ -260,9 +275,26 @@ class GenerateMarketInsightsCommandTest extends TestCase
             'transactions' => 101,
         ]);
 
-        $this->assertDatabaseMissing('market_insights', [
+        $this->assertDatabaseHas('market_insights', [
             'area_code' => 'ON1',
             'insight_type' => 'price_spike',
+            'transactions' => 20,
+        ]);
+
+        $this->assertDatabaseHas('market_insights', [
+            'area_code' => 'MR11',
+            'insight_type' => 'momentum_reversal',
+            'transactions' => 20,
+        ]);
+
+        $this->assertDatabaseMissing('market_insights', [
+            'area_code' => 'SM11',
+            'insight_type' => 'unexpected_hotspot',
+        ]);
+
+        $this->assertDatabaseMissing('market_insights', [
+            'area_code' => 'WR11',
+            'insight_type' => 'momentum_reversal',
         ]);
 
         $priceCollapse = MarketInsight::query()
@@ -291,7 +323,7 @@ class GenerateMarketInsightsCommandTest extends TestCase
             ->firstOrFail();
 
         $this->assertSame(
-            'Property transactions in postcode sector MF1 fell 60.0% over the past 12 months, indicating a sharp slowdown in market activity.',
+            'Property transactions in postcode sector MF1 fell 55.6% over the past 12 months, indicating a sharp slowdown in market activity.',
             $marketFreeze->insight_text
         );
 
@@ -303,6 +335,26 @@ class GenerateMarketInsightsCommandTest extends TestCase
         $this->assertSame(
             "Median property prices in postcode sector AL12 rose 25.0% over the past 12 months, significantly outperforming the UK average increase of 5.0%. Despite this surge, the sector's median price remains below the national average.",
             $unexpectedHotspot->insight_text
+        );
+
+        $priceSpike = MarketInsight::query()
+            ->where('area_code', 'ON1')
+            ->where('insight_type', 'price_spike')
+            ->firstOrFail();
+
+        $this->assertSame(
+            'Median property prices in ON1 rose 25.0% in 01 Feb 2025 to 31 Jan 2026 based on 20 recorded sales.',
+            $priceSpike->insight_text
+        );
+
+        $momentumReversal = MarketInsight::query()
+            ->where('area_code', 'MR11')
+            ->where('insight_type', 'momentum_reversal')
+            ->firstOrFail();
+
+        $this->assertSame(
+            'Median property prices in MR11 rose strongly in 01 Feb 2024 to 31 Jan 2025 but fell in 01 Feb 2025 to 31 Jan 2026, indicating a possible reversal in local price momentum based on 20 recorded sales.',
+            $momentumReversal->insight_text
         );
     }
 

@@ -31,9 +31,11 @@ class GenerateMarketInsights extends Command
 
     private const DEMAND_COLLAPSE_THRESHOLD = -30.0;
 
-    private const LIQUIDITY_SURGE_THRESHOLD = 35.0;
+    private const LIQUIDITY_SURGE_THRESHOLD = 50.0;
 
-    private const MARKET_FREEZE_THRESHOLD = -60.0;
+    private const MARKET_FREEZE_THRESHOLD = -50.0;
+
+    private const HOTSPOT_OUTPERFORMANCE_MARGIN = 12.0;
 
     private const OUTPERFORMANCE_THRESHOLD = 20.0;
 
@@ -393,12 +395,12 @@ SQL;
 
     protected function liquiditySurgeRows(): Collection
     {
-        return $this->salesChangeRows('>=', self::LIQUIDITY_SURGE_THRESHOLD, true);
+        return $this->salesChangeRows('>=', self::LIQUIDITY_SURGE_THRESHOLD, false);
     }
 
     protected function marketFreezeRows(): Collection
     {
-        return $this->salesChangeRows('<=', self::MARKET_FREEZE_THRESHOLD, true);
+        return $this->salesChangeRows('<=', self::MARKET_FREEZE_THRESHOLD, false);
     }
 
     protected function sectorOutperformanceRows(): Collection
@@ -729,8 +731,8 @@ WHERE current_period.sales >= ?
   AND uk_earlier.median_price > 0
   AND current_period.median_price < uk_current.median_price
   AND previous_period.median_price < uk_previous.median_price
-  AND {$currentSectorGrowthExpression} >= (2 * {$currentUkGrowthExpression})
-  AND {$previousSectorGrowthExpression} >= (2 * {$previousUkGrowthExpression})
+  AND {$currentSectorGrowthExpression} >= ({$currentUkGrowthExpression} + ?)
+  AND {$previousSectorGrowthExpression} >= ({$previousUkGrowthExpression} + ?)
 ORDER BY sector_growth DESC, current_period.sector ASC
 SQL;
 
@@ -761,6 +763,8 @@ SQL;
             $periods['earlier_end']->toDateString(),
             $this->minSectorTransactions(),
             $this->minSectorTransactions(),
+            self::HOTSPOT_OUTPERFORMANCE_MARGIN,
+            self::HOTSPOT_OUTPERFORMANCE_MARGIN,
         ]))->map(function (object $row) use ($periods): array {
             return [
                 'area_code' => (string) $row->sector,
@@ -880,8 +884,8 @@ SQL;
             $periods['earlier_start']->toDateString(),
             $periods['earlier_end']->toDateString(),
             $this->minSectorTransactions(),
-            10,
-            -5,
+            15,
+            -10,
         ]))->map(function (object $row) use ($periods): array {
             return [
                 'area_code' => (string) $row->sector,
@@ -1133,7 +1137,6 @@ WHERE current_period.sales >= ?
   AND previous_period.median_price > 0
   AND earlier_period.median_price > 0
   AND {$currentGrowthExpression} {$operator} ?
-  AND {$previousGrowthExpression} {$operator} ?
 SQL;
 
         $sql .= $operator === '<='
@@ -1155,7 +1158,6 @@ SQL;
             $periods['earlier_end']->toDateString(),
             $minimumSales,
             $minimumSales,
-            $threshold,
             $threshold,
         ]))->map(function (object $row) use ($periods): array {
             return [

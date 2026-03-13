@@ -82,7 +82,7 @@
                     @forelse ($query as $insight)
                         <a
                             href="{{ route('insights.show', ['sector' => strtolower($insight->area_code)]) }}"
-                            class="block min-h-[180px] rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-lime-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-lime-300"
+                            class="flex h-full min-h-[240px] flex-col rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-lime-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-lime-300"
                         >
                             <div class="mb-4 flex items-start justify-between gap-3">
                                 <span class="{{ $insightBadgeClasses[$insight->insight_type] ?? 'border-zinc-200 bg-zinc-100 text-zinc-800' }} inline-flex items-center rounded-full border px-3 py-1 text-xs tracking-wide">
@@ -92,12 +92,12 @@
                                 <p class="text-sm font-semibold text-gray-700">{{ $insight->area_code }} • {{ $insight->transactions }} sales</p>
                             </div>
 
-                            <div class="flex flex-col gap-4">
+                            <div class="flex flex-1 flex-col gap-4">
                                 <div>
-                                    <p class="line-clamp-2 text-sm text-zinc-700">{{ $insight->insight_text }}</p>
+                                    <p class="text-sm leading-6 text-zinc-700">{{ $insight->insight_text }}</p>
                                 </div>
 
-                                <div>
+                                <div class="mt-auto">
                                     <div class="flex items-end justify-between gap-4">
                                         <div>
                                             <p class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Rolling Period</p>
