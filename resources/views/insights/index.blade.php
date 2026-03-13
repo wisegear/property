@@ -55,6 +55,36 @@
         </div>
     </section>
 
+    <section class="mt-6">
+        <details class="group rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Guide</p>
+                    <h2 class="mt-2 text-lg font-semibold text-zinc-900">What the nine insights mean</h2>
+                    <p class="mt-1 text-sm text-zinc-600">Open this panel for a plain-language explanation of each market signal.</p>
+                </div>
+                <span class="inline-flex items-center rounded-full border border-zinc-300 bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-700 transition group-open:rotate-180">
+                    ˅
+                </span>
+            </summary>
+
+            <div class="border-t border-zinc-200 px-6 py-6">
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    @foreach ($insightTypes as $type => $label)
+                        <article class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                            <span class="{{ $insightBadgeClasses[$type] ?? 'border-zinc-200 bg-zinc-100 text-zinc-800' }} inline-flex items-center rounded-full border px-3 py-1 text-xs tracking-wide">
+                                {{ $label }}
+                            </span>
+                            <p class="mt-3 text-sm leading-6 text-zinc-600">
+                                {{ $insightDescriptions[$type] ?? 'This signal highlights a notable change in local market conditions over the latest rolling 12-month comparison.' }}
+                            </p>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </details>
+    </section>
+
     <div class="mx-auto max-w-7xl py-6 sm:px-2 lg:px-0">
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
             <div class="order-2 lg:order-1">
@@ -137,9 +167,9 @@
             <div class="order-1 flex h-fit flex-col gap-6 lg:order-2">
                 <aside class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Browse</p>
-                        <h2 class="mt-2 text-lg font-semibold text-zinc-900">Filter insights</h2>
-                        <p class="mt-2 text-sm text-zinc-600">Search by area or jump straight to a specific anomaly type.</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Search</p>
+                        <h2 class="mt-2 text-lg font-semibold text-zinc-900">Find a place or signal</h2>
+                        <p class="mt-2 text-sm text-zinc-600">Search by area code or insight text.</p>
                     </div>
 
                     <form action="{{ route('insights.search') }}" method="GET" class="mt-5 flex flex-col gap-3">
@@ -166,15 +196,23 @@
                             Search
                         </button>
                     </form>
+                </aside>
 
-                    <div class="mt-6 border-t border-zinc-200 pt-5">
+                <aside class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Browse</p>
+                        <h2 class="mt-2 text-lg font-semibold text-zinc-900">Filter insights</h2>
+                        <p class="mt-2 text-sm text-zinc-600">Jump straight to a specific anomaly type.</p>
+                    </div>
+
+                    <div class="mt-5">
                         <p class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Insight types</p>
                         <nav class="mt-3 flex flex-col gap-2">
                             <a
                                 href="{{ route('insights.index', array_filter(['search' => $search, 'sort' => $sort !== 'sector_asc' ? $sort : null])) }}"
-                                class="{{ $selectedType === '' ? 'border-lime-300 bg-lime-50 text-lime-900' : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:text-zinc-900' }} rounded-xl border px-4 py-3 text-sm font-medium shadow-sm transition"
+                                class="{{ $selectedType === '' ? 'border-lime-300 bg-lime-50 text-lime-900' : 'border-zinc-200 bg-zinc-100 text-zinc-700 hover:border-zinc-300 hover:text-zinc-900' }} rounded-xl border px-4 py-3 text-sm font-medium shadow-sm transition"
                             >
-                                All Insights
+                                All Insights - {{ number_format($query->total()) }}
                             </a>
 
                             @foreach ($insightTypeGroups as $groupLabel => $types)
@@ -184,9 +222,9 @@
                                         @foreach ($types as $type)
                                             <a
                                                 href="{{ route('insights.search', array_filter(['type' => $type, 'search' => $search, 'sort' => $sort !== 'sector_asc' ? $sort : null])) }}"
-                                                class="{{ $selectedType === $type ? (($insightBadgeClasses[$type] ?? 'border-lime-300 bg-lime-50 text-lime-900').' shadow-sm') : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:text-zinc-900' }} rounded-xl border px-4 py-3 text-sm font-medium transition"
+                                                class="{{ $selectedType === $type ? (($insightBadgeClasses[$type] ?? 'border-lime-300 bg-lime-50 text-lime-900').' shadow-sm') : 'border-zinc-200 bg-zinc-100 text-zinc-700 hover:border-zinc-300 hover:text-zinc-900' }} rounded-xl border px-4 py-3 text-sm font-medium transition"
                                             >
-                                                {{ $insightTypes[$type] ?? str_replace('_', ' ', $type) }}
+                                                {{ $insightTypes[$type] ?? str_replace('_', ' ', $type) }} - {{ number_format($insightTypeCounts[$type] ?? 0) }}
                                             </a>
                                         @endforeach
                                     </div>

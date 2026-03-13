@@ -38,7 +38,15 @@ class InsightsController extends Controller
     protected function insightDescriptions(): array
     {
         return [
+            'price_spike' => 'Median prices have risen unusually fast over the latest rolling 12-month period, which may indicate intense local demand or constrained supply.',
+            'price_collapse' => 'Median prices have fallen sharply over the latest rolling 12-month period, which can point to weakening demand, repricing, or distressed local conditions.',
+            'demand_collapse' => 'Transaction volumes have dropped hard compared with the prior year, suggesting buyers have pulled back or activity has stalled.',
             'liquidity_stress' => 'Transaction volumes have fallen sharply while prices continue rising, suggesting weakening market liquidity.',
+            'liquidity_surge' => 'Transaction volumes have risen strongly compared with the prior year, showing a sudden increase in market activity.',
+            'market_freeze' => 'Transaction volumes have fallen so far that the market may be freezing up, with far fewer homes successfully completing sales.',
+            'sector_outperformance' => 'This postcode sector is outperforming the wider national market, with stronger local price growth than the UK benchmark.',
+            'momentum_reversal' => 'Earlier strong price growth has turned into decline, which can signal that local market momentum is rolling over.',
+            'unexpected_hotspot' => 'This postcode sector is rising much faster than the national average, suggesting unusually strong local demand or catch-up growth.',
         ];
     }
 
@@ -64,6 +72,7 @@ class InsightsController extends Controller
             'query' => $query,
             'insightTypes' => $this->insightTypes(),
             'insightDescriptions' => $this->insightDescriptions(),
+            'insightTypeCounts' => $this->insightTypeCounts($request),
             'lastRunAt' => $lastRunAt === null ? null : Carbon::parse($lastRunAt),
             'selectedType' => is_string($selectedType) ? $selectedType : '',
             'search' => $search,
@@ -139,5 +148,34 @@ class InsightsController extends Controller
         ];
 
         return in_array($sort, $allowed, true) ? $sort : 'sector_asc';
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    protected function insightTypeCounts(InsightsFilterRequest $request): array
+    {
+        $search = trim((string) $request->validated('search', ''));
+        $driver = DB::getDriverName();
+        $likeOperator = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
+        $counts = array_fill_keys(array_keys($this->insightTypes()), 0);
+
+        $rows = MarketInsight::query()
+            ->select('insight_type', DB::raw('COUNT(*) as aggregate'))
+            ->when($search !== '', function (Builder $builder) use ($search, $likeOperator) {
+                $builder->where(function ($nestedQuery) use ($search, $likeOperator) {
+                    $nestedQuery
+                        ->where('area_code', $likeOperator, '%'.$search.'%')
+                        ->orWhere('insight_text', $likeOperator, '%'.$search.'%');
+                });
+            })
+            ->groupBy('insight_type')
+            ->get();
+
+        foreach ($rows as $row) {
+            $counts[(string) $row->insight_type] = (int) $row->aggregate;
+        }
+
+        return $counts;
     }
 }
