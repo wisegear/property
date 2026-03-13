@@ -52,11 +52,11 @@ class GenerateMarketInsights extends Command
             return self::SUCCESS;
         }
 
-        Cache::flush();
         Cache::forever('insights:cache_version', (int) Cache::get('insights:cache_version', 1) + 1);
 
         $inserted = 0;
         $skipped = 0;
+        $sectorCodes = [];
 
         foreach ($this->runAnomalyQueries() as $row) {
             if ($this->insightExists($row)) {
@@ -76,19 +76,14 @@ class GenerateMarketInsights extends Command
                 'supporting_data' => $row['supporting_data'],
                 'insight_text' => $row['insight_text'],
             ]);
-
+            $sectorCodes[] = $row['area_code'];
             $inserted++;
         }
 
         $this->info("Generated {$inserted} insights.");
         $this->info("Skipped {$skipped} duplicates.");
 
-        $sectors = DB::table('market_insights')
-            ->select('area_code')
-            ->distinct()
-            ->orderBy('area_code')
-            ->pluck('area_code');
-
+        $sectors = collect($sectorCodes)->unique()->sort()->values();
         Cache::put('insights:sectors', $sectors, now()->addDays(45));
         $this->call('insights:warm');
 
