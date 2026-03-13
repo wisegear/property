@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Schema;
 class GenerateMarketInsights extends Command
 {
     /**
-     * Future enhancements:
+     * Future enhancements: Possbily
      * - AI rewriting of insights
      * - district/county detection
      * - maps and visualisation
