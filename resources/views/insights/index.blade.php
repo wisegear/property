@@ -6,6 +6,7 @@
         'price_spike' => 'bg-orange-500 text-white border-orange-500',
         'price_collapse' => 'bg-red-500 text-white border-red-500',
         'demand_collapse' => 'bg-red-500 text-white border-red-500',
+        'liquidity_stress' => 'bg-amber-600 text-white border-amber-600',
         'liquidity_surge' => 'bg-green-500 text-white border-green-500',
         'market_freeze' => 'bg-red-600 text-white border-red-600',
         'sector_outperformance' => 'bg-green-600 text-white border-green-600',
@@ -14,7 +15,7 @@
     ];
     $insightTypeGroups = [
         'Price Signals' => ['price_spike', 'price_collapse'],
-        'Market Activity' => ['liquidity_surge', 'demand_collapse', 'market_freeze'],
+        'Market Activity' => ['liquidity_stress', 'liquidity_surge', 'demand_collapse', 'market_freeze'],
         'Market Trends' => ['sector_outperformance', 'momentum_reversal', 'unexpected_hotspot'],
     ];
 @endphp
@@ -29,17 +30,23 @@
             </div>
             <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Property Market Insights</h1>
             <p class="mt-3 text-sm leading-6 text-zinc-600">
-                <span class="font-semibold text-zinc-800">Price Spike</span> highlights unusually strong median price growth, <span class="font-semibold text-zinc-800">Demand Collapse</span> flags sharp transaction declines, <span class="font-semibold text-zinc-800">Sector Outperformance</span> shows sectors rising faster than the national HPI trend, and <span class="font-semibold text-zinc-800">Momentum Reversal</span> identifies areas where earlier strong price growth has turned into decline.
+                <span class="font-semibold text-zinc-800">Price Spike</span> highlights unusually strong median price growth, <span class="font-semibold text-zinc-800">Liquidity Stress</span> flags falling transaction volumes despite rising prices, <span class="font-semibold text-zinc-800">Sector Outperformance</span> shows sectors rising faster than the national HPI trend, and <span class="font-semibold text-zinc-800">Momentum Reversal</span> identifies areas where earlier strong price growth has turned into decline.
             </p>
             <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-zinc-600">
                 <span class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/80 px-3 py-1">
                     <span class="h-2 w-2 rounded-full bg-lime-500"></span>
-                    Four anomaly types
+                    Nine anomaly types
                 </span>
                 <span class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/80 px-3 py-1">
                     <span class="h-2 w-2 rounded-full bg-zinc-400"></span>
                     Searchable by area and insight text
                 </span>
+                @if ($lastRunAt)
+                    <span class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/80 px-3 py-1">
+                        <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                        Last run {{ $lastRunAt->timezone(config('app.timezone'))->format('d M Y, H:i') }}
+                    </span>
+                @endif
             </div>
         </div>
 
@@ -187,6 +194,16 @@
                             @endforeach
                         </nav>
                     </div>
+
+                    @if ($selectedType !== '' && isset($insightDescriptions[$selectedType]))
+                        <div class="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Selected signal</p>
+                            <p class="mt-2 text-sm font-semibold text-zinc-900">
+                                {{ $insightTypes[$selectedType] ?? str_replace('_', ' ', $selectedType) }}
+                            </p>
+                            <p class="mt-2 text-sm leading-6 text-zinc-600">{{ $insightDescriptions[$selectedType] }}</p>
+                        </div>
+                    @endif
                 </aside>
 
                 <aside class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">

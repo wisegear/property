@@ -35,6 +35,10 @@ class GenerateMarketInsights extends Command
 
     private const MARKET_FREEZE_THRESHOLD = -50.0;
 
+    private const LIQUIDITY_STRESS_SALES_THRESHOLD = -40.0;
+
+    private const LIQUIDITY_STRESS_PRICE_THRESHOLD = 5.0;
+
     private const HOTSPOT_OUTPERFORMANCE_MARGIN = 12.0;
 
     private const OUTPERFORMANCE_THRESHOLD = 20.0;
@@ -52,6 +56,24 @@ class GenerateMarketInsights extends Command
             return self::SUCCESS;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | IMPORTANT CACHE RULE
+        |--------------------------------------------------------------------------
+        |
+        | This application relies heavily on long-lived cache keys for performance.
+        |
+        | DO NOT run:
+        |     php artisan cache:clear
+        |     php artisan optimize:clear
+        |     Cache::flush()
+        |
+        | These commands destroy all cached datasets and can cause severe
+        | performance degradation on production systems.
+        |
+        | Always invalidate specific cache keys instead.
+        |
+        */
         Cache::forever('insights:cache_version', (int) Cache::get('insights:cache_version', 1) + 1);
 
         $inserted = 0;
@@ -95,6 +117,7 @@ class GenerateMarketInsights extends Command
         return $this->detectPriceSpikes()
             ->concat($this->detectPriceCollapses())
             ->concat($this->detectDemandCollapses())
+            ->concat($this->detectLiquidityStress())
             ->concat($this->detectLiquiditySurges())
             ->concat($this->detectMarketFreezes())
             ->concat($this->detectSectorOutperformance())
@@ -285,6 +308,31 @@ SQL;
             });
     }
 
+    protected function detectLiquidityStress(): Collection
+    {
+        return $this->liquidityStressRows()
+            ->map(function (array $row): array {
+                $periodLabel = $this->periodLabel($row['period_start'], $row['period_end']);
+
+                return [
+                    'area_type' => 'postcode_sector',
+                    'area_code' => $row['area_code'],
+                    'insight_type' => 'liquidity_stress',
+                    'metric_value' => round($row['sales_change'], 2),
+                    'transactions' => $row['sales'],
+                    'period_start' => $row['period_start'],
+                    'period_end' => $row['period_end'],
+                    'supporting_data' => $row,
+                    'insight_text' => $this->insightWriter->liquidityStress([
+                        'area_code' => $row['area_code'],
+                        'sales_change' => number_format(abs($row['sales_change']), 1, '.', ''),
+                        'price_growth' => number_format($row['price_growth'], 1, '.', ''),
+                        'period_label' => $periodLabel,
+                    ]),
+                ];
+            });
+    }
+
     protected function detectMarketFreezes(): Collection
     {
         return $this->marketFreezeRows()
@@ -396,6 +444,102 @@ SQL;
     protected function marketFreezeRows(): Collection
     {
         return $this->salesChangeRows('<=', self::MARKET_FREEZE_THRESHOLD, false);
+    }
+
+    protected function liquidityStressRows(): Collection
+    {
+        $periods = $this->rollingPeriods();
+        if ($periods === null) {
+            return collect();
+        }
+
+        $dateColumn = $this->column('Date');
+        $postcodeColumn = $this->column('Postcode');
+        $priceColumn = $this->column('Price');
+        $categoryColumn = $this->column('PPDCategoryType');
+        $newBuildColumn = $this->column('NewBuild');
+        $sectorExpression = $this->sectorExpression($postcodeColumn);
+        $salesChangeExpression = '(100.0 * (current_period.sales - previous_period.sales) / NULLIF(previous_period.sales, 0))';
+        $priceGrowthExpression = '(100.0 * (current_period.median_price - previous_period.median_price) / NULLIF(previous_period.median_price, 0))';
+
+        $sql = <<<SQL
+WITH current_period AS (
+    SELECT
+        {$sectorExpression} AS sector,
+        COUNT(*) AS sales,
+        percentile_cont(0.5) WITHIN GROUP (ORDER BY {$priceColumn}) AS median_price
+    FROM land_registry
+    WHERE {$categoryColumn} = ?
+      AND {$newBuildColumn} = ?
+      AND {$postcodeColumn} IS NOT NULL
+      AND TRIM({$postcodeColumn}) <> ''
+      AND {$dateColumn} IS NOT NULL
+      AND {$priceColumn} IS NOT NULL
+      AND {$priceColumn} > 0
+      AND {$dateColumn} BETWEEN ? AND ?
+    GROUP BY {$sectorExpression}
+),
+previous_period AS (
+    SELECT
+        {$sectorExpression} AS sector,
+        COUNT(*) AS sales,
+        percentile_cont(0.5) WITHIN GROUP (ORDER BY {$priceColumn}) AS median_price
+    FROM land_registry
+    WHERE {$categoryColumn} = ?
+      AND {$newBuildColumn} = ?
+      AND {$postcodeColumn} IS NOT NULL
+      AND TRIM({$postcodeColumn}) <> ''
+      AND {$dateColumn} IS NOT NULL
+      AND {$priceColumn} IS NOT NULL
+      AND {$priceColumn} > 0
+      AND {$dateColumn} BETWEEN ? AND ?
+    GROUP BY {$sectorExpression}
+)
+SELECT
+    current_period.sector,
+    current_period.sales,
+    previous_period.sales AS previous_sales,
+    current_period.median_price,
+    previous_period.median_price AS previous_median_price,
+    {$salesChangeExpression} AS sales_change,
+    {$priceGrowthExpression} AS price_growth
+FROM current_period
+INNER JOIN previous_period
+    ON previous_period.sector = current_period.sector
+WHERE current_period.sales >= ?
+  AND previous_period.sales >= ?
+  AND previous_period.median_price > 0
+  AND {$salesChangeExpression} <= ?
+  AND {$priceGrowthExpression} >= ?
+ORDER BY sales_change ASC, current_period.sector ASC
+SQL;
+
+        return collect(DB::select($sql, [
+            'A',
+            'N',
+            $periods['current_start']->toDateString(),
+            $periods['current_end']->toDateString(),
+            'A',
+            'N',
+            $periods['previous_start']->toDateString(),
+            $periods['previous_end']->toDateString(),
+            $this->minSectorTransactions(),
+            $this->minSectorTransactions(),
+            self::LIQUIDITY_STRESS_SALES_THRESHOLD,
+            self::LIQUIDITY_STRESS_PRICE_THRESHOLD,
+        ]))->map(function (object $row) use ($periods): array {
+            return [
+                'area_code' => (string) $row->sector,
+                'sales' => (int) $row->sales,
+                'previous_sales' => (int) $row->previous_sales,
+                'current_median_price' => (float) $row->median_price,
+                'previous_median_price' => (float) $row->previous_median_price,
+                'sales_change' => (float) $row->sales_change,
+                'price_growth' => (float) $row->price_growth,
+                'period_start' => $periods['current_start']->copy(),
+                'period_end' => $periods['current_end']->copy(),
+            ];
+        })->values();
     }
 
     protected function sectorOutperformanceRows(): Collection

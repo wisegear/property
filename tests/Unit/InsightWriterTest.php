@@ -73,6 +73,23 @@ class InsightWriterTest extends TestCase
         );
     }
 
+    public function test_liquidity_stress_writes_a_short_factual_sentence(): void
+    {
+        $writer = new InsightWriter;
+
+        $result = $writer->liquidityStress([
+            'area_code' => 'B1',
+            'sales_change' => '44.0',
+            'price_growth' => '6.5',
+            'period_label' => '01 Feb 2025 to 31 Jan 2026',
+        ]);
+
+        $this->assertSame(
+            'Property transactions in postcode sector B1 fell 44.0% in 01 Feb 2025 to 31 Jan 2026 while median prices still rose 6.5%, suggesting weakening market liquidity.',
+            $result
+        );
+    }
+
     public function test_market_freeze_writes_a_short_factual_sentence(): void
     {
         $writer = new InsightWriter;

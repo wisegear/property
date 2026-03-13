@@ -121,6 +121,13 @@ protected function isAccessible(User $user, ?string $path = null): bool
 - Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
 - Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
 
+## Cache Protection
+
+- This application relies on long-lived cache keys for performance.
+- Do not run `php artisan cache:clear`, `php artisan optimize:clear`, or `Cache::flush()` unless the user explicitly asks for it.
+- Do not add new broad cache-clearing calls to application code or test execution flows.
+- Prefer invalidating specific cache keys only.
+
 === laravel/core rules ===
 
 ## Do Things the Laravel Way

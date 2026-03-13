@@ -43,6 +43,7 @@ class MarketInsightsMigrationTest extends TestCase
 
             $this->assertNotNull($constraint);
             $this->assertStringContainsString("'price_collapse'", $constraint->definition);
+            $this->assertStringContainsString("'liquidity_stress'", $constraint->definition);
             $this->assertStringContainsString("'liquidity_surge'", $constraint->definition);
             $this->assertStringContainsString("'market_freeze'", $constraint->definition);
             $this->assertStringContainsString("'unexpected_hotspot'", $constraint->definition);

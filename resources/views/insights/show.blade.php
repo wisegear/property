@@ -18,6 +18,7 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
         'price_spike' => 'bg-amber-500 text-white border-amber-500',
         'price_collapse' => 'bg-stone-700 text-white border-stone-700',
         'demand_collapse' => 'bg-rose-500 text-white border-rose-500',
+        'liquidity_stress' => 'bg-amber-600 text-white border-amber-600',
         'liquidity_surge' => 'bg-emerald-600 text-white border-emerald-600',
         'market_freeze' => 'bg-slate-700 text-white border-slate-700',
         'sector_outperformance' => 'bg-lime-600 text-white border-lime-600',

@@ -15,7 +15,7 @@ class InsightsIndexViewTest extends TestCase
             'query' => new LengthAwarePaginator([
                 MarketInsight::make([
                     'area_code' => 'Manchester',
-                    'insight_type' => 'price_spike',
+                    'insight_type' => 'liquidity_stress',
                     'insight_text' => 'Prices increased 21% year-on-year based on 142 sales and the explanation should remain fully visible inside the card without being truncated.',
                     'transactions' => 142,
                     'period_start' => Carbon::create(2025, 1, 1),
@@ -26,13 +26,18 @@ class InsightsIndexViewTest extends TestCase
                 'price_spike' => 'Price Spike',
                 'price_collapse' => 'Price Collapse',
                 'demand_collapse' => 'Demand Collapse',
+                'liquidity_stress' => 'Liquidity Stress',
                 'liquidity_surge' => 'Liquidity Surge',
                 'market_freeze' => 'Market Freeze',
                 'sector_outperformance' => 'Sector Outperformance',
                 'momentum_reversal' => 'Momentum Reversal',
                 'unexpected_hotspot' => 'Unexpected Hotspot',
             ],
-            'selectedType' => '',
+            'insightDescriptions' => [
+                'liquidity_stress' => 'Transaction volumes have fallen sharply while prices continue rising, suggesting weakening market liquidity.',
+            ],
+            'lastRunAt' => Carbon::create(2026, 3, 13, 14, 45),
+            'selectedType' => 'liquidity_stress',
             'search' => '',
             'sort' => 'sector_asc',
         ]);
@@ -44,6 +49,9 @@ class InsightsIndexViewTest extends TestCase
         $this->assertStringContainsString('flex flex-1 flex-col gap-4', $rendered);
         $this->assertStringContainsString('class="mt-auto"', $rendered);
         $this->assertStringContainsString('text-sm leading-6 text-zinc-700', $rendered);
+        $this->assertStringContainsString('Liquidity Stress', $rendered);
+        $this->assertStringContainsString('Transaction volumes have fallen sharply while prices continue rising, suggesting weakening market liquidity.', $rendered);
+        $this->assertStringContainsString('Last run 13 Mar 2026, 14:45', $rendered);
         $this->assertStringNotContainsString('line-clamp-2', $rendered);
         $view->assertSee('Prices increased 21% year-on-year based on 142 sales and the explanation should remain fully visible inside the card without being truncated.');
     }

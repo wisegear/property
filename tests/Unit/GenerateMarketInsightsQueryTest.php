@@ -116,6 +116,64 @@ class GenerateMarketInsightsQueryTest extends TestCase
         ], $command->salesChangeCalls[0]);
     }
 
+    public function test_liquidity_stress_rows_require_falling_sales_and_rising_prices(): void
+    {
+        $command = $this->makeCommand();
+
+        DB::shouldReceive('select')
+            ->once()
+            ->withArgs(function (string $sql, array $bindings): bool {
+                $this->assertStringContainsString(
+                    'AND (100.0 * (current_period.sales - previous_period.sales) / NULLIF(previous_period.sales, 0)) <= ?',
+                    $sql
+                );
+                $this->assertStringContainsString(
+                    'AND (100.0 * (current_period.median_price - previous_period.median_price) / NULLIF(previous_period.median_price, 0)) >= ?',
+                    $sql
+                );
+                $this->assertSame([20, 20, -40.0, 5.0], array_slice($bindings, -4));
+
+                return true;
+            })
+            ->andReturn([]);
+
+        $this->assertTrue($command->callLiquidityStressRows()->isEmpty());
+    }
+
+    public function test_detect_liquidity_stress_maps_the_new_insight_type(): void
+    {
+        $command = $this->makeCommand();
+
+        DB::shouldReceive('select')
+            ->once()
+            ->andReturn([
+                (object) [
+                    'sector' => 'LS11',
+                    'sales' => 22,
+                    'previous_sales' => 40,
+                    'median_price' => 210000,
+                    'previous_median_price' => 200000,
+                    'sales_change' => -45.0,
+                    'price_growth' => 5.0,
+                ],
+            ]);
+
+        $result = $command->callDetectLiquidityStress();
+
+        $this->assertCount(1, $result);
+        $this->assertSame('postcode_sector', $result[0]['area_type']);
+        $this->assertSame('liquidity_stress', $result[0]['insight_type']);
+        $this->assertSame('LS11', $result[0]['area_code']);
+        $this->assertSame(-45.0, $result[0]['metric_value']);
+        $this->assertSame(22, $result[0]['transactions']);
+        $this->assertSame(-45.0, $result[0]['supporting_data']['sales_change']);
+        $this->assertSame(5.0, $result[0]['supporting_data']['price_growth']);
+        $this->assertSame(
+            'Property transactions in postcode sector LS11 fell 45.0% in 01 Feb 2025 to 31 Jan 2026 while median prices still rose 5.0%, suggesting weakening market liquidity.',
+            $result[0]['insight_text']
+        );
+    }
+
     public function test_market_freeze_rows_do_not_require_persistence(): void
     {
         $command = $this->makeCommand();
@@ -159,6 +217,16 @@ class GenerateMarketInsightsQueryTestCommand extends GenerateMarketInsights
     public function callLiquiditySurgeRows(): Collection
     {
         return $this->liquiditySurgeRows();
+    }
+
+    public function callLiquidityStressRows(): Collection
+    {
+        return $this->liquidityStressRows();
+    }
+
+    public function callDetectLiquidityStress(): Collection
+    {
+        return $this->detectLiquidityStress();
     }
 
     public function callMarketFreezeRows(): Collection

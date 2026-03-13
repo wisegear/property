@@ -23,6 +23,7 @@ class InsightController extends Controller
             'price_spike' => 'Price Spike',
             'price_collapse' => 'Price Collapse',
             'demand_collapse' => 'Demand Collapse',
+            'liquidity_stress' => 'Liquidity Stress',
             'liquidity_surge' => 'Liquidity Surge',
             'market_freeze' => 'Market Freeze',
             'sector_outperformance' => 'Sector Outperformance',

@@ -143,11 +143,15 @@ class InsightsControllerTest extends TestCase
                 'price_spike' => 'Price Spike',
                 'price_collapse' => 'Price Collapse',
                 'demand_collapse' => 'Demand Collapse',
+                'liquidity_stress' => 'Liquidity Stress',
                 'liquidity_surge' => 'Liquidity Surge',
                 'market_freeze' => 'Market Freeze',
                 'sector_outperformance' => 'Sector Outperformance',
                 'momentum_reversal' => 'Momentum Reversal',
                 'unexpected_hotspot' => 'Unexpected Hotspot',
+            ],
+            'insightDescriptions' => [
+                'liquidity_stress' => 'Transaction volumes have fallen sharply while prices continue rising, suggesting weakening market liquidity.',
             ],
             'selectedType' => 'price_spike',
             'search' => 'Manchester',
@@ -161,6 +165,7 @@ class InsightsControllerTest extends TestCase
         $view->assertSee('Price Spike');
         $view->assertSee('Price Collapse');
         $view->assertSee('Demand Collapse');
+        $view->assertSee('Liquidity Stress');
         $view->assertSee('Liquidity Surge');
         $view->assertSee('Market Freeze');
         $view->assertSee('Sector Outperformance');

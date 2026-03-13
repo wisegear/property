@@ -25,6 +25,7 @@ class InsightsFilterRequest extends FormRequest
                 'price_spike',
                 'price_collapse',
                 'demand_collapse',
+                'liquidity_stress',
                 'liquidity_surge',
                 'market_freeze',
                 'sector_outperformance',

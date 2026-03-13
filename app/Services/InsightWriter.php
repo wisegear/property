@@ -45,6 +45,16 @@ class InsightWriter
         return "Property transactions in postcode sector {$sector} increased {$salesChange}% over the past 12 months compared with the previous year.";
     }
 
+    public function liquidityStress(object|array $row): string
+    {
+        $sector = $this->value($row, 'sector', 'postcode', 'area_code');
+        $salesChange = $this->value($row, 'sales_change');
+        $priceGrowth = $this->value($row, 'price_growth');
+        $periodLabel = $this->value($row, 'period_label');
+
+        return "Property transactions in postcode sector {$sector} fell {$salesChange}% in {$periodLabel} while median prices still rose {$priceGrowth}%, suggesting weakening market liquidity.";
+    }
+
     public function marketFreeze(object|array $row): string
     {
         $sector = $this->value($row, 'sector', 'postcode', 'area_code');
@@ -153,6 +163,15 @@ class InsightWriter
             return $this->liquiditySurge([
                 'area_code' => $this->arrayValue($data, 'area', 'postcode', 'area_code'),
                 'sales_change' => $this->normaliseChange($this->arrayValue($data, 'change', 'sales_change')),
+            ]);
+        }
+
+        if ($insightType === 'liquidity_stress') {
+            return $this->liquidityStress([
+                'area_code' => $this->arrayValue($data, 'area', 'postcode', 'area_code'),
+                'sales_change' => $this->normaliseChange($this->arrayValue($data, 'change', 'sales_change')),
+                'price_growth' => $this->normaliseChange($this->arrayValue($data, 'benchmark', 'price_growth')),
+                'period_label' => $this->arrayValue($data, 'period', 'period_label'),
             ]);
         }
 

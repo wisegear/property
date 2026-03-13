@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\InsightsFilterRequest;
 use App\Models\MarketInsight;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -22,11 +23,22 @@ class InsightsController extends Controller
             'price_spike' => 'Price Spike',
             'price_collapse' => 'Price Collapse',
             'demand_collapse' => 'Demand Collapse',
+            'liquidity_stress' => 'Liquidity Stress',
             'liquidity_surge' => 'Liquidity Surge',
             'market_freeze' => 'Market Freeze',
             'sector_outperformance' => 'Sector Outperformance',
             'momentum_reversal' => 'Momentum Reversal',
             'unexpected_hotspot' => 'Unexpected Hotspot',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function insightDescriptions(): array
+    {
+        return [
+            'liquidity_stress' => 'Transaction volumes have fallen sharply while prices continue rising, suggesting weakening market liquidity.',
         ];
     }
 
@@ -46,10 +58,13 @@ class InsightsController extends Controller
         $selectedType = $request->validated('type');
         $search = trim((string) $request->validated('search', ''));
         $sort = $this->sortOption($request);
+        $lastRunAt = MarketInsight::query()->max('created_at');
 
         return view('insights.index', [
             'query' => $query,
             'insightTypes' => $this->insightTypes(),
+            'insightDescriptions' => $this->insightDescriptions(),
+            'lastRunAt' => $lastRunAt === null ? null : Carbon::parse($lastRunAt),
             'selectedType' => is_string($selectedType) ? $selectedType : '',
             'search' => $search,
             'sort' => $sort,
