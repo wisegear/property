@@ -108,7 +108,6 @@
                                 <option value="sector_desc" @selected($sort === 'sector_desc')>Postcode (Z-A)</option>
                                 <option value="transactions_desc" @selected($sort === 'transactions_desc')>Most transactions</option>
                                 <option value="transactions_asc" @selected($sort === 'transactions_asc')>Fewest transactions</option>
-                                <option value="latest_period_desc" @selected($sort === 'latest_period_desc')>Newest signals</option>
                             </select>
                         </form>
                     </div>
@@ -212,7 +211,7 @@
                                 href="{{ route('insights.index', array_filter(['search' => $search, 'sort' => $sort !== 'sector_asc' ? $sort : null])) }}"
                                 class="{{ $selectedType === '' ? 'border-lime-300 bg-lime-50 text-lime-900' : 'border-zinc-200 bg-zinc-100 text-zinc-700 hover:border-zinc-300 hover:text-zinc-900' }} rounded-xl border px-4 py-3 text-sm font-medium shadow-sm transition"
                             >
-                                All Insights - {{ number_format($query->total()) }}
+                                All Insights ({{ number_format($query->total()) }})
                             </a>
 
                             @foreach ($insightTypeGroups as $groupLabel => $types)
@@ -224,7 +223,7 @@
                                                 href="{{ route('insights.search', array_filter(['type' => $type, 'search' => $search, 'sort' => $sort !== 'sector_asc' ? $sort : null])) }}"
                                                 class="{{ $selectedType === $type ? (($insightBadgeClasses[$type] ?? 'border-lime-300 bg-lime-50 text-lime-900').' shadow-sm') : 'border-zinc-200 bg-zinc-100 text-zinc-700 hover:border-zinc-300 hover:text-zinc-900' }} rounded-xl border px-4 py-3 text-sm font-medium transition"
                                             >
-                                                {{ $insightTypes[$type] ?? str_replace('_', ' ', $type) }} - {{ number_format($insightTypeCounts[$type] ?? 0) }}
+                                                {{ $insightTypes[$type] ?? str_replace('_', ' ', $type) }} ({{ number_format($insightTypeCounts[$type] ?? 0) }})
                                             </a>
                                         @endforeach
                                     </div>

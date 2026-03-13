@@ -117,10 +117,6 @@ class InsightsController extends Controller
                 $query->orderByDesc('area_code')
                     ->orderByDesc('period_end');
                 break;
-            case 'latest_period_desc':
-                $query->orderByDesc('period_end')
-                    ->orderBy('area_code');
-                break;
             default:
                 if ($driver === 'pgsql') {
                     $query->orderByRaw("regexp_replace(area_code, '[0-9].*$', '') ASC");
@@ -144,7 +140,6 @@ class InsightsController extends Controller
             'sector_desc',
             'transactions_desc',
             'transactions_asc',
-            'latest_period_desc',
         ];
 
         return in_array($sort, $allowed, true) ? $sort : 'sector_asc';

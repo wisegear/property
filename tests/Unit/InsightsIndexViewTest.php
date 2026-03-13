@@ -79,10 +79,10 @@ class InsightsIndexViewTest extends TestCase
         $this->assertStringContainsString('Open this panel for a plain-language explanation of each market signal.', $rendered);
         $this->assertStringContainsString('Median prices have risen unusually fast over the latest rolling 12-month period, which may indicate intense local demand or constrained supply.', $rendered);
         $this->assertStringContainsString('This postcode sector is outperforming the wider national market, with stronger local price growth than the UK benchmark.', $rendered);
-        $this->assertStringContainsString('All Insights - 1', $rendered);
-        $this->assertStringContainsString('Price Spike - 10', $rendered);
-        $this->assertStringContainsString('Price Collapse - 32', $rendered);
-        $this->assertStringContainsString('Liquidity Stress - 4', $rendered);
+        $this->assertStringContainsString('All Insights (1)', $rendered);
+        $this->assertStringContainsString('Price Spike (10)', $rendered);
+        $this->assertStringContainsString('Price Collapse (32)', $rendered);
+        $this->assertStringContainsString('Liquidity Stress (4)', $rendered);
         $this->assertStringNotContainsString('line-clamp-2', $rendered);
         $view->assertSee('Prices increased 21% year-on-year based on 142 sales and the explanation should remain fully visible inside the card without being truncated.');
     }
