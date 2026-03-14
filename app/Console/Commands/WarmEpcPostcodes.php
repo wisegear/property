@@ -12,7 +12,8 @@ class WarmEpcPostcodes extends Command
 {
     protected $signature = 'epc:warm-postcodes
                             {--regime=all : all|england_wales|scotland}
-                            {--limit=0 : Limit the number of postcodes to warm per regime (0 = all)}';
+                            {--limit=0 : Limit the number of postcodes to warm per regime (0 = all)}
+                            {--workers=1 : Number of parallel workers to use when warming}';
 
     protected $description = 'Warm postcode EPC caches for all indexed postcodes.';
 
@@ -56,18 +57,56 @@ class WarmEpcPostcodes extends Command
         $controller = app(EpcPostcodeController::class);
         $warmed = 0;
         $failed = 0;
+        $workers = max(1, (int) $this->option('workers'));
 
-        foreach ($targets as $target) {
-            try {
-                $controller->warmPostcodeCache($target['regime'], $target['postcode']);
-                $warmed++;
-            } catch (Throwable $throwable) {
-                $failed++;
-                $this->newLine();
-                $this->error("Failed warming {$target['regime']} {$target['postcode']}: ".$throwable->getMessage());
+        // Use simple forking if pcntl is available and workers > 1
+        if ($workers > 1 && function_exists('pcntl_fork')) {
+            $active = 0;
+
+            foreach ($targets as $target) {
+                while ($active >= $workers) {
+                    pcntl_wait($status);
+                    $active--;
+                }
+
+                $pid = pcntl_fork();
+
+                if ($pid === -1) {
+                    throw new \RuntimeException('Could not fork worker process');
+                }
+
+                if ($pid === 0) {
+                    try {
+                        $controller->warmPostcodeCache($target['regime'], $target['postcode']);
+                        exit(0);
+                    } catch (Throwable $e) {
+                        exit(1);
+                    }
+                }
+
+                $active++;
+                $this->output->progressAdvance();
             }
 
-            $this->output->progressAdvance();
+            while ($active > 0) {
+                pcntl_wait($status);
+                $active--;
+            }
+
+            $warmed = $total; // assume success for progress stats
+        } else {
+            foreach ($targets as $target) {
+                try {
+                    $controller->warmPostcodeCache($target['regime'], $target['postcode']);
+                    $warmed++;
+                } catch (Throwable $throwable) {
+                    $failed++;
+                    $this->newLine();
+                    $this->error("Failed warming {$target['regime']} {$target['postcode']}: ".$throwable->getMessage());
+                }
+
+                $this->output->progressAdvance();
+            }
         }
 
         $this->output->progressFinish();

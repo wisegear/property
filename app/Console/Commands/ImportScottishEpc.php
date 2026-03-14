@@ -141,7 +141,9 @@ class ImportScottishEpc extends Command
             $this->info("Importing {$base}...");
             $inserted = 0;
             $batch = [];
-            $batchSize = 1000;
+            // PostgreSQL has a 65,535 parameter limit. With ~100 columns per row,
+            // a batch of 1000 rows would exceed this limit. Use a smaller batch size.
+            $batchSize = 250;
 
             while (($row = fgetcsv($fh)) !== false) {
                 if ($row === [null] || $row === []) {
