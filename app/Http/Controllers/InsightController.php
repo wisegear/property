@@ -14,6 +14,14 @@ class InsightController extends Controller
 {
     private const CACHE_TTL = 86400 * 45;
 
+    private bool $rollingPeriodsResolved = false;
+
+    private ?array $rollingPeriodsCache = null;
+
+    private bool $excludedHistoricalYearResolved = false;
+
+    private ?int $excludedHistoricalYearCache = null;
+
     /**
      * @return array<string, string>
      */
@@ -100,12 +108,14 @@ class InsightController extends Controller
             return;
         }
 
-        $salesByYear = $this->salesByYear($normalizedSector);
-        $medianPriceByYear = $this->medianPriceByYear($normalizedSector);
+        $yearlySummary = $this->yearlySummary($normalizedSector);
+        $rollingWindowSeries = $this->rollingWindowSeries($normalizedSector);
 
-        $this->rollingWindowSeries($normalizedSector);
-        $this->buildRecentPriceChange($normalizedSector);
-        $this->buildHistoryRows($salesByYear, $medianPriceByYear);
+        $this->buildHistoryRows(
+            $yearlySummary->map(fn (array $row): array => ['year' => $row['year'], 'sales' => $row['sales']]),
+            $yearlySummary->map(fn (array $row): array => ['year' => $row['year'], 'median_price' => $row['median_price']])
+        );
+        $this->buildRecentPriceChange($normalizedSector, $rollingWindowSeries);
     }
 
     private function insightsForSector(string $sector): Collection
@@ -131,34 +141,12 @@ class InsightController extends Controller
      */
     private function salesByYear(string $sector): Collection
     {
-        $yearExpression = $this->yearExpression();
-        $cacheKey = $this->cacheKey($sector, 'sales_by_year');
-
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($sector, $yearExpression): Collection {
-            $excludedYear = $this->excludedHistoricalYear();
-
-            $query = DB::table('land_registry')
-                ->selectRaw($yearExpression.' as year, COUNT(*) as sales')
-                ->where('PPDCategoryType', 'A')
-                ->where('NewBuild', 'N')
-                ->whereRaw($this->normalizedPostcodeExpression()." LIKE (? || '%')", [$sector]);
-
-            if ($excludedYear !== null) {
-                $query->whereRaw($yearExpression.' <> ?', [$excludedYear]);
-            }
-
-            $rows = $query
-                ->groupBy(DB::raw($yearExpression))
-                ->orderBy('year')
-                ->get();
-
-            return collect($rows)->map(function (object $row): array {
-                return [
-                    'year' => (int) $row->year,
-                    'sales' => (int) $row->sales,
-                ];
-            })->values();
-        });
+        return $this->yearlySummary($sector)
+            ->map(fn (array $row): array => [
+                'year' => $row['year'],
+                'sales' => $row['sales'],
+            ])
+            ->values();
     }
 
     /**
@@ -166,49 +154,12 @@ class InsightController extends Controller
      */
     private function medianPriceByYear(string $sector): Collection
     {
-        $yearExpression = $this->yearExpression();
-        $cacheKey = $this->cacheKey($sector, 'median_price_by_year');
-
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($sector, $yearExpression): Collection {
-            $excludedYear = $this->excludedHistoricalYear();
-            $query = DB::table('land_registry')
-                ->where('PPDCategoryType', 'A')
-                ->where('NewBuild', 'N')
-                ->whereNotNull('Price')
-                ->whereRaw($this->normalizedPostcodeExpression()." LIKE (? || '%')", [$sector]);
-
-            if ($excludedYear !== null) {
-                $query->whereRaw($yearExpression.' <> ?', [$excludedYear]);
-            }
-
-            if (DB::connection()->getDriverName() === 'pgsql') {
-                $rows = $query
-                    ->selectRaw($yearExpression.' as year, PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "Price") as median_price')
-                    ->groupBy(DB::raw($yearExpression))
-                    ->orderBy('year')
-                    ->get();
-
-                return collect($rows)->map(function (object $row): array {
-                    return [
-                        'year' => (int) $row->year,
-                        'median_price' => $row->median_price === null ? null : (float) $row->median_price,
-                    ];
-                })->values();
-            }
-
-            $rows = $query
-                ->selectRaw($yearExpression.' as year, AVG("Price") as median_price')
-                ->groupBy(DB::raw($yearExpression))
-                ->orderBy('year')
-                ->get();
-
-            return collect($rows)->map(function (object $row): array {
-                return [
-                    'year' => (int) $row->year,
-                    'median_price' => $row->median_price === null ? null : (float) $row->median_price,
-                ];
-            })->values();
-        });
+        return $this->yearlySummary($sector)
+            ->map(fn (array $row): array => [
+                'year' => $row['year'],
+                'median_price' => $row['median_price'],
+            ])
+            ->values();
     }
 
     /**
@@ -239,18 +190,22 @@ class InsightController extends Controller
     /**
      * @return array{current_start:Carbon,current_end:Carbon,previous_start:Carbon,previous_end:Carbon,current_price:float,previous_price:float,growth:float,current_label:string,previous_label:string}|null
      */
-    private function buildRecentPriceChange(string $sector): ?array
+    private function buildRecentPriceChange(string $sector, ?Collection $series = null): ?array
     {
         $cacheKey = $this->cacheKey($sector, 'recent_price_change');
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($sector): ?array {
-            $periods = $this->rollingPeriods();
-            if ($periods === null) {
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($sector, $series): ?array {
+            $rollingSeries = ($series ?? $this->rollingWindowSeries($sector))->values();
+
+            if ($rollingSeries->count() < 2) {
                 return null;
             }
 
-            $currentPrice = $this->medianPriceForWindow($sector, $periods['current_start'], $periods['current_end']);
-            $previousPrice = $this->medianPriceForWindow($sector, $periods['previous_start'], $periods['previous_end']);
+            $current = $rollingSeries->last();
+            $previous = $rollingSeries->slice(-2, 1)->first();
+
+            $currentPrice = data_get($current, 'median_price');
+            $previousPrice = data_get($previous, 'median_price');
 
             if ($currentPrice === null || $previousPrice === null || $previousPrice <= 0) {
                 return null;
@@ -259,12 +214,12 @@ class InsightController extends Controller
             $growth = (($currentPrice - $previousPrice) / $previousPrice) * 100;
 
             return [
-                'current_start' => $periods['current_start']->copy(),
-                'current_end' => $periods['current_end']->copy(),
-                'previous_start' => $periods['previous_start']->copy(),
-                'previous_end' => $periods['previous_end']->copy(),
-                'current_label' => $this->periodLabel($periods['current_start'], $periods['current_end']),
-                'previous_label' => $this->periodLabel($periods['previous_start'], $periods['previous_end']),
+                'current_start' => data_get($current, 'start')->copy(),
+                'current_end' => data_get($current, 'end')->copy(),
+                'previous_start' => data_get($previous, 'start')->copy(),
+                'previous_end' => data_get($previous, 'end')->copy(),
+                'current_label' => $this->periodLabel(data_get($current, 'start'), data_get($current, 'end')),
+                'previous_label' => $this->periodLabel(data_get($previous, 'start'), data_get($previous, 'end')),
                 'current_price' => $currentPrice,
                 'previous_price' => $previousPrice,
                 'growth' => round($growth, 2),
@@ -301,22 +256,84 @@ class InsightController extends Controller
                 return collect();
             }
 
-            $series = collect();
+            if (DB::connection()->getDriverName() !== 'pgsql') {
+                $series = collect();
+
+                for ($offset = $windows - 1; $offset >= 0; $offset--) {
+                    $windowStart = $periods['current_start']->copy()->subYears($offset);
+                    $windowEnd = $periods['current_end']->copy()->subYears($offset);
+
+                    $series->push([
+                        'label' => $windowEnd->format('Y'),
+                        'sales' => $this->salesCountForWindow($sector, $windowStart, $windowEnd),
+                        'median_price' => $this->medianPriceForWindow($sector, $windowStart, $windowEnd),
+                        'start' => $windowStart,
+                        'end' => $windowEnd,
+                    ]);
+                }
+
+                return $series;
+            }
+
+            $ranges = collect();
 
             for ($offset = $windows - 1; $offset >= 0; $offset--) {
                 $windowStart = $periods['current_start']->copy()->subYears($offset);
                 $windowEnd = $periods['current_end']->copy()->subYears($offset);
 
-                $series->push([
+                $ranges->push([
                     'label' => $windowEnd->format('Y'),
-                    'sales' => $this->salesCountForWindow($sector, $windowStart, $windowEnd),
-                    'median_price' => $this->medianPriceForWindow($sector, $windowStart, $windowEnd),
                     'start' => $windowStart,
                     'end' => $windowEnd,
+                    'sort_year' => (int) $windowEnd->format('Y'),
                 ]);
             }
 
-            return $series;
+            $rangesQuery = null;
+
+            foreach ($ranges as $range) {
+                $select = DB::query()->selectRaw(
+                    '? as label, ? as sort_year, ?::timestamp as start_date, ?::timestamp as end_date',
+                    [
+                        $range['label'],
+                        $range['sort_year'],
+                        $range['start']->toDateTimeString(),
+                        $range['end']->toDateTimeString(),
+                    ]
+                );
+
+                $rangesQuery = $rangesQuery === null ? $select : $rangesQuery->unionAll($select);
+            }
+
+            if ($rangesQuery === null) {
+                return collect();
+            }
+
+            $rows = DB::table('land_registry')
+                ->joinSub($rangesQuery, 'ranges', function ($join): void {
+                    $join->whereRaw('"Date" >= ranges.start_date AND "Date" <= ranges.end_date');
+                })
+                ->where('PPDCategoryType', 'A')
+                ->where('NewBuild', 'N')
+                ->whereNotNull('Price')
+                ->whereRaw($this->normalizedPostcodeExpression()." LIKE (? || '%')", [$sector])
+                ->selectRaw('ranges.label, ranges.sort_year, COUNT(*) as sales, PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "Price") as median_price')
+                ->groupBy('ranges.label', 'ranges.sort_year')
+                ->orderBy('ranges.sort_year')
+                ->get()
+                ->keyBy('label');
+
+            return $ranges->map(function (array $range) use ($rows): array {
+                $row = $rows->get($range['label']);
+
+                return [
+                    'label' => $range['label'],
+                    'sales' => (int) ($row->sales ?? 0),
+                    'median_price' => isset($row->median_price) ? (float) $row->median_price : null,
+                    'start' => $range['start'],
+                    'end' => $range['end'],
+                ];
+            })->values();
         });
     }
 
@@ -335,12 +352,18 @@ class InsightController extends Controller
      */
     private function rollingPeriods(): ?array
     {
+        if ($this->rollingPeriodsResolved) {
+            return $this->rollingPeriodsCache;
+        }
+
         $latestDate = DB::table('land_registry')
             ->whereNotNull('Date')
             ->max('Date');
 
         if (! is_string($latestDate) || $latestDate === '') {
-            return null;
+            $this->rollingPeriodsResolved = true;
+
+            return $this->rollingPeriodsCache = null;
         }
 
         $currentEnd = Carbon::parse($latestDate)->startOfDay();
@@ -348,7 +371,9 @@ class InsightController extends Controller
         $previousEnd = $currentStart->copy()->subDay()->startOfDay();
         $previousStart = $currentStart->copy()->subYear()->startOfDay();
 
-        return [
+        $this->rollingPeriodsResolved = true;
+
+        return $this->rollingPeriodsCache = [
             'current_start' => $currentStart,
             'current_end' => $currentEnd,
             'previous_start' => $previousStart,
@@ -358,12 +383,18 @@ class InsightController extends Controller
 
     private function excludedHistoricalYear(): ?int
     {
+        if ($this->excludedHistoricalYearResolved) {
+            return $this->excludedHistoricalYearCache;
+        }
+
         $latestDate = DB::table('land_registry')
             ->whereNotNull('Date')
             ->max('Date');
 
         if (! is_string($latestDate) || $latestDate === '') {
-            return null;
+            $this->excludedHistoricalYearResolved = true;
+
+            return $this->excludedHistoricalYearCache = null;
         }
 
         $latest = Carbon::parse($latestDate);
@@ -378,10 +409,14 @@ class InsightController extends Controller
             ->value('month_count');
 
         if ((int) $monthCount < 12) {
-            return $latestYear;
+            $this->excludedHistoricalYearResolved = true;
+
+            return $this->excludedHistoricalYearCache = $latestYear;
         }
 
-        return null;
+        $this->excludedHistoricalYearResolved = true;
+
+        return $this->excludedHistoricalYearCache = null;
     }
 
     private function monthExpression(): string
@@ -424,5 +459,51 @@ class InsightController extends Controller
     private function cacheVersion(): int
     {
         return (int) Cache::get('insights:cache_version', 1);
+    }
+
+    /**
+     * @return Collection<int, array{year:int,sales:int,median_price:?float}>
+     */
+    private function yearlySummary(string $sector): Collection
+    {
+        $yearExpression = $this->yearExpression();
+        $cacheKey = $this->cacheKey($sector, 'yearly_summary');
+
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($sector, $yearExpression): Collection {
+            $excludedYear = $this->excludedHistoricalYear();
+
+            $query = DB::table('land_registry')
+                ->where('PPDCategoryType', 'A')
+                ->where('NewBuild', 'N')
+                ->whereRaw($this->normalizedPostcodeExpression()." LIKE (? || '%')", [$sector]);
+
+            if ($excludedYear !== null) {
+                $query->whereRaw($yearExpression.' <> ?', [$excludedYear]);
+            }
+
+            if (DB::connection()->getDriverName() === 'pgsql') {
+                $rows = $query
+                    ->selectRaw($yearExpression.' as year, COUNT(*) as sales, PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "Price") as median_price')
+                    ->whereNotNull('Price')
+                    ->groupBy(DB::raw($yearExpression))
+                    ->orderBy('year')
+                    ->get();
+            } else {
+                $rows = $query
+                    ->selectRaw($yearExpression.' as year, COUNT(*) as sales, AVG("Price") as median_price')
+                    ->whereNotNull('Price')
+                    ->groupBy(DB::raw($yearExpression))
+                    ->orderBy('year')
+                    ->get();
+            }
+
+            return collect($rows)->map(function (object $row): array {
+                return [
+                    'year' => (int) $row->year,
+                    'sales' => (int) $row->sales,
+                    'median_price' => isset($row->median_price) ? (float) $row->median_price : null,
+                ];
+            })->values();
+        });
     }
 }
