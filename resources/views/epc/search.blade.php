@@ -42,25 +42,6 @@
         </div>
     </section>
 
-    {{-- EPC map --}}
-    <section class="mb-10 rounded border border-zinc-200 bg-white/80 p-6">
-        <div class="flex items-start justify-between gap-6 flex-col md:flex-row">
-            <div>
-                <h2 class="text-base font-semibold mb-2">
-                    <svg class="inline-block h-[1em] w-[1em] text-lime-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M11.54 22.351a.75.75 0 0 0 .92 0c4.472-3.73 6.79-7.003 6.79-9.851a7.25 7.25 0 1 0-14.5 0c0 2.848 2.318 6.12 6.79 9.851ZM12 14a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z" clip-rule="evenodd"/>
-                    </svg> EPC locations (England & Wales)
-                </h2>
-                <p class="text-xs text-zinc-600">
-                    Zoom in to see EPC certificates as pins. Click a pin to open the EPC report.  Note that this data is only as good as the EPC Register's UPRN matching.  It's ok, but not
-                    perfect.  I see a lot of quality issues in some areas.
-                </p>
-            </div>
-        </div>
-        <div id="epc-map" class="mt-4 h-96 md:h-[36rem] w-full rounded border border-zinc-200 bg-zinc-50"></div>
-        <p id="epc-map-status" class="mt-2 text-xs text-zinc-500">Zoom in to load EPC points.</p>
-    </section>
-
     {{-- Search form --}}
     <div class="flex justify-center">
         <form method="GET" action="{{ route('epc.search') }}" class="mb-10 w-full lg:w-1/2 mx-auto border bg-white/80 p-6 rounded">
@@ -89,6 +70,25 @@
             </div>
         </form>
     </div>
+
+    {{-- EPC map --}}
+    <section class="mb-10 rounded border border-zinc-200 bg-white/80 p-6">
+        <div class="flex items-start justify-between gap-6 flex-col md:flex-row">
+            <div>
+                <h2 class="text-base font-semibold mb-2">
+                    <svg class="inline-block h-[1em] w-[1em] text-lime-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M11.54 22.351a.75.75 0 0 0 .92 0c4.472-3.73 6.79-7.003 6.79-9.851a7.25 7.25 0 1 0-14.5 0c0 2.848 2.318 6.12 6.79 9.851ZM12 14a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z" clip-rule="evenodd"/>
+                    </svg> EPC locations (England & Wales)
+                </h2>
+                <p class="text-xs text-zinc-600">
+                    Zoom in to see EPC certificates as pins. Click a pin to open the EPC report.  Note that this data is only as good as the EPC Register's UPRN matching.  It's ok, but not
+                    perfect.  I see a lot of quality issues in some areas.
+                </p>
+            </div>
+        </div>
+        <div id="epc-map" class="mt-4 h-96 md:h-[36rem] w-full rounded border border-zinc-200 bg-zinc-50"></div>
+        <p id="epc-map-status" class="mt-2 text-xs text-zinc-500">Zoom in to load EPC points.</p>
+    </section>
 
     {{-- Results --}}
     @isset($results)
@@ -225,7 +225,7 @@
                                             title="View report"
                                             aria-label="View EPC report for {{ $row->address }}, {{ $row->postcode }}"
                                         >
-                                            <svg class="inline-block h-[1.5em] w-[1.5em] leading-none align-middle pt-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                                 <path fill-rule="evenodd" d="M11 3a8 8 0 1 0 5.026 14.225l4.374 4.374a.75.75 0 1 0 1.06-1.06l-4.374-4.375A8 8 0 0 0 11 3Zm-6.5 8a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0Z" clip-rule="evenodd"/>
                                                 <path d="M8.25 10.5a.75.75 0 0 1 .75-.75h3.19l-1.22-1.22a.75.75 0 1 1 1.06-1.06l2.5 2.5a.75.75 0 0 1 0 1.06l-2.5 2.5a.75.75 0 0 1-1.06-1.06l1.22-1.22H9a.75.75 0 0 1-.75-.75Z"/>
                                             </svg>
