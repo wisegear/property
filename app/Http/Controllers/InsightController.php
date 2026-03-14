@@ -40,11 +40,7 @@ class InsightController extends Controller
         abort_unless(preg_match('/^[A-Z0-9]+$/', $normalizedSector) === 1, 404);
 
         $insights = Schema::hasTable('market_insights')
-            ? MarketInsight::query()
-                ->whereRaw('UPPER(area_code) = ?', [$normalizedSector])
-                ->orderByDesc('period_end')
-                ->orderByDesc('created_at')
-                ->get()
+            ? $this->insightsForSector($normalizedSector)
             : collect();
 
         $salesByYear = Schema::hasTable('land_registry')
@@ -92,7 +88,15 @@ class InsightController extends Controller
         $normalizedSector = strtoupper($sector);
         $normalizedSector = $this->normalizeSector($normalizedSector);
 
-        if (preg_match('/^[A-Z0-9]+$/', $normalizedSector) !== 1 || ! Schema::hasTable('land_registry')) {
+        if (preg_match('/^[A-Z0-9]+$/', $normalizedSector) !== 1) {
+            return;
+        }
+
+        if (Schema::hasTable('market_insights')) {
+            $this->insightsForSector($normalizedSector);
+        }
+
+        if (! Schema::hasTable('land_registry')) {
             return;
         }
 
@@ -102,6 +106,19 @@ class InsightController extends Controller
         $this->rollingWindowSeries($normalizedSector);
         $this->buildRecentPriceChange($normalizedSector);
         $this->buildHistoryRows($salesByYear, $medianPriceByYear);
+    }
+
+    private function insightsForSector(string $sector): Collection
+    {
+        $cacheKey = $this->cacheKey($sector, 'insights');
+
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($sector): Collection {
+            return MarketInsight::query()
+                ->whereRaw('UPPER(area_code) = ?', [$sector])
+                ->orderByDesc('period_end')
+                ->orderByDesc('created_at')
+                ->get();
+        });
     }
 
     private function normalizeSector(string $sector): string

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Http\Controllers\InsightController;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,9 @@ class WarmInsights extends Command
      */
     public function handle(): int
     {
+        /** @var InsightController $controller */
+        $controller = app(InsightController::class);
+
         $sectors = Cache::get('insights:sectors');
 
         if (! $sectors) {
@@ -38,25 +42,16 @@ class WarmInsights extends Command
         $count = 0;
         $this->output->progressStart($total);
 
-        // Load all insights once instead of querying per sector
-        $allInsights = DB::table('market_insights')
-            ->orderBy('area_code')
-            ->orderByDesc('period_end')
-            ->get()
-            ->groupBy('area_code');
-
         foreach ($sectors as $sector) {
             $areaCode = is_object($sector)
                 ? (string) $sector->area_code
                 : (string) $sector;
 
-            $rows = $allInsights[$areaCode] ?? collect();
-
-            Cache::put("insights:sector:{$areaCode}", $rows, now()->addDays(45));
+            $this->line("Warming {$areaCode}");
+            $controller->warmSectorCache($areaCode);
 
             $count++;
             $this->output->progressAdvance();
-            $this->output->writeln(" {$count}/{$total} {$areaCode}");
         }
 
         $this->output->progressFinish();
