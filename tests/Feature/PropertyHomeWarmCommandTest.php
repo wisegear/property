@@ -22,10 +22,14 @@ class PropertyHomeWarmCommandTest extends TestCase
 
         $this->artisan('property:home-warm', ['--task' => 'sales'])->assertExitCode(0);
 
-        $cached = Cache::get('land_registry_sales_by_year:catA:v2');
+        $cached = Cache::get('property:home:rolling:202501:sales');
         $this->assertNotNull($cached);
-        $this->assertSame(2, $cached->count());
-        $this->assertSame(2024, (int) $cached->first()->year);
+        $this->assertSame('2025-01-01', $cached['latest_month']);
+        $this->assertSame('2024-02-01', $cached['rolling_start']);
+        $this->assertSame('2025-01-31', $cached['rolling_end']);
+        $this->assertSame(1, $cached['data']->count());
+        $this->assertSame(2025, (int) $cached['data']->first()->year);
+        $this->assertSame(1, (int) $cached['data']->first()->total);
     }
 
     public function test_it_warms_monthly24_cache_with_portable_month_expression(): void
@@ -51,19 +55,19 @@ class PropertyHomeWarmCommandTest extends TestCase
     public function test_it_warms_median_price_cache_for_each_year(): void
     {
         DB::table('land_registry')->insert([
-            $this->landRegistryRow('55555555-5555-5555-5555-55555555555555', 100000, '2024-01-15 00:00:00'),
-            $this->landRegistryRow('66666666-6666-6666-6666-66666666666666', 200000, '2024-02-15 00:00:00'),
-            $this->landRegistryRow('77777777-7777-7777-7777-77777777777777', 300000, '2024-03-15 00:00:00'),
-            $this->landRegistryRow('88888888-8888-8888-8888-88888888888888', 1000000, '2024-04-15 00:00:00'),
+            $this->landRegistryRow('55555555-5555-5555-5555-55555555555555', 100000, '2024-05-15 00:00:00'),
+            $this->landRegistryRow('66666666-6666-6666-6666-66666666666666', 200000, '2024-06-15 00:00:00'),
+            $this->landRegistryRow('77777777-7777-7777-7777-77777777777777', 300000, '2024-07-15 00:00:00'),
+            $this->landRegistryRow('88888888-8888-8888-8888-88888888888888', 1000000, '2025-04-15 00:00:00'),
         ]);
 
         $this->artisan('property:home-warm', ['--task' => 'avgPrice'])->assertExitCode(0);
 
-        $cached = Cache::get('land_registry_avg_price_by_year:catA:v3');
+        $cached = Cache::get('property:home:rolling:202504:avgPrice');
         $this->assertNotNull($cached);
-        $this->assertSame(1, $cached->count());
+        $this->assertSame(1, $cached['data']->count());
         $expected = DB::connection()->getDriverName() === 'pgsql' ? 250000 : 400000;
-        $this->assertSame($expected, (int) $cached->first()->avg_price);
+        $this->assertSame($expected, (int) $cached['data']->first()->avg_price);
     }
 
     private function landRegistryRow(string $transactionId, int $price, string $date): array

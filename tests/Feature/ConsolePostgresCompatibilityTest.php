@@ -36,7 +36,7 @@ class ConsolePostgresCompatibilityTest extends TestCase
         $this->artisan('pcl:warm --parallel=1')->assertExitCode(0);
 
         $expected = DB::connection()->getDriverName() === 'pgsql' ? 250000 : 400000;
-        $series = collect(Cache::get('pcl:v4:catA:ALL:avgPrice'));
+        $series = collect(Cache::get('pcl:home:rolling:202404:ALL:avgPrice'));
 
         $this->assertSame($expected, (int) ($series->first()->avg_price ?? 0));
     }
@@ -53,7 +53,7 @@ class ConsolePostgresCompatibilityTest extends TestCase
         $this->artisan('upcl:warm --parallel=1')->assertExitCode(0);
 
         $expected = DB::connection()->getDriverName() === 'pgsql' ? 250000 : 400000;
-        $series = collect(Cache::get('upcl:v6:catA:ALL:avgPrice'));
+        $series = collect(Cache::get('upcl:home:rolling:202404:ALL:avgPrice'));
 
         $this->assertSame($expected, (int) ($series->first()->avg_price ?? 0));
     }
@@ -70,7 +70,7 @@ class ConsolePostgresCompatibilityTest extends TestCase
         $this->artisan('app:outer-prime-warm --parallel=1')->assertExitCode(0);
 
         $expected = DB::connection()->getDriverName() === 'pgsql' ? 250000 : 400000;
-        $series = collect(Cache::get('outerprime:v3:catA:ALL:avgPrice'));
+        $series = collect(Cache::get('outerprime:home:rolling:202404:ALL:avgPrice'));
 
         $this->assertSame($expected, (int) ($series->first()->avg_price ?? 0));
     }

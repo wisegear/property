@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\LandRegistry;
 use App\Services\EpcMatcher;
 use App\Services\FormAnalytics;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -16,36 +17,20 @@ class PropertyController extends Controller
 
     public function home(Request $request)
     {
-        $yearExpr = $this->yearExpression();
+        $window = $this->rollingWindow();
+        $cachePrefix = $this->rollingCachePrefix($window['latest_month']);
+        $latestMonth = $window['latest_month'];
+        $rollingStart = $window['rolling_start'];
+        $rollingEnd = $window['rolling_end'];
+        $endMonths = $this->rollingEndMonths($window['latest_month']);
 
-        // =========================================================
-        // 2) CACHED AGGREGATES FOR HOMEPAGE CHARTS
-        //    These are cached for 1 day (86400s). When new monthly
-        //    data is imported you can clear cache to refresh.
-        // =========================================================
+        $rollingMeta = Cache::remember("{$cachePrefix}:meta", self::CACHE_TTL, fn () => $this->serializeRollingWindow($window));
 
-        // Yearly transaction counts (all categories)
-        $salesByYear = Cache::remember('land_registry_sales_by_year:catA:v2', self::CACHE_TTL, function () {
-            $yearExpr = $this->yearExpression();
+        $salesPayload = Cache::remember("{$cachePrefix}:sales", self::CACHE_TTL, fn () => $this->rollingPayload($window, $this->buildRollingSalesSeries($endMonths)));
+        $salesByYear = $salesPayload['data'];
 
-            return LandRegistry::selectRaw("{$yearExpr} as year, COUNT(*) as total")
-                ->where('PPDCategoryType', 'A')
-                ->groupByRaw($yearExpr)
-                ->orderBy('year')
-                ->get();
-        });
-
-        // Yearly median price (all categories)
-        $avgPriceByYear = Cache::remember('land_registry_avg_price_by_year:catA:v3', self::CACHE_TTL, function () {
-            $yearExpr = $this->yearExpression();
-            $medianExpr = $this->medianPriceExpression();
-
-            return LandRegistry::selectRaw("{$yearExpr} as year, ROUND({$medianExpr}) as avg_price")
-                ->where('PPDCategoryType', 'A')
-                ->groupByRaw($yearExpr)
-                ->orderBy('year')
-                ->get();
-        });
+        $avgPricePayload = Cache::remember("{$cachePrefix}:avgPrice", self::CACHE_TTL, fn () => $this->rollingPayload($window, $this->buildRollingMedianSeries($endMonths)));
+        $avgPriceByYear = $avgPricePayload['data'];
 
         // Monthly sales — last 24 months (England & Wales, Cat A)
         [$sales24Labels, $sales24Data] = Cache::remember(
@@ -94,74 +79,21 @@ class PropertyController extends Controller
             }
         );
 
-        // ========= ENGLAND & WALES (Cat A): P90 and Top 5% =========
-        $ewP90 = Cache::remember('ew:p90:catA:v1', self::CACHE_TTL, function () use ($yearExpr) {
-            $sub = DB::table('land_registry')
-                ->selectRaw("{$yearExpr} as year, \"Price\", CUME_DIST() OVER (PARTITION BY {$yearExpr} ORDER BY \"Price\") as cd")
-                ->where('PPDCategoryType', 'A')
-                ->whereNotNull('Price')
-                ->where('Price', '>', 0);
+        $ewP90Payload = Cache::remember("{$cachePrefix}:p90", self::CACHE_TTL, fn () => $this->rollingPayload($window, $this->buildRollingP90Series($endMonths)));
+        $ewP90 = $ewP90Payload['data'];
 
-            return DB::query()
-                ->fromSub($sub, 't')
-                ->selectRaw('year, MIN("Price") as p90_price')
-                ->where('cd', '>=', 0.9)
-                ->groupBy('year')
-                ->orderBy('year')
-                ->get();
-        });
+        $ewTop5Payload = Cache::remember("{$cachePrefix}:top5", self::CACHE_TTL, fn () => $this->rollingPayload($window, $this->buildRollingTop5Series($endMonths)));
+        $ewTop5 = $ewTop5Payload['data'];
 
-        $ewTop5 = Cache::remember('ew:top5avg:catA:v1', self::CACHE_TTL, function () use ($yearExpr) {
-            $ranked = DB::table('land_registry')
-                ->selectRaw("{$yearExpr} as year, \"Price\", ROW_NUMBER() OVER (PARTITION BY {$yearExpr} ORDER BY \"Price\" DESC) as rn, COUNT(*) OVER (PARTITION BY {$yearExpr}) as cnt")
-                ->where('PPDCategoryType', 'A')
-                ->whereNotNull('Price')
-                ->where('Price', '>', 0);
+        $ewTopSalePayload = Cache::remember("{$cachePrefix}:topSale", self::CACHE_TTL, fn () => $this->rollingPayload($window, $this->buildRollingTopSaleSeries($endMonths)));
+        $ewTopSalePerYear = $ewTopSalePayload['data'];
 
-            return DB::query()
-                ->fromSub($ranked, 'r')
-                ->selectRaw('year, ROUND(AVG("Price")) as top5_avg')
-                ->whereColumn('rn', '<=', DB::raw('CEIL(0.05 * cnt)'))
-                ->groupBy('year')
-                ->orderBy('year')
-                ->get();
-        });
+        $ewTop3Payload = Cache::remember("{$cachePrefix}:top3", self::CACHE_TTL, fn () => $this->rollingPayload($window, $this->buildRollingTop3Series($endMonths)));
+        $ewTop3PerYear = $ewTop3Payload['data'];
 
-        // England & Wales (Cat A): Top sale per year (for scatter marker)
-        $ewTopSalePerYear = Cache::remember('ew:topSalePerYear:catA:v1', self::CACHE_TTL, function () use ($yearExpr) {
-            return LandRegistry::selectRaw("{$yearExpr} as year, MAX(\"Price\") as top_sale")
-                ->where('PPDCategoryType', 'A')
-                ->whereNotNull('Price')
-                ->where('Price', '>', 0)
-                ->groupByRaw($yearExpr)
-                ->orderBy('year')
-                ->get();
-        });
-
-        // England & Wales (Cat A): Top 3 sales per year (for tooltip detail)
-        $ewTop3PerYear = Cache::remember('ew:top3PerYear:catA:v1', self::CACHE_TTL, function () use ($yearExpr) {
-            $rankedTop3 = DB::table('land_registry')
-                ->selectRaw("{$yearExpr} as year, \"Date\", \"Postcode\", \"Price\", ROW_NUMBER() OVER (PARTITION BY {$yearExpr} ORDER BY \"Price\" DESC) as rn")
-                ->where('PPDCategoryType', 'A')
-                ->whereNotNull('Price')
-                ->where('Price', '>', 0);
-
-            return DB::query()
-                ->fromSub($rankedTop3, 'r')
-                ->select('year', 'Date', 'Postcode', 'Price', 'rn')
-                ->where('rn', '<=', 3)
-                ->orderBy('year')
-                ->orderBy('rn')
-                ->get();
-        });
-
-        // =========================================================
-        // 3) RENDER: pass both search results (if any) and all
-        //    cached aggregates for charts to the Blade view
-        // =========================================================
         return view('property.home', compact(
             'salesByYear', 'avgPriceByYear', 'ewP90', 'ewTop5', 'ewTopSalePerYear', 'ewTop3PerYear',
-            'sales24Labels', 'sales24Data'
+            'sales24Labels', 'sales24Data', 'latestMonth', 'rollingStart', 'rollingEnd', 'rollingMeta'
         ));
     }
 
@@ -1296,6 +1228,299 @@ class PropertyController extends Controller
         }
 
         return 'EXTRACT(YEAR FROM "Date")::int';
+    }
+
+    /**
+     * @return array{
+     *     latest_month: Carbon,
+     *     rolling_start: Carbon,
+     *     rolling_end: Carbon,
+     *     previous_start: Carbon,
+     *     previous_end: Carbon
+     * }
+     */
+    private function rollingWindow(): array
+    {
+        $latestDate = DB::table('land_registry')->max('Date');
+        $latestMonth = $latestDate
+            ? Carbon::parse($latestDate)->startOfMonth()
+            : now()->startOfMonth();
+
+        $rollingStart = $latestMonth->copy()->subMonths(11)->startOfMonth();
+        $rollingEnd = $latestMonth->copy()->endOfMonth();
+
+        return [
+            'latest_month' => $latestMonth,
+            'rolling_start' => $rollingStart,
+            'rolling_end' => $rollingEnd,
+            'previous_start' => $rollingStart->copy()->subYear(),
+            'previous_end' => $rollingEnd->copy()->subYear(),
+        ];
+    }
+
+    private function rollingCachePrefix(Carbon $latestMonth): string
+    {
+        return 'property:home:rolling:'.$latestMonth->format('Ym');
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, Carbon>
+     */
+    private function rollingEndMonths(Carbon $latestMonth): \Illuminate\Support\Collection
+    {
+        $earliestDate = DB::table('land_registry')->min('Date');
+
+        if ($earliestDate === null) {
+            return collect([$latestMonth->copy()]);
+        }
+
+        $earliestPossibleEnd = Carbon::parse($earliestDate)->startOfMonth()->addMonths(11);
+        $firstEnd = $latestMonth->copy()->year($earliestPossibleEnd->year)->startOfMonth();
+
+        if ($firstEnd->lt($earliestPossibleEnd)) {
+            $firstEnd->addYear();
+        }
+
+        $endMonths = collect();
+        $cursor = $firstEnd->copy();
+
+        while ($cursor->lte($latestMonth)) {
+            $endMonths->push($cursor->copy());
+            $cursor->addYear();
+        }
+
+        return $endMonths->isNotEmpty() ? $endMonths : collect([$latestMonth->copy()]);
+    }
+
+    /**
+     * @return array{year:int,start:Carbon,end:Carbon}
+     */
+    private function rollingRangeForEndMonth(Carbon $endMonth): array
+    {
+        return [
+            'year' => $endMonth->year,
+            'start' => $endMonth->copy()->subMonths(11)->startOfMonth(),
+            'end' => $endMonth->copy()->endOfMonth(),
+        ];
+    }
+
+    private function buildRollingSalesSeries(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    {
+        return $endMonths->map(function (Carbon $endMonth) {
+            $range = $this->rollingRangeForEndMonth($endMonth);
+
+            return (object) [
+                'year' => $range['year'],
+                'total' => DB::table('land_registry')
+                    ->where('PPDCategoryType', 'A')
+                    ->whereBetween('Date', [$range['start'], $range['end']])
+                    ->count(),
+            ];
+        });
+    }
+
+    private function buildRollingMedianSeries(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    {
+        $medianExpr = $this->medianPriceExpression();
+
+        return $endMonths->map(function (Carbon $endMonth) use ($medianExpr) {
+            $range = $this->rollingRangeForEndMonth($endMonth);
+            $avgPrice = DB::table('land_registry')
+                ->where('PPDCategoryType', 'A')
+                ->whereBetween('Date', [$range['start'], $range['end']])
+                ->selectRaw("ROUND({$medianExpr}) as avg_price")
+                ->value('avg_price');
+
+            return (object) [
+                'year' => $range['year'],
+                'avg_price' => $avgPrice !== null ? (int) $avgPrice : null,
+            ];
+        });
+    }
+
+    private function buildRollingP90Series(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    {
+        return $endMonths->map(function (Carbon $endMonth) {
+            $range = $this->rollingRangeForEndMonth($endMonth);
+            $sub = DB::table('land_registry')
+                ->selectRaw('"Price", CUME_DIST() OVER (ORDER BY "Price") as cd')
+                ->where('PPDCategoryType', 'A')
+                ->whereBetween('Date', [$range['start'], $range['end']])
+                ->whereNotNull('Price')
+                ->where('Price', '>', 0);
+
+            $p90Price = DB::query()->fromSub($sub, 't')
+                ->where('cd', '>=', 0.9)
+                ->min('Price');
+
+            return (object) [
+                'year' => $range['year'],
+                'p90_price' => $p90Price !== null ? (int) $p90Price : null,
+            ];
+        });
+    }
+
+    private function buildRollingTop5Series(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    {
+        return $endMonths->map(function (Carbon $endMonth) {
+            $range = $this->rollingRangeForEndMonth($endMonth);
+            $ranked = DB::table('land_registry')
+                ->selectRaw('"Price", ROW_NUMBER() OVER (ORDER BY "Price" DESC) as rn, COUNT(*) OVER () as cnt')
+                ->where('PPDCategoryType', 'A')
+                ->whereBetween('Date', [$range['start'], $range['end']])
+                ->whereNotNull('Price')
+                ->where('Price', '>', 0);
+
+            $top5Average = DB::query()
+                ->fromSub($ranked, 'r')
+                ->selectRaw('ROUND(AVG("Price")) as top5_avg')
+                ->whereColumn('rn', '<=', DB::raw('CEIL(0.05 * cnt)'))
+                ->value('top5_avg');
+
+            return (object) [
+                'year' => $range['year'],
+                'top5_avg' => $top5Average !== null ? (int) $top5Average : null,
+            ];
+        });
+    }
+
+    private function buildRollingTopSaleSeries(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    {
+        return $endMonths->map(function (Carbon $endMonth) {
+            $range = $this->rollingRangeForEndMonth($endMonth);
+
+            return (object) [
+                'year' => $range['year'],
+                'top_sale' => LandRegistry::query()
+                    ->where('PPDCategoryType', 'A')
+                    ->whereBetween('Date', [$range['start'], $range['end']])
+                    ->whereNotNull('Price')
+                    ->where('Price', '>', 0)
+                    ->max('Price'),
+            ];
+        });
+    }
+
+    private function buildRollingTop3Series(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    {
+        return $endMonths->flatMap(function (Carbon $endMonth) {
+            $range = $this->rollingRangeForEndMonth($endMonth);
+            $rankedTop3 = DB::table('land_registry')
+                ->selectRaw('"Date", "Postcode", "Price", ROW_NUMBER() OVER (ORDER BY "Price" DESC) as rn')
+                ->where('PPDCategoryType', 'A')
+                ->whereBetween('Date', [$range['start'], $range['end']])
+                ->whereNotNull('Price')
+                ->where('Price', '>', 0);
+
+            return DB::query()
+                ->fromSub($rankedTop3, 'r')
+                ->select('Date', 'Postcode', 'Price', 'rn')
+                ->where('rn', '<=', 3)
+                ->orderBy('rn')
+                ->get()
+                ->map(fn ($row) => (object) [
+                    'year' => $range['year'],
+                    'Date' => $row->Date,
+                    'Postcode' => $row->Postcode,
+                    'Price' => $row->Price,
+                    'rn' => $row->rn,
+                ]);
+        })->values();
+    }
+
+    /**
+     * @param  array{
+     *     latest_month: Carbon,
+     *     rolling_start: Carbon,
+     *     rolling_end: Carbon,
+     *     previous_start: Carbon,
+     *     previous_end: Carbon
+     * }  $window
+     */
+    private function serializeRollingWindow(array $window): array
+    {
+        return [
+            'latest_month' => $window['latest_month']->toDateString(),
+            'rolling_start' => $window['rolling_start']->toDateString(),
+            'rolling_end' => $window['rolling_end']->toDateString(),
+            'previous_start' => $window['previous_start']->toDateString(),
+            'previous_end' => $window['previous_end']->toDateString(),
+        ];
+    }
+
+    /**
+     * @param  array{
+     *     latest_month: Carbon,
+     *     rolling_start: Carbon,
+     *     rolling_end: Carbon,
+     *     previous_start: Carbon,
+     *     previous_end: Carbon
+     * }  $window
+     */
+    private function rollingPayload(array $window, mixed $data): array
+    {
+        return [
+            ...$this->serializeRollingWindow($window),
+            'data' => $data,
+        ];
+    }
+
+    private function rollingSalesTotal(Carbon $start, Carbon $end): int
+    {
+        return (int) DB::table('land_registry')
+            ->where('PPDCategoryType', 'A')
+            ->whereBetween('Date', [$start, $end])
+            ->count();
+    }
+
+    private function rollingMedianPrice(Carbon $start, Carbon $end): ?int
+    {
+        $medianExpr = $this->medianPriceExpression();
+
+        $value = DB::table('land_registry')
+            ->where('PPDCategoryType', 'A')
+            ->whereBetween('Date', [$start, $end])
+            ->whereNotNull('Price')
+            ->where('Price', '>', 0)
+            ->selectRaw("ROUND({$medianExpr}) as avg_price")
+            ->value('avg_price');
+
+        return $value !== null ? (int) $value : null;
+    }
+
+    private function rollingP90Price(Carbon $start, Carbon $end): ?int
+    {
+        $sub = DB::table('land_registry')
+            ->selectRaw('"Price", CUME_DIST() OVER (ORDER BY "Price") as cd')
+            ->where('PPDCategoryType', 'A')
+            ->whereBetween('Date', [$start, $end])
+            ->whereNotNull('Price')
+            ->where('Price', '>', 0);
+
+        $value = DB::query()
+            ->fromSub($sub, 't')
+            ->where('cd', '>=', 0.9)
+            ->min('Price');
+
+        return $value !== null ? (int) $value : null;
+    }
+
+    private function rollingTop5Average(Carbon $start, Carbon $end): ?int
+    {
+        $ranked = DB::table('land_registry')
+            ->selectRaw('"Price", ROW_NUMBER() OVER (ORDER BY "Price" DESC) as rn, COUNT(*) OVER () as cnt')
+            ->where('PPDCategoryType', 'A')
+            ->whereBetween('Date', [$start, $end])
+            ->whereNotNull('Price')
+            ->where('Price', '>', 0);
+
+        $value = DB::query()
+            ->fromSub($ranked, 'r')
+            ->selectRaw('ROUND(AVG("Price")) as top5_avg')
+            ->whereColumn('rn', '<=', DB::raw('CEIL(0.05 * cnt)'))
+            ->value('top5_avg');
+
+        return $value !== null ? (int) $value : null;
     }
 
     private function monthStartExpression(): string

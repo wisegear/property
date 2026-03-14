@@ -31,13 +31,11 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
 
     public function test_property_home_uses_median_price_series_for_chart_data(): void
     {
-        Cache::forget('land_registry_avg_price_by_year:catA:v3');
-
         DB::table('land_registry')->insert([
             $this->landRegistryRow(
                 transactionId: '33333333-3333-3333-3333-33333333333333',
                 price: 100000,
-                date: '2024-01-15 00:00:00',
+                date: '2024-05-15 00:00:00',
                 postcode: 'AB1 2CD',
                 paon: '1',
                 street: 'HIGH STREET'
@@ -45,7 +43,7 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             $this->landRegistryRow(
                 transactionId: '44444444-4444-4444-4444-44444444444444',
                 price: 200000,
-                date: '2024-02-15 00:00:00',
+                date: '2024-06-15 00:00:00',
                 postcode: 'AB1 2CD',
                 paon: '2',
                 street: 'HIGH STREET'
@@ -53,7 +51,7 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             $this->landRegistryRow(
                 transactionId: '55555555-5555-5555-5555-55555555555555',
                 price: 300000,
-                date: '2024-03-15 00:00:00',
+                date: '2024-07-15 00:00:00',
                 postcode: 'AB1 2CD',
                 paon: '3',
                 street: 'HIGH STREET'
@@ -61,7 +59,7 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             $this->landRegistryRow(
                 transactionId: '66666666-6666-6666-6666-66666666666666',
                 price: 1000000,
-                date: '2024-04-15 00:00:00',
+                date: '2025-04-15 00:00:00',
                 postcode: 'AB1 2CD',
                 paon: '4',
                 street: 'HIGH STREET'
@@ -92,7 +90,7 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
 
         $this->get('/property')
             ->assertOk()
-            ->assertSee('text: salesYearTitle', false);
+            ->assertSee('Rolling 12 month period ending Jan 2026');
     }
 
     public function test_property_show_route_loads_without_mysql_index_hints(): void

@@ -7,7 +7,7 @@
         @include('partials.hero-background')
         <div class="max-w-5xl">
             <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">Property Dashboard</h1>
-            <p class="mt-2 text-sm leading-6 text-gray-700">Note that the current year in the charts below is only a part year therefore more data to come before the year is complete.</p>  
+            <p class="mt-2 text-sm leading-6 text-gray-700">Charts below use a rolling 12-month window from 1995 and ending with the latest Land Registry month ({{ isset($latestMonth) ? \Carbon\Carbon::parse($latestMonth)->format('F') : now()->format('F') }}).</p>
             <p class="mt-2 text-sm leading-6 text-gray-700">All property data includes <span class="text-lime-600 font-bold">Category A</span> sales only, these are sales at market value on an arms length basis.  <span class="text-rose-500 font-bold">Category B</span> sales are not included as they are transactions for a variety of reasons not neccessairly at 
                 arms length therefore skew the data so are excluded. Read more about this <a href="/blog/category-a-vs-category-b-property-sales-what-the-land-registry-is-actually-telling-you" class="text-lime-600 hover:text-lime-700">Here.</a>All data provided from the Land Registry.</p>     
             <div class="mt-4 flex flex-wrap gap-2"> <!-- Avoids unset in css -->
@@ -20,7 +20,53 @@
         <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
             <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="Property dashboard" class="w-72 h-auto">
         </div>
-    </section>
+</section>
+
+@php
+    $salesSeriesForSnapshot = collect($salesByYear ?? []);
+    $medianSeriesForSnapshot = collect($avgPriceByYear ?? []);
+    $currentSalesSnapshot = (float) optional($salesSeriesForSnapshot->last())->total;
+    $previousSalesSnapshot = (float) optional($salesSeriesForSnapshot->slice(-2, 1)->first())->total;
+    $currentMedianSnapshot = (float) optional($medianSeriesForSnapshot->last())->avg_price;
+    $previousMedianSnapshot = (float) optional($medianSeriesForSnapshot->slice(-2, 1)->first())->avg_price;
+
+    $snapshot = $snapshot ?? [
+        'rolling_12_sales' => (int) $currentSalesSnapshot,
+        'rolling_12_median_price' => (int) $currentMedianSnapshot,
+        'rolling_12_price_yoy' => $previousMedianSnapshot > 0 ? (($currentMedianSnapshot - $previousMedianSnapshot) / $previousMedianSnapshot) * 100 : 0,
+        'rolling_12_sales_yoy' => $previousSalesSnapshot > 0 ? (($currentSalesSnapshot - $previousSalesSnapshot) / $previousSalesSnapshot) * 100 : 0,
+    ];
+@endphp
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white shadow rounded p-4 text-center">
+        <div class="text-xs text-gray-500 uppercase">LAST 12 MONTHS SALES</div>
+        <div class="text-2xl font-semibold">
+            {{ number_format($snapshot['rolling_12_sales']) }}
+        </div>
+    </div>
+
+    <div class="bg-white shadow rounded p-4 text-center">
+        <div class="text-xs text-gray-500 uppercase">Median Price</div>
+        <div class="text-2xl font-semibold">
+            £{{ number_format($snapshot['rolling_12_median_price']) }}
+        </div>
+    </div>
+
+    <div class="bg-white shadow rounded p-4 text-center">
+        <div class="text-xs text-gray-500 uppercase">MEDIAN PRICE CHANGE</div>
+        <div class="text-2xl font-semibold {{ $snapshot['rolling_12_price_yoy'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
+            {{ number_format($snapshot['rolling_12_price_yoy'], 1) }}%
+        </div>
+    </div>
+
+    <div class="bg-white shadow rounded p-4 text-center">
+        <div class="text-xs text-gray-500 uppercase">SALES VOLUME CHANGE</div>
+        <div class="text-2xl font-semibold {{ $snapshot['rolling_12_sales_yoy'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
+            {{ number_format($snapshot['rolling_12_sales_yoy'], 1) }}%
+        </div>
+    </div>
+</div>
 
 
 {{-- Monthly Sales — Last 24 Months (England) --}}
@@ -137,19 +183,19 @@
         <canvas id="p90AvgTop5Chart" class="w-full h-full"></canvas>
     </div>
     <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Property type split by year (sales count)</h3>
+        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Property type split for rolling 12 months</h3>
         <canvas id="propertyTypeSplitChart" class="w-full h-full"></canvas>
     </div>
     <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Median price by property type (yearly)</h3>
+        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Median price by property type for rolling 12 months</h3>
         <canvas id="avgPriceByTypeChart" class="w-full h-full"></canvas>
     </div>
     <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">New build vs existing by year (%)</h3>
+        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">New build vs existing for rolling 12 months (%)</h3>
         <canvas id="newBuildSplitChart" class="w-full h-full"></canvas>
     </div>
     <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Leasehold vs freehold by year (%)</h3>
+        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Leasehold vs freehold for rolling 12 months (%)</h3>
         <canvas id="durationSplitChart" class="w-full h-full"></canvas>
     </div>
 </div>
@@ -175,6 +221,35 @@
 </div>
 
 @php
+    $latestMonth = isset($latestMonth) ? \Carbon\Carbon::parse($latestMonth) : now()->startOfMonth();
+    $rollingStart = isset($rollingStart) ? \Carbon\Carbon::parse($rollingStart) : $latestMonth->copy()->subMonths(11)->startOfMonth();
+    $rollingEnd = isset($rollingEnd) ? \Carbon\Carbon::parse($rollingEnd) : $latestMonth->copy()->endOfMonth();
+    $rollingLabel = 'Data range: Jan 1995 - '.$latestMonth->format('M Y').' (12-month rolling)';
+    $rollingCachePrefix = 'property:home:rolling:'.$latestMonth->format('Ym');
+    $annualRollingEndMonths = function () use ($latestMonth) {
+        $earliestDate = DB::table('land_registry')->min('Date');
+        if ($earliestDate === null) {
+            return collect([$latestMonth->copy()]);
+        }
+
+        $earliestPossibleEnd = \Carbon\Carbon::parse($earliestDate)->startOfMonth()->addMonths(11);
+        $firstEnd = $latestMonth->copy()->year($earliestPossibleEnd->year)->startOfMonth();
+
+        if ($firstEnd->lt($earliestPossibleEnd)) {
+            $firstEnd->addYear();
+        }
+
+        $endMonths = collect();
+        $cursor = $firstEnd->copy();
+
+        while ($cursor->lte($latestMonth)) {
+            $endMonths->push($cursor->copy());
+            $cursor->addYear();
+        }
+
+        return $endMonths->isNotEmpty() ? $endMonths : collect([$latestMonth->copy()]);
+    };
+
     // England & Wales series alignment
     $ewYears = $avgPriceByYear->pluck('year');
     $ewP90Map = $ewP90->keyBy('year');
@@ -225,12 +300,14 @@
         $top5YoY->push(($prevTop5 > 0) ? (($currTop5 - $prevTop5) / $prevTop5) * 100 : null);
     }
 
-    // Sales volume YoY % (aligned to $ewYears)
     $salesMap = $salesByYear->keyBy('year');
     $salesSeries = $ewYears->map(fn($y) => optional($salesMap->get($y))->total);
     $salesYoY = collect();
     for ($i = 0; $i < count($ewYears); $i++) {
-        if ($i === 0) { $salesYoY->push(null); continue; }
+        if ($i === 0) {
+            $salesYoY->push(null);
+            continue;
+        }
         $prev = $i - 1;
         $prevSales = (float) ($salesSeries[$prev] ?? 0);
         $currSales = (float) ($salesSeries[$i] ?? 0);
@@ -246,26 +323,33 @@
         (int) collect($ewTop5Series)->filter(fn($v) => !is_null($v))->min(),
     ])->min();
 
-    $ewYearExpr = \Illuminate\Support\Facades\Schema::hasColumn('land_registry', 'YearDate')
-        ? '"YearDate"'
-        : (DB::connection()->getDriverName() === 'sqlite'
-            ? 'CAST(strftime(\'%Y\', "Date") AS INTEGER)'
-            : 'EXTRACT(YEAR FROM "Date")::int');
     $homeCacheTtl = now()->addDays(45);
 
-    // === Property type split (England & Wales, Cat A) ===
-    // Prefer warmed cache; fallback to live query if missing.
-    $typeRows = \Illuminate\Support\Facades\Cache::remember('ew:propertyTypeSplitByYear:catA:v1', $homeCacheTtl, function () use ($ewYearExpr) {
-        return DB::table('land_registry')
-            ->selectRaw("{$ewYearExpr} as year, \"PropertyType\" as type, COUNT(*) as total")
-            ->where('PPDCategoryType', 'A')
-            ->whereIn('PropertyType', ['D','S','T','F'])
-            ->groupByRaw($ewYearExpr . ', "PropertyType"')
-            ->orderBy('year')
-            ->get();
-    });
+    $typePayload = \Illuminate\Support\Facades\Cache::remember("{$rollingCachePrefix}:typeSplit", $homeCacheTtl, function () use ($annualRollingEndMonths) {
+        $data = $annualRollingEndMonths()->flatMap(function ($endMonth) {
+            $start = $endMonth->copy()->subMonths(11)->startOfMonth();
+            $end = $endMonth->copy()->endOfMonth();
 
-    // Normalise into a year -> {D,S,T,F} map, then align to $ewYears
+            return DB::table('land_registry')
+                ->selectRaw('"PropertyType" as type, COUNT(*) as total')
+                ->where('PPDCategoryType', 'A')
+                ->whereBetween('Date', [$start, $end])
+                ->whereIn('PropertyType', ['D','S','T','F'])
+                ->groupBy('PropertyType')
+                ->get()
+                ->map(fn ($row) => (object) [
+                    'year' => $endMonth->year,
+                    'type' => $row->type,
+                    'total' => (int) $row->total,
+                ]);
+        })->values();
+
+        return [
+            'data' => $data,
+        ];
+    });
+    $typeRows = collect($typePayload['data'] ?? []);
+
     $typeByYear = collect($typeRows)->groupBy('year')->map(function ($rows) {
         $out = ['D' => 0, 'S' => 0, 'T' => 0, 'F' => 0];
         foreach ($rows as $r) {
@@ -277,29 +361,42 @@
         return $out;
     });
 
-    $typeYears = $ewYears; // align to existing EW year axis
+    $typeYears = $ewYears;
     $typeSeriesD = $typeYears->map(fn($y) => (int) (($typeByYear[$y]['D'] ?? 0)));
     $typeSeriesS = $typeYears->map(fn($y) => (int) (($typeByYear[$y]['S'] ?? 0)));
     $typeSeriesT = $typeYears->map(fn($y) => (int) (($typeByYear[$y]['T'] ?? 0)));
     $typeSeriesF = $typeYears->map(fn($y) => (int) (($typeByYear[$y]['F'] ?? 0)));
 
-    // === Median price by property type (England & Wales, Cat A) ===
-    // Prefer warmed cache; fallback to live query if missing.
-    $avgTypeRows = \Illuminate\Support\Facades\Cache::remember('ew:avgPriceByTypeByYear:catA:v2', $homeCacheTtl, function () use ($ewYearExpr) {
+    $avgTypePayload = \Illuminate\Support\Facades\Cache::remember("{$rollingCachePrefix}:avgPriceByType", $homeCacheTtl, function () use ($annualRollingEndMonths) {
         $medianExpr = DB::connection()->getDriverName() === 'pgsql'
             ? 'PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "Price")'
             : 'AVG("Price")';
 
-        return DB::table('land_registry')
-            ->selectRaw("{$ewYearExpr} as year, \"PropertyType\" as type, ROUND({$medianExpr}) as avg_price")
-            ->where('PPDCategoryType', 'A')
-            ->whereIn('PropertyType', ['D','S','T','F'])
-            ->whereNotNull('Price')
-            ->where('Price', '>', 0)
-            ->groupByRaw($ewYearExpr . ', "PropertyType"')
-            ->orderBy('year')
-            ->get();
+        $data = $annualRollingEndMonths()->flatMap(function ($endMonth) use ($medianExpr) {
+            $start = $endMonth->copy()->subMonths(11)->startOfMonth();
+            $end = $endMonth->copy()->endOfMonth();
+
+            return DB::table('land_registry')
+                ->selectRaw("\"PropertyType\" as type, ROUND({$medianExpr}) as avg_price")
+                ->where('PPDCategoryType', 'A')
+                ->whereBetween('Date', [$start, $end])
+                ->whereIn('PropertyType', ['D','S','T','F'])
+                ->whereNotNull('Price')
+                ->where('Price', '>', 0)
+                ->groupBy('PropertyType')
+                ->get()
+                ->map(fn ($row) => (object) [
+                    'year' => $endMonth->year,
+                    'type' => $row->type,
+                    'avg_price' => is_null($row->avg_price) ? null : (int) $row->avg_price,
+                ]);
+        })->values();
+
+        return [
+            'data' => $data,
+        ];
     });
+    $avgTypeRows = collect($avgTypePayload['data'] ?? []);
 
     $avgTypeByYear = collect($avgTypeRows)->groupBy('year')->map(function ($rows) {
         $out = ['D' => null, 'S' => null, 'T' => null, 'F' => null];
@@ -318,17 +415,28 @@
     $avgTypeSeriesT = $avgTypeYears->map(fn($y) => $avgTypeByYear[$y]['T'] ?? null);
     $avgTypeSeriesF = $avgTypeYears->map(fn($y) => $avgTypeByYear[$y]['F'] ?? null);
 
-    // === New build vs existing split (England & Wales, Cat A) ===
-    // Prefer warmed cache; fallback to live query if missing.
-    $nbRows = \Illuminate\Support\Facades\Cache::remember('ew:newBuildSplitByYear:catA:v1', $homeCacheTtl, function () use ($ewYearExpr) {
-        return DB::table('land_registry')
-            ->selectRaw("{$ewYearExpr} as year, \"NewBuild\" as nb, COUNT(*) as total")
-            ->where('PPDCategoryType', 'A')
-            ->whereIn('NewBuild', ['Y','N'])
-            ->groupByRaw($ewYearExpr . ', "NewBuild"')
-            ->orderBy('year')
-            ->get();
+    $nbPayload = \Illuminate\Support\Facades\Cache::remember("{$rollingCachePrefix}:newBuildSplit", $homeCacheTtl, function () use ($annualRollingEndMonths) {
+        return [
+            'data' => $annualRollingEndMonths()->flatMap(function ($endMonth) {
+                $start = $endMonth->copy()->subMonths(11)->startOfMonth();
+                $end = $endMonth->copy()->endOfMonth();
+
+                return DB::table('land_registry')
+                    ->selectRaw('"NewBuild" as nb, COUNT(*) as total')
+                    ->where('PPDCategoryType', 'A')
+                    ->whereBetween('Date', [$start, $end])
+                    ->whereIn('NewBuild', ['Y','N'])
+                    ->groupBy('NewBuild')
+                    ->get()
+                    ->map(fn ($row) => (object) [
+                        'year' => $endMonth->year,
+                        'nb' => $row->nb,
+                        'total' => (int) $row->total,
+                    ]);
+            })->values(),
+        ];
     });
+    $nbRows = collect($nbPayload['data'] ?? $nbPayload);
 
     $nbByYear = collect($nbRows)->groupBy('year')->map(function ($rows) {
         $out = ['Y' => 0, 'N' => 0];
@@ -357,17 +465,30 @@
         return $tot > 0 ? round(($old / $tot) * 100, 2) : 0;
     });
 
-// === Leasehold vs freehold split (England & Wales, Cat A) ===
-// Prefer warmed cache; fallback to live query if missing.
-$durRows = \Illuminate\Support\Facades\Cache::remember('ew:durationSplitByYear:catA:v1', $homeCacheTtl, function () use ($ewYearExpr) {
-    return DB::table('land_registry')
-        ->selectRaw("{$ewYearExpr} as year, \"Duration\" as dur, COUNT(*) as total")
-        ->where('PPDCategoryType', 'A')
-        ->whereIn('Duration', ['F','L'])
-        ->groupByRaw($ewYearExpr . ', "Duration"')
-        ->orderBy('year')
-        ->get();
+$durPayload = \Illuminate\Support\Facades\Cache::remember("{$rollingCachePrefix}:durationSplit", $homeCacheTtl, function () use ($annualRollingEndMonths) {
+    $data = $annualRollingEndMonths()->flatMap(function ($endMonth) {
+        $start = $endMonth->copy()->subMonths(11)->startOfMonth();
+        $end = $endMonth->copy()->endOfMonth();
+
+        return DB::table('land_registry')
+            ->selectRaw('"Duration" as dur, COUNT(*) as total')
+            ->where('PPDCategoryType', 'A')
+            ->whereBetween('Date', [$start, $end])
+            ->whereIn('Duration', ['F','L'])
+            ->groupBy('Duration')
+            ->get()
+            ->map(fn ($row) => (object) [
+                'year' => $endMonth->year,
+                'dur' => $row->dur,
+                'total' => (int) $row->total,
+            ]);
+    })->values();
+
+    return [
+        'data' => $data,
+    ];
 });
+$durRows = collect($durPayload['data'] ?? []);
 
 $durByYear = collect($durRows)->groupBy('year')->map(function ($rows) {
     $out = ['F' => 0, 'L' => 0];
@@ -405,43 +526,30 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
     const salesMinVal   = {!! json_encode($salesMinVal) !!};
     const topSaleMinVal = {!! json_encode($topSaleMinVal) !!};
     const p90BlockMinVal = {!! json_encode($p90BlockMinVal) !!};
-    const salesYearTitle = buildYearRangeTitle({!! json_encode($salesByYear->pluck('year')) !!});
-    const avgPriceYearTitle = buildYearRangeTitle({!! json_encode($avgPriceByYear->pluck('year')) !!});
+    const rollingPeriodTitle = {!! json_encode($rollingLabel) !!};
+    const isSinglePeriod = {!! json_encode($salesByYear->count() <= 1) !!};
 
     function buildYearLabels(labels) {
         return labels.map((label) => String(label).replace(/,/g, ''));
     }
 
-    function buildYearRangeTitle(labels) {
-        const years = buildYearLabels(labels);
-        const hoverHint = ' (Hover over bars for yearly data)';
-
-        if (! years.length) {
-            return `Years${hoverHint}`;
-        }
-
-        const firstYear = years[0];
-        const lastYear = years[years.length - 1];
-
-        return firstYear === lastYear
-            ? `Year: ${firstYear}${hoverHint}`
-            : `Years: ${firstYear} to ${lastYear}${hoverHint}`;
+    function buildYearRangeTitle() {
+        return rollingPeriodTitle;
     }
 
     function buildYoYYearRangeTitle(labels) {
         const years = buildYearLabels(labels);
-        const hoverHint = ' (Hover over bars for yearly data)';
 
         if (years.length <= 1) {
-            return buildYearRangeTitle(years);
+            return `Rolling 12 month YoY ending ${new Date({!! json_encode($latestMonth->toDateString()) !!}).toLocaleString('en-GB', { month: 'short', year: 'numeric' })}`;
         }
 
         const firstComparableYear = years[1];
         const lastYear = years[years.length - 1];
 
         return firstComparableYear === lastYear
-            ? `YoY available: ${firstComparableYear}${hoverHint}`
-            : `YoY available: ${firstComparableYear} to ${lastYear}${hoverHint}`;
+            ? `Rolling 12 month YoY: ${firstComparableYear}`
+            : `Rolling 12 month YoY: ${firstComparableYear} to ${lastYear}`;
     }
 
     function buildCategoryYearTickCallback(labels) {
@@ -477,19 +585,20 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
         data: {
             labels: {!! json_encode($salesByYear->pluck('year')) !!},
             datasets: [{
-                label: 'Number of Sales per Year across England & Wales',
+                label: 'Sales across England & Wales',
                 data: {!! json_encode($salesByYear->pluck('total')) !!},
                 borderColor: 'rgb(54, 162, 235)',
                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 tension: 0.1,
+                showLine: !isSinglePeriod,
                 pointBackgroundColor: function(ctx) {
                     const index = ctx.dataIndex;
                     const data = ctx.dataset.data;
                     if (index === 0) return 'rgb(54, 162, 235)';
                     return data[index] < data[index-1] ? 'red' : 'rgb(54, 162, 235)';
                 },
-                pointRadius: 3,
-                pointHoverRadius: 5
+                pointRadius: isSinglePeriod ? 8 : 3,
+                pointHoverRadius: isSinglePeriod ? 10 : 5
             }]
         },
         options: {
@@ -501,7 +610,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     offset: false,
                     title: {
                         display: true,
-                        text: salesYearTitle
+                        text: rollingPeriodTitle
                     },
                     ticks: {
                         display: false,
@@ -541,8 +650,8 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     borderColor: 'rgb(255, 99, 132)',
                     backgroundColor: 'rgba(255, 99, 132, 0.8)',
                     showLine: false,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
+                    pointRadius: isSinglePeriod ? 8 : 4,
+                    pointHoverRadius: isSinglePeriod ? 10 : 6,
                     pointStyle: 'circle'
                 }
             ]
@@ -557,7 +666,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     callbacks: {
                         // Show the year as the primary label
                         label: function(context) {
-                            return 'Year ' + context.parsed.x;
+                            return rollingPeriodTitle;
                         },
                         afterBody: function(items) {
                             if (!items.length) return [];
@@ -587,12 +696,12 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
             scales: {
                 x: {
                     type: 'linear',
-                    min: Math.min(...scatterYears),
-                    max: Math.max(...scatterYears),
+                    min: isSinglePeriod ? scatterYears[0] - 1 : Math.min(...scatterYears),
+                    max: isSinglePeriod ? scatterYears[0] + 1 : Math.max(...scatterYears),
                     offset: false,
                     title: {
                         display: true,
-                        text: avgPriceYearTitle
+                        text: rollingPeriodTitle
                     },
                     ticks: {
                         display: false,
@@ -624,8 +733,9 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     borderColor: 'rgb(54, 162, 235)',
                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
                     tension: 0.1,
-                    pointRadius: 3,
-                    pointHoverRadius: 4
+                    showLine: !isSinglePeriod,
+                    pointRadius: isSinglePeriod ? 8 : 3,
+                    pointHoverRadius: isSinglePeriod ? 10 : 4
                 },
                 {
                     label: '90th Percentile',
@@ -634,8 +744,9 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     backgroundColor: 'rgba(75, 192, 192, 0.15)',
                     borderDash: [6,1],
                     tension: 0.1,
-                    pointRadius: 4,
-                    pointHoverRadius: 5
+                    showLine: !isSinglePeriod,
+                    pointRadius: isSinglePeriod ? 8 : 4,
+                    pointHoverRadius: isSinglePeriod ? 10 : 5
                 },
                 {
                     label: 'Top 5% Average',
@@ -643,8 +754,9 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     borderColor: 'rgb(255, 159, 64)',
                     backgroundColor: 'rgba(255, 159, 64, 0.15)',
                     tension: 0.1,
-                    pointRadius: 3,
-                    pointHoverRadius: 5
+                    showLine: !isSinglePeriod,
+                    pointRadius: isSinglePeriod ? 8 : 3,
+                    pointHoverRadius: isSinglePeriod ? 10 : 5
                 }
             ]
         },
@@ -658,7 +770,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     offset: false,
                     title: {
                         display: true,
-                        text: avgPriceYearTitle
+                        text: rollingPeriodTitle
                     },
                     ticks: { 
                         display: false,

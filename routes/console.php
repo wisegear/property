@@ -2,14 +2,19 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
+
+if (! app()->environment('testing')) {
+    Artisan::command('test', function () {
+        throw new RuntimeException(
+            'Tests can only run in testing environment.'
+        );
+    });
+}
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
-
 
 // Sitemap
 Schedule::command('sitemap:generate')->dailyAt('01:10');
