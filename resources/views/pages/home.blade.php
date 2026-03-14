@@ -136,6 +136,11 @@
 
     </section>
 
+    {{-- Property Stress Index --}}
+    <div class="mt-8">
+        @include('partials.stress-score-panel', ['totalStress' => $totalStress ?? null, 'isSticky' => false, 'showDashboardLink' => true])
+    </div>
+
     <section class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         {{-- Quick postcode search --}}
         <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
@@ -185,11 +190,6 @@
             </div>
         </a>
     </section>
-
-    {{-- Property Stress Index --}}
-    <div class="mt-8">
-        @include('partials.stress-score-panel', ['totalStress' => $totalStress ?? null, 'isSticky' => false, 'showDashboardLink' => true])
-    </div>
 
     {{-- Explore panels --}}
     <section class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

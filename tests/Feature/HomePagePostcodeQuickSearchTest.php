@@ -6,7 +6,7 @@ use Tests\TestCase;
 
 class HomePagePostcodeQuickSearchTest extends TestCase
 {
-    public function test_home_page_shows_quick_postcode_search_form_above_market_stress_panel(): void
+    public function test_home_page_shows_market_stress_panel_above_quick_postcode_search_form(): void
     {
         $view = $this->view('pages.home', [
             'posts' => collect(),
@@ -33,6 +33,6 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('md:grid-cols-2 lg:grid-cols-3', false);
         $view->assertSee('flex h-full flex-col', false);
         $view->assertSee('mt-auto inline-flex items-center pt-4', false);
-        $view->assertSeeInOrder(['Quick postcode search', 'Market Stress Score guide']);
+        $view->assertSeeInOrder(['Market Stress Score guide', 'Quick postcode search', 'Market Insights']);
     }
 }
