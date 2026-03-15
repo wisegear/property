@@ -175,10 +175,7 @@
             <div class="flex h-full flex-col">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <div class="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-zinc-600">
-                            Market Insights
-                        </div>
-                        <h2 class="mt-3 text-lg font-semibold text-zinc-900">Signals worth watching</h2>
+                        <h2 class="text-lg font-semibold text-zinc-900">Signals worth watching</h2>
                     </div>
 
                     <div class="flex flex-wrap justify-end gap-2 text-[11px] font-semibold tracking-wide">
