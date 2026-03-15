@@ -245,6 +245,44 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// Insights dropdown toggle functionality (desktop)
+document.addEventListener('DOMContentLoaded', () => {
+  const insightsBtn = document.getElementById('insightsMenuButton');
+  const insightsMenu = document.getElementById('insightsDropdown');
+
+  if (!insightsBtn || !insightsMenu) return;
+
+  window._registerDropdownPair(insightsBtn, insightsMenu);
+
+  const openMenu = () => {
+    window._closeAllDropdownsExcept(insightsMenu);
+    window._animateOpen(insightsMenu);
+    insightsBtn.setAttribute('aria-expanded', 'true');
+  };
+
+  const closeMenu = () => {
+    window._animateClose(insightsMenu, () => {});
+    insightsBtn.setAttribute('aria-expanded', 'false');
+  };
+
+  insightsBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const isHidden = insightsMenu.classList.contains('hidden');
+    isHidden ? openMenu() : closeMenu();
+  });
+
+  document.addEventListener('click', (e) => {
+    const open = !insightsMenu.classList.contains('hidden');
+    if (!open) return;
+    if (!insightsMenu.contains(e.target) && !insightsBtn.contains(e.target)) closeMenu();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMenu();
+  });
+});
+
 // Economic Indicators dropdown toggle functionality (desktop)
 document.addEventListener('DOMContentLoaded', () => {
   const ecoBtn  = document.getElementById('economicsMenuButton');
@@ -348,6 +386,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (willOpen) { window._closeAllDropdownsExcept(propMenu); window._animateOpen(propMenu); }
       else { window._animateClose(propMenu); }
       propBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+  }
+
+  // Mobile insights submenu toggle
+  const insightsMobileBtn = document.getElementById('mobileInsightsBtn');
+  const insightsMobileMenu = document.getElementById('mobileInsightsMenu');
+
+  if (insightsMobileBtn && insightsMobileMenu) {
+    window._registerDropdownPair(insightsMobileBtn, insightsMobileMenu);
+    insightsMobileBtn.addEventListener('click', () => {
+      const willOpen = insightsMobileMenu.classList.contains('hidden');
+      if (willOpen) { window._closeAllDropdownsExcept(insightsMobileMenu); window._animateOpen(insightsMobileMenu); }
+      else { window._animateClose(insightsMobileMenu); }
+      insightsMobileBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
     });
   }
 

@@ -16,6 +16,7 @@ use App\Http\Controllers\EpcPostcodeController;
 use App\Http\Controllers\HpiDashboardController;
 use App\Http\Controllers\InsightController;
 use App\Http\Controllers\InsightsController;
+use App\Http\Controllers\InsightsDashboardController;
 use App\Http\Controllers\InterestRateController;
 use App\Http\Controllers\LocalAuthorityController;
 use App\Http\Controllers\MlarArrearsController;
@@ -94,6 +95,7 @@ Route::get('/repossessions', [RepossessionsController::class, 'index'])->name('r
 Route::get('/arrears', [MlarArrearsController::class, 'index'])->name('arrears.index');
 Route::get('/insights', [InsightsController::class, 'index'])->name('insights.index');
 Route::get('/insights/search', [InsightsController::class, 'search'])->name('insights.search');
+Route::get('/insights/dashboard', [InsightsDashboardController::class, 'index'])->name('insights.dashboard');
 Route::get('/insights/{sector}', [InsightController::class, 'show'])
     ->where('sector', '[A-Za-z0-9]+')
     ->name('insights.show');

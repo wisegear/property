@@ -226,12 +226,119 @@
                         Home
                     </a>
                     
-                    <!-- Blog Link -->
-                    <a href="{{ url('/blog') }}" 
-                       class="px-3 py-2 rounded {{ request()->is('blog') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
-                        Blog
-                    </a>
-                    
+                    <!-- Stress Indicators Dropdown Menu -->
+                    <div class="relative">
+                        <button id="economicsMenuButton" 
+                                aria-haspopup="true" 
+                                aria-controls="economicsDropdown" 
+                                aria-expanded="false" 
+                                class="px-3 py-2 rounded flex items-center gap-1 text-zinc-700 hover:text-lime-600 focus:outline-none cursor-pointer">
+                            Stress Indicators
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        
+                        <!-- Economics Dropdown Content (2 columns) -->
+                        <div id="economicsDropdown" 
+                             role="menu" 
+                             aria-labelledby="economicsMenuButton" 
+                             class="absolute left-0 mt-4 w-[32rem] bg-white border border-zinc-200 rounded shadow-lg z-50 transform transition duration-150 ease-out origin-top opacity-0 scale-95 pointer-events-none hidden">
+                            <div class="flex">
+                                <!-- Left Column -->
+                                <div class="py-2 flex-1">
+                                    <a href="{{ url('/economic-dashboard') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 font-semibold hover:bg-zinc-100 text-zinc-800">
+                                        Stress Indicators Dashboard
+                                    </a>
+                                    <a href="{{ url('/interest-rates') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Interest Rates
+                                    </a>
+                                    <a href="{{ url('/inflation') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Inflation (CPIH)
+                                    </a>
+                                    <a href="{{ url('/wage-growth') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Wage Growth
+                                    </a>
+                                </div>
+
+                                <!-- Vertical Divider -->
+                                <div class="w-px bg-zinc-200 my-2"></div>
+
+                                <!-- Right Column -->
+                                <div class="py-2 flex-1">
+                                    <a href="{{ url('/hpi-overview') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        House Price Index (HPI)
+                                    </a>
+                                    <a href="{{ url('/unemployment') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Unemployment
+                                    </a>
+                                    <a href="{{ url('/approvals') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Mortgage Approvals
+                                    </a>
+                                    <a href="{{ url('/arrears') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Mortgage Arrears (MLAR)
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Insights Dropdown Menu -->
+                    <div class="relative">
+                        <button id="insightsMenuButton"
+                                aria-haspopup="true"
+                                aria-controls="insightsDropdown"
+                                aria-expanded="false"
+                                class="px-3 py-2 rounded flex items-center gap-1 {{ request()->routeIs('insights.dashboard') || request()->routeIs('insights.index') || request()->routeIs('insights.search') || request()->routeIs('insights.show') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }} focus:outline-none cursor-pointer">
+                            Insights
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+
+                        <div id="insightsDropdown"
+                             role="menu"
+                             aria-labelledby="insightsMenuButton"
+                             class="absolute left-0 mt-4 w-56 bg-white border border-zinc-200 rounded shadow-lg z-50 transform transition duration-150 ease-out origin-top opacity-0 scale-95 pointer-events-none hidden">
+                            <a href="{{ route('insights.dashboard') }}"
+                               role="menuitem"
+                               tabindex="-1"
+                               class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 {{ request()->routeIs('insights.dashboard') ? 'font-semibold' : '' }}">
+                                Dashboard
+                            </a>
+                            <a href="{{ route('insights.index') }}"
+                               role="menuitem"
+                               tabindex="-1"
+                               class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 {{ request()->routeIs('insights.index') || request()->routeIs('insights.search') || request()->routeIs('insights.show') ? 'font-semibold' : '' }}">
+                                Granular Insights
+                            </a>
+                        </div>
+                    </div>
+
                     <!-- Property Dropdown Menu -->
                     <div class="relative">
                         <button id="propertyMenuButton" 
@@ -313,12 +420,6 @@
                         </div>
                     </div>
 
-                    <!-- Insights Link -->
-                    <a href="{{ url('/insights') }}"
-                       class="px-3 py-2 rounded {{ request()->is('insights') || request()->is('insights/search') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
-                        Insights
-                    </a>
-
                     <!-- Social Housing Dropdown Menu -->
                     <div class="relative">
                         <button id="socialHousingMenuButton"
@@ -356,6 +457,18 @@
                        class="px-3 py-2 rounded {{ request()->is('rental') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
                         Rental
                     </a>
+                    
+                    <!-- Repossessions Link -->
+                    <a href="{{ url('/repossessions') }}" 
+                       class="px-3 py-2 rounded {{ request()->is('repossessions') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
+                        Repossessions
+                    </a>
+                    
+                    <!-- Deprivation Link -->
+                    <a href="{{ url('/deprivation') }}" 
+                       class="px-3 py-2 rounded {{ request()->is('deprivation') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
+                        Deprivation
+                    </a>
 
                     <!-- Calculators Dropdown Menu -->
                     <div class="relative">
@@ -389,99 +502,12 @@
                             </a>
                         </div>
                     </div>
-                    
-                    <!-- Repossessions Link -->
-                    <a href="{{ url('/repossessions') }}" 
-                       class="px-3 py-2 rounded {{ request()->is('repossessions') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
-                        Repossessions
-                    </a>
-                    
-                    <!-- Deprivation Link -->
-                    <a href="{{ url('/deprivation') }}" 
-                       class="px-3 py-2 rounded {{ request()->is('deprivation') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
-                        Deprivation
-                    </a>
-                    
-                    <!-- Market Stress Indicators Dropdown Menu -->
-                    <div class="relative">
-                        <button id="economicsMenuButton" 
-                                aria-haspopup="true" 
-                                aria-controls="economicsDropdown" 
-                                aria-expanded="false" 
-                                class="px-3 py-2 rounded flex items-center gap-1 text-zinc-700 hover:text-lime-600 focus:outline-none cursor-pointer">
-                            Market Stress Indicators
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        
-                        <!-- Economics Dropdown Content (2 columns) -->
-                        <div id="economicsDropdown" 
-                             role="menu" 
-                             aria-labelledby="economicsMenuButton" 
-                             class="absolute left-0 mt-4 w-[32rem] bg-white border border-zinc-200 rounded shadow-lg z-50 transform transition duration-150 ease-out origin-top opacity-0 scale-95 pointer-events-none hidden">
-                            <div class="flex">
-                                <!-- Left Column -->
-                                <div class="py-2 flex-1">
-                                    <a href="{{ url('/economic-dashboard') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 font-semibold hover:bg-zinc-100 text-zinc-800">
-                                        Market Stress Dashboard
-                                    </a>
-                                    <a href="{{ url('/interest-rates') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        Interest Rates
-                                    </a>
-                                    <a href="{{ url('/inflation') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        Inflation (CPIH)
-                                    </a>
-                                    <a href="{{ url('/wage-growth') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        Wage Growth
-                                    </a>
-                                </div>
 
-                                <!-- Vertical Divider -->
-                                <div class="w-px bg-zinc-200 my-2"></div>
-
-                                <!-- Right Column -->
-                                <div class="py-2 flex-1">
-                                    <a href="{{ url('/hpi-overview') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        House Price Index (HPI)
-                                    </a>
-                                    <a href="{{ url('/unemployment') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        Unemployment
-                                    </a>
-                                    <a href="{{ url('/approvals') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        Mortgage Approvals
-                                    </a>
-                                    <a href="{{ url('/arrears') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        Mortgage Arrears (MLAR)
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Blog Link -->
+                    <a href="{{ url('/blog') }}" 
+                       class="px-3 py-2 rounded {{ request()->is('blog') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
+                        Blog
+                    </a>
                     
                     <!-- About Link -->
                     <a href="{{ url('/about') }}" 
@@ -530,11 +556,75 @@
                     Home
                 </a>
                 
-                <!-- Blog Link -->
-                <a href="{{ url('/blog') }}" 
-                   class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                    Blog
-                </a>
+                <!-- Stress Indicators Dropdown (Mobile) -->
+                <div>
+                    <button id="mobileIndicatorsBtn" 
+                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none">
+                        Stress Indicators
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    
+                    <!-- Stress Indicators Submenu Items -->
+                    <div id="mobileIndicatorsMenu" class="hidden flex-col pl-2 space-y-1 mt-1">
+                        <a href="{{ url('/economic-dashboard') }}" 
+                           class="block px-3 py-2 rounded font-semibold text-zinc-800 hover:bg-zinc-100">
+                            Stress Indicators Dashboard
+                        </a>
+                        <div class="border-t border-zinc-100 my-1"></div>
+                        <a href="{{ url('/interest-rates') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Interest Rates
+                        </a>
+                        <a href="{{ url('/inflation') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Inflation (CPIH)
+                        </a>
+                        <a href="{{ url('/wage-growth') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Wage Growth
+                        </a>
+                        <a href="{{ url('/hpi-overview') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            House Price Index (HPI)
+                        </a>
+                        <a href="{{ url('/unemployment') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Unemployment
+                        </a>
+                        <a href="{{ url('/approvals') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Mortgage Approvals
+                        </a>
+                        <a href="{{ url('/arrears') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Mortgage Arrears (MLAR)
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Insights Dropdown (Mobile) -->
+                <div>
+                    <button id="mobileInsightsBtn"
+                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none">
+                        Insights
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <div id="mobileInsightsMenu" class="hidden flex-col pl-2 space-y-1 mt-1">
+                        <a href="{{ route('insights.dashboard') }}"
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 {{ request()->routeIs('insights.dashboard') ? 'font-semibold' : '' }}">
+                            Dashboard
+                        </a>
+                        <a href="{{ route('insights.index') }}"
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 {{ request()->routeIs('insights.index') || request()->routeIs('insights.search') || request()->routeIs('insights.show') ? 'font-semibold' : '' }}">
+                            Granular Insights
+                        </a>
+                    </div>
+                </div>
 
                 <!-- Property Dropdown (Mobile) -->
                 <div>
@@ -583,12 +673,6 @@
                     </div>
                 </div>
 
-                <!-- Insights Link -->
-                <a href="{{ url('/insights') }}"
-                   class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                    Insights
-                </a>
-
                 <!-- Social Housing Dropdown (Mobile) -->
                 <div>
                     <button id="mobileSocialHousingBtn"
@@ -616,6 +700,18 @@
                    class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
                     Rental
                 </a>
+                
+                <!-- Repossessions Link -->
+                <a href="{{ url('/repossessions') }}" 
+                   class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                    Repossessions
+                </a>
+                
+                <!-- Deprivation Link -->
+                <a href="{{ url('/deprivation') }}" 
+                   class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                    Deprivation
+                </a>
 
                 <!-- Calculators Dropdown (Mobile) -->
                 <div>
@@ -639,66 +735,12 @@
                         </a>
                     </div>
                 </div>
-                
-                <!-- Repossessions Link -->
-                <a href="{{ url('/repossessions') }}" 
+
+                <!-- Blog Link -->
+                <a href="{{ url('/blog') }}" 
                    class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                    Repossessions
+                    Blog
                 </a>
-                
-                <!-- Deprivation Link -->
-                <a href="{{ url('/deprivation') }}" 
-                   class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                    Deprivation
-                </a>
-                
-                <!-- Market Stress Indicators Dropdown (Mobile) -->
-                <div>
-                    <button id="mobileIndicatorsBtn" 
-                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none">
-                        Market Stress Indicators
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-                    
-                    <!-- Market Stress Indicators Submenu Items -->
-                    <div id="mobileIndicatorsMenu" class="hidden flex-col pl-2 space-y-1 mt-1">
-                        <a href="{{ url('/economic-dashboard') }}" 
-                           class="block px-3 py-2 rounded font-semibold text-zinc-800 hover:bg-zinc-100">
-                            Market Stress Dashboard
-                        </a>
-                        <div class="border-t border-zinc-100 my-1"></div>
-                        <a href="{{ url('/interest-rates') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Interest Rates
-                        </a>
-                        <a href="{{ url('/inflation') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Inflation (CPIH)
-                        </a>
-                        <a href="{{ url('/wage-growth') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Wage Growth
-                        </a>
-                        <a href="{{ url('/hpi-overview') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            House Price Index (HPI)
-                        </a>
-                        <a href="{{ url('/unemployment') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Unemployment
-                        </a>
-                        <a href="{{ url('/approvals') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Mortgage Approvals
-                        </a>
-                        <a href="{{ url('/arrears') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Mortgage Arrears (MLAR)
-                        </a>
-                    </div>
-                </div>
                 
                 <!-- About Link -->
                 <a href="{{ url('/about') }}" 

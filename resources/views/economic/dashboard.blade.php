@@ -152,7 +152,7 @@
         <div class="flex flex-col md:flex-row justify-between items-center">
             <div class="max-w-4xl">
                 <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900">
-                    Market Stress Dashboard
+                    Stress Indicators Dashboard
                 </h1>
                 <p class="text-sm text-zinc-700 mt-2">
                     Overview of key UK economic indicators that influence the housing market: borrowing costs, affordability,

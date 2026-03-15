@@ -52,7 +52,7 @@
                     <div class="mt-3 flex justify-center">
                         <a href="/economic-dashboard"
                            class="inline-flex items-center gap-2 rounded-md border border-lime-600 px-3 py-1.5 text-xs font-semibold text-lime-700 transition hover:bg-lime-50">
-                            View stress dashboard
+                            View stress indicators
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-3.5 w-3.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                             </svg>
@@ -112,7 +112,7 @@
 
             {{-- Right: Score explanation --}}
             <div class="flex flex-col items-center text-right md:col-span-1">
-                <div class="text-sm uppercase text-center tracking-wide text-gray-700 font-semibold mb-2">Market Stress Score guide</div>
+                <div class="text-sm uppercase text-center tracking-wide text-gray-700 font-semibold mb-2">Stress Indicators Guide</div>
                 <p class="text-xs text-center text-gray-600">
                     The score rolls up eight indicators into a 0–100 index. Under 40 is low stress,
                     40–69 signals elevated risk, and 70+ points to high stress. Use it to compare
