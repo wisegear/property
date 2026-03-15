@@ -171,15 +171,35 @@
         </div>
 
         <a href="{{ route('insights.index') }}"
-           class="group rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+           class="group rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:border-zinc-300 hover:shadow-md">
             <div class="flex h-full flex-col">
-                <div>
-                    <h2 class="mt-2 text-lg font-semibold text-zinc-900">Market Insights (New)</h2>
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <div class="inline-flex items-center rounded-full border border-lime-200 bg-white/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-lime-700 shadow-sm">
+                            Market Insights
+                        </div>
+                        <h2 class="mt-3 text-lg font-semibold text-zinc-900">Signals worth watching</h2>
+                    </div>
+
+                    <div class="flex flex-wrap justify-end gap-2 text-[11px] font-semibold tracking-wide">
+                        <span class="inline-flex items-center rounded-full border border-lime-300 bg-lime-100 px-2.5 py-1 text-lime-800">
+                            {{ number_format($marketInsightsCount ?? 0) }} live
+                        </span>
+                        <span class="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-sky-700">
+                            {{ $marketInsightSignalCount ?? 9 }} signal types
+                        </span>
+                    </div>
                 </div>
 
                 <p class="mt-3 text-sm leading-6 text-zinc-600">
-                    Browse price signals, market activity shifts, and longer-term trend signals generated from rolling 12-month Land Registry windows, with postcode sector detail pages and historical sales and price context for each insight.
+                    Browse price signals, market activity shifts, and longer-term trend signals from rolling 12-month Land Registry windows, with postcode sector pages and historical sales context behind each insight.
                 </p>
+
+                @if (! empty($marketInsightsLastRunAt))
+                    <p class="mt-2 text-xs font-medium text-zinc-500">
+                        Updated {{ $marketInsightsLastRunAt->timezone(config('app.timezone'))->format('d M Y') }}
+                    </p>
+                @endif
 
                 <div class="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-medium text-lime-700 group-hover:underline">
                     Open Insights

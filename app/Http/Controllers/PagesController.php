@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Cache;
 use App\Models\BlogPosts;
+use App\Models\MarketInsight;
+use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * PagesController
@@ -14,8 +18,7 @@ use App\Models\BlogPosts;
  */
 class PagesController extends Controller
 {
-
-    public function home()
+    public function home(): View
     {
         // Get the 4 most recent blog posts
         $posts = BlogPosts::where('published', true)->orderBy('date', 'desc')->take(4)->get();
@@ -35,15 +38,42 @@ class PagesController extends Controller
             $totalStress = Cache::get('eco:total_stress_persist');
         }
 
-        return view('pages.home', compact('posts', 'stats', 'totalStress'));
+        return view('pages.home', [
+            'posts' => $posts,
+            'stats' => $stats,
+            'totalStress' => $totalStress,
+            ...$this->marketInsightsSummary(),
+        ]);
     }
 
     /**
      * Static About page.
      */
-    public function about()
+    public function about(): View
     {
         return view('pages.about');
     }
 
+    /**
+     * @return array{marketInsightsCount:int, marketInsightsLastRunAt:?Carbon, marketInsightSignalCount:int}
+     */
+    private function marketInsightsSummary(): array
+    {
+        if (! Schema::hasTable('market_insights')) {
+            return [
+                'marketInsightsCount' => 0,
+                'marketInsightsLastRunAt' => null,
+                'marketInsightSignalCount' => 9,
+            ];
+        }
+
+        $marketInsightsCount = MarketInsight::query()->count();
+        $marketInsightsLastRunAt = MarketInsight::query()->max('created_at');
+
+        return [
+            'marketInsightsCount' => $marketInsightsCount,
+            'marketInsightsLastRunAt' => $marketInsightsLastRunAt === null ? null : Carbon::parse($marketInsightsLastRunAt),
+            'marketInsightSignalCount' => 9,
+        ];
+    }
 }
