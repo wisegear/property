@@ -175,17 +175,22 @@
             <div class="flex h-full flex-col">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <div class="inline-flex items-center rounded-full border border-lime-200 bg-white/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-lime-700 shadow-sm">
+                        <div class="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-zinc-600">
                             Market Insights
                         </div>
                         <h2 class="mt-3 text-lg font-semibold text-zinc-900">Signals worth watching</h2>
                     </div>
 
                     <div class="flex flex-wrap justify-end gap-2 text-[11px] font-semibold tracking-wide">
-                        <span class="inline-flex items-center rounded-full border border-lime-300 bg-lime-100 px-2.5 py-1 text-lime-800">
+                        @if (! empty($marketInsightsLastRunAt))
+                            <span class="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-zinc-600">
+                                Updated {{ $marketInsightsLastRunAt->timezone(config('app.timezone'))->format('d M Y') }}
+                            </span>
+                        @endif
+                        <span class="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-zinc-700">
                             {{ number_format($marketInsightsCount ?? 0) }} live
                         </span>
-                        <span class="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-sky-700">
+                        <span class="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-zinc-700">
                             {{ $marketInsightSignalCount ?? 9 }} signal types
                         </span>
                     </div>
@@ -194,12 +199,6 @@
                 <p class="mt-3 text-sm leading-6 text-zinc-600">
                     Browse price signals, market activity shifts, and longer-term trend signals from rolling 12-month Land Registry windows, with postcode sector pages and historical sales context behind each insight.
                 </p>
-
-                @if (! empty($marketInsightsLastRunAt))
-                    <p class="mt-2 text-xs font-medium text-zinc-500">
-                        Updated {{ $marketInsightsLastRunAt->timezone(config('app.timezone'))->format('d M Y') }}
-                    </p>
-                @endif
 
                 <div class="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-medium text-lime-700 group-hover:underline">
                     Open Insights
