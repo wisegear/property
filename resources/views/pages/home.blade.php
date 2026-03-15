@@ -141,8 +141,100 @@
         @include('partials.stress-score-panel', ['totalStress' => $totalStress ?? null, 'isSticky' => false, 'showDashboardLink' => true])
     </div>
 
-    <section class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {{-- Quick postcode search --}}
+    <section class="mt-6">
+        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div class="flex h-full flex-col gap-4">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-semibold text-zinc-900">Latest Market Movements <span class="text-xs font-normal text-zinc-500">(Last 2 quarters)</span></h2>
+                        <p class="mt-1 text-sm text-zinc-600">
+                            The latest Land Registry window indicates a broad market slowdown, with transaction volumes declining across all counties and only limited price growth remaining.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-1 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    @php
+                        $transactionChange = -34.1;
+                        $transactionDirection = $transactionChange < 0 ? 'negative' : ($transactionChange > 0 ? 'positive' : 'neutral');
+                        $transactionValueClasses = match ($transactionDirection) {
+                            'negative' => 'text-red-600',
+                            'positive' => 'text-green-600',
+                            default => 'text-gray-600',
+                        };
+                        $transactionArrow = match ($transactionDirection) {
+                            'negative' => '▼ ',
+                            'positive' => '▲ ',
+                            default => '',
+                        };
+                    @endphp
+                    <div @class([
+                        'rounded-lg border border-zinc-200 bg-zinc-50 p-4',
+                    ])>
+                        <p class="text-sm font-semibold text-zinc-800">Change in Transactions</p>
+                        <p @class([
+                            'mt-2 text-lg font-semibold',
+                            $transactionValueClasses,
+                        ])>{{ $transactionArrow }}{{ number_format($transactionChange, 1) }}%</p>
+                    </div>
+                    <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                        <p class="text-sm font-semibold text-zinc-800">Median Price % Change</p>
+                        <p class="mt-2 text-lg font-semibold text-red-600">▼ -0.2%</p>
+                    </div>
+                    <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                        <p class="text-sm font-semibold text-zinc-800">Counties with Rising Prices</p>
+                        <p class="mt-2 text-lg font-semibold text-zinc-900">
+                            <span class="text-green-600">{{ number_format($homepageMarketMovements['rising_price_counties'] ?? 18) }}</span> / {{ number_format($homepageMarketMovements['total_counties'] ?? 112) }}
+                        </p>
+                    </div>
+                    <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                        <p class="text-sm font-semibold text-zinc-800">Counties with Falling Sales</p>
+                        <p class="mt-2 text-lg font-semibold text-zinc-900"><span class="text-red-600">112</span> / 112</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-x-8 gap-y-2 text-sm text-zinc-700">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-zinc-900">Transaction Volume Change</span>
+                        <span>154,923 vs 102,104</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-zinc-900">Median Price £ Change</span>
+                        <span>£290,693 &rarr; £290,000</span>
+                    </div>
+                </div>
+
+                <div class="">
+                    <div class="flex flex-wrap items-center gap-3 text-sm">
+                        <p class="font-semibold text-zinc-900">Top declining counties:</p>
+                        <div class="flex flex-wrap gap-6">
+                            <div class="flex items-center gap-1">
+                                <span class="text-zinc-700">Torfaen</span>
+                                <span class="font-semibold text-red-600">▼ -47.4%</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-zinc-700">Portsmouth</span>
+                                <span class="font-semibold text-red-600">▼ -46.1%</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-zinc-700">Slough</span>
+                                <span class="font-semibold text-red-600">▼ -44.7%</span>
+                            </div>
+                        </div>
+                        <a href="{{ route('insights.dashboard') }}"
+                           class="inline-flex items-center gap-2 text-sm font-medium text-lime-700 hover:underline sm:ml-auto">
+                            View Insights Dashboard
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex h-full flex-col items-center justify-center gap-4 text-center">
                 <div class="max-w-3xl">
@@ -170,41 +262,35 @@
             </div>
         </div>
 
-        <a href="{{ route('insights.index') }}"
-           class="group rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:border-zinc-300 hover:shadow-md">
-            <div class="flex h-full flex-col">
-                <div class="flex items-start justify-between gap-3">
-                    <div>
+        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div class="flex h-full flex-col gap-4">
+                <div>
+                    <div class="flex flex-wrap items-center justify-between gap-3">
                         <h2 class="text-lg font-semibold text-zinc-900">Signals worth watching</h2>
-                    </div>
-
-                    <div class="flex flex-wrap justify-end gap-2 text-[11px] font-semibold tracking-wide">
-                        @if (! empty($marketInsightsLastRunAt))
-                            <span class="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-sky-700">
-                                Updated {{ $marketInsightsLastRunAt->timezone(config('app.timezone'))->format('d M Y') }}
+                        <div class="flex flex-wrap gap-2 text-[11px] font-semibold tracking-wide">
+                            <span class="inline-flex items-center rounded-full border border-lime-200 bg-lime-50 px-2.5 py-1 text-lime-700">
+                                {{ number_format($marketInsightsCount ?? 0) }} live
                             </span>
-                        @endif
-                        <span class="inline-flex items-center rounded-full border border-lime-200 bg-lime-50 px-2.5 py-1 text-lime-700">
-                            {{ number_format($marketInsightsCount ?? 0) }} live
-                        </span>
-                        <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-700">
-                            {{ $marketInsightSignalCount ?? 9 }} signal types
-                        </span>
+                            <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-700">
+                                {{ $marketInsightSignalCount ?? 9 }} signal types
+                            </span>
+                        </div>
                     </div>
+                    <p class="mt-4 text-sm leading-6 text-zinc-600">
+                        Browse price signals, market activity shifts, and longer-term trend signals from rolling 12-month Land Registry windows, with postcode sector pages and historical sales context behind each insight.
+                    </p>
                 </div>
 
-                <p class="mt-3 text-sm leading-6 text-zinc-600">
-                    Browse price signals, market activity shifts, and longer-term trend signals from rolling 12-month Land Registry windows, with postcode sector pages and historical sales context behind each insight.
-                </p>
-
-                <div class="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-medium text-lime-700 group-hover:underline">
-                    Open Insights
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                    </svg>
+                <div class="inline-flex items-center gap-2 pt-1 text-sm font-medium text-lime-700 group-hover:underline">
+                    <a href="{{ route('insights.index') }}" class="inline-flex items-center gap-2">
+                        Open Insights
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                        </svg>
+                    </a>
                 </div>
             </div>
-        </a>
+        </div>
     </section>
 
     {{-- Explore panels --}}
@@ -229,46 +315,6 @@
             </div>
         </a>
 
-        <a href="{{ Route::has('repossessions.index') ? route('repossessions.index') : url('/repossessions') }}"
-           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">Repossessions Dashboard</h2>
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke-width="1.5"
-                     stroke="currentColor"
-                     class="h-6 w-6 text-zinc-500 group-hover:text-lime-600 transition">
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5m0 9V18A2.25 2.25 0 0 1 18 20.25h-1.5m-9 0H6A2.25 2.25 0 0 1 3.75 18v-1.5M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                </svg>
-            </div>
-            <p class="mt-2 text-sm text-zinc-700">An overview of Claims made across England & Wales, see who is making claims and all of the stages.  Search individual local authorities.</p>
-            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open Repossessions
-            </div>
-        </a>
-
-        <a href="{{ Route::has('mortgages.home') ? route('mortgages.home') : url('/approvals') }}"
-           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">Mortgage Approvals</h2>
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke-width="1.5"
-                     stroke="currentColor"
-                     class="h-6 w-6 text-zinc-500 group-hover:text-lime-600 transition">
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M6.75 2.994v2.25m10.5-2.25v2.25m-14.252 13.5V7.491a2.25 2.25 0 0 1 2.25-2.25h13.5a2.25 2.25 0 0 1 2.25 2.25v11.251m-18 0a2.25 2.25 0 0 0 2.25 2.25h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5a2.25 2.25 0 0 1 2.25-2.25h13.5a2.25 2.25 0 0 1 2.25 2.25v7.5m-6.75-6h2.25m-9 2.25h4.5m.002-2.25h.005v.006H12v-.006Zm-.001 4.5h.006v.006h-.006v-.005Zm-2.25.001h.005v.006H9.75v-.006Zm-2.25 0h.005v.005h-.006v-.005Zm6.75-2.247h.005v.005h-.005v-.005Zm0 2.247h.006v.006h-.006v-.006Zm2.25-2.248h.006V15H16.5v-.005Z" />
-                </svg>
-            </div>
-            <p class="mt-2 text-sm text-zinc-700">Monthly BoE approvals for house purchases, remortgaging and other secured lending.</p>
-            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open Mortgage Approvals
-            </div>
-        </a>
-
         <a href="{{ Route::has('epc.home') ? route('epc.home') : url('/epc') }}"
            class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
@@ -286,26 +332,6 @@
             </div>
             <p class="mt-2 text-sm text-zinc-700">EPC report details for England, Wales and Scotland.  Dashboard contains some information not available from the Land Registry</p>
             <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open EPC Dashboard
-            </div>
-        </a>
-
-        <a href="{{ Route::has('hpi.home') ? route('hpi.home') : url('/hpi') }}"
-           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">House Price Index - HPI</h2>
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke-width="1.5"
-                     stroke="currentColor"
-                     class="h-6 w-6 text-zinc-500 group-hover:text-lime-600 transition">
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3" />
-                </svg>
-            </div>
-            <p class="mt-2 text-sm text-zinc-700">House price index as UK and individual Nation dating back to 1968 for all nations.  See how house prices have evolved over time.</p>
-            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open HPI Dashboard
             </div>
         </a>
 

@@ -11,6 +11,13 @@ class HomePagePostcodeQuickSearchTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+    }
+
     public function test_home_page_shows_market_stress_panel_above_quick_postcode_search_form(): void
     {
         $view = $this->view('pages.home', [
@@ -27,6 +34,10 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'marketInsightsCount' => 128,
             'marketInsightsLastRunAt' => Carbon::create(2026, 3, 15, 8, 30),
             'marketInsightSignalCount' => 9,
+            'homepageMarketMovements' => [
+                'rising_price_counties' => 18,
+                'total_counties' => 112,
+            ],
         ]);
 
         $searchUrl = route('property.search', absolute: false);
@@ -35,23 +46,34 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee($searchUrl, false);
         $view->assertSee('name="postcode"', false);
         $view->assertSee('placeholder="e.g. SW7 5PH"', false);
-        $view->assertSee('Market Insights');
+        $view->assertSee('Latest Market Movements');
+        $view->assertSee('Counties with Falling Sales');
+        $view->assertSee('Counties with Rising Prices');
+        $view->assertSee('text-green-600', false);
+        $view->assertSee('18');
+        $view->assertSee('/ 112');
+        $view->assertSee('border-zinc-200 bg-zinc-50', false);
+        $view->assertSee('▼ -34.1%', false);
+        $view->assertSee('Transaction Volume Change');
+        $view->assertSee('154,923 vs 102,104');
+        $view->assertSee('Median Price £ Change');
+        $view->assertSee('£290,693');
+        $view->assertSee('£290,000');
+        $view->assertSee('Top declining counties');
+        $view->assertSee('Torfaen');
+        $view->assertSee('Portsmouth');
+        $view->assertSee('Slough');
         $view->assertSee('Signals worth watching');
         $view->assertSee('128 live');
         $view->assertSee('9 signal types');
-        $view->assertSee('Updated 15 Mar 2026');
         $view->assertSee('Open Insights');
-        $view->assertSee('lg:grid-cols-2', false);
         $view->assertSee('md:grid-cols-2 lg:grid-cols-3', false);
         $view->assertSee('flex h-full flex-col', false);
-        $view->assertSee('mt-auto inline-flex items-center pt-4', false);
-        $view->assertSeeInOrder(['Market Stress Score guide', 'Quick postcode search', 'Market Insights']);
+        $view->assertSeeInOrder(['Latest Market Movements', 'Quick postcode search', 'Signals worth watching']);
     }
 
     public function test_home_page_displays_market_insight_count_and_latest_update_from_database(): void
     {
-        config()->set('app.key', 'base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=');
-
         MarketInsight::query()->create([
             'area_type' => 'postcode_sector',
             'area_code' => 'NW8',
@@ -85,6 +107,5 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response->assertOk();
         $response->assertSee('2 live');
         $response->assertSee('9 signal types');
-        $response->assertSee('Updated 15 Mar 2026');
     }
 }
