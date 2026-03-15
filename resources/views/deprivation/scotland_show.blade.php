@@ -12,12 +12,17 @@
 @endphp
 @php
   $dec = (int) ($row->decile ?? 0);
-  $badge = match (true) {
-    $dec >= 8 => 'bg-emerald-100 text-emerald-800 ring-1 ring-inset ring-emerald-200',
-    $dec >= 4 => 'bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-200',
-    $dec >= 1 => 'bg-rose-100 text-rose-800 ring-1 ring-inset ring-rose-200',
-    default   => 'bg-zinc-100 text-zinc-800',
+  $decileBadge = function ($decile) {
+    $value = (int) ($decile ?? 0);
+
+    return match (true) {
+      $value >= 8 => 'bg-emerald-100 text-emerald-800 ring-1 ring-inset ring-emerald-200',
+      $value >= 4 => 'bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-200',
+      $value >= 1 => 'bg-rose-100 text-rose-800 ring-1 ring-inset ring-rose-200',
+      default     => 'bg-zinc-100 text-zinc-800',
+    };
   };
+  $badge = $decileBadge($dec);
 @endphp
 
 <script>
@@ -198,7 +203,7 @@
             @endphp
 
             @if(!is_null($domainDecile))
-              <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $decileBadge($domainDecile) }}">
                 Decile {{ $domainDecile }}
               </span>
             @endif

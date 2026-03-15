@@ -180,14 +180,14 @@
 
                     <div class="flex flex-wrap justify-end gap-2 text-[11px] font-semibold tracking-wide">
                         @if (! empty($marketInsightsLastRunAt))
-                            <span class="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-zinc-600">
+                            <span class="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-sky-700">
                                 Updated {{ $marketInsightsLastRunAt->timezone(config('app.timezone'))->format('d M Y') }}
                             </span>
                         @endif
-                        <span class="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-zinc-700">
+                        <span class="inline-flex items-center rounded-full border border-lime-200 bg-lime-50 px-2.5 py-1 text-lime-700">
                             {{ number_format($marketInsightsCount ?? 0) }} live
                         </span>
-                        <span class="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-zinc-700">
+                        <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-700">
                             {{ $marketInsightSignalCount ?? 9 }} signal types
                         </span>
                     </div>
