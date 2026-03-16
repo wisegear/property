@@ -218,12 +218,12 @@
         </article>
     </section>
 
-    <section class="mt-8 grid gap-6 xl:grid-cols-2">
-        <article class="rounded-xl border border-zinc-200 bg-white shadow-sm">
+    <section class="mt-8 grid items-stretch gap-6 xl:grid-cols-2">
+        <article class="flex h-full flex-col rounded-xl border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 px-6 py-5">
                 <h2 class="text-xl font-semibold text-zinc-900">Top Transaction Growth Counties</h2>
             </div>
-            <div class="overflow-x-auto">
+            <div class="flex-1 overflow-x-auto">
                 <table class="min-w-full divide-y divide-zinc-200">
                     <thead class="bg-zinc-50">
                         <tr>
@@ -249,11 +249,11 @@
             </div>
         </article>
 
-        <article class="rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <article class="flex h-full flex-col rounded-xl border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 px-6 py-5">
                 <h2 class="text-xl font-semibold text-zinc-900">Top Transaction Decline Counties</h2>
             </div>
-            <div class="overflow-x-auto">
+            <div class="flex-1 overflow-x-auto">
                 <table class="min-w-full divide-y divide-zinc-200">
                     <thead class="bg-zinc-50">
                         <tr>
@@ -280,12 +280,12 @@
         </article>
     </section>
 
-    <section class="mt-6 grid gap-6 xl:grid-cols-2">
-        <article class="rounded-xl border border-zinc-200 bg-white shadow-sm">
+    <section class="mt-6 grid items-stretch gap-6 xl:grid-cols-2">
+        <article class="flex h-full flex-col rounded-xl border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 px-6 py-5">
                 <h2 class="text-xl font-semibold text-zinc-900">Top Price Growth Counties</h2>
             </div>
-            <div class="overflow-x-auto">
+            <div class="flex-1 overflow-x-auto">
                 <table class="min-w-full divide-y divide-zinc-200">
                     <thead class="bg-zinc-50">
                         <tr>
@@ -311,11 +311,11 @@
             </div>
         </article>
 
-        <article class="rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <article class="flex h-full flex-col rounded-xl border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 px-6 py-5">
                 <h2 class="text-xl font-semibold text-zinc-900">Top Price Decline Counties</h2>
             </div>
-            <div class="overflow-x-auto">
+            <div class="flex-1 overflow-x-auto">
                 <table class="min-w-full divide-y divide-zinc-200">
                     <thead class="bg-zinc-50">
                         <tr>
@@ -342,26 +342,12 @@
         </article>
     </section>
 
-    <section class="mt-8 grid items-start gap-6 xl:grid-cols-2">
-        <article class="min-w-0 self-start overflow-hidden rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <div class="flex items-start justify-between gap-4">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Property Type Shifts</p>
-                    <h2 class="mt-2 text-xl font-semibold text-zinc-900">Transaction change by property type</h2>
-                </div>
-                <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Quarter comparison</span>
-            </div>
-            <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80 lg:h-96">
-                <canvas id="property-type-chart" class="block h-full w-full max-w-full"></canvas>
-            </div>
-        </article>
-
-        <div class="grid min-w-0 gap-6 self-start">
-            <article class="min-w-0 rounded-xl border border-zinc-200 bg-white shadow-sm">
+    <section class="mt-8 grid items-stretch gap-6 xl:grid-cols-2">
+        <article class="flex min-w-0 h-full flex-col rounded-xl border border-zinc-200 bg-white shadow-sm">
                 <div class="border-b border-zinc-200 px-6 py-5">
                     <h2 class="text-xl font-semibold text-zinc-900">Top 10 emerging hotspots</h2>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="flex-1 overflow-x-auto">
                     <table class="min-w-full divide-y divide-zinc-200">
                         <thead class="bg-zinc-50">
                             <tr>
@@ -383,13 +369,13 @@
                         </tbody>
                     </table>
                 </div>
-            </article>
+        </article>
 
-            <article class="min-w-0 rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <article class="flex min-w-0 h-full flex-col rounded-xl border border-zinc-200 bg-white shadow-sm">
                 <div class="border-b border-zinc-200 px-6 py-5">
                     <h2 class="text-xl font-semibold text-zinc-900">Top 10 cooling markets</h2>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="flex-1 overflow-x-auto">
                     <table class="min-w-full divide-y divide-zinc-200">
                         <thead class="bg-zinc-50">
                             <tr>
@@ -411,8 +397,22 @@
                         </tbody>
                     </table>
                 </div>
-            </article>
-        </div>
+        </article>
+    </section>
+
+    <section class="mt-6">
+        <article class="min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Property Type Shifts</p>
+                    <h2 class="mt-2 text-xl font-semibold text-zinc-900">Transaction change by property type</h2>
+                </div>
+                <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Quarter comparison</span>
+            </div>
+            <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80 lg:h-96">
+                <canvas id="property-type-chart" class="block h-full w-full max-w-full"></canvas>
+            </div>
+        </article>
     </section>
 </div>
 @endsection
