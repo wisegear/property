@@ -48,6 +48,18 @@
         return 'text-zinc-600 bg-zinc-50 border-zinc-200';
     };
 
+    $changeValueClass = function (float $value): string {
+        if ($value > 0) {
+            return 'text-green-600';
+        }
+
+        if ($value < 0) {
+            return 'text-red-600';
+        }
+
+        return 'text-zinc-900';
+    };
+
     $tableHeadingClass = 'px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500 sm:px-4 sm:text-xs sm:tracking-[0.24em]';
     $tableCellClass = 'px-3 py-3 text-sm text-zinc-700 sm:px-4';
 @endphp
@@ -96,7 +108,7 @@
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">{{ $card['title'] }}</p>
-                        <p class="mt-3 text-3xl font-bold text-zinc-900">{{ $card['value'] }}</p>
+                        <p class="mt-3 text-3xl font-bold {{ isset($card['badge']) ? $changeValueClass($card['badge']) : 'text-zinc-900' }}">{{ $card['value'] }}</p>
                         @isset($card['suffix'])
                             <p class="mt-2 text-sm text-zinc-500">{{ $card['suffix'] }}</p>
                         @endisset
@@ -104,11 +116,6 @@
                             <p class="mt-2 text-sm text-zinc-600">{{ $card['context'] }}</p>
                         @endisset
                     </div>
-                    @isset($card['badge'])
-                        <span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $changeClass($card['badge']) }}">
-                            {{ $formatChange($card['badge']) }}
-                        </span>
-                    @endisset
                 </div>
             </article>
         @endforeach
