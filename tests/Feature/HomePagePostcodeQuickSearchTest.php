@@ -139,7 +139,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response->assertSee('Lee Wisener is logged in, probably means he is breaking things, beware :)');
     }
 
-    public function test_home_page_shows_dynamic_top_declining_and_rising_counties(): void
+    public function test_home_page_shows_dynamic_top_declining_sales_and_rising_price_counties(): void
     {
         $this->ensureLandRegistryTable();
 
