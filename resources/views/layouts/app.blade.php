@@ -820,6 +820,16 @@
             </div>
         </nav>
 
+        @auth
+            @if (Auth::id() === 1 && request()->routeIs('home'))
+                <div class="px-4 pt-2 text-center text-sm text-zinc-600">
+                    <div class="mx-auto max-w-7xl font-bold text-rose-700">
+                        Lee Wisener is logged in, probably means he is breaking things, beware :)
+                    </div>
+                </div>
+            @endif
+        @endauth
+
         <!-- ============================================ -->
         <!-- MAIN CONTENT AREA -->
         <!-- This is where page-specific content is injected -->

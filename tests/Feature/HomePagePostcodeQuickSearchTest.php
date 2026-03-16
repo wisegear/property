@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\MarketInsight;
+use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -70,11 +71,11 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('/ 112');
         $view->assertSee('border-zinc-200 bg-zinc-50', false);
         $view->assertSee('▼ -34.1%', false);
-        $view->assertSee('Top declining counties');
+        $view->assertSee('Top Counties with Falling Sales');
         $view->assertSee('Torfaen');
         $view->assertSee('Portsmouth');
         $view->assertSee('Slough');
-        $view->assertSee('Top rising counties');
+        $view->assertSee('Top Counties with Rising Prices');
         $view->assertSee('Rutland');
         $view->assertSee('Merseyside');
         $view->assertSee('Bedfordshire');
@@ -124,6 +125,20 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response->assertSee('9 signal types');
     }
 
+    public function test_home_page_shows_logged_in_banner_for_user_id_one(): void
+    {
+        $user = User::factory()->create([
+            'id' => 1,
+            'name' => 'Lee Wisener',
+            'email' => 'lee@example.com',
+        ]);
+
+        $response = $this->actingAs($user)->get('/');
+
+        $response->assertOk();
+        $response->assertSee('Lee Wisener is logged in, probably means he is breaking things, beware :)');
+    }
+
     public function test_home_page_shows_dynamic_top_declining_and_rising_counties(): void
     {
         $this->ensureLandRegistryTable();
@@ -138,9 +153,9 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response->assertSee('1</span> / 4', false);
         $response->assertSee('3</span> / 4', false);
         $response->assertSeeInOrder([
-            'Top declining counties:',
+            'Top Counties with Falling Sales:',
             'Beta',
-            'Top rising counties:',
+            'Top Counties with Rising Prices:',
             'Alpha',
             'Delta',
             'Gamma',
