@@ -65,7 +65,7 @@
                 </div>
                 <h1 class="mt-4 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">Housing Market Movement Dashboard</h1>
                 <p class="mt-4 max-w-3xl text-sm leading-6 text-zinc-600">
-                    This dashboard highlights the most significant movements in the England &amp; Wales housing market between two recent quarters using Land Registry transaction data.
+                    This dashboard highlights the most significant movements in the England &amp; Wales housing market between two recent quarters using Land Registry transaction data. Counties are used to provide a localised view of market shifts, while national trends and property type movements offer broader context. The insights here are designed to help homeowners, buyers, and industry professionals understand where the market is moving most rapidly and which areas are showing resilience or weakness in the current environment.
                 </p>
                 <div class="mt-5 flex flex-wrap gap-3 text-xs font-medium text-zinc-600">
                     <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1">
