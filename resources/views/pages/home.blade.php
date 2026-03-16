@@ -146,7 +146,7 @@
             <div class="flex h-full flex-col gap-4">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <h2 class="text-lg font-semibold text-zinc-900">Latest Market Movements <span class="text-xs font-normal text-zinc-500">(Last 2 quarters)</span></h2>
+                        <h2 class="text-lg font-semibold text-zinc-900">Latest Market Movements by County <span class="text-xs font-normal text-zinc-500">(Last 2 quarters)</span></h2>
                         <p class="mt-1 text-sm text-zinc-600">
                             The latest Land Registry window indicates a broad market slowdown, with transaction volumes declining across all counties and only limited price growth remaining.
                         </p>
