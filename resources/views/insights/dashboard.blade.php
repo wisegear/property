@@ -20,14 +20,12 @@
             'title' => 'Transaction Volume Change',
             'value' => number_format($summary['sales_change_percent'], 1).'%',
             'badge' => $summary['sales_change_percent'],
-            'sparkline' => $summary['transactions_sparkline'],
             'context' => number_format($summary['benchmark_transactions']).' vs '.number_format($summary['comparison_transactions']),
         ],
         [
             'title' => 'Median Price Change',
             'value' => number_format($summary['median_price_change_percent'], 1).'%',
             'badge' => $summary['median_price_change_percent'],
-            'sparkline' => $summary['price_sparkline'],
             'context' => $currency($summary['benchmark_median_price']).' vs '.$currency($summary['comparison_median_price']),
         ],
     ];
@@ -94,7 +92,7 @@
 
     <section class="mt-8 grid gap-5 md:grid-cols-2">
         @foreach ($metricCards as $index => $card)
-            <article class="min-w-0 overflow-hidden flex h-full min-h-[13rem] flex-col rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <article class="min-w-0 overflow-hidden flex h-full flex-col rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">{{ $card['title'] }}</p>
@@ -111,11 +109,6 @@
                             {{ $formatChange($card['badge']) }}
                         </span>
                     @endisset
-                </div>
-                <div class="mt-auto pt-3">
-                    <div class="h-9 min-w-0 overflow-hidden">
-                        <canvas id="metric-sparkline-{{ $index }}" class="block h-9 w-full max-w-full"></canvas>
-                    </div>
                 </div>
             </article>
         @endforeach
@@ -425,7 +418,6 @@
         monthlyLabels: @json($monthlyTrends['labels']),
         monthlyTransactions: @json($monthlyTrends['transactions_values']),
         monthlyPrices: @json($monthlyTrends['price_values']),
-        metricSparklines: @json(array_map(fn ($card) => $card['sparkline'], $metricCards)),
         propertyTypes: {
             labels: @json($propertyTypeMovements['labels']),
             benchmarkSales: @json($propertyTypeMovements['benchmark_sales']),
@@ -444,47 +436,6 @@
     });
 
     const makeCurrencyTick = (value) => '£' + Number(value).toLocaleString('en-GB');
-
-    const createSparkline = (id, values, color) => {
-        const element = document.getElementById(id);
-
-        if (!element) {
-            return;
-        }
-
-        new Chart(element, {
-            type: 'line',
-            data: {
-                labels: values.map((_, index) => index + 1),
-                datasets: [{
-                    data: values,
-                    borderColor: color,
-                    backgroundColor: color + '1A',
-                    fill: true,
-                    borderWidth: 2,
-                    tension: 0.35,
-                    pointRadius: 0,
-                }],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: false },
-                },
-                scales: {
-                    x: { display: false },
-                    y: { display: false },
-                },
-            },
-        });
-    };
-
-    dashboardChartData.metricSparklines.forEach((series, index) => {
-        const color = index === 1 ? '#2563eb' : '#65a30d';
-        createSparkline('metric-sparkline-' + index, series, color);
-    });
 
     new Chart(document.getElementById('monthly-transactions-chart'), {
         type: 'line',
