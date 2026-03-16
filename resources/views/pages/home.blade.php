@@ -155,7 +155,7 @@
 
                 <div class="mt-1 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                     @php
-                        $transactionChange = -34.1;
+                        $transactionChange = (float) ($homepageMarketMovements['transaction_change_percent'] ?? -34.1);
                         $transactionDirection = $transactionChange < 0 ? 'negative' : ($transactionChange > 0 ? 'positive' : 'neutral');
                         $transactionValueClasses = match ($transactionDirection) {
                             'negative' => 'text-red-600',
@@ -163,6 +163,18 @@
                             default => 'text-gray-600',
                         };
                         $transactionArrow = match ($transactionDirection) {
+                            'negative' => '▼ ',
+                            'positive' => '▲ ',
+                            default => '',
+                        };
+                        $priceChange = (float) ($homepageMarketMovements['median_price_change_percent'] ?? -0.2);
+                        $priceDirection = $priceChange < 0 ? 'negative' : ($priceChange > 0 ? 'positive' : 'neutral');
+                        $priceValueClasses = match ($priceDirection) {
+                            'negative' => 'text-red-600',
+                            'positive' => 'text-green-600',
+                            default => 'text-gray-600',
+                        };
+                        $priceArrow = match ($priceDirection) {
                             'negative' => '▼ ',
                             'positive' => '▲ ',
                             default => '',
@@ -179,7 +191,10 @@
                     </div>
                     <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
                         <p class="text-sm font-semibold text-zinc-800">Median Price % Change</p>
-                        <p class="mt-2 text-lg font-semibold text-red-600">▼ -0.2%</p>
+                        <p @class([
+                            'mt-2 text-lg font-semibold',
+                            $priceValueClasses,
+                        ])>{{ $priceArrow }}{{ number_format($priceChange, 1) }}%</p>
                     </div>
                     <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
                         <p class="text-sm font-semibold text-zinc-800">Counties with Rising Prices</p>
@@ -189,37 +204,37 @@
                     </div>
                     <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
                         <p class="text-sm font-semibold text-zinc-800">Counties with Falling Sales</p>
-                        <p class="mt-2 text-lg font-semibold text-zinc-900"><span class="text-red-600">112</span> / 112</p>
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap gap-x-8 gap-y-2 text-sm text-zinc-700">
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-zinc-900">Transaction Volume Change</span>
-                        <span>154,923 vs 102,104</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-zinc-900">Median Price £ Change</span>
-                        <span>£290,693 &rarr; £290,000</span>
+                        <p class="mt-2 text-lg font-semibold text-zinc-900">
+                            <span class="text-red-600">{{ number_format($homepageMarketMovements['declining_counties'] ?? 112) }}</span> / {{ number_format($homepageMarketMovements['total_counties'] ?? 112) }}
+                        </p>
                     </div>
                 </div>
 
                 <div class="">
                     <div class="flex flex-wrap items-center gap-3 text-sm">
-                        <p class="font-semibold text-zinc-900">Top declining counties:</p>
+                        <p class="font-semibold text-zinc-900">Top Counties with Falling Sales:</p>
                         <div class="flex flex-wrap gap-6">
-                            <div class="flex items-center gap-1">
-                                <span class="text-zinc-700">Torfaen</span>
-                                <span class="font-semibold text-red-600">▼ -47.4%</span>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <span class="text-zinc-700">Portsmouth</span>
-                                <span class="font-semibold text-red-600">▼ -46.1%</span>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <span class="text-zinc-700">Slough</span>
-                                <span class="font-semibold text-red-600">▼ -44.7%</span>
-                            </div>
+                            @forelse (($homepageMarketMovements['top_declining_counties'] ?? collect()) as $county)
+                                <div class="flex items-center gap-1">
+                                    <span class="text-zinc-700">{{ \Illuminate\Support\Str::title(strtolower($county['county'])) }}</span>
+                                    <span class="font-semibold text-red-600">▼ {{ number_format((float) $county['sales_change_percent'], 1) }}%</span>
+                                </div>
+                            @empty
+                                <span class="text-zinc-500">No counties recorded falling sales in this window.</span>
+                            @endforelse
+                        </div>
+                    </div>
+                    <div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
+                        <p class="font-semibold text-zinc-900">Top Counties with Rising Prices:</p>
+                        <div class="flex flex-wrap gap-6">
+                            @forelse (($homepageMarketMovements['top_rising_price_counties'] ?? collect()) as $county)
+                                <div class="flex items-center gap-1">
+                                    <span class="text-zinc-700">{{ \Illuminate\Support\Str::title(strtolower($county['county'])) }}</span>
+                                    <span class="font-semibold text-green-600">▲ {{ number_format((float) $county['price_change_percent'], 1) }}%</span>
+                                </div>
+                            @empty
+                                <span class="text-zinc-500">No counties recorded rising prices in this window.</span>
+                            @endforelse
                         </div>
                         <a href="{{ route('insights.dashboard') }}"
                            class="inline-flex items-center gap-2 text-sm font-medium text-lime-700 hover:underline sm:ml-auto">

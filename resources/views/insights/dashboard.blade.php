@@ -21,28 +21,14 @@
             'value' => number_format($summary['sales_change_percent'], 1).'%',
             'badge' => $summary['sales_change_percent'],
             'sparkline' => $summary['transactions_sparkline'],
-            'suffix' => 'vs benchmark quarter',
-            'context' => number_format($summary['comparison_transactions']).' vs '.number_format($summary['benchmark_transactions']).' transactions',
+            'context' => number_format($summary['benchmark_transactions']).' vs '.number_format($summary['comparison_transactions']),
         ],
         [
             'title' => 'Median Price Change',
             'value' => number_format($summary['median_price_change_percent'], 1).'%',
             'badge' => $summary['median_price_change_percent'],
             'sparkline' => $summary['price_sparkline'],
-            'suffix' => 'vs benchmark quarter',
-            'context' => 'Benchmark median: '.$currency($summary['benchmark_median_price']).' | Comparison median: '.$currency($summary['comparison_median_price']),
-        ],
-        [
-            'title' => 'Benchmark Quarter Transactions',
-            'value' => number_format($summary['benchmark_transactions']),
-            'sparkline' => $summary['benchmark_transactions_sparkline'],
-            'suffix' => 'Aug 2025 to Oct 2025',
-        ],
-        [
-            'title' => 'Comparison Quarter Transactions',
-            'value' => number_format($summary['comparison_transactions']),
-            'sparkline' => $summary['comparison_transactions_sparkline'],
-            'suffix' => 'Nov 2025 to Jan 2026',
+            'context' => $currency($summary['benchmark_median_price']).' vs '.$currency($summary['comparison_median_price']),
         ],
     ];
 
@@ -64,19 +50,20 @@
         return 'text-zinc-600 bg-zinc-50 border-zinc-200';
     };
 
-    $tableHeadingClass = 'px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500';
-    $tableCellClass = 'px-4 py-3 text-sm text-zinc-700';
+    $tableHeadingClass = 'px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500 sm:px-4 sm:text-xs sm:tracking-[0.24em]';
+    $tableCellClass = 'px-3 py-3 text-sm text-zinc-700 sm:px-4';
 @endphp
 
 <div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
-    <section class="overflow-hidden rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center">
+    <section class="relative z-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-8">
+        @include('partials.hero-background')
+        <div class="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
             <div>
                 <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
                     <span class="h-2 w-2 rounded-full bg-lime-500"></span>
                     Insights Dashboard
                 </div>
-                <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Housing Market Movement Dashboard</h1>
+                <h1 class="mt-4 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">Housing Market Movement Dashboard</h1>
                 <p class="mt-4 max-w-3xl text-sm leading-6 text-zinc-600">
                     This dashboard highlights the most significant movements in the England &amp; Wales housing market between two recent quarters using Land Registry transaction data.
                 </p>
@@ -89,7 +76,7 @@
                     </span>
                 </div>
                 <div class="mt-5">
-                    <a href="/insights" class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm bg-zinc-200 hover:bg-zinc-100 hover:border-zinc-400 transition">
+                    <a href="/insights" class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-400 hover:bg-zinc-100">
                         View Granular Insights
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -97,36 +84,22 @@
                     </a>
                 </div>
             </div>
-            <div class="rounded-2xl border border-zinc-200 bg-gradient-to-br from-zinc-900 via-zinc-800 to-lime-900 p-6 text-white shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-lime-200">Market Pulse</p>
-                <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
-                    <div>
-                        <p class="text-sm text-zinc-300">Benchmark median</p>
-                        <p class="mt-1 text-2xl font-bold">{{ $currency($summary['benchmark_median_price']) }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-zinc-300">Comparison median</p>
-                        <p class="mt-1 text-2xl font-bold">{{ $currency($summary['comparison_median_price']) }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-zinc-300">Price change</p>
-                        <p class="mt-1 text-lg font-semibold {{ $summary['median_price_change_percent'] < 0 ? 'text-red-300' : 'text-green-300' }}">
-                            {{ number_format($summary['median_price_change_percent'], 1) }}%
-                        </p>
-                    </div>
-                </div>
+            <div class="relative z-10 mt-2 flex justify-center lg:mt-0 lg:ml-8 lg:justify-end">
+                <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="h-auto w-full max-w-[15rem] sm:max-w-xs lg:max-w-sm">
             </div>
         </div>
     </section>
 
-    <section class="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+    <section class="mt-8 grid gap-5 md:grid-cols-2">
         @foreach ($metricCards as $index => $card)
-            <article class="flex h-full min-h-[18rem] flex-col rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <article class="min-w-0 overflow-hidden flex h-full min-h-[13rem] flex-col rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">{{ $card['title'] }}</p>
                         <p class="mt-3 text-3xl font-bold text-zinc-900">{{ $card['value'] }}</p>
-                        <p class="mt-2 text-sm text-zinc-500">{{ $card['suffix'] }}</p>
+                        @isset($card['suffix'])
+                            <p class="mt-2 text-sm text-zinc-500">{{ $card['suffix'] }}</p>
+                        @endisset
                         @isset($card['context'])
                             <p class="mt-2 text-sm text-zinc-600">{{ $card['context'] }}</p>
                         @endisset
@@ -137,9 +110,9 @@
                         </span>
                     @endisset
                 </div>
-                <div class="mt-auto pt-5">
-                    <div class="h-14">
-                    <canvas id="metric-sparkline-{{ $index }}" class="h-14 w-full"></canvas>
+                <div class="mt-auto pt-3">
+                    <div class="h-9 min-w-0 overflow-hidden">
+                        <canvas id="metric-sparkline-{{ $index }}" class="block h-9 w-full max-w-full"></canvas>
                     </div>
                 </div>
             </article>
@@ -158,7 +131,7 @@
                     <span class="w-fit rounded-full border px-3 py-1 text-xs font-semibold {{ $momentumStyles[$summary['market_momentum']['tone']] ?? $momentumStyles['amber'] }}">
                         {{ ucfirst($summary['market_momentum']['tone']) }}
                     </span>
-                    <div class="grid w-full min-w-48 grid-cols-3 gap-2 lg:w-56">
+                    <div class="grid w-full grid-cols-3 gap-2 sm:max-w-56 lg:w-56">
                         <span class="h-2 rounded-full {{ $summary['market_momentum']['tone'] === 'green' ? 'bg-green-500' : 'bg-zinc-200' }}"></span>
                         <span class="h-2 rounded-full {{ $summary['market_momentum']['tone'] === 'amber' ? 'bg-amber-500' : 'bg-zinc-200' }}"></span>
                         <span class="h-2 rounded-full {{ $summary['market_momentum']['tone'] === 'red' ? 'bg-red-500' : 'bg-zinc-200' }}"></span>
@@ -169,7 +142,7 @@
     </section>
 
     <section class="mt-8 grid gap-6 xl:grid-cols-2">
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">National Trend</p>
@@ -177,12 +150,12 @@
                 </div>
                 <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Last 12 months</span>
             </div>
-            <div class="mt-6 h-80">
-                <canvas id="monthly-transactions-chart"></canvas>
+            <div class="mt-6 h-64 min-w-0 overflow-hidden sm:h-72 lg:h-80">
+                <canvas id="monthly-transactions-chart" class="block h-full w-full max-w-full"></canvas>
             </div>
         </article>
 
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">National Trend</p>
@@ -190,8 +163,8 @@
                 </div>
                 <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Last 12 months</span>
             </div>
-            <div class="mt-6 h-80">
-                <canvas id="median-price-chart"></canvas>
+            <div class="mt-6 h-64 min-w-0 overflow-hidden sm:h-72 lg:h-80">
+                <canvas id="median-price-chart" class="block h-full w-full max-w-full"></canvas>
             </div>
         </article>
     </section>
@@ -255,8 +228,8 @@
                     <thead class="bg-zinc-50">
                         <tr>
                             <th class="{{ $tableHeadingClass }}">County</th>
-                            <th class="{{ $tableHeadingClass }}">Benchmark Transactions</th>
-                            <th class="{{ $tableHeadingClass }}">Comparison Transactions</th>
+                            <th class="{{ $tableHeadingClass }}"><span class="sm:hidden">Bench Txns</span><span class="hidden sm:inline">Benchmark Transactions</span></th>
+                            <th class="{{ $tableHeadingClass }}"><span class="sm:hidden">Comp Txns</span><span class="hidden sm:inline">Comparison Transactions</span></th>
                             <th class="{{ $tableHeadingClass }}">Change %</th>
                         </tr>
                     </thead>
@@ -285,8 +258,8 @@
                     <thead class="bg-zinc-50">
                         <tr>
                             <th class="{{ $tableHeadingClass }}">County</th>
-                            <th class="{{ $tableHeadingClass }}">Benchmark Transactions</th>
-                            <th class="{{ $tableHeadingClass }}">Comparison Transactions</th>
+                            <th class="{{ $tableHeadingClass }}"><span class="sm:hidden">Bench Txns</span><span class="hidden sm:inline">Benchmark Transactions</span></th>
+                            <th class="{{ $tableHeadingClass }}"><span class="sm:hidden">Comp Txns</span><span class="hidden sm:inline">Comparison Transactions</span></th>
                             <th class="{{ $tableHeadingClass }}">Change %</th>
                         </tr>
                     </thead>
@@ -317,8 +290,8 @@
                     <thead class="bg-zinc-50">
                         <tr>
                             <th class="{{ $tableHeadingClass }}">County</th>
-                            <th class="{{ $tableHeadingClass }}">Benchmark Price</th>
-                            <th class="{{ $tableHeadingClass }}">Comparison Price</th>
+                            <th class="{{ $tableHeadingClass }}"><span class="sm:hidden">Bench Price</span><span class="hidden sm:inline">Benchmark Price</span></th>
+                            <th class="{{ $tableHeadingClass }}"><span class="sm:hidden">Comp Price</span><span class="hidden sm:inline">Comparison Price</span></th>
                             <th class="{{ $tableHeadingClass }}">Change %</th>
                         </tr>
                     </thead>
@@ -347,8 +320,8 @@
                     <thead class="bg-zinc-50">
                         <tr>
                             <th class="{{ $tableHeadingClass }}">County</th>
-                            <th class="{{ $tableHeadingClass }}">Benchmark Price</th>
-                            <th class="{{ $tableHeadingClass }}">Comparison Price</th>
+                            <th class="{{ $tableHeadingClass }}"><span class="sm:hidden">Bench Price</span><span class="hidden sm:inline">Benchmark Price</span></th>
+                            <th class="{{ $tableHeadingClass }}"><span class="sm:hidden">Comp Price</span><span class="hidden sm:inline">Comparison Price</span></th>
                             <th class="{{ $tableHeadingClass }}">Change %</th>
                         </tr>
                     </thead>
@@ -370,7 +343,7 @@
     </section>
 
     <section class="mt-8 grid items-start gap-6 xl:grid-cols-2">
-        <article class="min-w-0 self-start rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="min-w-0 self-start overflow-hidden rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Property Type Shifts</p>
@@ -378,8 +351,8 @@
                 </div>
                 <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Quarter comparison</span>
             </div>
-            <div class="mt-6 h-96 min-w-0 overflow-hidden">
-                <canvas id="property-type-chart"></canvas>
+            <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80 lg:h-96">
+                <canvas id="property-type-chart" class="block h-full w-full max-w-full"></canvas>
             </div>
         </article>
 
@@ -393,8 +366,8 @@
                         <thead class="bg-zinc-50">
                             <tr>
                                 <th class="{{ $tableHeadingClass }}">County</th>
-                                <th class="{{ $tableHeadingClass }}">Transaction Change</th>
-                                <th class="{{ $tableHeadingClass }}">Price Change</th>
+                                <th class="{{ $tableHeadingClass }}"><span class="sm:hidden">Txn Chg</span><span class="hidden sm:inline">Transaction Change</span></th>
+                                <th class="{{ $tableHeadingClass }}"><span class="sm:hidden">Price Chg</span><span class="hidden sm:inline">Price Change</span></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-zinc-100">
@@ -421,8 +394,8 @@
                         <thead class="bg-zinc-50">
                             <tr>
                                 <th class="{{ $tableHeadingClass }}">County</th>
-                                <th class="{{ $tableHeadingClass }}">Transaction Change</th>
-                                <th class="{{ $tableHeadingClass }}">Price Change</th>
+                                <th class="{{ $tableHeadingClass }}"><span class="sm:hidden">Txn Chg</span><span class="hidden sm:inline">Transaction Change</span></th>
+                                <th class="{{ $tableHeadingClass }}"><span class="sm:hidden">Price Chg</span><span class="hidden sm:inline">Price Change</span></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-zinc-100">

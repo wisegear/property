@@ -29,7 +29,7 @@ class InsightsDashboardControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertViewIs('insights.dashboard');
-        $response->assertSee('Housing Market Moves Dashboard');
+        $response->assertSee('Housing Market Movement Dashboard');
         $response->assertSee('Dashboard');
         $response->assertSee('Granular Insights');
         $response->assertSee('Top Transaction Growth Counties');
