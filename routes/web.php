@@ -33,6 +33,7 @@ use App\Http\Controllers\RentalController;
 use App\Http\Controllers\RepossessionsController;
 use App\Http\Controllers\StampDutyController;
 use App\Http\Controllers\SupportController;
+use App\Http\Controllers\TopSalesController;
 // 3rd Party packages
 
 use App\Http\Controllers\UltraLondonController;
@@ -96,6 +97,7 @@ Route::get('/arrears', [MlarArrearsController::class, 'index'])->name('arrears.i
 Route::get('/insights', [InsightsController::class, 'index'])->name('insights.index');
 Route::get('/insights/search', [InsightsController::class, 'search'])->name('insights.search');
 Route::get('/insights/dashboard', [InsightsDashboardController::class, 'index'])->name('insights.dashboard');
+Route::get('/top-property-sales', [TopSalesController::class, 'index'])->name('top-sales.index');
 Route::get('/insights/{sector}', [InsightController::class, 'show'])
     ->where('sector', '[A-Za-z0-9]+')
     ->name('insights.show');
