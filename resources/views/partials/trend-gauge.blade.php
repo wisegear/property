@@ -1,6 +1,18 @@
 @php
     $trendGaugeValue = max(-100, min(100, (float) ($value ?? 0)));
-    $trendNeedleRotation = number_format($trendGaugeValue * 0.9, 2, '.', '');
+    $trendNeedleRotationValue = $trendGaugeValue * 0.9;
+    $minimumVisibleRotation = 2.0;
+
+    if ($trendGaugeValue !== 0.0 && abs($trendNeedleRotationValue) < $minimumVisibleRotation) {
+        $trendNeedleRotationValue = $trendGaugeValue < 0 ? -$minimumVisibleRotation : $minimumVisibleRotation;
+    }
+
+    $trendNeedleRotation = number_format($trendNeedleRotationValue, 2, '.', '');
+    $trendNeedleColor = match (true) {
+        $trendGaugeValue < 0 => '#dc2626',
+        $trendGaugeValue > 0 => '#16a34a',
+        default => '#1f2937',
+    };
 @endphp
 
 <div @class([
@@ -19,8 +31,8 @@
               stroke-width="12"
               stroke-linecap="round" />
         <g transform="rotate({{ $trendNeedleRotation }}, 60, 60)">
-            <line x1="60" y1="60" x2="60" y2="18" stroke="#1f2937" stroke-width="3" stroke-linecap="round" />
-            <circle cx="60" cy="60" r="4" fill="#1f2937" />
+            <line x1="60" y1="60" x2="60" y2="15" stroke="{{ $trendNeedleColor }}" stroke-width="3.5" stroke-linecap="round" />
+            <circle cx="60" cy="60" r="4.5" fill="{{ $trendNeedleColor }}" />
         </g>
     </svg>
 </div>

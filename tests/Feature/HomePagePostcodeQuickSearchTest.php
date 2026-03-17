@@ -73,8 +73,10 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('▼ -34.1%', false);
         $view->assertSee('stroke="#ef4444"', false);
         $view->assertSee('stroke="#22c55e"', false);
+        $view->assertSee('stroke="#dc2626"', false);
+        $view->assertSee('stroke="#16a34a"', false);
         $view->assertSee('rotate(-30.69, 60, 60)', false);
-        $view->assertSee('rotate(-0.18, 60, 60)', false);
+        $view->assertSee('rotate(-2.00, 60, 60)', false);
         $view->assertSee('rotate(14.46, 60, 60)', false);
         $view->assertSee('rotate(-90.00, 60, 60)', false);
         $view->assertSee('Top Counties with Falling Sales');
