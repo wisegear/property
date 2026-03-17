@@ -146,97 +146,111 @@
             <div class="flex h-full flex-col gap-4">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <h2 class="text-lg font-semibold text-zinc-900">Latest Market Movements by County <span class="text-xs font-normal text-zinc-500">(Last 2 quarters)</span></h2>
+                        <h2 class="text-lg font-semibold text-zinc-900">UK Housing Market Snapshot <span class="text-xs font-normal text-zinc-500">(Last 2 quarters)</span></h2>
                         <p class="mt-1 text-sm text-zinc-600">
                             The latest Land Registry window indicates a broad market slowdown, with transaction volumes declining across all counties and only limited price growth remaining.
                         </p>
                     </div>
                 </div>
 
+                @php
+                    $transactionChange = (float) ($homepageMarketMovements['transaction_change_percent'] ?? -34.1);
+                    $priceChange = (float) ($homepageMarketMovements['median_price_change_percent'] ?? -0.2);
+                    $totalCounties = (int) ($homepageMarketMovements['total_counties'] ?? 112);
+                    $risingPriceCounties = (int) ($homepageMarketMovements['rising_price_counties'] ?? 18);
+                    $decliningCounties = (int) ($homepageMarketMovements['declining_counties'] ?? 112);
+                    $risingPriceTrend = $totalCounties > 0 ? ($risingPriceCounties / $totalCounties) * 100 : 0;
+                    $fallingSalesPercent = $totalCounties > 0 ? ($decliningCounties / $totalCounties) * 100 : 0;
+                    $decliningSalesTrend = -$fallingSalesPercent;
+                    $condition = marketCondition($transactionChange, $priceChange, $fallingSalesPercent);
+                    $labels = [
+                        'transactions' => 'Demand weakening',
+                        'price' => 'Price growth stalling',
+                        'rising' => 'Market breadth improving',
+                        'falling' => 'Liquidity falling',
+                    ];
+                    $colorTextClasses = [
+                        'red' => 'text-red-600',
+                        'yellow' => 'text-yellow-600',
+                        'green' => 'text-green-600',
+                        'gray' => 'text-zinc-600',
+                    ];
+                    $conditionClasses = [
+                        'red' => 'bg-red-100 text-red-700',
+                        'yellow' => 'bg-yellow-100 text-yellow-700',
+                        'green' => 'bg-green-100 text-green-700',
+                        'gray' => 'bg-zinc-100 text-zinc-700',
+                    ];
+                    $transactionColor = marketColor($transactionChange, 'transactions');
+                    $priceColor = marketColor($priceChange, 'price');
+                    $risingColor = marketColor($risingPriceTrend, 'rising');
+                    $fallingColor = marketColor($fallingSalesPercent, 'falling');
+                    $stats = [
+                        [
+                            'title' => 'Change in Transactions',
+                            'value' => $transactionChange,
+                            'formatted' => number_format($transactionChange, 1).'%',
+                            'titleText' => number_format($transactionChange, 1).'%',
+                            'label' => $labels['transactions'],
+                            'color' => $transactionColor,
+                            'gaugeValue' => $transactionChange,
+                            'text' => number_format($transactionChange, 1).'%',
+                        ],
+                        [
+                            'title' => 'Median Price % Change',
+                            'value' => $priceChange,
+                            'formatted' => number_format($priceChange, 1).'%',
+                            'titleText' => number_format($priceChange, 1).'%',
+                            'label' => $labels['price'],
+                            'color' => $priceColor,
+                            'gaugeValue' => $priceChange,
+                            'text' => number_format($priceChange, 1).'%',
+                        ],
+                        [
+                            'title' => 'Counties with Rising Prices',
+                            'value' => $risingPriceTrend,
+                            'formatted' => $totalCounties > 0 ? number_format($risingPriceTrend, 0).'% of counties' : 'No counties available',
+                            'label' => $labels['rising'],
+                            'color' => $risingColor,
+                            'gaugeValue' => $risingPriceTrend,
+                            'text' => number_format($risingPriceCounties).' / '.number_format($totalCounties),
+                        ],
+                        [
+                            'title' => 'Counties with Falling Sales',
+                            'value' => $fallingSalesPercent,
+                            'formatted' => $totalCounties > 0 ? number_format($fallingSalesPercent, 0).'% of counties' : 'No counties available',
+                            'label' => $labels['falling'],
+                            'color' => $fallingColor,
+                            'gaugeValue' => $decliningSalesTrend,
+                            'text' => number_format($decliningCounties).' / '.number_format($totalCounties),
+                        ],
+                    ];
+                @endphp
+
+                <div class="mb-1 flex items-center gap-2">
+                    <span class="text-sm text-zinc-500">Market Condition:</span>
+                    <span class="rounded-full px-3 py-1 text-sm font-semibold {{ $conditionClasses[$condition['color']] ?? $conditionClasses['gray'] }}">
+                        {{ $condition['label'] }}
+                    </span>
+                </div>
+
                 <div class="mt-1 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    @php
-                        $transactionChange = (float) ($homepageMarketMovements['transaction_change_percent'] ?? -34.1);
-                        $transactionDirection = $transactionChange < 0 ? 'negative' : ($transactionChange > 0 ? 'positive' : 'neutral');
-                        $transactionValueClasses = match ($transactionDirection) {
-                            'negative' => 'text-red-600',
-                            'positive' => 'text-green-600',
-                            default => 'text-gray-600',
-                        };
-                        $transactionArrow = match ($transactionDirection) {
-                            'negative' => '▼ ',
-                            'positive' => '▲ ',
-                            default => '',
-                        };
-                        $priceChange = (float) ($homepageMarketMovements['median_price_change_percent'] ?? -0.2);
-                        $priceDirection = $priceChange < 0 ? 'negative' : ($priceChange > 0 ? 'positive' : 'neutral');
-                        $priceValueClasses = match ($priceDirection) {
-                            'negative' => 'text-red-600',
-                            'positive' => 'text-green-600',
-                            default => 'text-gray-600',
-                        };
-                        $priceArrow = match ($priceDirection) {
-                            'negative' => '▼ ',
-                            'positive' => '▲ ',
-                            default => '',
-                        };
-                        $totalCounties = (int) ($homepageMarketMovements['total_counties'] ?? 112);
-                        $risingPriceCounties = (int) ($homepageMarketMovements['rising_price_counties'] ?? 18);
-                        $decliningCounties = (int) ($homepageMarketMovements['declining_counties'] ?? 112);
-                        $risingPriceTrend = $totalCounties > 0 ? ($risingPriceCounties / $totalCounties) * 100 : 0;
-                        $decliningSalesTrend = $totalCounties > 0 ? -(($decliningCounties / $totalCounties) * 100) : 0;
-                    @endphp
-                    <div @class([
-                        'rounded-lg border border-zinc-200 bg-zinc-50 p-4',
-                    ])>
-                        <div class="flex items-start justify-between gap-3">
-                            <p class="text-sm font-semibold text-zinc-800">Change in Transactions</p>
-                            @include('partials.trend-gauge', [
-                                'value' => $transactionChange,
-                                'title' => number_format($transactionChange, 1).'%',
-                            ])
+                    @foreach ($stats as $stat)
+                        <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <p class="text-sm font-semibold text-zinc-800">{{ $stat['title'] }}</p>
+                                @include('partials.trend-gauge', [
+                                    'value' => $stat['gaugeValue'],
+                                    'title' => $stat['formatted'],
+                                    'color' => $stat['color'],
+                                ])
+                            </div>
+                            <p class="mt-2 text-lg font-semibold {{ $colorTextClasses[$stat['color']] ?? $colorTextClasses['gray'] }}">
+                                {{ $stat['text'] }}
+                            </p>
+                            <p class="mt-1 text-xs text-zinc-500">{{ $stat['label'] }}</p>
                         </div>
-                        <p @class([
-                            'mt-2 text-lg font-semibold',
-                            $transactionValueClasses,
-                        ])>{{ $transactionArrow }}{{ number_format($transactionChange, 1) }}%</p>
-                    </div>
-                    <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <p class="text-sm font-semibold text-zinc-800">Median Price % Change</p>
-                            @include('partials.trend-gauge', [
-                                'value' => $priceChange,
-                                'title' => number_format($priceChange, 1).'%',
-                            ])
-                        </div>
-                        <p @class([
-                            'mt-2 text-lg font-semibold',
-                            $priceValueClasses,
-                        ])>{{ $priceArrow }}{{ number_format($priceChange, 1) }}%</p>
-                    </div>
-                    <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <p class="text-sm font-semibold text-zinc-800">Counties with Rising Prices</p>
-                            @include('partials.trend-gauge', [
-                                'value' => $risingPriceTrend,
-                                'title' => $totalCounties > 0 ? number_format(($risingPriceCounties / $totalCounties) * 100, 0).'% of counties' : 'No counties available',
-                            ])
-                        </div>
-                        <p class="mt-2 text-lg font-semibold text-zinc-900">
-                            <span class="text-green-600">{{ number_format($risingPriceCounties) }}</span> / {{ number_format($totalCounties) }}
-                        </p>
-                    </div>
-                    <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <p class="text-sm font-semibold text-zinc-800">Counties with Falling Sales</p>
-                            @include('partials.trend-gauge', [
-                                'value' => $decliningSalesTrend,
-                                'title' => $totalCounties > 0 ? number_format(($decliningCounties / $totalCounties) * 100, 0).'% of counties' : 'No counties available',
-                            ])
-                        </div>
-                        <p class="mt-2 text-lg font-semibold text-zinc-900">
-                            <span class="text-red-600">{{ number_format($decliningCounties) }}</span> / {{ number_format($totalCounties) }}
-                        </p>
-                    </div>
+                    @endforeach
                 </div>
 
                 <div class="">

@@ -63,20 +63,23 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee($searchUrl, false);
         $view->assertSee('name="postcode"', false);
         $view->assertSee('placeholder="e.g. SW7 5PH"', false);
-        $view->assertSee('Latest Market Movements');
+        $view->assertSee('UK Housing Market Snapshot');
+        $view->assertSee('Market Condition:');
+        $view->assertSee('Cooling');
         $view->assertSee('Counties with Falling Sales');
         $view->assertSee('Counties with Rising Prices');
-        $view->assertSee('text-green-600', false);
-        $view->assertSee('18');
-        $view->assertSee('/ 112');
+        $view->assertSee('Demand weakening');
+        $view->assertSee('Price growth stalling');
+        $view->assertSee('Market breadth improving');
+        $view->assertSee('Liquidity falling');
+        $view->assertSee('18 / 112');
         $view->assertSee('border-zinc-200 bg-zinc-50', false);
-        $view->assertSee('▼ -34.1%', false);
+        $view->assertSee('-34.1%', false);
         $view->assertSee('M 12 60 A 48 48 0 0 1 56 12.2', false);
         $view->assertSee('M 64 12.2 A 48 48 0 0 1 108 60', false);
         $view->assertSee('stroke="#ef4444"', false);
         $view->assertSee('stroke="#22c55e"', false);
         $view->assertSee('stroke="#dc2626"', false);
-        $view->assertSee('stroke="#16a34a"', false);
         $view->assertSee('x1="60" y1="10" x2="60" y2="18"', false);
         $view->assertSee('x1="60" y1="60" x2="60" y2="12"', false);
         $view->assertSee('rotate(-30.69, 60, 60)', false);
@@ -97,7 +100,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('Open Insights');
         $view->assertSee('md:grid-cols-2 lg:grid-cols-3', false);
         $view->assertSee('flex h-full flex-col', false);
-        $view->assertSeeInOrder(['Latest Market Movements', 'Quick postcode search', 'Signals worth watching']);
+        $view->assertSeeInOrder(['UK Housing Market Snapshot', 'Quick postcode search', 'Signals worth watching']);
     }
 
     public function test_home_page_displays_market_insight_count_and_latest_update_from_database(): void
@@ -160,9 +163,13 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('▲ 19.2%', false);
-        $response->assertSee('3</span> / 4', false);
-        $response->assertSee('1</span> / 4', false);
+        $response->assertSee('Market Condition:');
+        $response->assertSee('Expanding');
+        $response->assertSee('19.2%', false);
+        $response->assertSee('3 / 4', false);
+        $response->assertSee('1 / 4', false);
+        $response->assertSee('Demand weakening');
+        $response->assertSee('Liquidity falling');
         $response->assertSee('rotate(17.28, 60, 60)', false);
         $response->assertSee('rotate(67.50, 60, 60)', false);
         $response->assertSee('rotate(-22.50, 60, 60)', false);

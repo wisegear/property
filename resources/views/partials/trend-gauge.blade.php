@@ -8,10 +8,16 @@
     }
 
     $trendNeedleRotation = number_format($trendNeedleRotationValue, 2, '.', '');
-    $trendNeedleColor = match (true) {
-        $trendGaugeValue < 0 => '#dc2626',
-        $trendGaugeValue > 0 => '#16a34a',
-        default => '#1f2937',
+    $trendNeedleColor = match ($color ?? null) {
+        'red' => '#dc2626',
+        'yellow' => '#ca8a04',
+        'green' => '#16a34a',
+        'gray' => '#1f2937',
+        default => match (true) {
+            $trendGaugeValue < 0 => '#dc2626',
+            $trendGaugeValue > 0 => '#16a34a',
+            default => '#1f2937',
+        },
     };
 @endphp
 
