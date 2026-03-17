@@ -166,7 +166,7 @@
                     $labels = [
                         'transactions' => 'Demand weakening',
                         'price' => 'Price growth stalling',
-                        'rising' => 'Market breadth improving',
+                        'rising' => 'Limited market breadth',
                         'falling' => 'Liquidity falling',
                     ];
                     $colorTextClasses = [
@@ -214,6 +214,7 @@
                             'color' => $risingColor,
                             'gaugeValue' => $risingPriceTrend,
                             'text' => number_format($risingPriceCounties).' / '.number_format($totalCounties),
+                            'suffix' => $totalCounties > 0 ? '('.number_format($risingPriceTrend, 0).'%)' : null,
                         ],
                         [
                             'title' => 'Counties with Falling Sales',
@@ -248,6 +249,9 @@
                             </div>
                             <p class="mt-1 text-lg font-semibold {{ $colorTextClasses[$stat['color']] ?? $colorTextClasses['gray'] }}">
                                 {{ $stat['text'] }}
+                                @isset($stat['suffix'])
+                                    <span class="text-sm font-medium text-zinc-500">{{ $stat['suffix'] }}</span>
+                                @endisset
                             </p>
                             <p class="mt-1 text-xs text-zinc-500">{{ $stat['label'] }}</p>
                         </div>

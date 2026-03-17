@@ -5,8 +5,8 @@ if (! function_exists('marketColor')) {
     {
         return match ($type) {
             'transactions', 'price' => $value < 0 ? 'red' : 'green',
-            'rising' => $value > 50 ? 'green' : 'red',
-            'falling' => $value > 50 ? 'red' : 'green',
+            'rising' => 'green',
+            'falling' => 'red',
             default => 'gray',
         };
     }
