@@ -243,9 +243,10 @@
                                     'value' => $stat['gaugeValue'],
                                     'title' => $stat['formatted'],
                                     'color' => $stat['color'],
+                                    'wrapperClass' => 'ml-0 -mt-2',
                                 ])
                             </div>
-                            <p class="mt-2 text-lg font-semibold {{ $colorTextClasses[$stat['color']] ?? $colorTextClasses['gray'] }}">
+                            <p class="mt-1 text-lg font-semibold {{ $colorTextClasses[$stat['color']] ?? $colorTextClasses['gray'] }}">
                                 {{ $stat['text'] }}
                             </p>
                             <p class="mt-1 text-xs text-zinc-500">{{ $stat['label'] }}</p>
