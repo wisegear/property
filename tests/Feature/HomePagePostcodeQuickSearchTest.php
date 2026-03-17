@@ -71,10 +71,14 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('/ 112');
         $view->assertSee('border-zinc-200 bg-zinc-50', false);
         $view->assertSee('▼ -34.1%', false);
+        $view->assertSee('M 12 60 A 48 48 0 0 1 56 12.2', false);
+        $view->assertSee('M 64 12.2 A 48 48 0 0 1 108 60', false);
         $view->assertSee('stroke="#ef4444"', false);
         $view->assertSee('stroke="#22c55e"', false);
         $view->assertSee('stroke="#dc2626"', false);
         $view->assertSee('stroke="#16a34a"', false);
+        $view->assertSee('x1="60" y1="10" x2="60" y2="18"', false);
+        $view->assertSee('x1="60" y1="60" x2="60" y2="12"', false);
         $view->assertSee('rotate(-30.69, 60, 60)', false);
         $view->assertSee('rotate(-2.00, 60, 60)', false);
         $view->assertSee('rotate(14.46, 60, 60)', false);
