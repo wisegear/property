@@ -22,7 +22,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
     }
 
-    public function test_home_page_shows_market_stress_panel_above_quick_postcode_search_form(): void
+    public function test_home_page_shows_quick_postcode_search_above_market_stress_panel_and_keeps_top_sales_panel(): void
     {
         $view = $this->view('pages.home', [
             'posts' => collect(),
@@ -55,6 +55,56 @@ class HomePagePostcodeQuickSearchTest extends TestCase
                     ['county' => 'Bedfordshire', 'price_change_percent' => 4.9],
                 ]),
             ],
+            'homepageTopSales' => [
+                [
+                    'mode' => 'ultra',
+                    'label' => 'Ultra Prime London',
+                    'title' => 'Highest ultra-prime London sale',
+                    'sale' => (object) [
+                        'Price' => 14500000,
+                        'Date' => '2026-01-15 00:00:00',
+                        'PAON' => '1',
+                        'SAON' => null,
+                        'Street' => 'Belgrave Square',
+                        'TownCity' => 'London',
+                        'County' => 'GREATER LONDON',
+                        'Postcode' => 'SW1X 8PP',
+                        'property_slug' => 'sw1x-8pp-1-belgrave-square',
+                    ],
+                ],
+                [
+                    'mode' => 'london',
+                    'label' => 'Prime London',
+                    'title' => 'Highest prime London sale',
+                    'sale' => (object) [
+                        'Price' => 6500000,
+                        'Date' => '2026-01-12 00:00:00',
+                        'PAON' => '8',
+                        'SAON' => null,
+                        'Street' => 'Cheyne Walk',
+                        'TownCity' => 'London',
+                        'County' => 'GREATER LONDON',
+                        'Postcode' => 'SW3 5HL',
+                        'property_slug' => 'sw3-5hl-8-cheyne-walk',
+                    ],
+                ],
+                [
+                    'mode' => 'rest',
+                    'label' => 'Rest of UK',
+                    'title' => 'Highest rest-of-UK sale',
+                    'sale' => (object) [
+                        'Price' => 3800000,
+                        'Date' => '2026-01-10 00:00:00',
+                        'PAON' => '25',
+                        'SAON' => null,
+                        'Street' => 'Park Row',
+                        'TownCity' => 'Leeds',
+                        'County' => 'West Yorkshire',
+                        'Postcode' => 'LS1 5HD',
+                        'property_slug' => 'ls1-5hd-25-park-row',
+                    ],
+                ],
+            ],
         ]);
 
         $searchUrl = route('property.search', absolute: false);
@@ -63,6 +113,23 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee($searchUrl, false);
         $view->assertSee('name="postcode"', false);
         $view->assertSee('placeholder="e.g. SW7 5PH"', false);
+        $view->assertSee('Top Property Sales');
+        $view->assertSee('Open Top Property Sales');
+        $view->assertSee(route('top-sales.index', absolute: false), false);
+        $view->assertSee('Ultra Prime London');
+        $view->assertSee('Prime London');
+        $view->assertSee('Rest of UK');
+        $view->assertDontSee('Highest ultra-prime London sale');
+        $view->assertDontSee('Highest prime London sale');
+        $view->assertDontSee('Highest rest-of-UK sale');
+        $view->assertSee('£14,500,000');
+        $view->assertSee('£6,500,000');
+        $view->assertSee('£3,800,000');
+        $view->assertSee('View Detail');
+        $view->assertSee('15 Jan 2026');
+        $view->assertDontSee('GREATER LONDON');
+        $view->assertDontSee('West Yorkshire');
+        $view->assertSee(route('property.show.slug', ['slug' => 'sw1x-8pp-1-belgrave-square'], false), false);
         $view->assertSee('UK Housing Market Snapshot');
         $view->assertSee('Market Condition:');
         $view->assertSee('Cooling');
@@ -101,9 +168,16 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('128 live');
         $view->assertSee('9 signal types');
         $view->assertSee('Open Insights');
+        $view->assertSee('lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)]', false);
         $view->assertSee('md:grid-cols-2 lg:grid-cols-3', false);
         $view->assertSee('flex h-full flex-col', false);
-        $view->assertSeeInOrder(['UK Housing Market Snapshot', 'Quick postcode search', 'Signals worth watching']);
+        $view->assertSeeInOrder([
+            'Quick postcode search',
+            'Overall Property MArket Stress Index',
+            'UK Housing Market Snapshot',
+            'Top Property Sales',
+            'Signals worth watching',
+        ]);
     }
 
     public function test_home_page_displays_market_insight_count_and_latest_update_from_database(): void
@@ -200,6 +274,11 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             $table->unsignedInteger('Price')->nullable();
             $table->dateTime('Date')->nullable();
             $table->string('Postcode', 10)->nullable();
+            $table->string('PAON', 100)->nullable();
+            $table->string('SAON', 100)->nullable();
+            $table->string('Street', 255)->nullable();
+            $table->string('TownCity', 100)->nullable();
+            $table->string('District', 100)->nullable();
             $table->enum('PropertyType', ['D', 'S', 'T', 'F', 'O'])->nullable();
             $table->string('County', 100)->nullable();
             $table->enum('PPDCategoryType', ['A', 'B'])->nullable();
@@ -221,6 +300,11 @@ class HomePagePostcodeQuickSearchTest extends TestCase
                     'Price' => $price,
                     'Date' => $date,
                     'Postcode' => sprintf('AB%d %dCD', $transactionId % 9, ($transactionId % 9) + 1),
+                    'PAON' => (string) $transactionId,
+                    'SAON' => null,
+                    'Street' => sprintf('%s Street', $county),
+                    'TownCity' => $county,
+                    'District' => $county,
                     'PropertyType' => 'D',
                     'County' => $county,
                     'PPDCategoryType' => 'A',

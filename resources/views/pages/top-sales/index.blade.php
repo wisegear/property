@@ -46,7 +46,7 @@
             </div>
 
             <p class="text-sm text-zinc-500">
-                Highest value residential transactions, refreshed via the property sales warmer.
+                Highest value residential transactions.
             </p>
         </section>
 

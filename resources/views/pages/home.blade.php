@@ -136,6 +136,35 @@
 
     </section>
 
+    <section class="mt-6">
+        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div class="flex h-full flex-col items-center justify-center gap-4 text-center">
+                <div class="max-w-3xl">
+                    <h2 class="text-lg font-semibold text-zinc-900">Quick postcode search <span class="text-sm text-zinc-500">(England & Wales Only)</span></h2>
+                    <p class="mt-1 text-sm text-zinc-600">
+                        Jump straight to the Property Search page for a postcode, for example SW7 5PH.
+                    </p>
+                </div>
+
+                <form method="GET" action="{{ route('property.search') }}" class="w-full max-w-xl">
+                    <div class="flex w-full flex-col justify-center gap-3 sm:flex-row">
+                        <input
+                            id="home-postcode"
+                            name="postcode"
+                            type="text"
+                            value="{{ old('postcode', request('postcode', '')) }}"
+                            placeholder="e.g. SW7 5PH"
+                            class="w-full min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500 sm:min-w-72"
+                        />
+                        <button type="submit" class="inner-button whitespace-nowrap">
+                            Search postcode
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
     {{-- Property Stress Index --}}
     <div class="mt-8">
         @include('partials.stress-score-panel', ['totalStress' => $totalStress ?? null, 'isSticky' => false, 'showDashboardLink' => true])
@@ -298,31 +327,56 @@
         </div>
     </section>
 
-    <section class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <section class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)]">
         <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <div class="flex h-full flex-col items-center justify-center gap-4 text-center">
-                <div class="max-w-3xl">
-                    <h2 class="text-lg font-semibold text-zinc-900">Quick postcode search <span class="text-sm text-zinc-500">(England & Wales Only)</span></h2>
-                    <p class="mt-1 text-sm text-zinc-600">
-                        Jump straight to the Property Search page for a postcode, for example SW7 5PH.
-                    </p>
+            <div class="flex h-full flex-col gap-4">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-semibold text-zinc-900">Most Expensive Property Sales</h2>
+                        <p class="mt-1 max-w-3xl text-sm text-zinc-600">
+                            A quick look at the current highest sale in each top-sales segment, from ultra-prime London to the strongest rest-of-UK outlier.
+                        </p>
+                    </div>
+                    <a href="{{ route('top-sales.index') }}"
+                       class="inline-flex items-center gap-2 text-sm font-medium text-lime-700 hover:underline">
+                        Open Top Property Sales
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                        </svg>
+                    </a>
                 </div>
 
-                <form method="GET" action="{{ route('property.search') }}" class="w-full max-w-xl">
-                    <div class="flex w-full flex-col justify-center gap-3 sm:flex-row">
-                        <input
-                            id="home-postcode"
-                            name="postcode"
-                            type="text"
-                            value="{{ old('postcode', request('postcode', '')) }}"
-                            placeholder="e.g. SW7 5PH"
-                            class="w-full min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500 sm:min-w-72"
-                        />
-                        <button type="submit" class="inner-button whitespace-nowrap">
-                            Search postcode
-                        </button>
-                    </div>
-                </form>
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    @foreach (($homepageTopSales ?? []) as $summary)
+                        @php
+                            $sale = $summary['sale'];
+                            $saleAddress = $sale
+                                ? collect([
+                                    $sale->PAON ?? null,
+                                    $sale->SAON ?? null,
+                                    $sale->Street ?? null,
+                                ])->filter()->implode(', ')
+                                : null;
+                        @endphp
+
+                        <article class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">{{ $summary['label'] }}</p>
+
+                            @if ($sale)
+                                <p class="mt-3 text-lg font-semibold text-zinc-900">£{{ number_format((int) ($sale->Price ?? 0)) }}</p>
+                                <a href="{{ route('property.show.slug', ['slug' => $sale->property_slug], false) }}"
+                                   class="mt-2 block text-sm font-medium text-lime-700 hover:underline">
+                                    View Detail
+                                </a>
+                                <p class="mt-1 text-xs text-zinc-500">
+                                    {{ $sale->Date ? \Illuminate\Support\Carbon::parse($sale->Date)->format('d M Y') : 'Unknown date' }}
+                                </p>
+                            @else
+                                <p class="mt-3 text-sm text-zinc-500">No qualifying sale is cached for this segment yet.</p>
+                            @endif
+                        </article>
+                    @endforeach
+                </div>
             </div>
         </div>
 

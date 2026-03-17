@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BlogPosts;
 use App\Models\MarketInsight;
+use App\Services\TopSalesService;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Schema;
  */
 class PagesController extends Controller
 {
-    public function home(): View
+    public function home(TopSalesService $topSalesService): View
     {
         // Get the 4 most recent blog posts
         $posts = BlogPosts::where('published', true)->orderBy('date', 'desc')->take(4)->get();
@@ -46,6 +47,7 @@ class PagesController extends Controller
             'totalStress' => $totalStress,
             ...$this->marketInsightsSummary(),
             'homepageMarketMovements' => $this->homepageMarketMovements(),
+            'homepageTopSales' => $this->homepageTopSales($topSalesService),
         ]);
     }
 
@@ -257,6 +259,33 @@ class PagesController extends Controller
                 ])
                 ->values(),
         ];
+    }
+
+    /**
+     * @return array<int, array{mode:string,label:string,title:string,sale:?object}>
+     */
+    private function homepageTopSales(TopSalesService $topSalesService): array
+    {
+        if (! Schema::hasTable('land_registry')) {
+            return [
+                ['mode' => 'ultra', 'label' => 'Ultra Prime London', 'title' => 'Highest ultra-prime London sale', 'sale' => null],
+                ['mode' => 'london', 'label' => 'Prime London', 'title' => 'Highest prime London sale', 'sale' => null],
+                ['mode' => 'rest', 'label' => 'Rest of UK', 'title' => 'Highest rest-of-UK sale', 'sale' => null],
+            ];
+        }
+
+        return collect([
+            'ultra' => ['label' => 'Ultra Prime London', 'title' => 'Highest ultra-prime London sale'],
+            'london' => ['label' => 'Prime London', 'title' => 'Highest prime London sale'],
+            'rest' => ['label' => 'Rest of UK', 'title' => 'Highest rest-of-UK sale'],
+        ])->map(function (array $config, string $mode) use ($topSalesService): array {
+            return [
+                'mode' => $mode,
+                'label' => $config['label'],
+                'title' => $config['title'],
+                'sale' => $topSalesService->cachedSales($mode)->first(),
+            ];
+        })->values()->all();
     }
 
     private function percentageChange(int|float|null $benchmarkValue, int|float|null $comparisonValue): float
