@@ -109,10 +109,12 @@ class HomePagePostcodeQuickSearchTest extends TestCase
 
         $searchUrl = route('property.search', absolute: false);
 
-        $view->assertSee('Quick postcode search');
         $view->assertSee($searchUrl, false);
         $view->assertSee('name="postcode"', false);
-        $view->assertSee('placeholder="e.g. SW7 5PH"', false);
+        $view->assertSee('placeholder="Search postcode (e.g. SW7 5PH)"', false);
+        $view->assertSee('max-w-3xl rounded-xl border border-zinc-200 bg-white p-6 shadow-sm', false);
+        $view->assertSee('rounded-lg bg-zinc-900 px-5 py-2 text-sm text-white transition hover:bg-black', false);
+        $view->assertSee('Jump straight to full property data for any postcode in England &amp; Wales', false);
         $view->assertSee('Top Property Sales');
         $view->assertSee('Open Top Property Sales');
         $view->assertSee(route('top-sales.index', absolute: false), false);
@@ -172,7 +174,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('md:grid-cols-2 lg:grid-cols-3', false);
         $view->assertSee('flex h-full flex-col', false);
         $view->assertSeeInOrder([
-            'Quick postcode search',
+            'Search postcode (e.g. SW7 5PH)',
+            'Property Records',
             'Overall Property MArket Stress Index',
             'UK Housing Market Snapshot',
             'Top Property Sales',

@@ -36,6 +36,32 @@
         </div>
     </section>
 
+    <section class="mt-6">
+        <div class="mx-auto max-w-3xl rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <form method="GET" action="{{ route('property.search') }}" class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <input
+                    id="home-postcode"
+                    name="postcode"
+                    type="text"
+                    value="{{ old('postcode', request('postcode', '')) }}"
+                    placeholder="Search postcode (e.g. SW7 5PH)"
+                    class="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                />
+
+                <button
+                    type="submit"
+                    class="rounded-lg bg-zinc-900 px-5 py-2 text-sm text-white transition hover:bg-black"
+                >
+                    Search
+                </button>
+            </form>
+
+            <div class="mt-2 text-center text-xs text-zinc-500">
+                Jump straight to full property data for any postcode in England &amp; Wales
+            </div>
+        </div>
+    </section>
+
     {{-- Live Stats Section --}}
     <section class="mt-8 grid grid-cols-2 md:grid-cols-6 gap-4" x-data="{
         shown: false,
@@ -134,35 +160,6 @@
             </div>
         </div>
 
-    </section>
-
-    <section class="mt-6">
-        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <div class="flex h-full flex-col items-center justify-center gap-4 text-center">
-                <div class="max-w-3xl">
-                    <h2 class="text-lg font-semibold text-zinc-900">Quick postcode search <span class="text-sm text-zinc-500">(England & Wales Only)</span></h2>
-                    <p class="mt-1 text-sm text-zinc-600">
-                        Jump straight to the Property Search page for a postcode, for example SW7 5PH.
-                    </p>
-                </div>
-
-                <form method="GET" action="{{ route('property.search') }}" class="w-full max-w-xl">
-                    <div class="flex w-full flex-col justify-center gap-3 sm:flex-row">
-                        <input
-                            id="home-postcode"
-                            name="postcode"
-                            type="text"
-                            value="{{ old('postcode', request('postcode', '')) }}"
-                            placeholder="e.g. SW7 5PH"
-                            class="w-full min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500 sm:min-w-72"
-                        />
-                        <button type="submit" class="inner-button whitespace-nowrap">
-                            Search postcode
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
     </section>
 
     {{-- Property Stress Index --}}
