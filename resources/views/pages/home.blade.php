@@ -224,6 +224,7 @@
                             'color' => $fallingColor,
                             'gaugeValue' => $decliningSalesTrend,
                             'text' => number_format($decliningCounties).' / '.number_format($totalCounties),
+                            'suffix' => $totalCounties > 0 ? '('.number_format($fallingSalesPercent, 0).'%)' : null,
                         ],
                     ];
                 @endphp

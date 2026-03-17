@@ -74,6 +74,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('Liquidity falling');
         $view->assertSee('18 / 112');
         $view->assertSee('(16%)');
+        $view->assertSee('112 / 112');
+        $view->assertSee('(100%)');
         $view->assertSee('border-zinc-200 bg-zinc-50', false);
         $view->assertSee('-34.1%', false);
         $view->assertSee('M 12 60 A 48 48 0 0 1 56 12.2', false);
@@ -170,6 +172,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response->assertSee('3 / 4', false);
         $response->assertSee('(75%)', false);
         $response->assertSee('1 / 4', false);
+        $response->assertSee('(25%)', false);
         $response->assertSee('Demand weakening');
         $response->assertSee('Liquidity falling');
         $response->assertSee('Limited market breadth');
