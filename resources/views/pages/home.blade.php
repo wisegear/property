@@ -334,7 +334,7 @@
                     <div>
                         <h2 class="text-lg font-semibold text-zinc-900">Most Expensive Property Sales</h2>
                         <p class="mt-1 max-w-3xl text-sm text-zinc-600">
-                            A quick look at the current highest sale in each top-sales segment, from ultra-prime London to the strongest rest-of-UK outlier.
+                            The current highest sale in each top-sales segment, from ultra-prime London to the strongest rest-of-UK outlier.
                         </p>
                     </div>
                     <a href="{{ route('top-sales.index') }}"
