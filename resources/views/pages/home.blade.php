@@ -179,33 +179,62 @@
                             'positive' => '▲ ',
                             default => '',
                         };
+                        $totalCounties = (int) ($homepageMarketMovements['total_counties'] ?? 112);
+                        $risingPriceCounties = (int) ($homepageMarketMovements['rising_price_counties'] ?? 18);
+                        $decliningCounties = (int) ($homepageMarketMovements['declining_counties'] ?? 112);
+                        $risingPriceTrend = $totalCounties > 0 ? ($risingPriceCounties / $totalCounties) * 100 : 0;
+                        $decliningSalesTrend = $totalCounties > 0 ? -(($decliningCounties / $totalCounties) * 100) : 0;
                     @endphp
                     <div @class([
                         'rounded-lg border border-zinc-200 bg-zinc-50 p-4',
                     ])>
-                        <p class="text-sm font-semibold text-zinc-800">Change in Transactions</p>
+                        <div class="flex items-start justify-between gap-3">
+                            <p class="text-sm font-semibold text-zinc-800">Change in Transactions</p>
+                            @include('partials.trend-gauge', [
+                                'value' => $transactionChange,
+                                'title' => number_format($transactionChange, 1).'%',
+                            ])
+                        </div>
                         <p @class([
                             'mt-2 text-lg font-semibold',
                             $transactionValueClasses,
                         ])>{{ $transactionArrow }}{{ number_format($transactionChange, 1) }}%</p>
                     </div>
                     <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                        <p class="text-sm font-semibold text-zinc-800">Median Price % Change</p>
+                        <div class="flex items-start justify-between gap-3">
+                            <p class="text-sm font-semibold text-zinc-800">Median Price % Change</p>
+                            @include('partials.trend-gauge', [
+                                'value' => $priceChange,
+                                'title' => number_format($priceChange, 1).'%',
+                            ])
+                        </div>
                         <p @class([
                             'mt-2 text-lg font-semibold',
                             $priceValueClasses,
                         ])>{{ $priceArrow }}{{ number_format($priceChange, 1) }}%</p>
                     </div>
                     <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                        <p class="text-sm font-semibold text-zinc-800">Counties with Rising Prices</p>
+                        <div class="flex items-start justify-between gap-3">
+                            <p class="text-sm font-semibold text-zinc-800">Counties with Rising Prices</p>
+                            @include('partials.trend-gauge', [
+                                'value' => $risingPriceTrend,
+                                'title' => $totalCounties > 0 ? number_format(($risingPriceCounties / $totalCounties) * 100, 0).'% of counties' : 'No counties available',
+                            ])
+                        </div>
                         <p class="mt-2 text-lg font-semibold text-zinc-900">
-                            <span class="text-green-600">{{ number_format($homepageMarketMovements['rising_price_counties'] ?? 18) }}</span> / {{ number_format($homepageMarketMovements['total_counties'] ?? 112) }}
+                            <span class="text-green-600">{{ number_format($risingPriceCounties) }}</span> / {{ number_format($totalCounties) }}
                         </p>
                     </div>
                     <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                        <p class="text-sm font-semibold text-zinc-800">Counties with Falling Sales</p>
+                        <div class="flex items-start justify-between gap-3">
+                            <p class="text-sm font-semibold text-zinc-800">Counties with Falling Sales</p>
+                            @include('partials.trend-gauge', [
+                                'value' => $decliningSalesTrend,
+                                'title' => $totalCounties > 0 ? number_format(($decliningCounties / $totalCounties) * 100, 0).'% of counties' : 'No counties available',
+                            ])
+                        </div>
                         <p class="mt-2 text-lg font-semibold text-zinc-900">
-                            <span class="text-red-600">{{ number_format($homepageMarketMovements['declining_counties'] ?? 112) }}</span> / {{ number_format($homepageMarketMovements['total_counties'] ?? 112) }}
+                            <span class="text-red-600">{{ number_format($decliningCounties) }}</span> / {{ number_format($totalCounties) }}
                         </p>
                     </div>
                 </div>

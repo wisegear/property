@@ -71,6 +71,12 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('/ 112');
         $view->assertSee('border-zinc-200 bg-zinc-50', false);
         $view->assertSee('▼ -34.1%', false);
+        $view->assertSee('stroke="#ef4444"', false);
+        $view->assertSee('stroke="#22c55e"', false);
+        $view->assertSee('rotate(-30.69, 60, 60)', false);
+        $view->assertSee('rotate(-0.18, 60, 60)', false);
+        $view->assertSee('rotate(14.46, 60, 60)', false);
+        $view->assertSee('rotate(-90.00, 60, 60)', false);
         $view->assertSee('Top Counties with Falling Sales');
         $view->assertSee('Torfaen');
         $view->assertSee('Portsmouth');
@@ -149,9 +155,11 @@ class HomePagePostcodeQuickSearchTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('▲ 19.2%', false);
-        $response->assertSee('▲ 5.0%', false);
-        $response->assertSee('1</span> / 4', false);
         $response->assertSee('3</span> / 4', false);
+        $response->assertSee('1</span> / 4', false);
+        $response->assertSee('rotate(17.28, 60, 60)', false);
+        $response->assertSee('rotate(67.50, 60, 60)', false);
+        $response->assertSee('rotate(-22.50, 60, 60)', false);
         $response->assertSeeInOrder([
             'Top Counties with Falling Sales:',
             'Beta',
