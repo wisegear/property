@@ -378,7 +378,7 @@
             </div>
         </div>
 
-        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition transform hover:-translate-y-0.5 hover:shadow-md">
+        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex h-full flex-col gap-4">
                 <div>
                     <div class="flex flex-wrap items-center justify-between gap-3">
