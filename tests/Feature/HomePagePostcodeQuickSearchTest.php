@@ -38,6 +38,15 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'marketInsightsCount' => 128,
             'marketInsightsLastRunAt' => Carbon::create(2026, 3, 15, 8, 30),
             'marketInsightSignalCount' => 9,
+            'liveSignalsCount' => 128,
+            'signalTypesCount' => 9,
+            'topSignal' => [
+                'type' => 'Demand Collapse',
+                'postcode' => 'M1',
+                'change' => -33.3,
+                'direction' => 'down',
+                'color' => 'text-red-600',
+            ],
             'homepageMarketMovements' => [
                 'transaction_change_percent' => -34.1,
                 'median_price_change_percent' => -0.2,
@@ -169,7 +178,17 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('Signals worth watching');
         $view->assertSee('128 live');
         $view->assertSee('9 signal types');
-        $view->assertSee('Open Insights');
+        $view->assertSee('Top signal (this period)');
+        $view->assertSee('Demand Collapse');
+        $view->assertSee('M1');
+        $view->assertSee('▼ -33.3%');
+        $view->assertSee('Spot price collapses, demand freezes, and unexpected hotspots before they show in headline data.');
+        $view->assertSee('animate-pulse', false);
+        $view->assertSee('w-1/3 bg-red-400', false);
+        $view->assertSee('w-1/3 bg-amber-400', false);
+        $view->assertSee('w-1/3 bg-green-400', false);
+        $view->assertSee('Explore live signals');
+        $view->assertSee('transition transform hover:-translate-y-0.5 hover:shadow-md', false);
         $view->assertSee('lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)]', false);
         $view->assertSee('md:grid-cols-2 lg:grid-cols-3', false);
         $view->assertSee('flex h-full flex-col', false);
@@ -213,11 +232,69 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'updated_at' => Carbon::create(2026, 3, 15, 9, 45),
         ]);
 
+        MarketInsight::query()->create([
+            'area_type' => 'postcode_sector',
+            'area_code' => 'SW1',
+            'insight_type' => 'unexpected_hotspot',
+            'metric_value' => 6.4,
+            'transactions' => 24,
+            'period_start' => '2025-02-01',
+            'period_end' => '2026-01-31',
+            'supporting_data' => ['price_change' => 6.4],
+            'insight_text' => 'Prices in SW1 are outperforming nearby sectors.',
+            'created_at' => Carbon::create(2026, 3, 17, 12, 0),
+            'updated_at' => Carbon::create(2026, 3, 17, 12, 0),
+        ]);
+
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('2 live');
+        $response->assertSee('3 live');
         $response->assertSee('9 signal types');
+        $response->assertSee('Top signal (this period)');
+        $response->assertSee('Demand Collapse');
+        $response->assertSee('M1');
+        $response->assertSee('▼ -33.3%');
+    }
+
+    public function test_home_page_normalizes_upward_top_signal_direction_and_sign(): void
+    {
+        MarketInsight::query()->create([
+            'area_type' => 'postcode_sector',
+            'area_code' => 'B1',
+            'insight_type' => 'price_spike',
+            'metric_value' => -89.0,
+            'transactions' => 18,
+            'period_start' => '2025-02-01',
+            'period_end' => '2026-01-31',
+            'supporting_data' => ['price_change' => -89.0],
+            'insight_text' => 'Median prices in B1 rose sharply.',
+            'created_at' => Carbon::create(2026, 3, 18, 9, 0),
+            'updated_at' => Carbon::create(2026, 3, 18, 9, 0),
+        ]);
+
+        MarketInsight::query()->create([
+            'area_type' => 'postcode_sector',
+            'area_code' => 'M1',
+            'insight_type' => 'demand_collapse',
+            'metric_value' => -33.3,
+            'transactions' => 20,
+            'period_start' => '2025-02-01',
+            'period_end' => '2026-01-31',
+            'supporting_data' => ['transaction_change' => -33.3],
+            'insight_text' => 'Property transactions in M1 fell sharply.',
+            'created_at' => Carbon::create(2026, 3, 15, 9, 45),
+            'updated_at' => Carbon::create(2026, 3, 15, 9, 45),
+        ]);
+
+        $response = $this->get('/');
+
+        $response->assertOk();
+        $response->assertSee('Price Spike');
+        $response->assertSee('B1');
+        $response->assertSee('▲ 89.0%');
+        $response->assertDontSee('▼ -89.0%');
+        $response->assertSee('text-green-600');
     }
 
     public function test_home_page_shows_logged_in_banner_for_user_id_one(): void

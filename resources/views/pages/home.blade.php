@@ -169,7 +169,7 @@
 
     <section class="mt-6">
         <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <div class="flex h-full flex-col gap-4">
+            <div class="flex h-full flex-col gap-3">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <h2 class="text-lg font-semibold text-zinc-900">UK Housing Market Snapshot <span class="text-xs font-normal text-zinc-500">(Last 2 quarters)</span></h2>
@@ -334,13 +334,6 @@
                             The current highest sale in each top-sales segment, from ultra-prime London to the strongest rest-of-UK outlier.
                         </p>
                     </div>
-                    <a href="{{ route('top-sales.index') }}"
-                       class="inline-flex items-center gap-2 text-sm font-medium text-lime-700 hover:underline">
-                        Open Top Property Sales
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                        </svg>
-                    </a>
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -374,36 +367,69 @@
                         </article>
                     @endforeach
                 </div>
+
+                <a href="{{ route('top-sales.index') }}"
+                   class="inline-flex items-center gap-2 pt-1 text-sm font-medium text-lime-700 hover:underline sm:mt-auto sm:ml-auto">
+                    Open Top Property Sales
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                </a>
             </div>
         </div>
 
-        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition transform hover:-translate-y-0.5 hover:shadow-md">
             <div class="flex h-full flex-col gap-4">
                 <div>
                     <div class="flex flex-wrap items-center justify-between gap-3">
-                        <h2 class="text-lg font-semibold text-zinc-900">Signals worth watching</h2>
-                        <div class="flex flex-wrap gap-2 text-[11px] font-semibold tracking-wide">
-                            <span class="inline-flex items-center rounded-full border border-lime-200 bg-lime-50 px-2.5 py-1 text-lime-700">
-                                {{ number_format($marketInsightsCount ?? 0) }} live
+                        <h2 class="text-lg font-semibold text-zinc-900">Signals Worth Watching</h2>
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-sm font-medium text-green-700">
+                                ● {{ number_format($liveSignalsCount ?? $marketInsightsCount ?? 0) }} live
                             </span>
-                            <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-700">
-                                {{ $marketInsightSignalCount ?? 9 }} signal types
+                            <span class="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-sm font-medium text-amber-700">
+                                {{ $signalTypesCount ?? $marketInsightSignalCount ?? 9 }} signal types
                             </span>
                         </div>
                     </div>
-                    <p class="mt-4 text-sm leading-6 text-zinc-600">
-                        Browse price signals, market activity shifts, and longer-term trend signals from rolling 12-month Land Registry windows, with postcode sector pages and historical sales context behind each insight.
+                    <div class="mt-3 text-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-500">Top signal (this period)</span>
+                            <span class="font-medium text-red-600">
+                                {{ $topSignal['type'] ?? 'Price Collapse' }}
+                            </span>
+                        </div>
+
+                        <div class="font-medium text-gray-800">
+                            {{ $topSignal['postcode'] ?? 'TA22' }}
+                            @php
+                                $topSignalDirection = $topSignal['direction'] ?? 'down';
+                                $topSignalArrow = $topSignalDirection === 'up' ? '▲' : '▼';
+                                $topSignalColor = $topSignal['color'] ?? ($topSignalDirection === 'up' ? 'text-green-600' : 'text-red-600');
+                                $topSignalChange = (float) ($topSignal['change'] ?? -41.0);
+                            @endphp
+                            <span class="{{ $topSignalColor }}">
+                                {{ $topSignalArrow }} {{ number_format($topSignalChange, 1) }}%
+                            </span>
+                        </div>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-600">
+                        Spot price collapses, demand freezes, and unexpected hotspots before they show in headline data.
                     </p>
+                    <div class="mt-3 flex h-1 overflow-hidden rounded-full">
+                        <div class="w-1/3 bg-red-400"></div>
+                        <div class="w-1/3 bg-amber-400"></div>
+                        <div class="w-1/3 bg-green-400"></div>
+                    </div>
                 </div>
 
-                <div class="inline-flex items-center gap-2 pt-1 text-sm font-medium text-lime-700 group-hover:underline">
-                    <a href="{{ route('insights.index') }}" class="inline-flex items-center gap-2">
-                        Open Insights
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                        </svg>
-                    </a>
-                </div>
+                <a href="{{ route('insights.index') }}"
+                   class="mt-4 inline-flex items-center gap-2 text-sm font-medium text-lime-700 hover:underline sm:ml-auto">
+                    Explore live signals
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                </a>
             </div>
         </div>
     </section>

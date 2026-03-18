@@ -60,7 +60,14 @@ class PagesController extends Controller
     }
 
     /**
-     * @return array{marketInsightsCount:int, marketInsightsLastRunAt:?Carbon, marketInsightSignalCount:int}
+     * @return array{
+     *     marketInsightsCount:int,
+     *     marketInsightsLastRunAt:?Carbon,
+     *     marketInsightSignalCount:int,
+     *     liveSignalsCount:int,
+     *     signalTypesCount:int,
+     *     topSignal:array{type:string,postcode:string,change:float,direction:string,color:string}|null
+     * }
      */
     private function marketInsightsSummary(): array
     {
@@ -69,17 +76,69 @@ class PagesController extends Controller
                 'marketInsightsCount' => 0,
                 'marketInsightsLastRunAt' => null,
                 'marketInsightSignalCount' => 9,
+                'liveSignalsCount' => 0,
+                'signalTypesCount' => 9,
+                'topSignal' => null,
             ];
         }
 
         $marketInsightsCount = MarketInsight::query()->count();
         $marketInsightsLastRunAt = MarketInsight::query()->max('created_at');
+        $topInsight = MarketInsight::query()
+            ->whereNotNull('metric_value')
+            ->orderByRaw('ABS(metric_value) DESC')
+            ->orderByDesc('created_at')
+            ->first();
 
         return [
             'marketInsightsCount' => $marketInsightsCount,
             'marketInsightsLastRunAt' => $marketInsightsLastRunAt === null ? null : Carbon::parse($marketInsightsLastRunAt),
             'marketInsightSignalCount' => 9,
+            'liveSignalsCount' => $marketInsightsCount,
+            'signalTypesCount' => 9,
+            'topSignal' => $topInsight ? $this->formatTopSignal($topInsight) : null,
         ];
+    }
+
+    /**
+     * @return array{type:string,postcode:string,change:float,direction:string,color:string}
+     */
+    private function formatTopSignal(MarketInsight $topInsight): array
+    {
+        $direction = $this->insightDirection($topInsight->insight_type);
+        $change = (float) $topInsight->metric_value;
+
+        return [
+            'type' => $this->insightTypeLabel($topInsight->insight_type),
+            'postcode' => (string) $topInsight->area_code,
+            'change' => $direction === 'up' ? abs($change) : -abs($change),
+            'direction' => $direction,
+            'color' => $direction === 'up' ? 'text-green-600' : 'text-red-600',
+        ];
+    }
+
+    private function insightDirection(string $insightType): string
+    {
+        return match ($insightType) {
+            'price_spike', 'liquidity_surge', 'sector_outperformance', 'unexpected_hotspot' => 'up',
+            default => 'down',
+        };
+    }
+
+    private function insightTypeLabel(string $insightType): string
+    {
+        return match ($insightType) {
+            'price_spike' => 'Price Spike',
+            'price_collapse' => 'Price Collapse',
+            'demand_collapse' => 'Demand Collapse',
+            'liquidity_stress' => 'Liquidity Stress',
+            'liquidity_surge' => 'Liquidity Surge',
+            'market_freeze' => 'Market Freeze',
+            'sector_outperformance' => 'Sector Outperformance',
+            'momentum_reversal' => 'Momentum Reversal',
+            'unexpected_hotspot' => 'Unexpected Hotspot',
+            default => str($insightType)->replace('_', ' ')->title()->toString(),
+        };
     }
 
     /**
