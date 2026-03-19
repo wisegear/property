@@ -421,6 +421,18 @@
                                        class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
                                         EPC Dashboard
                                     </a>
+                                    <a href="{{ url('/rental') }}"
+                                       role="menuitem"
+                                       tabindex="-1"
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Rental
+                                    </a>
+                                    <a href="{{ url('/repossessions') }}"
+                                       role="menuitem"
+                                       tabindex="-1"
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Repossessions
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -458,18 +470,6 @@
                         </div>
                     </div>
 
-                    <!-- Rental Link -->
-                    <a href="{{ url('/rental') }}"
-                       class="px-3 py-2 rounded {{ request()->is('rental') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
-                        Rental
-                    </a>
-                    
-                    <!-- Repossessions Link -->
-                    <a href="{{ url('/repossessions') }}" 
-                       class="px-3 py-2 rounded {{ request()->is('repossessions') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
-                        Repossessions
-                    </a>
-                    
                     <!-- Deprivation Link -->
                     <a href="{{ url('/deprivation') }}" 
                        class="px-3 py-2 rounded {{ request()->is('deprivation') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
@@ -680,6 +680,14 @@
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
                             EPC Dashboard
                         </a>
+                        <a href="{{ url('/rental') }}"
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Rental
+                        </a>
+                        <a href="{{ url('/repossessions') }}"
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Repossessions
+                        </a>
                     </div>
                 </div>
 
@@ -705,18 +713,6 @@
                     </div>
                 </div>
 
-                <!-- Rental Link -->
-                <a href="{{ url('/rental') }}"
-                   class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                    Rental
-                </a>
-                
-                <!-- Repossessions Link -->
-                <a href="{{ url('/repossessions') }}" 
-                   class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                    Repossessions
-                </a>
-                
                 <!-- Deprivation Link -->
                 <a href="{{ url('/deprivation') }}" 
                    class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
