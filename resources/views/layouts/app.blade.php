@@ -226,6 +226,99 @@
                         Home
                     </a>
                     
+                    <!-- Property Dropdown Menu -->
+                    <div class="relative">
+                        <button id="propertyMenuButton" 
+                                aria-haspopup="true" 
+                                aria-controls="propertyDropdown" 
+                                aria-expanded="false" 
+                                class="px-3 py-2 rounded flex items-center gap-1 text-zinc-700 hover:text-lime-600 focus:outline-none cursor-pointer">
+                            Property
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        
+                        <!-- Property Dropdown Content (2 columns) -->
+                        <div id="propertyDropdown" 
+                             role="menu" 
+                             aria-labelledby="propertyMenuButton" 
+                             class="absolute left-0 mt-4 w-[32rem] bg-white border border-zinc-200 rounded shadow-lg z-50 transform transition duration-150 ease-out origin-top opacity-0 scale-95 pointer-events-none hidden">
+                            <div class="flex">
+                                <!-- Left Column -->
+                                <div class="py-2 flex-1">
+                                    <a href="{{ url('/property') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 font-bold">
+                                        Dashboard
+                                    </a>
+                                    <a href="{{ url('/property/search') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Property Search
+                                    </a>
+                                    <a href="{{ url('/property/outer-prime-london') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Outer Prime London
+                                    </a>
+                                    <a href="{{ url('/property/prime-central-london') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Prime Central London
+                                    </a>
+                                    <a href="{{ url('/property/ultra-prime-central-london') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Ultra Prime Central London
+                                    </a>
+                                </div>
+
+                                <!-- Vertical Divider -->
+                                <div class="w-px bg-zinc-200 my-2"></div>
+
+                                <!-- Right Column -->
+                                <div class="py-2 flex-1">
+                                    <a href="{{ url('/hpi') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        House Price Index
+                                    </a>
+                                    <a href="{{ url('/new-old') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        New Build Comparison
+                                    </a>
+                                    <a href="{{ url('/epc') }}" 
+                                       role="menuitem" 
+                                       tabindex="-1" 
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        EPC Dashboard
+                                    </a>
+                                    <a href="{{ url('/rental') }}"
+                                       role="menuitem"
+                                       tabindex="-1"
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Rental
+                                    </a>
+                                    <a href="{{ url('/repossessions') }}"
+                                       role="menuitem"
+                                       tabindex="-1"
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Repossessions
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Stress Indicators Dropdown Menu -->
                     <div class="relative">
                         <button id="economicsMenuButton" 
@@ -345,98 +438,11 @@
                         </div>
                     </div>
 
-                    <!-- Property Dropdown Menu -->
-                    <div class="relative">
-                        <button id="propertyMenuButton" 
-                                aria-haspopup="true" 
-                                aria-controls="propertyDropdown" 
-                                aria-expanded="false" 
-                                class="px-3 py-2 rounded flex items-center gap-1 text-zinc-700 hover:text-lime-600 focus:outline-none cursor-pointer">
-                            Property
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        
-                        <!-- Property Dropdown Content (2 columns) -->
-                        <div id="propertyDropdown" 
-                             role="menu" 
-                             aria-labelledby="propertyMenuButton" 
-                             class="absolute left-0 mt-4 w-[32rem] bg-white border border-zinc-200 rounded shadow-lg z-50 transform transition duration-150 ease-out origin-top opacity-0 scale-95 pointer-events-none hidden">
-                            <div class="flex">
-                                <!-- Left Column -->
-                                <div class="py-2 flex-1">
-                                    <a href="{{ url('/property') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 font-bold">
-                                        Dashboard
-                                    </a>
-                                    <a href="{{ url('/property/search') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        Property Search
-                                    </a>
-                                    <a href="{{ url('/property/outer-prime-london') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        Outer Prime London
-                                    </a>
-                                    <a href="{{ url('/property/prime-central-london') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        Prime Central London
-                                    </a>
-                                    <a href="{{ url('/property/ultra-prime-central-london') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        Ultra Prime Central London
-                                    </a>
-                                </div>
-
-                                <!-- Vertical Divider -->
-                                <div class="w-px bg-zinc-200 my-2"></div>
-
-                                <!-- Right Column -->
-                                <div class="py-2 flex-1">
-                                    <a href="{{ url('/hpi') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        House Price Index
-                                    </a>
-                                    <a href="{{ url('/new-old') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        New Build Comparison
-                                    </a>
-                                    <a href="{{ url('/epc') }}" 
-                                       role="menuitem" 
-                                       tabindex="-1" 
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        EPC Dashboard
-                                    </a>
-                                    <a href="{{ url('/rental') }}"
-                                       role="menuitem"
-                                       tabindex="-1"
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        Rental
-                                    </a>
-                                    <a href="{{ url('/repossessions') }}"
-                                       role="menuitem"
-                                       tabindex="-1"
-                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        Repossessions
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Deprivation Link -->
+                    <a href="{{ url('/deprivation') }}" 
+                       class="px-3 py-2 rounded {{ request()->is('deprivation') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
+                        Deprivation
+                    </a>
 
                     <!-- Social Housing Dropdown Menu -->
                     <div class="relative">
@@ -469,12 +475,6 @@
                             </a>
                         </div>
                     </div>
-
-                    <!-- Deprivation Link -->
-                    <a href="{{ url('/deprivation') }}" 
-                       class="px-3 py-2 rounded {{ request()->is('deprivation') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
-                        Deprivation
-                    </a>
 
                     <!-- Calculators Dropdown Menu -->
                     <div class="relative">
@@ -562,6 +562,61 @@
                     Home
                 </a>
                 
+                <!-- Property Dropdown (Mobile) -->
+                <div>
+                    <button id="mobilePropertyBtn"
+                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none">
+                        Property
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    
+                    <!-- Property Submenu Items -->
+                    <div id="mobilePropertyMenu" class="hidden flex-col pl-2 space-y-1 mt-1">
+                        <a href="{{ url('/property') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 font-bold">
+                            Dashboard
+                        </a>
+                        <a href="{{ url('/property/search') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Property Search
+                        </a>
+                        <a href="{{ url('/property/outer-prime-london') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Outer Prime London
+                        </a>
+                        <a href="{{ url('/property/prime-central-london') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Prime Central London
+                        </a>
+                        <a href="{{ url('/property/ultra-prime-central-london') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Ultra Prime Central London
+                        </a>
+                        <a href="{{ url('/hpi') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            House Price Index
+                        </a>
+                        <a href="{{ url('/new-old') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            New Build Comparison
+                        </a>
+                        <a href="{{ url('/epc') }}" 
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            EPC Dashboard
+                        </a>
+                        <a href="{{ url('/rental') }}"
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Rental
+                        </a>
+                        <a href="{{ url('/repossessions') }}"
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Repossessions
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Stress Indicators Dropdown (Mobile) -->
                 <div>
                     <button id="mobileIndicatorsBtn" 
@@ -636,60 +691,11 @@
                     </div>
                 </div>
 
-                <!-- Property Dropdown (Mobile) -->
-                <div>
-                    <button id="mobilePropertyBtn"
-                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none">
-                        Property
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-                    
-                    <!-- Property Submenu Items -->
-                    <div id="mobilePropertyMenu" class="hidden flex-col pl-2 space-y-1 mt-1">
-                        <a href="{{ url('/property') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 font-bold">
-                            Dashboard
-                        </a>
-                        <a href="{{ url('/property/search') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Property Search
-                        </a>
-                        <a href="{{ url('/property/outer-prime-london') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Outer Prime London
-                        </a>
-                        <a href="{{ url('/property/prime-central-london') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Prime Central London
-                        </a>
-                        <a href="{{ url('/property/ultra-prime-central-london') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Ultra Prime Central London
-                        </a>
-                        <a href="{{ url('/hpi') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            House Price Index
-                        </a>
-                        <a href="{{ url('/new-old') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            New Build Comparison
-                        </a>
-                        <a href="{{ url('/epc') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            EPC Dashboard
-                        </a>
-                        <a href="{{ url('/rental') }}"
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Rental
-                        </a>
-                        <a href="{{ url('/repossessions') }}"
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Repossessions
-                        </a>
-                    </div>
-                </div>
+                <!-- Deprivation Link -->
+                <a href="{{ url('/deprivation') }}" 
+                   class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                    Deprivation
+                </a>
 
                 <!-- Social Housing Dropdown (Mobile) -->
                 <div>
@@ -712,12 +718,6 @@
                         </a>
                     </div>
                 </div>
-
-                <!-- Deprivation Link -->
-                <a href="{{ url('/deprivation') }}" 
-                   class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                    Deprivation
-                </a>
 
                 <!-- Calculators Dropdown (Mobile) -->
                 <div>
