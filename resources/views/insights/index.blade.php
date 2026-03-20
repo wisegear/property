@@ -18,6 +18,11 @@
         'Market Activity' => ['liquidity_stress', 'liquidity_surge', 'demand_collapse', 'market_freeze'],
         'Market Trends' => ['sector_outperformance', 'momentum_reversal', 'unexpected_hotspot'],
     ];
+    $insightTypeChartLabels = array_values($insightTypes);
+    $insightTypeChartValues = collect(array_keys($insightTypes))
+        ->map(fn (string $type): int => (int) ($insightTypeCounts[$type] ?? 0))
+        ->values()
+        ->all();
 @endphp
 
 <div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
@@ -83,6 +88,23 @@
                 </div>
             </div>
         </details>
+    </section>
+
+    <section class="mt-6">
+        <article class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Signal Mix</p>
+                    <h2 class="mt-2 text-lg font-semibold text-zinc-900">Stored insights by type</h2>
+                    <p class="mt-2 text-sm text-zinc-600">A quick view of how the nine anomaly types are currently distributed.</p>
+                </div>
+                <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">All 9 signals</span>
+            </div>
+
+            <div class="mt-5 h-72 min-w-0 overflow-hidden sm:h-80">
+                <canvas id="insight-type-count-chart" class="block h-full w-full max-w-full"></canvas>
+            </div>
+        </article>
     </section>
 
     <div class="mx-auto max-w-7xl py-6 sm:px-2 lg:px-0">
@@ -259,3 +281,69 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    new Chart(document.getElementById('insight-type-count-chart'), {
+        type: 'bar',
+        data: {
+            labels: @json($insightTypeChartLabels),
+            datasets: [{
+                label: 'Stored insights',
+                data: @json($insightTypeChartValues),
+                backgroundColor: [
+                    'rgba(249, 115, 22, 0.78)',
+                    'rgba(239, 68, 68, 0.78)',
+                    'rgba(225, 29, 72, 0.78)',
+                    'rgba(217, 119, 6, 0.78)',
+                    'rgba(34, 197, 94, 0.78)',
+                    'rgba(220, 38, 38, 0.78)',
+                    'rgba(22, 163, 74, 0.78)',
+                    'rgba(59, 130, 246, 0.78)',
+                    'rgba(234, 88, 12, 0.78)',
+                ],
+                borderColor: [
+                    '#ea580c',
+                    '#dc2626',
+                    '#be123c',
+                    '#b45309',
+                    '#16a34a',
+                    '#b91c1c',
+                    '#15803d',
+                    '#2563eb',
+                    '#c2410c',
+                ],
+                borderWidth: 1,
+                borderRadius: 8,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => Number(context.parsed.y).toLocaleString('en-GB') + ' insights',
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45,
+                    },
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: (value) => Number(value).toLocaleString('en-GB'),
+                    },
+                },
+            },
+        },
+    });
+</script>
+@endpush

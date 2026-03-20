@@ -56,6 +56,22 @@ class PostgresControllerRouteSmokeTest extends TestCase
             ->assertSee('text: yearRangeTitle', false);
     }
 
+    public function test_prime_london_top_sale_chart_uses_highest_sale_of_year_and_keeps_top_three_rows(): void
+    {
+        $this->seedPrimeDataset('Prime Central', 'AB1');
+
+        $this->get('/property/prime-central-london')
+            ->assertOk()
+            ->assertViewHas('charts', function ($charts): bool {
+                $topSaleSeries = collect($charts['ALL']['topSalePerYear'] ?? []);
+                $topThree = collect($charts['ALL']['top3PerYear'] ?? []);
+
+                return (int) ($topSaleSeries->first()->top_sale ?? 0) === 1000000
+                    && $topThree->count() === 3
+                    && $topThree->pluck('Price')->map(fn ($price) => (int) $price)->all() === [1000000, 300000, 200000];
+            });
+    }
+
     public function test_prime_london_route_uses_warmed_cache_without_district_queries(): void
     {
         $this->seedPrimeDataset('Prime Central', 'AB1');

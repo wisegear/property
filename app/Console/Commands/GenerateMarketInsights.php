@@ -25,23 +25,23 @@ class GenerateMarketInsights extends Command
 
     protected $description = 'Run anomaly detection and store market insights.';
 
-    private const PRICE_SPIKE_THRESHOLD = 15.0;
+    private const PRICE_SPIKE_THRESHOLD = 25.0;
 
-    private const PRICE_COLLAPSE_THRESHOLD = -15.0;
+    private const PRICE_COLLAPSE_THRESHOLD = -25.0;
 
-    private const DEMAND_COLLAPSE_THRESHOLD = -30.0;
+    private const DEMAND_COLLAPSE_THRESHOLD = -45.0;
 
-    private const LIQUIDITY_SURGE_THRESHOLD = 50.0;
+    private const LIQUIDITY_SURGE_THRESHOLD = 70.0;
 
-    private const MARKET_FREEZE_THRESHOLD = -50.0;
+    private const MARKET_FREEZE_THRESHOLD = -60.0;
 
     private const LIQUIDITY_STRESS_SALES_THRESHOLD = -40.0;
 
     private const LIQUIDITY_STRESS_PRICE_THRESHOLD = 5.0;
 
-    private const HOTSPOT_OUTPERFORMANCE_MARGIN = 12.0;
+    private const HOTSPOT_OUTPERFORMANCE_MARGIN = 20.0;
 
-    private const OUTPERFORMANCE_THRESHOLD = 20.0;
+    private const OUTPERFORMANCE_THRESHOLD = 30.0;
 
     public function __construct(private InsightWriter $insightWriter)
     {
@@ -114,15 +114,15 @@ class GenerateMarketInsights extends Command
 
     protected function runAnomalyQueries(): Collection
     {
-        return $this->detectPriceSpikes()
-            ->concat($this->detectPriceCollapses())
-            ->concat($this->detectDemandCollapses())
-            ->concat($this->detectLiquidityStress())
-            ->concat($this->detectLiquiditySurges())
-            ->concat($this->detectMarketFreezes())
-            ->concat($this->detectSectorOutperformance())
-            ->concat($this->detectMomentumReversal())
-            ->concat($this->detectUnexpectedHotspots())
+        return $this->detectPriceSpikes()->take(50)
+            ->concat($this->detectPriceCollapses()->take(50))
+            ->concat($this->detectDemandCollapses()->take(50))
+            ->concat($this->detectLiquidityStress()->take(50))
+            ->concat($this->detectLiquiditySurges()->take(50))
+            ->concat($this->detectMarketFreezes()->take(50))
+            ->concat($this->detectSectorOutperformance()->take(50))
+            ->concat($this->detectMomentumReversal()->take(50))
+            ->concat($this->detectUnexpectedHotspots()->take(50))
             ->values();
     }
 
@@ -256,6 +256,7 @@ FROM current_period
 INNER JOIN previous_period
     ON previous_period.postcode = current_period.postcode
 WHERE current_period.sales >= ?
+  AND current_period.sales >= 15
   AND previous_period.sales > 0
   AND {$salesChangeExpression} < ?
 ORDER BY sales_change ASC, current_period.postcode ASC
@@ -1023,8 +1024,8 @@ SQL;
             $periods['earlier_start']->toDateString(),
             $periods['earlier_end']->toDateString(),
             $this->minSectorTransactions(),
-            15,
-            -10,
+            25,
+            -20,
         ]))->map(function (object $row) use ($periods): array {
             return [
                 'area_code' => (string) $row->sector,
@@ -1316,7 +1317,7 @@ SQL;
 
     protected function minSectorTransactions(): int
     {
-        return max((int) config('insights.min_sector_transactions', 20), 1);
+        return max((int) config('insights.min_sector_transactions', 40), 1);
     }
 
     /**

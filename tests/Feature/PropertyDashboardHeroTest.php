@@ -86,5 +86,10 @@ class PropertyDashboardHeroTest extends TestCase
         $view->assertSee('id="snapshot-sales-yoy"', false);
         $view->assertSee('function updateSnapshot(district)', false);
         $view->assertSee('updateSnapshot(val);', false);
+        $view->assertSee('canvas id="api_ALL" class="w-full flex-1 min-h-0"', false);
+        $view->assertSee('canvas id="yoy_top5_ALL" class="w-full flex-1 min-h-0"', false);
+        $view->assertSee('text: yoyRangeTitle,', false);
+        $view->assertSee('font: {', false);
+        $view->assertSee('size: 12', false);
     }
 }

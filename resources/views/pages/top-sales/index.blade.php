@@ -45,8 +45,8 @@
                 @endforeach
             </div>
 
-            <p class="text-sm text-zinc-500">
-                Highest value residential transactions.
+            <p class="text-sm text-zinc-500 font-semibold">
+                Click on any address to view more details about that property.
             </p>
         </section>
 
@@ -64,7 +64,7 @@
                 ])->filter()->implode(', ');
             @endphp
 
-            <section class="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-6">
+            <section class="mt-6 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
                 <p class="text-sm text-zinc-500">Most Expensive Sale</p>
                 <p class="mt-2 text-3xl font-bold text-zinc-900">
                     £{{ number_format((int) ($topSale->Price ?? 0)) }}
@@ -105,6 +105,22 @@
                 </article>
             @endforeach
         </section>
+
+        @if ($salesScatter->isNotEmpty())
+            <section class="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price History View</p>
+                        <h2 class="mt-2 text-xl font-semibold text-zinc-900">Sale prices across the years shown in this table</h2>
+                    </div>
+                    <p class="text-sm text-zinc-500">Each point is a listed sale on this page, plotted by year and price.</p>
+                </div>
+
+                <div class="mt-5 h-72 min-w-0 sm:h-80">
+                    <canvas id="top-sales-scatter-chart"></canvas>
+                </div>
+            </section>
+        @endif
 
         <p class="mt-6 text-sm text-zinc-600">{{ $insight }}</p>
 
@@ -164,4 +180,69 @@
             </div>
         @endif
     </div>
+
+    @if ($salesScatter->isNotEmpty())
+        <script>
+            const topSalesScatterData = @json($salesScatter);
+
+            new Chart(document.getElementById('top-sales-scatter-chart'), {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Sale price',
+                        data: topSalesScatterData,
+                        backgroundColor: 'rgba(101, 163, 13, 0.75)',
+                        borderColor: '#3f6212',
+                        borderWidth: 1,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label(context) {
+                                    const point = context.raw ?? {};
+
+                                    return `${point.address ?? 'Sale'}: £${Number(point.y ?? 0).toLocaleString()} (${point.date ?? ''})`;
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            ticks: {
+                                precision: 0,
+                                callback(value) {
+                                    return Number(value).toFixed(0);
+                                },
+                            },
+                            title: {
+                                display: true,
+                                text: 'Year',
+                            },
+                        },
+                        y: {
+                            ticks: {
+                                callback(value) {
+                                    return `£${Number(value).toLocaleString()}`;
+                                },
+                            },
+                            title: {
+                                display: true,
+                                text: 'Sale price',
+                            },
+                        },
+                    },
+                },
+            });
+        </script>
+    @endif
 @endsection

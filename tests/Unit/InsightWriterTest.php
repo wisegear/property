@@ -19,7 +19,7 @@ class InsightWriterTest extends TestCase
         ]);
 
         $this->assertSame(
-            'Median property prices in NW8 rose 12.4% in 01 Feb 2025 to 31 Jan 2026 based on 42 recorded sales.',
+            'Median property prices in NW8 rose 12.4% between 01 Feb 2025 and 31 Jan 2026 based on 42 recorded sales.',
             $result
         );
     }
@@ -36,7 +36,7 @@ class InsightWriterTest extends TestCase
         ]);
 
         $this->assertSame(
-            'Property transactions in M1 fell 18.7% in 01 Feb 2025 to 31 Jan 2026 based on 15 recorded sales.',
+            'Property transactions in M1 fell 18.7% between 01 Feb 2025 and 31 Jan 2026 based on 15 recorded sales.',
             $result
         );
     }
@@ -85,7 +85,7 @@ class InsightWriterTest extends TestCase
         ]);
 
         $this->assertSame(
-            'Property transactions in postcode sector B1 fell 44.0% in 01 Feb 2025 to 31 Jan 2026 while median prices still rose 6.5%, suggesting weakening market liquidity.',
+            'Property transactions in postcode sector B1 fell 44.0% between 01 Feb 2025 and 31 Jan 2026 while median prices still rose 6.5%, suggesting weakening market liquidity.',
             $result
         );
     }
@@ -118,7 +118,7 @@ class InsightWriterTest extends TestCase
         ]);
 
         $this->assertSame(
-            'Median property prices in SW1A rose 14.2% in 01 Feb 2025 to 31 Jan 2026 versus 2.8% nationally based on 27 recorded sales.',
+            'Median property prices in SW1A rose 14.2% between 01 Feb 2025 and 31 Jan 2026 versus 2.8% nationally based on 27 recorded sales.',
             $result
         );
     }

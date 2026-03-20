@@ -26,6 +26,9 @@ class InsightsControllerTest extends TestCase
 
         $routeResponse->assertOk();
         $routeResponse->assertViewIs('insights.index');
+        $routeResponse->assertSee('Stored insights by type');
+        $routeResponse->assertSee('Signal Mix');
+        $routeResponse->assertSee('insight-type-count-chart', false);
         $routeResponse->assertViewHas('query', function ($query): bool {
             if (! $query instanceof LengthAwarePaginator) {
                 return false;
@@ -81,6 +84,11 @@ class InsightsControllerTest extends TestCase
                 && $items[1]->area_code === 'CITY1';
         });
         $routeResponse->assertSee('search=city', false);
+        $routeResponse->assertViewHas('insightTypeCounts', function (array $counts): bool {
+            return $counts['price_spike'] === 0
+                && $counts['demand_collapse'] === 26
+                && $counts['price_collapse'] === 0;
+        });
     }
 
     public function test_search_filters_by_insight_type(): void
@@ -156,12 +164,27 @@ class InsightsControllerTest extends TestCase
             'selectedType' => 'price_spike',
             'search' => 'Manchester',
             'sort' => 'transactions_desc',
+            'lastRunAt' => null,
+            'insightTypeCounts' => [
+                'price_spike' => 3,
+                'price_collapse' => 0,
+                'demand_collapse' => 0,
+                'liquidity_stress' => 0,
+                'liquidity_surge' => 0,
+                'market_freeze' => 0,
+                'sector_outperformance' => 0,
+                'momentum_reversal' => 0,
+                'unexpected_hotspot' => 0,
+            ],
         ]);
-        $rendered = $view->render();
+        $rendered = (string) $view;
 
         $view->assertSee('Property Market Insights');
         $view->assertSee('/insights/search', false);
         $view->assertSee('Filter insights');
+        $view->assertSee('Stored insights by type');
+        $view->assertSee('Signal Mix');
+        $view->assertSee('insight-type-count-chart', false);
         $view->assertSee('Price Spike');
         $view->assertSee('Price Collapse');
         $view->assertSee('Demand Collapse');
@@ -188,7 +211,7 @@ class InsightsControllerTest extends TestCase
     {
         $this->ensureLandRegistryTable();
 
-        $this->insertInsight('B1', 'price_spike', 'Median prices surged across B1.', '2026-03-09 12:00:00');
+        $this->insertInsight('B1', 'price_spike', 'Median prices surged across B1.', '2026-03-09 12:00:00', 25, 45.0);
 
         $rows = [];
         $prices2024 = array_merge(array_fill(0, 15, 200000), array_fill(0, 15, 220000));
@@ -313,13 +336,65 @@ class InsightsControllerTest extends TestCase
         $response->assertSee('No current market insights are stored for AL12.');
     }
 
-    private function insertInsight(string $areaCode, string $insightType, string $insightText, string $createdAt, int $transactions = 25): void
+    public function test_show_filters_weak_signals_ranks_results_and_applies_caps(): void
     {
+        config()->set('insights.min_period_transactions', 10);
+        config()->set('insights.strong_thresholds', [
+            'price_spike' => 40,
+            'price_collapse' => -30,
+            'demand_collapse' => -40,
+            'liquidity_stress' => -40,
+            'liquidity_surge' => 40,
+            'market_freeze' => -50,
+            'sector_outperformance' => 30,
+            'momentum_reversal' => 35,
+            'unexpected_hotspot' => 50,
+        ]);
+        config()->set('insights.max_per_type', 2);
+        config()->set('insights.max_insights_total', 3);
+
+        $this->insertInsight('LS1', 'price_spike', 'Weak price spike should be removed.', '2026-03-09 12:00:00', 12, 39.9);
+        $this->insertInsight('LS1', 'unexpected_hotspot', 'Low transaction hotspot should be removed.', '2026-03-09 11:00:00', 9, 80.0);
+        $this->insertInsight('LS1', 'price_spike', 'Strongest price spike.', '2026-03-09 10:00:00', 50, 60.0);
+        $this->insertInsight('LS1', 'price_spike', 'Second strongest price spike.', '2026-03-09 09:00:00', 30, 55.0);
+        $this->insertInsight('LS1', 'price_spike', 'Third price spike should be capped out.', '2026-03-09 08:00:00', 25, 50.0);
+        $this->insertInsight('LS1', 'demand_collapse', 'Top demand collapse.', '2026-03-09 07:00:00', 100, -70.0);
+        $this->insertInsight('LS1', 'demand_collapse', 'Second demand collapse.', '2026-03-09 06:00:00', 20, -50.0);
+
+        $response = $this->get('/insights/ls1');
+
+        $response->assertOk();
+        $response->assertViewHas('insights', function ($insights): bool {
+            if (! $insights instanceof \Illuminate\Support\Collection) {
+                return false;
+            }
+
+            return $insights->count() === 3
+                && $insights->pluck('insight_type')->all() === ['demand_collapse', 'price_spike', 'price_spike']
+                && $insights->pluck('insight_text')->all() === [
+                    'Top demand collapse.',
+                    'Strongest price spike.',
+                    'Second strongest price spike.',
+                ];
+        });
+        $response->assertDontSee('Weak price spike should be removed.');
+        $response->assertDontSee('Low transaction hotspot should be removed.');
+        $response->assertDontSee('Third price spike should be capped out.');
+    }
+
+    private function insertInsight(
+        string $areaCode,
+        string $insightType,
+        string $insightText,
+        string $createdAt,
+        int $transactions = 25,
+        float $metricValue = 12.34
+    ): void {
         DB::table('market_insights')->insert([
             'area_type' => 'postcode',
             'area_code' => $areaCode,
             'insight_type' => $insightType,
-            'metric_value' => 12.34,
+            'metric_value' => $metricValue,
             'transactions' => $transactions,
             'period_start' => Carbon::parse('2025-01-01')->toDateString(),
             'period_end' => Carbon::parse('2025-12-31')->toDateString(),

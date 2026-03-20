@@ -50,9 +50,38 @@ class TopSalesControllerTest extends TestCase
         $response->assertSee('£12,000,000');
         $response->assertSee('15 Jan 2025');
         $response->assertSee('London, GREATER LONDON');
+        $response->assertViewHas('salesScatter', function ($salesScatter): bool {
+            return $salesScatter->count() === 1
+                && $salesScatter->pluck('x')->all() === [2025]
+                && $salesScatter->pluck('y')->all() === [12000000];
+        });
+        $response->assertSee('Sale prices across the years shown in this table');
+        $response->assertSee('Each point is a listed sale on this page, plotted by year and price.');
+        $response->assertSee('top-sales-scatter-chart', false);
+        $response->assertSee('const topSalesScatterData =', false);
         $response->assertSee(route('property.show.slug', ['slug' => 'sw1a-1aa-10-downing-street'], false), false);
         $response->assertDontSee(route('property.show.slug', ['slug' => 'm1-1aa-30-deansgate'], false), false);
         $this->assertNotNull(Cache::get('top_sales:ultra'));
+    }
+
+    public function test_top_sales_scatter_chart_includes_multiple_years_from_current_table_results(): void
+    {
+        DB::table('land_registry')->insert([
+            $this->landRegistryRow('11111111-1111-1111-1111-aaaaaaaaaaaa', 13000000, '2026-01-15 00:00:00', 'SW1A 1AA', '1', null, 'Downing Street', 'London', 'GREATER LONDON'),
+            $this->landRegistryRow('22222222-2222-2222-2222-bbbbbbbbbbbb', 11000000, '2025-01-14 00:00:00', 'SW1X 7XL', '2', null, 'Belgrave Square', 'London', 'GREATER LONDON'),
+            $this->landRegistryRow('33333333-3333-3333-3333-cccccccccccc', 10000000, '2024-01-13 00:00:00', 'W1K 1AB', '3', null, 'Park Lane', 'London', 'GREATER LONDON'),
+        ]);
+
+        $response = $this->get(route('top-sales.index', ['mode' => 'ultra'], false));
+
+        $response->assertOk();
+        $response->assertViewHas('salesScatter', function ($salesScatter): bool {
+            return $salesScatter->pluck('x')->all() === [2026, 2025, 2024]
+                && $salesScatter->pluck('y')->all() === [13000000, 11000000, 10000000];
+        });
+        $response->assertSee('2026', false);
+        $response->assertSee('2025', false);
+        $response->assertSee('2024', false);
     }
 
     public function test_top_sales_page_can_filter_to_london_mode(): void
@@ -71,7 +100,7 @@ class TopSalesControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('Prime London Property Sales (£2m-£10m)');
         $response->assertSee('High-value property transactions across London.');
-        $response->assertSee('Highest value residential transactions, refreshed via the property sales warmer.');
+        $response->assertSee('Highest value residential transactions.');
         $response->assertSee('These sales show where London&#039;s prime market is still clearing at scale.', false);
         $response->assertSee('Next Highest Sale');
         $response->assertSee('Cheyne Walk');

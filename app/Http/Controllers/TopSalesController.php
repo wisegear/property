@@ -40,6 +40,23 @@ class TopSalesController extends Controller
                 'pageName' => 'page',
             ]
         );
+        $salesScatter = $sales->getCollection()
+            ->filter(fn (object $sale): bool => isset($sale->Date, $sale->Price) && $sale->Date !== null && $sale->Price !== null)
+            ->map(function (object $sale): array {
+                $address = collect([
+                    $sale->PAON ?? null,
+                    $sale->SAON ?? null,
+                    $sale->Street ?? null,
+                ])->filter()->implode(', ');
+
+                return [
+                    'x' => (int) Carbon::parse((string) $sale->Date)->format('Y'),
+                    'y' => (int) $sale->Price,
+                    'address' => $address !== '' ? $address : (string) ($sale->Postcode ?? 'Unknown address'),
+                    'date' => Carbon::parse((string) $sale->Date)->format('d M Y'),
+                ];
+            })
+            ->values();
         $insight = match ($mode) {
             'london' => 'These sales show where London\'s prime market is still clearing at scale.',
             'rest' => 'These are the most expensive sales outside London, showing where wealth is concentrating beyond the capital.',
@@ -56,6 +73,7 @@ class TopSalesController extends Controller
             'lastWarmedAt' => is_string($lastWarmedAt) ? Carbon::parse($lastWarmedAt) : null,
             'topSale' => $topSale,
             'topThree' => $topThree,
+            'salesScatter' => $salesScatter,
             'insight' => $insight,
         ]);
     }

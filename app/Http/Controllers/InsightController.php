@@ -123,11 +123,57 @@ class InsightController extends Controller
         $cacheKey = $this->cacheKey($sector, 'insights');
 
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($sector): Collection {
-            return MarketInsight::query()
+            $thresholds = config('insights.strong_thresholds');
+            $minTransactions = (int) config('insights.min_period_transactions');
+            $maxTotal = (int) config('insights.max_insights_total');
+            $maxPerType = (int) config('insights.max_per_type');
+
+            $insights = MarketInsight::query()
                 ->whereRaw('UPPER(area_code) = ?', [$sector])
                 ->orderByDesc('period_end')
                 ->orderByDesc('created_at')
                 ->get();
+
+            $filtered = $insights->filter(function (MarketInsight $insight) use ($thresholds, $minTransactions): bool {
+                if (($insight->transactions ?? 0) < $minTransactions) {
+                    return false;
+                }
+
+                $type = $insight->insight_type;
+                $change = (float) ($insight->metric_value ?? 0);
+
+                if (! isset($thresholds[$type])) {
+                    return true;
+                }
+
+                $threshold = $thresholds[$type];
+
+                if ($threshold > 0) {
+                    return $change >= $threshold;
+                }
+
+                return $change <= $threshold;
+            });
+
+            $scored = $filtered->map(function (MarketInsight $insight): MarketInsight {
+                $change = abs((float) ($insight->metric_value ?? 0));
+                $transactions = max(1, (int) ($insight->transactions ?? 1));
+
+                $insight->score = $change * log($transactions);
+
+                return $insight;
+            });
+
+            $sorted = $scored->sortByDesc('score');
+
+            $limitedPerType = $sorted
+                ->groupBy('insight_type')
+                ->flatMap(fn (Collection $group): Collection => $group->take($maxPerType));
+
+            return $limitedPerType
+                ->sortByDesc('score')
+                ->take($maxTotal)
+                ->values();
         });
     }
 

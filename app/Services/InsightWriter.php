@@ -14,7 +14,7 @@ class InsightWriter
         $sales = $this->value($row, 'sales');
         $periodLabel = $this->value($row, 'period_label');
 
-        return "Median property prices in {$postcode} rose {$growth}% in {$periodLabel} based on {$sales} recorded sales.";
+        return "Median property prices in {$postcode} rose {$growth}% {$this->periodPhrase($periodLabel)} based on {$sales} recorded sales.";
     }
 
     public function demandCollapse(object|array $row): string
@@ -24,7 +24,7 @@ class InsightWriter
         $sales = $this->value($row, 'sales');
         $periodLabel = $this->value($row, 'period_label');
 
-        return "Property transactions in {$postcode} fell {$salesChange}% in {$periodLabel} based on {$sales} recorded sales.";
+        return "Property transactions in {$postcode} fell {$salesChange}% {$this->periodPhrase($periodLabel)} based on {$sales} recorded sales.";
     }
 
     public function priceCollapse(object|array $row): string
@@ -52,7 +52,7 @@ class InsightWriter
         $priceGrowth = $this->value($row, 'price_growth');
         $periodLabel = $this->value($row, 'period_label');
 
-        return "Property transactions in postcode sector {$sector} fell {$salesChange}% in {$periodLabel} while median prices still rose {$priceGrowth}%, suggesting weakening market liquidity.";
+        return "Property transactions in postcode sector {$sector} fell {$salesChange}% {$this->periodPhrase($periodLabel)} while median prices still rose {$priceGrowth}%, suggesting weakening market liquidity.";
     }
 
     public function marketFreeze(object|array $row): string
@@ -71,7 +71,7 @@ class InsightWriter
         $sales = $this->value($row, 'sales');
         $periodLabel = $this->value($row, 'period_label');
 
-        return "Median property prices in {$sector} rose {$sectorGrowth}% in {$periodLabel} versus {$ukGrowth}% nationally based on {$sales} recorded sales.";
+        return "Median property prices in {$sector} rose {$sectorGrowth}% {$this->periodPhrase($periodLabel)} versus {$ukGrowth}% nationally based on {$sales} recorded sales.";
     }
 
     public function momentumReversal(object|array $row): string
@@ -81,7 +81,7 @@ class InsightWriter
         $currentPeriodLabel = $this->value($row, 'current_period_label', 'period_label');
         $previousPeriodLabel = $this->value($row, 'previous_period_label');
 
-        return "Median property prices in {$sector} rose strongly in {$previousPeriodLabel} but fell in {$currentPeriodLabel}, indicating a possible reversal in local price momentum based on {$sales} recorded sales.";
+        return "Median property prices in {$sector} rose strongly {$this->periodPhrase($previousPeriodLabel)} but fell {$this->periodPhrase($currentPeriodLabel)}, indicating a possible reversal in local price momentum based on {$sales} recorded sales.";
     }
 
     public function unexpectedHotspot(object|array $row): string
@@ -290,5 +290,14 @@ class InsightWriter
         $firstSentence = trim((string) ($parts[0] ?? $sentence));
 
         return rtrim($firstSentence, " \t\n\r\0\x0B.!?").'.';
+    }
+
+    private function periodPhrase(string $periodLabel): string
+    {
+        if (str_contains($periodLabel, ' to ')) {
+            return 'between '.str_replace(' to ', ' and ', $periodLabel);
+        }
+
+        return 'in '.$periodLabel;
     }
 }

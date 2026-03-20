@@ -75,6 +75,24 @@ class ConsolePostgresCompatibilityTest extends TestCase
         $this->assertSame($expected, (int) ($series->first()->avg_price ?? 0));
     }
 
+    public function test_prime_aggregate_warmers_do_not_double_count_overlapping_prefixes(): void
+    {
+        $this->seedPrimeDataset('Prime Central', 'AB');
+        $this->seedOverlappingPrimePrefixes('Prime Central', 'AB1');
+        $this->artisan('pcl:warm --parallel=1')->assertExitCode(0);
+        $this->assertSame(4, (int) (collect(Cache::get('pcl:home:rolling:202404:ALL:sales'))->first()->sales ?? 0));
+
+        $this->seedPrimeDataset('Ultra Prime', 'CD');
+        $this->seedOverlappingPrimePrefixes('Ultra Prime', 'CD1');
+        $this->artisan('upcl:warm --parallel=1')->assertExitCode(0);
+        $this->assertSame(4, (int) (collect(Cache::get('upcl:home:rolling:202404:ALL:sales'))->first()->sales ?? 0));
+
+        $this->seedPrimeDataset('Outer Prime London', 'EF');
+        $this->seedOverlappingPrimePrefixes('Outer Prime London', 'EF1');
+        $this->artisan('app:outer-prime-warm --parallel=1')->assertExitCode(0);
+        $this->assertSame(4, (int) (collect(Cache::get('outerprime:home:rolling:202404:ALL:sales'))->first()->sales ?? 0));
+    }
+
     public function test_epc_warmer_runs_with_postgres_safe_sql(): void
     {
         $this->artisan('epc:warm-dashboard')->assertExitCode(0);
@@ -117,6 +135,15 @@ class ConsolePostgresCompatibilityTest extends TestCase
             $this->landRegistryRow('22222222-2222-2222-2222-22222222222222', 200000, '2024-02-15 00:00:00', $postcodePrefix.' 2BB'),
             $this->landRegistryRow('33333333-3333-3333-3333-33333333333333', 300000, '2024-03-15 00:00:00', $postcodePrefix.' 3CC'),
             $this->landRegistryRow('44444444-4444-4444-4444-44444444444444', 1000000, '2024-04-15 00:00:00', $postcodePrefix.' 4DD'),
+        ]);
+    }
+
+    private function seedOverlappingPrimePrefixes(string $category, string $postcodePrefix): void
+    {
+        DB::table('prime_postcodes')->insert([
+            'postcode' => $postcodePrefix,
+            'category' => $category,
+            'notes' => 'Test overlap',
         ]);
     }
 

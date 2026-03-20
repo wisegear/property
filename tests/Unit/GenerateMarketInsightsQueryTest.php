@@ -77,7 +77,7 @@ class GenerateMarketInsightsQueryTest extends TestCase
                     $sql
                 );
                 $this->assertStringNotContainsString('2 *', $sql);
-                $this->assertSame([20, 20, 12.0, 12.0], array_slice($bindings, -4));
+                $this->assertSame([20, 20, 20.0, 20.0], array_slice($bindings, -4));
 
                 return true;
             })
@@ -95,13 +95,30 @@ class GenerateMarketInsightsQueryTest extends TestCase
             ->withArgs(function (string $sql, array $bindings): bool {
                 $this->assertStringContainsString('AND (100.0 * (previous_period.median_price - earlier_period.median_price) / NULLIF(earlier_period.median_price, 0)) > ?', $sql);
                 $this->assertStringContainsString('AND (100.0 * (current_period.median_price - previous_period.median_price) / NULLIF(previous_period.median_price, 0)) < ?', $sql);
-                $this->assertSame([20, 15, -10], array_slice($bindings, -3));
+                $this->assertSame([20, 25, -20], array_slice($bindings, -3));
 
                 return true;
             })
             ->andReturn([]);
 
         $this->assertTrue($command->callMomentumReversalRows()->isEmpty());
+    }
+
+    public function test_demand_collapse_rows_require_meaningful_current_volume(): void
+    {
+        $command = $this->makeCommand();
+
+        DB::shouldReceive('select')
+            ->once()
+            ->withArgs(function (string $sql, array $bindings): bool {
+                $this->assertStringContainsString('AND current_period.sales >= 15', $sql);
+                $this->assertSame([20, -45.0], array_slice($bindings, -2));
+
+                return true;
+            })
+            ->andReturn([]);
+
+        $this->assertTrue($command->callDemandCollapseRows()->isEmpty());
     }
 
     public function test_liquidity_surge_rows_do_not_require_persistence(): void
@@ -111,7 +128,7 @@ class GenerateMarketInsightsQueryTest extends TestCase
         $this->assertTrue($command->callLiquiditySurgeRows()->isEmpty());
         $this->assertSame([
             'operator' => '>=',
-            'threshold' => 50.0,
+            'threshold' => 70.0,
             'requiresPersistence' => false,
         ], $command->salesChangeCalls[0]);
     }
@@ -169,7 +186,7 @@ class GenerateMarketInsightsQueryTest extends TestCase
         $this->assertSame(-45.0, $result[0]['supporting_data']['sales_change']);
         $this->assertSame(5.0, $result[0]['supporting_data']['price_growth']);
         $this->assertSame(
-            'Property transactions in postcode sector LS11 fell 45.0% in 01 Feb 2025 to 31 Jan 2026 while median prices still rose 5.0%, suggesting weakening market liquidity.',
+            'Property transactions in postcode sector LS11 fell 45.0% between 01 Feb 2025 and 31 Jan 2026 while median prices still rose 5.0%, suggesting weakening market liquidity.',
             $result[0]['insight_text']
         );
     }
@@ -181,7 +198,7 @@ class GenerateMarketInsightsQueryTest extends TestCase
         $this->assertTrue($command->callMarketFreezeRows()->isEmpty());
         $this->assertSame([
             'operator' => '<=',
-            'threshold' => -50.0,
+            'threshold' => -60.0,
             'requiresPersistence' => false,
         ], $command->salesChangeCalls[0]);
     }
@@ -207,6 +224,11 @@ class GenerateMarketInsightsQueryTestCommand extends GenerateMarketInsights
     public function callUnexpectedHotspotRows(): Collection
     {
         return $this->unexpectedHotspotRows();
+    }
+
+    public function callDemandCollapseRows(): Collection
+    {
+        return $this->demandCollapseRows();
     }
 
     public function callMomentumReversalRows(): Collection

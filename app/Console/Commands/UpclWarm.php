@@ -32,6 +32,8 @@ class UpclWarm extends Command
 
     private ?array $primeDistrictPrefixes = null;
 
+    private ?string $activeTempTable = null;
+
     protected $signature = 'upcl:warm {--district=} {--parallel=1}';
 
     protected $description = 'Warm the Ultra Prime Central London cache';
@@ -86,7 +88,13 @@ class UpclWarm extends Command
         $this->newLine();
         $this->info('Warming ALL Ultra Prime (aggregate)');
 
-        $this->storeSeries('ALL', $this->buildSeries($this->baseAllDistrictsQuery(), $endMonths, 'ALL'), $cachePrefix, $ttl);
+        $this->createAllDistrictTempTable();
+
+        try {
+            $this->storeSeries('ALL', $this->buildSeries($this->baseAllDistrictsQuery(), $endMonths, 'ALL'), $cachePrefix, $ttl);
+        } finally {
+            $this->dropAllDistrictTempTable();
+        }
         Cache::put($cachePrefix.':last_warm', now()->toIso8601String(), $ttl);
 
         $this->newLine(2);
@@ -298,33 +306,22 @@ class UpclWarm extends Command
                 ->groupBy('month');
         }
 
-        $union = null;
-
-        foreach ($this->primeDistrictPrefixes() as $prefix) {
-            $select = DB::table('land_registry_monthly_prefix_mv')
-                ->selectRaw('month, sales, new_build_sales, existing_sales, freehold_sales, leasehold_sales')
-                ->where('postcode_prefix', 'like', $prefix.'%');
-
-            $union = $union === null ? $select : $union->unionAll($select);
-        }
-
-        if ($union === null) {
-            return DB::query()
-                ->selectRaw('NULL::date as month, 0 as sales, 0 as new_build_sales, 0 as existing_sales, 0 as freehold_sales, 0 as leasehold_sales')
-                ->whereRaw('1 = 0');
-        }
-
-        return DB::query()
-            ->fromSub($union, 'mv')
+        return DB::table('land_registry_monthly_prefix_mv as mv')
             ->selectRaw(
-                'month, '.
-                'SUM(sales) as sales, '.
-                'SUM(new_build_sales) as new_build_sales, '.
-                'SUM(existing_sales) as existing_sales, '.
-                'SUM(freehold_sales) as freehold_sales, '.
-                'SUM(leasehold_sales) as leasehold_sales'
+                'mv.month, '.
+                'SUM(mv.sales) as sales, '.
+                'SUM(mv.new_build_sales) as new_build_sales, '.
+                'SUM(mv.existing_sales) as existing_sales, '.
+                'SUM(mv.freehold_sales) as freehold_sales, '.
+                'SUM(mv.leasehold_sales) as leasehold_sales'
             )
-            ->groupBy('month');
+            ->whereExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('prime_postcodes as pp')
+                    ->where('pp.category', self::CATEGORY)
+                    ->whereRaw("mv.postcode_prefix LIKE (pp.postcode || '%')");
+            })
+            ->groupBy('mv.month');
     }
 
     private function canUseMonthlyPrefixMv(): bool
@@ -525,14 +522,20 @@ class UpclWarm extends Command
             return $this->buildRollingTopSaleSeriesFallback($baseQuery, $endMonths);
         }
 
-        $rows = $this->topSaleRollingMonthlyQuery($baseQuery, $endMonths)
-            ->whereIn('months.month', $this->endMonthKeys($endMonths))
+        $rows = DB::query()
+            ->fromSub($this->normalizedBaseRowsQuery($baseQuery), 'rows')
+            ->selectRaw('EXTRACT(YEAR FROM rows.date)::int as year, MAX(rows.price) as top_sale')
+            ->whereIn(DB::raw('EXTRACT(YEAR FROM rows.date)::int'), $endMonths->map(fn ($endMonth) => $endMonth->year)->all())
+            ->whereNotNull('rows.date')
+            ->whereNotNull('rows.price')
+            ->where('rows.price', '>', 0)
+            ->groupBy(DB::raw('EXTRACT(YEAR FROM rows.date)::int'))
             ->get()
-            ->keyBy('month');
+            ->keyBy('year');
 
         return $endMonths->map(fn ($endMonth) => (object) [
             'year' => $endMonth->year,
-            'top_sale' => isset($rows[$endMonth->toDateString()]) ? (int) $rows[$endMonth->toDateString()]->rolling_top_sale : null,
+            'top_sale' => isset($rows[$endMonth->year]) ? (int) $rows[$endMonth->year]->top_sale : null,
         ])->values();
     }
 
@@ -543,8 +546,10 @@ class UpclWarm extends Command
         }
 
         $ranked = DB::query()
-            ->fromSub($this->joinedRollingRows($baseQuery, $endMonths), 'joined')
-            ->selectRaw('year, date, postcode, price, ROW_NUMBER() OVER (PARTITION BY year ORDER BY price DESC) as rn')
+            ->fromSub($this->normalizedBaseRowsQuery($baseQuery), 'rows')
+            ->selectRaw('EXTRACT(YEAR FROM rows.date)::int as year, rows.date as date, rows.postcode as postcode, rows.price as price, ROW_NUMBER() OVER (PARTITION BY EXTRACT(YEAR FROM rows.date)::int ORDER BY rows.price DESC) as rn')
+            ->whereIn(DB::raw('EXTRACT(YEAR FROM rows.date)::int'), $endMonths->map(fn ($endMonth) => $endMonth->year)->all())
+            ->whereNotNull('rows.date')
             ->whereNotNull('price')
             ->where('price', '>', 0);
 
@@ -576,8 +581,8 @@ class UpclWarm extends Command
 
     private function normalizedBaseRowsQuery(Builder $baseQuery): Builder
     {
-        if ($this->hasDistrictTempTable()) {
-            return DB::table('tmp_prime_district')
+        if ($this->activeTempTable !== null && $this->hasTempTable($this->activeTempTable)) {
+            return DB::table($this->activeTempTable)
                 ->selectRaw('date, price, property_type, new_build, duration, postcode');
         }
 
@@ -607,20 +612,61 @@ class UpclWarm extends Command
 
         DB::statement('CREATE INDEX tmp_prime_date_idx ON tmp_prime_district(date)');
         DB::statement('CREATE INDEX tmp_prime_price_idx ON tmp_prime_district(price)');
+        $this->activeTempTable = 'tmp_prime_district';
     }
 
     private function dropDistrictTempTable(): void
     {
         DB::statement('DROP TABLE IF EXISTS tmp_prime_district');
+        if ($this->activeTempTable === 'tmp_prime_district') {
+            $this->activeTempTable = null;
+        }
     }
 
-    private function hasDistrictTempTable(): bool
+    private function createAllDistrictTempTable(): void
+    {
+        $this->dropAllDistrictTempTable();
+
+        DB::statement(
+            'CREATE TEMP TABLE tmp_prime_all AS
+            SELECT
+                "Date" as date,
+                "Price" as price,
+                "PropertyType" as property_type,
+                "NewBuild" as new_build,
+                "Duration" as duration,
+                "Postcode" as postcode
+            FROM land_registry
+            WHERE "PPDCategoryType" = ?
+            AND EXISTS (
+                SELECT 1
+                FROM prime_postcodes pp
+                WHERE pp.category = ?
+                AND REPLACE("Postcode", \' \', \'\') LIKE (pp.postcode || \'%\')
+            )',
+            ['A', self::CATEGORY]
+        );
+
+        DB::statement('CREATE INDEX tmp_prime_all_date_idx ON tmp_prime_all(date)');
+        DB::statement('CREATE INDEX tmp_prime_all_price_idx ON tmp_prime_all(price)');
+        $this->activeTempTable = 'tmp_prime_all';
+    }
+
+    private function dropAllDistrictTempTable(): void
+    {
+        DB::statement('DROP TABLE IF EXISTS tmp_prime_all');
+        if ($this->activeTempTable === 'tmp_prime_all') {
+            $this->activeTempTable = null;
+        }
+    }
+
+    private function hasTempTable(string $tableName): bool
     {
         if (DB::connection()->getDriverName() !== 'pgsql') {
             return false;
         }
 
-        $table = DB::selectOne("SELECT to_regclass('pg_temp.tmp_prime_district') as t");
+        $table = DB::selectOne("SELECT to_regclass('pg_temp.{$tableName}') as t");
 
         return ! empty($table?->t);
     }
@@ -739,24 +785,6 @@ class UpclWarm extends Command
             );
     }
 
-    private function topSaleRollingMonthlyQuery(Builder $baseQuery, \Illuminate\Support\Collection $endMonths): Builder
-    {
-        $monthly = DB::query()
-            ->fromSub($this->normalizedBaseRowsQuery($baseQuery), 'rows')
-            ->selectRaw("date_trunc('month', rows.date)::date as month, MAX(rows.price) as top_sale")
-            ->whereNotNull('rows.price')
-            ->where('rows.price', '>', 0)
-            ->groupBy('month');
-
-        return DB::query()
-            ->fromSub($this->monthSeriesQuery($baseQuery, $endMonths), 'months')
-            ->leftJoinSub($monthly, 'monthly', 'months.month', '=', 'monthly.month')
-            ->selectRaw(
-                'months.month, '.
-                'MAX(monthly.top_sale) OVER (ORDER BY months.month ROWS BETWEEN 11 PRECEDING AND CURRENT ROW) as rolling_top_sale'
-            );
-    }
-
     private function monthSeriesQuery(Builder $baseQuery, \Illuminate\Support\Collection $endMonths): Builder
     {
         $earliestDate = (clone $baseQuery)->min('Date');
@@ -810,8 +838,11 @@ class UpclWarm extends Command
     private function baseAllDistrictsQuery(): Builder
     {
         return DB::table('land_registry')
-            ->join(DB::raw("(SELECT DISTINCT postcode FROM prime_postcodes WHERE category = '".self::CATEGORY."') as pp"), function ($join) {
-                $join->on(DB::raw($this->normalizedPostcodeExpression()), 'LIKE', DB::raw("(pp.postcode || '%')"));
+            ->whereExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('prime_postcodes as pp')
+                    ->where('pp.category', self::CATEGORY)
+                    ->whereRaw($this->normalizedPostcodeExpression('land_registry')." LIKE (pp.postcode || '%')");
             })
             ->where('PPDCategoryType', 'A');
     }
@@ -841,8 +872,14 @@ class UpclWarm extends Command
         return $column;
     }
 
-    private function normalizedPostcodeExpression(): string
+    private function normalizedPostcodeExpression(?string $table = null): string
     {
-        return 'REPLACE('.$this->quotedColumn('Postcode').", ' ', '')";
+        $column = $this->quotedColumn('Postcode');
+
+        if ($table !== null) {
+            $column = $table.'.'.$column;
+        }
+
+        return 'REPLACE('.$column.", ' ', '')";
     }
 }

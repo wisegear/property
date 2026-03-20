@@ -234,48 +234,59 @@ trait BuildsRollingPrimeDashboardData
 
     protected function buildRollingTopSaleSeries(Builder $baseQuery, Collection $endMonths): Collection
     {
-        return $endMonths->map(function (Carbon $endMonth) use ($baseQuery) {
-            $range = $this->rollingRangeForEndMonth($endMonth);
+        $years = $endMonths->map(fn (Carbon $endMonth): int => $endMonth->year)->values();
+        $yearExpr = DB::connection()->getDriverName() === 'pgsql'
+            ? 'EXTRACT(YEAR FROM '.$this->quotedColumn('Date').')::int'
+            : 'CAST(strftime(\'%Y\', '.$this->quotedColumn('Date').') AS INTEGER)';
 
-            return (object) [
-                'year' => $range['year'],
-                'top_sale' => (clone $baseQuery)
-                    ->whereBetween('Date', [$range['start'], $range['end']])
-                    ->whereNotNull('Price')
-                    ->where('Price', '>', 0)
-                    ->max('Price'),
-            ];
-        })->values();
+        $rows = (clone $baseQuery)
+            ->selectRaw($yearExpr.' as year, MAX('.$this->quotedColumn('Price').') as top_sale')
+            ->whereIn(DB::raw($yearExpr), $years->all())
+            ->whereNotNull('Date')
+            ->whereNotNull('Price')
+            ->where('Price', '>', 0)
+            ->groupBy(DB::raw($yearExpr))
+            ->get()
+            ->keyBy('year');
+
+        return $years->map(fn (int $year): object => (object) [
+            'year' => $year,
+            'top_sale' => isset($rows[$year]) ? (int) $rows[$year]->top_sale : null,
+        ])->values();
     }
 
     protected function buildRollingTop3Series(Builder $baseQuery, Collection $endMonths): Collection
     {
+        $years = $endMonths->map(fn (Carbon $endMonth): int => $endMonth->year)->values();
         $dateColumn = $this->quotedColumn('Date');
         $postcodeColumn = $this->quotedColumn('Postcode');
         $priceColumn = $this->quotedColumn('Price');
+        $yearExpr = DB::connection()->getDriverName() === 'pgsql'
+            ? 'EXTRACT(YEAR FROM '.$dateColumn.')::int'
+            : 'CAST(strftime(\'%Y\', '.$dateColumn.') AS INTEGER)';
 
-        return $endMonths->flatMap(function (Carbon $endMonth) use ($baseQuery, $dateColumn, $postcodeColumn, $priceColumn) {
-            $range = $this->rollingRangeForEndMonth($endMonth);
-            $ranked = (clone $baseQuery)
-                ->selectRaw("{$dateColumn} as date, {$postcodeColumn} as postcode, {$priceColumn} as price, ROW_NUMBER() OVER (ORDER BY {$priceColumn} DESC) as rn")
-                ->whereBetween('Date', [$range['start'], $range['end']])
-                ->whereNotNull('Price')
-                ->where('Price', '>', 0);
+        $ranked = (clone $baseQuery)
+            ->selectRaw("{$yearExpr} as year, {$dateColumn} as date, {$postcodeColumn} as postcode, {$priceColumn} as price, ROW_NUMBER() OVER (PARTITION BY {$yearExpr} ORDER BY {$priceColumn} DESC) as rn")
+            ->whereIn(DB::raw($yearExpr), $years->all())
+            ->whereNotNull('Date')
+            ->whereNotNull('Price')
+            ->where('Price', '>', 0);
 
-            return DB::query()
-                ->fromSub($ranked, 'r')
-                ->select('date', 'postcode', 'price', 'rn')
-                ->where('rn', '<=', 3)
-                ->orderBy('rn')
-                ->get()
-                ->map(fn ($row) => (object) [
-                    'year' => $range['year'],
-                    'Date' => $row->date,
-                    'Postcode' => $row->postcode,
-                    'Price' => $row->price,
-                    'rn' => $row->rn,
-                ]);
-        })->values();
+        return DB::query()
+            ->fromSub($ranked, 'r')
+            ->select('year', 'date', 'postcode', 'price', 'rn')
+            ->where('rn', '<=', 3)
+            ->orderBy('year')
+            ->orderBy('rn')
+            ->get()
+            ->map(fn ($row) => (object) [
+                'year' => (int) $row->year,
+                'Date' => $row->date,
+                'Postcode' => $row->postcode,
+                'Price' => $row->price,
+                'rn' => $row->rn,
+            ])
+            ->values();
     }
 
     protected function snapshotFromCharts(array $chartData): array

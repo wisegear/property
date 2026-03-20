@@ -141,10 +141,10 @@
                     </div>
 
                     <!-- Average + Prime Indicators (line) -->
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72 col-span-2">
+                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72 col-span-2 flex flex-col">
                         <h3 class="font-semibold mb-2">Property prices across the market</h3>
                         <p class="mb-2 text-xs text-zinc-500">Method: median for broad price level, average for top 5% tail activity.</p>
-                        <canvas id="api_{{ $district }}" class="w-full h-full"></canvas>
+                        <canvas id="api_{{ $district }}" class="w-full flex-1 min-h-0"></canvas>
                     </div>
                     <!-- YoY % Change Charts -->
                     <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
@@ -440,8 +440,8 @@
                             padding: {
                                 top: 12,
                                 right: 12,
-                                bottom: 24,
-                                left: 8
+                                bottom: 28,
+                                left: 12
                             }
                         },
                         plugins: {
@@ -1093,10 +1093,13 @@
                             }}}
                         },
                         scales: {
-                            x: { 
+                            x: {
                                 title: {
                                     display: true,
-                                    text: yoyRangeTitle
+                                    text: yoyRangeTitle,
+                                    font: {
+                                        size: 12
+                                    }
                                 },
                                 ticks: { 
                                     display: false,
@@ -1143,7 +1146,10 @@
                             x: { 
                                 title: {
                                     display: true,
-                                    text: yoyRangeTitle
+                                    text: yoyRangeTitle,
+                                    font: {
+                                        size: 12
+                                    }
                                 },
                                 ticks: { 
                                     display: false,
@@ -1190,7 +1196,10 @@
                             x: { 
                                 title: {
                                     display: true,
-                                    text: yoyRangeTitle
+                                    text: yoyRangeTitle,
+                                    font: {
+                                        size: 12
+                                    }
                                 },
                                 ticks: { 
                                     display: false,
@@ -1237,7 +1246,10 @@
                             x: { 
                                 title: {
                                     display: true,
-                                    text: yoyRangeTitle
+                                    text: yoyRangeTitle,
+                                    font: {
+                                        size: 12
+                                    }
                                 },
                                 ticks: { 
                                     display: false,
