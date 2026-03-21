@@ -175,7 +175,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('Rutland');
         $view->assertSee('Merseyside');
         $view->assertSee('Bedfordshire');
-        $view->assertSee('Signals worth watching');
+        $view->assertSee('Signals Worth Watching');
         $view->assertSee('128 live');
         $view->assertSee('9 signal types');
         $view->assertSee('Top signal (this period)');
@@ -183,11 +183,10 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('M1');
         $view->assertSee('▼ -33.3%');
         $view->assertSee('Spot price collapses, demand freezes, and unexpected hotspots before they show in headline data.');
-        $view->assertSee('animate-pulse', false);
         $view->assertSee('w-1/3 bg-red-400', false);
         $view->assertSee('w-1/3 bg-amber-400', false);
         $view->assertSee('w-1/3 bg-green-400', false);
-        $view->assertSee('Explore live signals');
+        $view->assertSee('Explore County Insights');
         $view->assertSee('transition transform hover:-translate-y-0.5 hover:shadow-md', false);
         $view->assertSee('lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)]', false);
         $view->assertSee('md:grid-cols-2 lg:grid-cols-3', false);

@@ -40,5 +40,7 @@ class ExampleTest extends TestCase
         $this->assertStringContainsString(sprintf('href="%s"', $repossessionsUrl), $desktopPropertyMenu);
         $this->assertStringContainsString(sprintf('href="%s"', $rentalUrl), $mobilePropertyMenu);
         $this->assertStringContainsString(sprintf('href="%s"', $repossessionsUrl), $mobilePropertyMenu);
+        $this->assertStringContainsString('Market Insights', $renderedLayout);
+        $this->assertStringContainsString('County Insights', $renderedLayout);
     }
 }

@@ -421,13 +421,13 @@
                                role="menuitem"
                                tabindex="-1"
                                class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 {{ request()->routeIs('insights.dashboard') ? 'font-semibold' : '' }}">
-                                Dashboard
+                                Market Insights
                             </a>
                             <a href="{{ route('insights.index') }}"
                                role="menuitem"
                                tabindex="-1"
                                class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 {{ request()->routeIs('insights.index') || request()->routeIs('insights.search') || request()->routeIs('insights.show') ? 'font-semibold' : '' }}">
-                                Granular Insights
+                                County Insights
                             </a>
                             <a href="{{ route('top-sales.index') }}"
                                role="menuitem"
@@ -678,11 +678,11 @@
                     <div id="mobileInsightsMenu" class="hidden flex-col pl-2 space-y-1 mt-1">
                         <a href="{{ route('insights.dashboard') }}"
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 {{ request()->routeIs('insights.dashboard') ? 'font-semibold' : '' }}">
-                            Dashboard
+                            Market Insights
                         </a>
                         <a href="{{ route('insights.index') }}"
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 {{ request()->routeIs('insights.index') || request()->routeIs('insights.search') || request()->routeIs('insights.show') ? 'font-semibold' : '' }}">
-                            Granular Insights
+                            County Insights
                         </a>
                         <a href="{{ route('top-sales.index') }}"
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 {{ request()->routeIs('top-sales.index') ? 'font-semibold' : '' }}">
