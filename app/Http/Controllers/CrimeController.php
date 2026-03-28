@@ -483,6 +483,7 @@ class CrimeController extends Controller
             'total_asc' => $collection->sortBy([['total_12m', 'asc'], ['area', 'asc']])->values()->all(),
             'change_asc' => $collection->sortBy([['pct_change', 'asc'], ['area', 'asc']])->values()->all(),
             'change_desc' => $collection->sortBy([['pct_change', 'desc'], ['area', 'asc']])->values()->all(),
+            'area_asc' => $collection->sortBy([['area', 'asc']])->values()->all(),
             default => $collection->sortBy([['total_12m', 'desc'], ['area', 'asc']])->values()->all(),
         };
     }
@@ -491,7 +492,7 @@ class CrimeController extends Controller
     {
         $sort = $request->string('sort')->value();
 
-        return in_array($sort, ['total_desc', 'total_asc', 'change_desc', 'change_asc'], true)
+        return in_array($sort, ['total_desc', 'total_asc', 'change_desc', 'change_asc', 'area_asc'], true)
             ? $sort
             : 'total_desc';
     }

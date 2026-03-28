@@ -13,6 +13,13 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+    }
+
     public function test_property_home_route_loads_with_postgres_safe_queries(): void
     {
         DB::table('land_registry')->insert([
@@ -383,12 +390,11 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             ->assertOk()
             ->assertSee('Crime Trends')
             ->assertSee('Crime Profile for this Postcode (Last 12 months)')
-            ->assertSee('Crime is up 25% over the past year, driven by increases in robbery and decreases in public order.')
+            ->assertSee('Crime is up 25% over the past year, driven by increases in robbery and offset by decreases in public order.')
             ->assertSee('Compared to the previous 12 months')
-            ->assertSee('Based on reported crimes within approximately 500m of this postcode.')
-            ->assertSee('Monthly crime volume (last 24 months)')
-            ->assertSee('Showing how crime levels have changed over time in this area')
-            ->assertSee('Peaks and dips show higher and lower crime months')
+            ->assertSee('Compared to the previous 12 months, based on reported crimes within ~500m of this postcode.')
+            ->assertSee('Monthly Crime Volume (last 24 months, hover over to see detail)')
+            ->assertSee('Shows monthly crime levels over time. Peaks indicate higher crime periods.')
             ->assertSee('Latest: 1 crimes')
             ->assertSee('Rising')
             ->assertSee('Overall Change')
@@ -403,9 +409,11 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             ->assertSee('12m Change')
             ->assertSee('+100%')
             ->assertSee('-100%')
+            ->assertSee('vs +100% nationally')
+            ->assertSee('vs 0% nationally')
             ->assertDontSee('Shoplifting')
             ->assertViewHas('totalChange', 25.0)
-            ->assertViewHas('crimeSummary', 'Crime is up 25% over the past year, driven by increases in robbery and decreases in public order.')
+            ->assertViewHas('crimeSummary', 'Crime is up 25% over the past year, driven by increases in robbery and offset by decreases in public order.')
             ->assertViewHas('crimeDirection', 'rising')
             ->assertViewHas('crimeTrendLabels', function ($crimeTrendLabels) {
                 return $crimeTrendLabels->count() === 24
@@ -441,14 +449,17 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
                     && (int) $burglary->total === 2
                     && (float) $burglary->pct === 40.0
                     && (float) $burglary->pct_change === 0.0
+                    && (float) $burglary->national_pct_change === 0.0
                     && $vehicleCrime !== null
                     && (int) $vehicleCrime->total === 2
                     && (float) $vehicleCrime->pct === 40.0
                     && (float) $vehicleCrime->pct_change === 100.0
+                    && (float) $vehicleCrime->national_pct_change === 100.0
                     && $robbery !== null
                     && (int) $robbery->total === 1
                     && (float) $robbery->pct === 20.0
-                    && (float) $robbery->pct_change === 100.0;
+                    && (float) $robbery->pct_change === 100.0
+                    && (float) $robbery->national_pct_change === 100.0;
             })
             ->assertViewHas('crimeTrend', function ($crimeTrend) {
                 if ($crimeTrend->count() !== 4) {

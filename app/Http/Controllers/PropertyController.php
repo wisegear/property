@@ -541,12 +541,36 @@ class PropertyController extends Controller
 
                 $crimeTrendByType = $crimeTrendCounts->keyBy('crime_type');
                 $crimeTotal = (int) $crimeSummaryRows->sum('total');
+                $nationalCrimeTrendByType = Crime::query()
+                    ->selectRaw('
+                        crime_type,
+                        SUM(CASE WHEN month >= ? THEN 1 ELSE 0 END) as current_total,
+                        SUM(CASE WHEN month >= ? AND month < ? THEN 1 ELSE 0 END) as previous_total
+                    ', [
+                        $crimeWindowStart->toDateString(),
+                        $previousWindowStart->toDateString(),
+                        $crimeWindowStart->toDateString(),
+                    ])
+                    ->whereDate('month', '>=', $previousWindowStart->toDateString())
+                    ->whereDate('month', '<=', $currentWindowEnd->toDateString())
+                    ->groupBy('crime_type')
+                    ->get()
+                    ->mapWithKeys(function ($crime) {
+                        $currentTotal = (int) $crime->current_total;
+                        $previousTotal = (int) $crime->previous_total;
+                        $pctChange = $previousTotal > 0
+                            ? round((($currentTotal - $previousTotal) * 100) / $previousTotal, 1)
+                            : ($currentTotal > 0 ? 100.0 : 0.0);
 
-                $crimeData = $crimeSummaryRows->map(function ($crime) use ($crimeTotal, $crimeTrendByType) {
+                        return [$crime->crime_type => $pctChange];
+                    });
+
+                $crimeData = $crimeSummaryRows->map(function ($crime) use ($crimeTotal, $crimeTrendByType, $nationalCrimeTrendByType) {
                     $crime->pct = $crimeTotal > 0
                         ? round(((int) $crime->total * 100) / $crimeTotal, 1)
                         : 0.0;
                     $crime->pct_change = (float) optional($crimeTrendByType->get($crime->crime_type))->pct_change;
+                    $crime->national_pct_change = $nationalCrimeTrendByType->get($crime->crime_type);
 
                     return $crime;
                 });
@@ -608,7 +632,7 @@ class PropertyController extends Controller
 
                 if ($topIncrease && $topDecrease) {
                     $crimeSummary .= ', driven by increases in '.strtolower($topIncrease->crime_type);
-                    $crimeSummary .= ' and decreases in '.strtolower($topDecrease->crime_type).'.';
+                    $crimeSummary .= ' and offset by decreases in '.strtolower($topDecrease->crime_type).'.';
                 } else {
                     $crimeSummary .= '.';
                 }

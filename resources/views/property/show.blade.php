@@ -562,11 +562,17 @@
                                             <td class="py-2">{{ $crime->pct }}%</td>
                                             <td class="py-2">
                                                 @if($crime->pct_change > 0)
-                                                    <span class="text-red-600">+{{ $crime->pct_change }}%</span>
+                                                    <div class="text-red-600">+{{ $crime->pct_change }}%</div>
                                                 @elseif($crime->pct_change < 0)
-                                                    <span class="text-green-600">{{ $crime->pct_change }}%</span>
+                                                    <div class="text-green-600">{{ $crime->pct_change }}%</div>
                                                 @else
-                                                    <span class="text-zinc-600">0%</span>
+                                                    <div class="text-zinc-600">0%</div>
+                                                @endif
+
+                                                @if($crime->national_pct_change !== null)
+                                                    <div class="mt-1 text-xs text-zinc-500">
+                                                        vs {{ $crime->national_pct_change > 0 ? '+' : '' }}{{ $crime->national_pct_change }}% nationally
+                                                    </div>
                                                 @endif
                                             </td>
                                         </tr>

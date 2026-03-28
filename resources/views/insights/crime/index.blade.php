@@ -42,10 +42,11 @@
     ];
 
     $sortLinks = [
-        'total_desc' => route('insights.crime.index', ['sort' => 'total_desc']),
-        'total_asc' => route('insights.crime.index', ['sort' => 'total_asc']),
-        'change_desc' => route('insights.crime.index', ['sort' => 'change_desc']),
-        'change_asc' => route('insights.crime.index', ['sort' => 'change_asc']),
+        'total_desc' => route('insights.crime.index', ['sort' => 'total_desc', 'crime_type_sort' => $crime_type_sort]),
+        'total_asc' => route('insights.crime.index', ['sort' => 'total_asc', 'crime_type_sort' => $crime_type_sort]),
+        'change_desc' => route('insights.crime.index', ['sort' => 'change_desc', 'crime_type_sort' => $crime_type_sort]),
+        'change_asc' => route('insights.crime.index', ['sort' => 'change_asc', 'crime_type_sort' => $crime_type_sort]),
+        'area_asc' => route('insights.crime.index', ['sort' => 'area_asc', 'crime_type_sort' => $crime_type_sort]),
     ];
     $crimeTypeSortLinks = [
         'total_desc' => route('insights.crime.index', ['crime_type_sort' => 'total_desc', 'sort' => $sort]),
@@ -198,7 +199,14 @@
                                 <td class="px-6 py-4 font-medium text-zinc-900">{{ $crimeType['type'] }}</td>
                                 <td class="px-6 py-4 text-zinc-700">{{ number_format($crimeType['total_12m']) }}</td>
                                 <td class="px-6 py-4 font-semibold {{ $changeClass($crimeType['yoy_change']) }}">{{ $formatChange($crimeType['yoy_change']) }}</td>
-                                <td class="px-6 py-4 text-zinc-700">{{ number_format($crimeType['share_pct'], 1) }}%</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="h-2.5 w-28 overflow-hidden rounded-full bg-zinc-100">
+                                            <div class="h-full rounded-full bg-sky-500" style="width: {{ max(0, min(100, $crimeType['share_pct'])) }}%"></div>
+                                        </div>
+                                        <span class="text-zinc-700">{{ number_format($crimeType['share_pct'], 1) }}%</span>
+                                    </div>
+                                </td>
                                 <td class="px-6 py-4">
                                     <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold {{ $badgeClass($crimeType['yoy_change']) }}">
                                         <span>
@@ -232,6 +240,7 @@
                         <a href="{{ $sortLinks['total_asc'] }}" class="rounded-full border px-3 py-1 {{ $sort === 'total_asc' ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-200 bg-white text-zinc-700' }}">Total asc</a>
                         <a href="{{ $sortLinks['change_desc'] }}" class="rounded-full border px-3 py-1 {{ $sort === 'change_desc' ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-200 bg-white text-zinc-700' }}">Change desc</a>
                         <a href="{{ $sortLinks['change_asc'] }}" class="rounded-full border px-3 py-1 {{ $sort === 'change_asc' ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-200 bg-white text-zinc-700' }}">Change asc</a>
+                        <a href="{{ $sortLinks['area_asc'] }}" class="rounded-full border px-3 py-1 {{ $sort === 'area_asc' ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-200 bg-white text-zinc-700' }}">Area A-Z</a>
                     </div>
                 </div>
             </div>
