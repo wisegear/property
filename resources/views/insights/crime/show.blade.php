@@ -66,7 +66,7 @@
                 </div>
             </div>
             <div class="relative z-10 flex justify-center lg:justify-end">
-                <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="{{ $area }} crime trends" class="h-auto w-full max-w-[15rem] sm:max-w-xs">
+                <img src="{{ asset('/assets/images/site/crime.jpg') }}" alt="{{ $area }} crime trends" class="h-auto w-full max-w-[15rem] sm:max-w-xs">
             </div>
         </div>
     </section>

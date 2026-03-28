@@ -78,7 +78,7 @@
                 </div>
             </div>
             <div class="relative z-10 mt-2 flex justify-center lg:mt-0 lg:justify-end">
-                <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Crime insights dashboard" class="h-auto w-full max-w-[15rem] sm:max-w-xs">
+                <img src="{{ asset('/assets/images/site/crime.jpg') }}" alt="Crime insights dashboard" class="h-auto w-full max-w-[15rem] sm:max-w-xs">
             </div>
         </div>
     </section>
