@@ -491,11 +491,7 @@
             </p>
 
             <p class="mb-2 text-sm text-zinc-500">
-                Compared to the previous 12 months
-            </p>
-
-            <p class="mb-2 text-sm text-zinc-500">
-                Based on reported crimes within ~500m of this postcode.
+                Compared to the previous 12 months, based on reported crimes within ~500m of this postcode.
             </p>
 
             <p class="mb-1 text-xs text-zinc-500">
