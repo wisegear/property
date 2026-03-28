@@ -11,7 +11,7 @@ class WarmInsights extends Command
 {
     protected $signature = 'insights:warm';
 
-    protected $description = 'Warm cache for insight sector pages';
+    protected $description = 'Warm cache for existing insight sector pages';
 
     /**
      * Execute the console command.
@@ -34,12 +34,13 @@ class WarmInsights extends Command
         $total = $sectors->count();
 
         if ($total === 0) {
-            $this->info('No insight sectors found to warm.');
+            $this->info('No insight sectors found to warm. Run insights:generate to populate market_insights first.');
 
             return self::SUCCESS;
         }
 
         $count = 0;
+        $this->info('Warming caches for existing sectors only. This command does not generate market_insights rows.');
         $this->output->progressStart($total);
 
         foreach ($sectors as $sector) {

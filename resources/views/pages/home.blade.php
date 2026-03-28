@@ -23,11 +23,11 @@
             <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-zinc-600">
                 <span class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/70 px-3 py-1">
                     <span class="h-2 w-2 rounded-lg bg-lime-500"></span>
-                    Latest data: Jan 2026
+                    Latest data: 28th Feb 2026
                 </span>
                 <span class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/70 px-3 py-1">
                     <span class="h-2 w-2 rounded-lg bg-zinc-400"></span>
-                    Next update: 31st March 2026
+                    Next update: 30th April 2026
                 </span>
             </div>
         </div>

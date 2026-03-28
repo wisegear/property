@@ -62,6 +62,7 @@ class WarmInsightsCommandTest extends TestCase
         $this->app->instance(InsightController::class, $controller);
 
         $this->artisan('insights:warm')
+            ->expectsOutput('Warming caches for existing sectors only. This command does not generate market_insights rows.')
             ->expectsOutput('Warming AL12')
             ->expectsOutput('Warming B1')
             ->expectsOutput('Insight cache warming complete (2 sectors)')
