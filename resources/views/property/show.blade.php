@@ -469,7 +469,7 @@
     @if(isset($crimeTrend) && count($crimeTrend))
         <div class="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg">
             <div class="mb-2 flex items-center justify-between gap-3">
-                <h3 class="text-lg font-semibold text-zinc-600">Crime Trends</h3>
+                <h3 class="text-lg font-semibold text-zinc-600">Crime Trends in {{ $postcode }}</h3>
 
                 @if($crimeDirection === 'rising')
                     <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
