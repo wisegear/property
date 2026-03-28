@@ -41,7 +41,7 @@ class CrimeWarmCommandTest extends TestCase
             ->expectsOutput('Crime dashboard cache warming complete (2 areas)')
             ->assertExitCode(0);
 
-        $this->assertNotNull(Cache::get('insights:crime:national:v3'));
+        $this->assertNotNull(Cache::get('insights:crime:national:v4'));
         $this->assertNotNull(Cache::get('insights:crime:area:v3:alpha-county'));
         $this->assertNotNull(Cache::get('insights:crime:area:v3:beta-region'));
         $this->assertNotNull(Cache::get('insights:crime:last_warmed_at'));

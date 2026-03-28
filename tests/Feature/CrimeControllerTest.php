@@ -30,9 +30,13 @@ class CrimeControllerTest extends TestCase
         $response->assertSee('Monthly crime compared to the same period last year');
         $response->assertSee('Crime composition and trends');
         $response->assertSee('Regional Drilldowns');
-        $response->assertSee('Key Headlines');
+        $response->assertSee('Crime is up 30.8% nationally.');
+        $response->assertSee('Driven by');
+        $response->assertSee('Offset by');
         $response->assertSee('href="'.route('insights.crime.index').'"', false);
-        $response->assertSee('Crime', false);
+        $response->assertSee('Crime Insights', false);
+        $response->assertSee('text-lime-800 transition hover:text-lime-900 hover:underline', false);
+        $response->assertSee('↗', false);
         $response->assertSee('stroke="#22c55e"', false);
         $response->assertSee('stroke="#ef4444"', false);
         $response->assertViewHas('summary', function (array $summary): bool {
@@ -91,11 +95,16 @@ class CrimeControllerTest extends TestCase
                 && $chart['previous_year'][0] === 4
                 && $chart['previous_year'][11] === 3;
         });
-        $response->assertViewHas('headlines', function (array $headlines): bool {
-            return count($headlines) === 3
-                && $headlines[0] === 'Crime up 30.8% nationally over the latest 12 months.'
-                && $headlines[1] === 'Burglary is increasing fastest at 300.0%.'
-                && $headlines[2] === 'Alpha County recorded the highest 12-month total with 36 crimes.';
+        $response->assertViewHas('drivers', function (array $drivers): bool {
+            return $drivers['overall_yoy'] === 30.8
+                && count($drivers['increases']) === 2
+                && $drivers['increases'][0]['type'] === 'Burglary'
+                && $drivers['increases'][0]['impact'] === 9
+                && $drivers['increases'][0]['yoy_change'] === 300.0
+                && $drivers['increases'][1]['type'] === 'Robbery'
+                && $drivers['increases'][1]['impact'] === 3
+                && $drivers['increases'][1]['yoy_change'] === 100.0
+                && $drivers['decreases'] === [];
         });
     }
 
@@ -110,7 +119,7 @@ class CrimeControllerTest extends TestCase
         $response->assertSee('Alpha County Crime Drilldown');
         $response->assertSee('How crime is changing and what is driving it in Alpha County.');
         $response->assertSee('Monthly crime compared to the same period last year');
-        $response->assertSee('driving change');
+        $response->assertSee('Crime is up 33.3% in this area.');
         $response->assertSee('Latest 12 months by type');
         $response->assertSee('Share of total crime (%)');
         $response->assertViewHas('area', 'Alpha County');

@@ -81,7 +81,19 @@ class CrimeController extends Controller
      *         share_pct:float,
      *         trend:string
      *     }>,
-     *     headlines:array<int,string>
+     *     drivers:array{
+     *         overall_yoy:float,
+     *         increases:array<int,array{
+     *             type:string,
+     *             impact:int,
+     *             yoy_change:float
+     *         }>,
+     *         decreases:array<int,array{
+     *             type:string,
+     *             impact:int,
+     *             yoy_change:float
+     *         }>
+     *     }
      * }
      */
     public function warmNationalCache(): array
@@ -186,12 +198,24 @@ class CrimeController extends Controller
      *         share_pct:float,
      *         trend:string
      *     }>,
-     *     headlines:array<int,string>
+     *     drivers:array{
+     *         overall_yoy:float,
+     *         increases:array<int,array{
+     *             type:string,
+     *             impact:int,
+     *             yoy_change:float
+     *         }>,
+     *         decreases:array<int,array{
+     *             type:string,
+     *             impact:int,
+     *             yoy_change:float
+     *         }>
+     *     }
      * }
      */
     private function nationalPayload(bool $forceRefresh = false): array
     {
-        $cacheKey = 'insights:crime:national:v3';
+        $cacheKey = 'insights:crime:national:v4';
 
         if ($forceRefresh) {
             Cache::forget($cacheKey);
@@ -219,7 +243,7 @@ class CrimeController extends Controller
                 'areas' => $areas,
                 'type_breakdown' => $typeBreakdown,
                 'crime_types' => $crimeTypes,
-                'headlines' => $this->headlines($summary, $areas, $typeBreakdown),
+                'drivers' => $this->driversPanel($summary['pct_change'], $this->nationalDriversBreakdown($typeBreakdown, $summary['total_12m'])),
             ];
         });
     }
@@ -516,36 +540,6 @@ class CrimeController extends Controller
     }
 
     /**
-     * @param  array{total_12m:int,prev_12m:int,pct_change:float,last_3m_total:int,prev_3m_total:int,last_3m_change:float}  $summary
-     * @param  array<int,array{area:string,slug:string,total_12m:int,prev_12m:int,pct_change:float,trend:string}>  $areas
-     * @param  array<int,array{crime_type:string,total_12m:int,prev_12m:int,pct_change:float}>  $typeBreakdown
-     * @return array<int,string>
-     */
-    private function headlines(array $summary, array $areas, array $typeBreakdown): array
-    {
-        $headlines = [];
-        $direction = $summary['pct_change'] >= 0 ? 'up' : 'down';
-
-        $headlines[] = 'Crime '.$direction.' '.number_format(abs($summary['pct_change']), 1).'% nationally over the latest 12 months.';
-
-        if ($typeBreakdown !== []) {
-            $fastestType = $typeBreakdown[0];
-            $typeDirection = $fastestType['pct_change'] >= 0 ? 'increasing' : 'falling';
-            $headlines[] = $fastestType['crime_type'].' is '.$typeDirection.' fastest at '.number_format(abs($fastestType['pct_change']), 1).'%.';
-        }
-
-        if ($areas !== []) {
-            $largestArea = collect($areas)->sortByDesc('total_12m')->first();
-
-            if ($largestArea !== null) {
-                $headlines[] = $largestArea['area'].' recorded the highest 12-month total with '.number_format($largestArea['total_12m']).' crimes.';
-            }
-        }
-
-        return $headlines;
-    }
-
-    /**
      * @param  array<int,array{crime_type:string,total_12m:int,prev_12m:int,pct_change:float}>  $typeBreakdown
      * @return array<int,array{type:string,total_12m:int,total_prev_12m:int,yoy_change:float,share_pct:float,trend:string}>
      */
@@ -610,6 +604,36 @@ class CrimeController extends Controller
                     'impact' => $impact,
                     'trend' => $yoyChange > 1 ? 'Up' : ($yoyChange < -1 ? 'Down' : 'Flat'),
                     'national_yoy' => $nationalType['yoy_change'] ?? null,
+                    'is_largest' => $type === $largestTypeName,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int,array{crime_type:string,total_12m:int,prev_12m:int,pct_change:float}>  $typeBreakdown
+     * @return array<int,array{type:string,total_12m:int,total_prev_12m:int,yoy_change:float,share_pct:float,impact:int,trend:string,national_yoy:?float,is_largest:bool}>
+     */
+    private function nationalDriversBreakdown(array $typeBreakdown, int $totalCrime): array
+    {
+        $largestType = collect($typeBreakdown)->sortByDesc('total_12m')->first();
+        $largestTypeName = $largestType['crime_type'] ?? null;
+
+        return collect($typeBreakdown)
+            ->map(function (array $crimeType) use ($totalCrime, $largestTypeName): array {
+                $yoyChange = (float) $crimeType['pct_change'];
+                $type = (string) $crimeType['crime_type'];
+
+                return [
+                    'type' => $type,
+                    'total_12m' => (int) $crimeType['total_12m'],
+                    'total_prev_12m' => (int) $crimeType['prev_12m'],
+                    'yoy_change' => $yoyChange,
+                    'share_pct' => $totalCrime > 0 ? round((((int) $crimeType['total_12m']) * 100) / $totalCrime, 1) : 0.0,
+                    'impact' => (int) $crimeType['total_12m'] - (int) $crimeType['prev_12m'],
+                    'trend' => $yoyChange > 1 ? 'Up' : ($yoyChange < -1 ? 'Down' : 'Flat'),
+                    'national_yoy' => null,
                     'is_largest' => $type === $largestTypeName,
                 ];
             })
@@ -800,7 +824,7 @@ class CrimeController extends Controller
             'areas' => [],
             'type_breakdown' => [],
             'crime_types' => [],
-            'headlines' => [],
+            'drivers' => $this->driversPanel(0.0, []),
         ];
     }
 }

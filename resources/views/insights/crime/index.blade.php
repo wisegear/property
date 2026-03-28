@@ -139,14 +139,38 @@
 
     <section class="mt-8">
         <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Key Headlines</p>
-            <h2 class="mt-2 text-xl font-semibold text-zinc-900">What stands out right now</h2>
-            <div class="mt-5 grid gap-3">
-                @forelse ($headlines as $headline)
-                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700">{{ $headline }}</div>
-                @empty
-                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">No crime headlines are available yet.</div>
-                @endforelse
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">What&apos;s Driving Change</p>
+            <h2 class="mt-2 text-xl font-semibold text-zinc-900">High level changes impacting crime figures nationally</h2>
+            <p class="mt-3 text-sm text-zinc-700">
+                Crime is {{ $summary['pct_change'] >= 0 ? 'up' : 'down' }} {{ number_format(abs($drivers['overall_yoy']), 1) }}% nationally.
+            </p>
+            <div class="mt-5 grid gap-4 lg:grid-cols-2">
+                <div class="rounded-xl border border-red-200 bg-red-50 p-4">
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-red-700">Driven by</p>
+                    <div class="mt-3 grid gap-2 text-sm text-zinc-700">
+                        @forelse ($drivers['increases'] as $increase)
+                            <div class="flex items-start gap-2">
+                                <span class="mt-0.5 text-red-600">•</span>
+                                <span>{{ $increase['type'] }} ↑ {{ number_format($increase['yoy_change'], 1) }}%</span>
+                            </div>
+                        @empty
+                            <div class="text-zinc-600">No material category increases.</div>
+                        @endforelse
+                    </div>
+                </div>
+                <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Offset by</p>
+                    <div class="mt-3 grid gap-2 text-sm text-zinc-700">
+                        @forelse ($drivers['decreases'] as $decrease)
+                            <div class="flex items-start gap-2">
+                                <span class="mt-0.5 text-emerald-600">•</span>
+                                <span>{{ $decrease['type'] }} ↓ {{ number_format(abs($decrease['yoy_change']), 1) }}%</span>
+                            </div>
+                        @empty
+                            <div class="text-zinc-600">No material category declines.</div>
+                        @endforelse
+                    </div>
+                </div>
             </div>
         </article>
     </section>
@@ -258,7 +282,13 @@
                         @forelse ($areas as $area)
                             <tr class="hover:bg-zinc-50">
                                 <td class="px-6 py-4 font-medium text-zinc-900">
-                                    <a href="{{ route('insights.crime.show', ['area' => $area['slug']]) }}" class="hover:text-lime-700">{{ $area['area'] }}</a>
+                                    <a
+                                        href="{{ route('insights.crime.show', ['area' => $area['slug']]) }}"
+                                        class="inline-flex items-center gap-2 text-sm font-semibold text-lime-800 transition hover:text-lime-900 hover:underline"
+                                    >
+                                        <span>{{ $area['area'] }}</span>
+                                        <span aria-hidden="true">↗</span>
+                                    </a>
                                 </td>
                                 <td class="px-6 py-4 text-zinc-700">{{ number_format($area['total_12m']) }}</td>
                                 <td class="px-6 py-4 font-semibold {{ $changeClass($area['pct_change']) }}">{{ $formatChange($area['pct_change']) }}</td>

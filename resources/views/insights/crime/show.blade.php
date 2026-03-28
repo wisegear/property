@@ -56,8 +56,8 @@
                 <p class="mt-4 max-w-3xl text-sm leading-6 text-zinc-600">
                     How crime is changing and what is driving it in {{ $area }}.
                 </p>
-                <div class="mt-5 flex flex-wrap gap-3 text-xs font-medium text-zinc-600">
-                    <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1">
+                <div class="mt-5 flex flex-wrap items-center gap-3 text-zinc-600">
+                    <span class="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm font-medium">
                         Latest month: {{ $latest_month_label ?? 'No data' }}
                     </span>
                     <a href="{{ route('insights.crime.index') }}" class="inline-flex items-center rounded-full border border-lime-200 bg-lime-50 px-4 py-2 text-sm font-semibold text-lime-800 transition hover:border-lime-300 hover:text-lime-700 hover:underline">
@@ -108,7 +108,7 @@
     <section class="mt-8">
         <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">What&apos;s Driving Change</p>
-            <h2 class="mt-2 text-xl font-semibold text-zinc-900">What&apos;s driving change</h2>
+            <h2 class="mt-2 text-xl font-semibold text-zinc-900">High level changes impacting crime figures regionally</h2>
             <p class="mt-3 text-sm text-zinc-700">
                 Crime is {{ $summary['pct_change'] >= 0 ? 'up' : 'down' }} {{ number_format(abs($drivers['overall_yoy']), 1) }}% in this area.
             </p>

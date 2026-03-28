@@ -433,7 +433,7 @@
                                role="menuitem"
                                tabindex="-1"
                                class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 {{ request()->routeIs('insights.crime.index') || request()->routeIs('insights.crime.show') ? 'font-semibold' : '' }}">
-                                Crime
+                                Crime Insights
                             </a>
                             <a href="{{ route('top-sales.index') }}"
                                role="menuitem"
@@ -692,7 +692,7 @@
                         </a>
                         <a href="{{ route('insights.crime.index') }}"
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 {{ request()->routeIs('insights.crime.index') || request()->routeIs('insights.crime.show') ? 'font-semibold' : '' }}">
-                            Crime
+                            Crime Insights
                         </a>
                         <a href="{{ route('top-sales.index') }}"
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 {{ request()->routeIs('top-sales.index') ? 'font-semibold' : '' }}">
