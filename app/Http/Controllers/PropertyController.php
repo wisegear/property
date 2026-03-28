@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Crime;
 use App\Models\LandRegistry;
 use App\Services\EpcMatcher;
 use App\Services\FormAnalytics;
@@ -452,6 +453,165 @@ class PropertyController extends Controller
             if ($coords) {
                 $mapLat = $coords->lat !== null ? (float) $coords->lat : null;
                 $mapLong = $coords->long !== null ? (float) $coords->long : null;
+            }
+        }
+
+        $crimeData = collect();
+        $crimeTrend = collect();
+        $totalChange = 0.0;
+        $topIncrease = null;
+        $topDecrease = null;
+        $crimeSummary = null;
+        $crimeDirection = 'stable';
+        $crimeTrendLabels = collect();
+        $crimeTrendValues = collect();
+
+        if ($mapLat !== null && $mapLong !== null) {
+            $latestCrimeMonth = Crime::query()->max('month');
+
+            if ($latestCrimeMonth !== null) {
+                $currentWindowEnd = Carbon::parse((string) $latestCrimeMonth)->startOfMonth();
+                $crimeWindowStart = $currentWindowEnd->copy()->subMonths(11);
+                $previousWindowStart = $crimeWindowStart->copy()->subMonths(12);
+
+                $crimeSummaryRows = Crime::query()
+                    ->selectRaw('crime_type, COUNT(*) as total')
+                    ->whereDate('month', '>=', $crimeWindowStart->toDateString())
+                    ->whereBetween('latitude', [$mapLat - 0.005, $mapLat + 0.005])
+                    ->whereBetween('longitude', [$mapLong - 0.005, $mapLong + 0.005])
+                    ->whereNotNull('crime_type')
+                    ->groupBy('crime_type')
+                    ->orderByDesc('total')
+                    ->limit(10)
+                    ->get();
+
+                $crimeTrendCounts = Crime::query()
+                    ->selectRaw(
+                        'crime_type,
+                        SUM(CASE WHEN month >= ? THEN 1 ELSE 0 END) as current_total,
+                        SUM(CASE WHEN month >= ? AND month < ? THEN 1 ELSE 0 END) as previous_total',
+                        [
+                            $crimeWindowStart->toDateString(),
+                            $previousWindowStart->toDateString(),
+                            $crimeWindowStart->toDateString(),
+                        ]
+                    )
+                    ->whereDate('month', '>=', $previousWindowStart->toDateString())
+                    ->whereDate('month', '<=', $currentWindowEnd->toDateString())
+                    ->whereBetween('latitude', [$mapLat - 0.005, $mapLat + 0.005])
+                    ->whereBetween('longitude', [$mapLong - 0.005, $mapLong + 0.005])
+                    ->whereNotNull('crime_type')
+                    ->groupBy('crime_type')
+                    ->get()
+                    ->map(function ($crime) {
+                        $currentTotal = (int) $crime->current_total;
+                        $previousTotal = (int) $crime->previous_total;
+                        $crime->diff = $currentTotal - $previousTotal;
+                        $crime->pct_change = $previousTotal > 0
+                            ? round((($currentTotal - $previousTotal) * 100) / $previousTotal, 1)
+                            : ($currentTotal > 0 ? 100.0 : 0.0);
+
+                        return $crime;
+                    })
+                    ->values();
+
+                $crimeTrendSeriesRows = Crime::query()
+                    ->selectRaw('month, COUNT(*) as total')
+                    ->whereDate('month', '>=', $previousWindowStart->toDateString())
+                    ->whereDate('month', '<=', $currentWindowEnd->toDateString())
+                    ->whereBetween('latitude', [$mapLat - 0.005, $mapLat + 0.005])
+                    ->whereBetween('longitude', [$mapLong - 0.005, $mapLong + 0.005])
+                    ->groupBy('month')
+                    ->orderBy('month')
+                    ->pluck('total', 'month');
+
+                $trendLabels = [];
+                $trendValues = [];
+                $trendCursor = $previousWindowStart->copy();
+
+                while ($trendCursor->lte($currentWindowEnd)) {
+                    $monthKey = $trendCursor->toDateString();
+                    $trendLabels[] = $trendCursor->format('M y');
+                    $trendValues[] = (int) ($crimeTrendSeriesRows[$monthKey] ?? 0);
+                    $trendCursor->addMonth();
+                }
+
+                $crimeTrendLabels = collect($trendLabels);
+                $crimeTrendValues = collect($trendValues);
+
+                $crimeTrendByType = $crimeTrendCounts->keyBy('crime_type');
+                $crimeTotal = (int) $crimeSummaryRows->sum('total');
+
+                $crimeData = $crimeSummaryRows->map(function ($crime) use ($crimeTotal, $crimeTrendByType) {
+                    $crime->pct = $crimeTotal > 0
+                        ? round(((int) $crime->total * 100) / $crimeTotal, 1)
+                        : 0.0;
+                    $crime->pct_change = (float) optional($crimeTrendByType->get($crime->crime_type))->pct_change;
+
+                    return $crime;
+                });
+
+                $totalCurrent = (int) $crimeTrendCounts->sum('current_total');
+                $totalPrevious = (int) $crimeTrendCounts->sum('previous_total');
+                $totalChange = $totalPrevious > 0
+                    ? round((($totalCurrent - $totalPrevious) * 100) / $totalPrevious, 1)
+                    : ($totalCurrent > 0 ? 100.0 : 0.0);
+
+                $crimeTrend = $crimeTrendCounts
+                    ->map(function ($crime) use ($totalCurrent, $totalPrevious, $totalChange) {
+                        $crime->total_current = $totalCurrent;
+                        $crime->total_previous = $totalPrevious;
+                        $crime->total_pct_change = $totalChange;
+
+                        return $crime;
+                    })
+                    ->sortByDesc('pct_change')
+                    ->values();
+
+                if ($crimeTrend->isNotEmpty()) {
+                    $topIncrease = $crimeTrend
+                        ->filter(fn ($crime) => (float) $crime->pct_change > 0)
+                        ->sortByDesc(fn ($crime) => (float) $crime->pct_change)
+                        ->first();
+
+                    if ($topIncrease === null) {
+                        $topIncrease = $crimeTrend
+                            ->sortByDesc(fn ($crime) => (float) $crime->pct_change)
+                            ->first();
+                    }
+
+                    $topDecrease = $crimeTrend
+                        ->filter(fn ($crime) => (float) $crime->pct_change < 0)
+                        ->sortBy(fn ($crime) => (float) $crime->pct_change)
+                        ->first();
+
+                    if ($topDecrease === null) {
+                        $topDecrease = $crimeTrend
+                            ->sortBy(fn ($crime) => (float) $crime->pct_change)
+                            ->first();
+                    }
+                }
+
+                if ($totalChange > 10) {
+                    $crimeDirection = 'rising';
+                } elseif ($totalChange < -10) {
+                    $crimeDirection = 'falling';
+                }
+
+                if ($topIncrease && $topIncrease->previous_total < 20) {
+                    $topIncrease->pct_change_label = $topIncrease->pct_change.'% (low volume)';
+                }
+
+                $directionWord = $totalChange > 0 ? 'up' : 'down';
+
+                $crimeSummary = "Crime is {$directionWord} ".abs($totalChange).'% over the past year';
+
+                if ($topIncrease && $topDecrease) {
+                    $crimeSummary .= ', driven by increases in '.strtolower($topIncrease->crime_type);
+                    $crimeSummary .= ' and decreases in '.strtolower($topDecrease->crime_type).'.';
+                } else {
+                    $crimeSummary .= '.';
+                }
             }
         }
 
@@ -1185,6 +1345,15 @@ class PropertyController extends Controller
             'pcds' => $pcds,
             'mapLat' => $mapLat,
             'mapLong' => $mapLong,
+            'crimeData' => $crimeData,
+            'crimeTrend' => $crimeTrend,
+            'totalChange' => $totalChange,
+            'topIncrease' => $topIncrease,
+            'topDecrease' => $topDecrease,
+            'crimeSummary' => $crimeSummary,
+            'crimeDirection' => $crimeDirection,
+            'crimeTrendLabels' => $crimeTrendLabels,
+            'crimeTrendValues' => $crimeTrendValues,
             'depr' => $depr,
             'deprMsg' => $deprMsg,
             'lsoaLink' => $lsoaLink,

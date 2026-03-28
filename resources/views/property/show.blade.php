@@ -466,7 +466,125 @@
     </section>
     </div>
 
-    <div>
+    @if(isset($crimeTrend) && count($crimeTrend))
+        <div class="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg">
+            <div class="mb-2 flex items-center justify-between gap-3">
+                <h3 class="text-lg font-semibold text-zinc-600">Crime Trends</h3>
+
+                @if($crimeDirection === 'rising')
+                    <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+                        Rising
+                    </span>
+                @elseif($crimeDirection === 'falling')
+                    <span class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                        Improving
+                    </span>
+                @else
+                    <span class="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600">
+                        Stable
+                    </span>
+                @endif
+            </div>
+
+            <p class="mb-2 text-base font-medium text-zinc-800">
+                {{ $crimeSummary }}
+            </p>
+
+            <p class="mb-2 text-sm text-zinc-500">
+                Compared to the previous 12 months
+            </p>
+
+            <p class="mb-2 text-sm text-zinc-500">
+                Based on reported crimes within ~500m of this postcode.
+            </p>
+
+            <p class="mb-1 text-xs text-zinc-500">
+                Monthly Crime Volume (last 24 months, hover over to see detail)
+            </p>
+
+            <div class="mb-1 h-10">
+                <canvas id="crimeSparkline" class="h-10 w-full"></canvas>
+            </div>
+
+            <div class="mt-1 mb-4 flex items-center justify-between gap-3 text-xs text-zinc-500">
+                <span>Shows monthly crime levels over time. Peaks indicate higher crime periods.</span>
+                <span>Latest: {{ last(($crimeTrendValues ?? collect())->all()) ?? 0 }} crimes</span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6 text-sm md:grid-cols-3">
+                <div>
+                    <div class="text-zinc-500">Overall Change</div>
+                    <div class="text-2xl font-bold {{ $totalChange > 0 ? 'text-red-600' : ($totalChange < 0 ? 'text-green-600' : 'text-zinc-700') }}">
+                        {{ $totalChange > 0 ? '+' : '' }}{{ $totalChange }}%
+                    </div>
+                    <div class="mt-2 text-xs">
+                        @if($totalChange > 10)
+                            <span class="text-red-600">Increasing trend</span>
+                        @elseif($totalChange < -10)
+                            <span class="text-green-600">Decreasing trend</span>
+                        @else
+                            <span class="text-zinc-500">Stable trend</span>
+                        @endif
+                    </div>
+                </div>
+
+                <div>
+                    <div class="text-zinc-500">Rising Most</div>
+                    <div class="font-semibold">{{ $topIncrease->crime_type ?? '-' }}</div>
+                    <div class="text-sm text-zinc-600">{{ $topIncrease->pct_change_label ?? (($topIncrease->pct_change ?? 0).'%') }}</div>
+                </div>
+
+                <div>
+                    <div class="text-zinc-500">Falling Most</div>
+                    <div class="font-semibold">{{ $topDecrease->crime_type ?? '-' }}</div>
+                    <div class="text-sm text-zinc-600">{{ $topDecrease->pct_change ?? 0 }}%</div>
+                </div>
+            </div>
+
+            @if(isset($crimeData) && $crimeData->count())
+                <div class="mt-6">
+                    <details class="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+                        <summary class="cursor-pointer text-sm font-semibold text-zinc-600 marker:text-zinc-500">
+                            Crime Profile for this Postcode (Last 12 months)
+                        </summary>
+
+                        <div class="mt-4 overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b text-left">
+                                        <th class="py-2">Crime Type</th>
+                                        <th class="py-2">Total</th>
+                                        <th class="py-2">%</th>
+                                        <th class="py-2">12m Change</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($crimeData as $crime)
+                                        <tr class="border-b border-zinc-100">
+                                            <td class="py-2">{{ $crime->crime_type }}</td>
+                                            <td class="py-2">{{ number_format($crime->total) }}</td>
+                                            <td class="py-2">{{ $crime->pct }}%</td>
+                                            <td class="py-2">
+                                                @if($crime->pct_change > 0)
+                                                    <span class="text-red-600">+{{ $crime->pct_change }}%</span>
+                                                @elseif($crime->pct_change < 0)
+                                                    <span class="text-green-600">{{ $crime->pct_change }}%</span>
+                                                @else
+                                                    <span class="text-zinc-600">0%</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                </div>
+            @endif
+        </div>
+    @endif
+
+    <div class="pt-6">
         <p class="text-center text-zinc-700 text-sm">The charts below show the price history of the specific property type being viewed <span class="text-blue-700">({{ strtolower($propertyTypeLabel) }})</span>. Price data is shown for the locality, town/city, district and county.
         <span class="font-semibold">If you want to see more detail about a specific area and or property type go back and use the <a class="text-lime-600 hover:underline" href="../property/search">search by area</a> option</span>.</p>
     </div>
@@ -587,6 +705,56 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const crimeSparklineEl = document.getElementById('crimeSparkline');
+const trendColor = @json($totalChange > 0 ? '#ef4444' : ($totalChange < 0 ? '#16a34a' : '#3b82f6'));
+
+if (crimeSparklineEl) {
+    new Chart(crimeSparklineEl, {
+        type: 'line',
+        data: {
+            labels: @json($crimeTrendLabels ?? []),
+            datasets: [{
+                data: @json($crimeTrendValues ?? []),
+                borderColor: trendColor,
+                borderWidth: 1.5,
+                tension: 0.25,
+                pointRadius: function (context) {
+                    const index = context.dataIndex;
+                    const total = context.dataset.data.length;
+
+                    return index === 0 || index === total - 1 ? 2 : 0;
+                },
+                pointBackgroundColor: trendColor,
+                fill: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: undefined,
+                intersect: false,
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: true,
+                    callbacks: {
+                        label: function (context) {
+                            return context.raw + ' crimes';
+                        }
+                    }
+                },
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false },
+            }
+        }
+    });
+}
+</script>
 <script>
 const ctxPostcode = document.getElementById('postcodePriceChart').getContext('2d');
 const postcodePriceData = @json(($postcodePriceHistory ?? collect())->pluck('avg_price'));

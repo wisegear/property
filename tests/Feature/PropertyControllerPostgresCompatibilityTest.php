@@ -287,6 +287,198 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             ->assertViewHas('slug', $slug);
     }
 
+    public function test_property_show_displays_crime_profile_for_last_twelve_months_near_postcode_centroid(): void
+    {
+        DB::table('land_registry')->insert([
+            $this->landRegistryRow(
+                transactionId: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeeeee',
+                price: 325000,
+                date: '2025-03-01 00:00:00',
+                postcode: 'AB1 2CD',
+                paon: '10',
+                street: 'MARKET ROAD'
+            ),
+        ]);
+
+        DB::table('onspd')->insert([
+            'pcds' => 'AB1 2CD',
+            'lat' => 52.123456,
+            'long' => -1.123456,
+        ]);
+
+        DB::table('crime')->insert([
+            [
+                'crime_id' => 'crime-1',
+                'month' => '2026-03-01',
+                'longitude' => -1.1231000,
+                'latitude' => 52.1231000,
+                'crime_type' => 'Burglary',
+            ],
+            [
+                'crime_id' => 'crime-2',
+                'month' => '2025-08-01',
+                'longitude' => -1.1232000,
+                'latitude' => 52.1232000,
+                'crime_type' => 'Burglary',
+            ],
+            [
+                'crime_id' => 'crime-3',
+                'month' => '2025-10-01',
+                'longitude' => -1.1233000,
+                'latitude' => 52.1233000,
+                'crime_type' => 'Vehicle crime',
+            ],
+            [
+                'crime_id' => 'crime-4',
+                'month' => '2024-12-01',
+                'longitude' => -1.1233000,
+                'latitude' => 52.1233000,
+                'crime_type' => 'Burglary',
+            ],
+            [
+                'crime_id' => 'crime-5',
+                'month' => '2024-09-01',
+                'longitude' => -1.1231500,
+                'latitude' => 52.1231500,
+                'crime_type' => 'Burglary',
+            ],
+            [
+                'crime_id' => 'crime-6',
+                'month' => '2024-11-01',
+                'longitude' => -1.1232500,
+                'latitude' => 52.1232500,
+                'crime_type' => 'Vehicle crime',
+            ],
+            [
+                'crime_id' => 'crime-7',
+                'month' => '2024-10-01',
+                'longitude' => -1.1232500,
+                'latitude' => 52.1232500,
+                'crime_type' => 'Public order',
+            ],
+            [
+                'crime_id' => 'crime-8',
+                'month' => '2025-12-01',
+                'longitude' => -1.1232200,
+                'latitude' => 52.1232200,
+                'crime_type' => 'Vehicle crime',
+            ],
+            [
+                'crime_id' => 'crime-9',
+                'month' => '2026-01-01',
+                'longitude' => -1.1232500,
+                'latitude' => 52.1232500,
+                'crime_type' => 'Robbery',
+            ],
+            [
+                'crime_id' => 'crime-10',
+                'month' => '2026-02-01',
+                'longitude' => -1.2000000,
+                'latitude' => 52.2000000,
+                'crime_type' => 'Shoplifting',
+            ],
+        ]);
+
+        $this->get('/property/ab1-2cd-10-market-road')
+            ->assertOk()
+            ->assertSee('Crime Trends')
+            ->assertSee('Crime Profile for this Postcode (Last 12 months)')
+            ->assertSee('Crime is up 25% over the past year, driven by increases in robbery and decreases in public order.')
+            ->assertSee('Compared to the previous 12 months')
+            ->assertSee('Based on reported crimes within approximately 500m of this postcode.')
+            ->assertSee('Monthly crime volume (last 24 months)')
+            ->assertSee('Showing how crime levels have changed over time in this area')
+            ->assertSee('Peaks and dips show higher and lower crime months')
+            ->assertSee('Latest: 1 crimes')
+            ->assertSee('Rising')
+            ->assertSee('Overall Change')
+            ->assertSee('Rising Most')
+            ->assertSee('Falling Most')
+            ->assertSee('Increasing trend')
+            ->assertSee('+25%')
+            ->assertSee('Burglary')
+            ->assertSee('Vehicle crime')
+            ->assertSee('Robbery')
+            ->assertSee('100% (low volume)')
+            ->assertSee('12m Change')
+            ->assertSee('+100%')
+            ->assertSee('-100%')
+            ->assertDontSee('Shoplifting')
+            ->assertViewHas('totalChange', 25.0)
+            ->assertViewHas('crimeSummary', 'Crime is up 25% over the past year, driven by increases in robbery and decreases in public order.')
+            ->assertViewHas('crimeDirection', 'rising')
+            ->assertViewHas('crimeTrendLabels', function ($crimeTrendLabels) {
+                return $crimeTrendLabels->count() === 24
+                    && $crimeTrendLabels->first() === 'Apr 24'
+                    && $crimeTrendLabels->last() === 'Mar 26';
+            })
+            ->assertViewHas('crimeTrendValues', function ($crimeTrendValues) {
+                return $crimeTrendValues->count() === 24
+                    && $crimeTrendValues->contains(1)
+                    && $crimeTrendValues->max() >= 1;
+            })
+            ->assertViewHas('topIncrease', function ($topIncrease) {
+                return $topIncrease !== null
+                    && $topIncrease->crime_type === 'Robbery'
+                    && (float) $topIncrease->pct_change === 100.0
+                    && $topIncrease->pct_change_label === '100% (low volume)';
+            })
+            ->assertViewHas('topDecrease', function ($topDecrease) {
+                return $topDecrease !== null
+                    && $topDecrease->crime_type === 'Public order'
+                    && (float) $topDecrease->pct_change === -100.0;
+            })
+            ->assertViewHas('crimeData', function ($crimeData) {
+                if ($crimeData->count() !== 3) {
+                    return false;
+                }
+
+                $burglary = $crimeData->firstWhere('crime_type', 'Burglary');
+                $vehicleCrime = $crimeData->firstWhere('crime_type', 'Vehicle crime');
+                $robbery = $crimeData->firstWhere('crime_type', 'Robbery');
+
+                return $burglary !== null
+                    && (int) $burglary->total === 2
+                    && (float) $burglary->pct === 40.0
+                    && (float) $burglary->pct_change === 0.0
+                    && $vehicleCrime !== null
+                    && (int) $vehicleCrime->total === 2
+                    && (float) $vehicleCrime->pct === 40.0
+                    && (float) $vehicleCrime->pct_change === 100.0
+                    && $robbery !== null
+                    && (int) $robbery->total === 1
+                    && (float) $robbery->pct === 20.0
+                    && (float) $robbery->pct_change === 100.0;
+            })
+            ->assertViewHas('crimeTrend', function ($crimeTrend) {
+                if ($crimeTrend->count() !== 4) {
+                    return false;
+                }
+
+                $burglary = $crimeTrend->firstWhere('crime_type', 'Burglary');
+                $vehicleCrime = $crimeTrend->firstWhere('crime_type', 'Vehicle crime');
+                $robbery = $crimeTrend->firstWhere('crime_type', 'Robbery');
+                $publicOrder = $crimeTrend->firstWhere('crime_type', 'Public order');
+
+                return $burglary !== null
+                    && (int) $burglary->current_total === 2
+                    && (int) $burglary->previous_total === 2
+                    && (float) $burglary->pct_change === 0.0
+                    && $vehicleCrime !== null
+                    && (int) $vehicleCrime->current_total === 2
+                    && (int) $vehicleCrime->previous_total === 1
+                    && (float) $vehicleCrime->pct_change === 100.0
+                    && $robbery !== null
+                    && (int) $robbery->current_total === 1
+                    && (int) $robbery->previous_total === 0
+                    && (float) $robbery->pct_change === 100.0
+                    && $publicOrder !== null
+                    && (int) $publicOrder->current_total === 0
+                    && (int) $publicOrder->previous_total === 1
+                    && (float) $publicOrder->pct_change === -100.0;
+            });
+    }
+
     private function landRegistryRow(
         string $transactionId,
         int $price,
