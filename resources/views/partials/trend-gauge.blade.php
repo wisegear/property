@@ -1,7 +1,10 @@
 @php
     $trendGaugeValue = max(-100, min(100, (float) ($value ?? 0)));
+    $invertTrendScale = (bool) ($invert ?? false);
     $trendNeedleRotationValue = $trendGaugeValue * 0.9;
     $minimumVisibleRotation = 2.0;
+    $negativeTrendColor = $invertTrendScale ? '#22c55e' : '#ef4444';
+    $positiveTrendColor = $invertTrendScale ? '#ef4444' : '#22c55e';
 
     if ($trendGaugeValue !== 0.0 && abs($trendNeedleRotationValue) < $minimumVisibleRotation) {
         $trendNeedleRotationValue = $trendGaugeValue < 0 ? -$minimumVisibleRotation : $minimumVisibleRotation;
@@ -14,8 +17,8 @@
         'green' => '#16a34a',
         'gray' => '#1f2937',
         default => match (true) {
-            $trendGaugeValue < 0 => '#dc2626',
-            $trendGaugeValue > 0 => '#16a34a',
+            $trendGaugeValue < 0 => $negativeTrendColor,
+            $trendGaugeValue > 0 => $positiveTrendColor,
             default => '#1f2937',
         },
     };
@@ -28,12 +31,12 @@
     <svg class="{{ $svgClass ?? 'h-7 w-11' }}" viewBox="0 0 120 70" aria-hidden="true">
         <path d="M 12 60 A 48 48 0 0 1 56 12.2"
               fill="none"
-              stroke="#ef4444"
+              stroke="{{ $negativeTrendColor }}"
               stroke-width="12"
               stroke-linecap="round" />
         <path d="M 64 12.2 A 48 48 0 0 1 108 60"
               fill="none"
-              stroke="#22c55e"
+              stroke="{{ $positiveTrendColor }}"
               stroke-width="12"
               stroke-linecap="round" />
         <line x1="60" y1="10" x2="60" y2="18" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />

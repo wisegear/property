@@ -10,6 +10,7 @@ use App\Http\Controllers\AdminUnemploymentController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CommentsController;
+use App\Http\Controllers\CrimeController;
 use App\Http\Controllers\DeprivationController;
 use App\Http\Controllers\EpcController;
 use App\Http\Controllers\EpcPostcodeController;
@@ -97,6 +98,8 @@ Route::get('/arrears', [MlarArrearsController::class, 'index'])->name('arrears.i
 Route::get('/insights', [InsightsController::class, 'index'])->name('insights.index');
 Route::get('/insights/search', [InsightsController::class, 'search'])->name('insights.search');
 Route::get('/insights/dashboard', [InsightsDashboardController::class, 'index'])->name('insights.dashboard');
+Route::get('/insights/crime', [CrimeController::class, 'index'])->name('insights.crime.index');
+Route::get('/insights/crime/{area}', [CrimeController::class, 'show'])->name('insights.crime.show');
 Route::get('/top-property-sales', [TopSalesController::class, 'index'])->name('top-sales.index');
 Route::get('/insights/{sector}', [InsightController::class, 'show'])
     ->where('sector', '[A-Za-z0-9]+')

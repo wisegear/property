@@ -406,7 +406,7 @@
                                 aria-haspopup="true"
                                 aria-controls="insightsDropdown"
                                 aria-expanded="false"
-                                class="px-3 py-2 rounded flex items-center gap-1 {{ request()->routeIs('insights.dashboard') || request()->routeIs('insights.index') || request()->routeIs('insights.search') || request()->routeIs('insights.show') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }} focus:outline-none cursor-pointer">
+                                class="px-3 py-2 rounded flex items-center gap-1 {{ request()->routeIs('insights.dashboard') || request()->routeIs('insights.index') || request()->routeIs('insights.search') || request()->routeIs('insights.show') || request()->routeIs('insights.crime.index') || request()->routeIs('insights.crime.show') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }} focus:outline-none cursor-pointer">
                             Insights
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -428,6 +428,12 @@
                                tabindex="-1"
                                class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 {{ request()->routeIs('insights.index') || request()->routeIs('insights.search') || request()->routeIs('insights.show') ? 'font-semibold' : '' }}">
                                 County Insights
+                            </a>
+                            <a href="{{ route('insights.crime.index') }}"
+                               role="menuitem"
+                               tabindex="-1"
+                               class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 {{ request()->routeIs('insights.crime.index') || request()->routeIs('insights.crime.show') ? 'font-semibold' : '' }}">
+                                Crime
                             </a>
                             <a href="{{ route('top-sales.index') }}"
                                role="menuitem"
@@ -683,6 +689,10 @@
                         <a href="{{ route('insights.index') }}"
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 {{ request()->routeIs('insights.index') || request()->routeIs('insights.search') || request()->routeIs('insights.show') ? 'font-semibold' : '' }}">
                             County Insights
+                        </a>
+                        <a href="{{ route('insights.crime.index') }}"
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 {{ request()->routeIs('insights.crime.index') || request()->routeIs('insights.crime.show') ? 'font-semibold' : '' }}">
+                            Crime
                         </a>
                         <a href="{{ route('top-sales.index') }}"
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 {{ request()->routeIs('top-sales.index') ? 'font-semibold' : '' }}">
