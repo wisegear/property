@@ -30,3 +30,4 @@ Thumbs.db
 /public/geo/wales/wimd2019.json
 /public/geo/northern_ireland/SA2011_full.json
 /public/sitemap*.xml
+public/data/epc-postcodes.json
