@@ -27,12 +27,12 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view = $this->view('pages.home', [
             'posts' => collect(),
             'stats' => [
-                'property_records' => 0,
-                'uk_avg_price' => 0,
-                'uk_avg_rent' => 0,
-                'bank_rate' => 0,
-                'inflation_rate' => 0,
-                'epc_count' => 0,
+                'property_records' => 31092167,
+                'uk_avg_price' => 268421,
+                'uk_avg_rent' => 1371,
+                'bank_rate' => 0.0375,
+                'inflation_rate' => 0.032,
+                'epc_count' => 30720499,
             ],
             'totalStress' => 10,
             'marketInsightsCount' => 128,
@@ -124,6 +124,15 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('max-w-3xl rounded-xl border border-zinc-200 bg-white p-6 shadow-sm', false);
         $view->assertSee('rounded-lg bg-zinc-900 px-5 py-2 text-sm text-white transition hover:bg-black', false);
         $view->assertSee('Jump straight to full property data for any postcode in England &amp; Wales', false);
+        $view->assertSee('31,092,167');
+        $view->assertSee('30,720,499');
+        $view->assertSee('&pound;268,421', false);
+        $view->assertSee('&pound;1,371', false);
+        $view->assertSee('3.75%');
+        $view->assertSee('3.20%');
+        $view->assertDontSee('animateValue', false);
+        $view->assertDontSee('requestAnimationFrame', false);
+        $view->assertDontSee('x-text=', false);
         $view->assertSee('Top Property Sales');
         $view->assertSee('Open Top Property Sales');
         $view->assertSee(route('top-sales.index', absolute: false), false);
@@ -187,7 +196,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('w-1/3 bg-amber-400', false);
         $view->assertSee('w-1/3 bg-green-400', false);
         $view->assertSee('Explore County Insights');
-        $view->assertSee('transition transform hover:-translate-y-0.5 hover:shadow-md', false);
+        $view->assertSee('shadow-sm transition hover:shadow-md', false);
         $view->assertSee('lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)]', false);
         $view->assertSee('md:grid-cols-2 lg:grid-cols-3', false);
         $view->assertSee('flex h-full flex-col', false);
@@ -197,7 +206,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'Overall Property MArket Stress Index',
             'UK Housing Market Snapshot',
             'Top Property Sales',
-            'Signals worth watching',
+            'Signals Worth Watching',
         ]);
     }
 

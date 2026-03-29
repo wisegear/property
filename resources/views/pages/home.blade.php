@@ -64,99 +64,63 @@
     </section>
 
     {{-- Live Stats Section --}}
-    <section class="mt-8 grid grid-cols-2 md:grid-cols-6 gap-4" x-data="{
-        shown: false,
-        propertyRecords: 0,
-        ukAvgPrice: 0,
-        ukAvgRent: 0,
-        bankRate: 0,
-        inflationRate: 0,
-        epcCount: 0,
-        animateValue(start, end, key, duration) {
-            const range = end - start;
-            const startTime = performance.now();
-            const animate = (currentTime) => {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const easeOut = 1 - Math.pow(1 - progress, 3);
-                this[key] = Math.floor(start + range * easeOut);
-                if (progress < 1) requestAnimationFrame(animate);
-            };
-            requestAnimationFrame(animate);
-        }
-    }" x-init="
-        setTimeout(() => {
-            shown = true;
-            animateValue(0, {{ $stats['property_records'] ?? 0 }}, 'propertyRecords', 2000);
-            animateValue(0, {{ $stats['uk_avg_price'] ?? 0 }}, 'ukAvgPrice', 2000);
-            animateValue(0, {{ $stats['uk_avg_rent'] ?? 0 }}, 'ukAvgRent', 2000);
-            animateValue(0, {{ ($stats['bank_rate'] ?? 0) * 100 }}, 'bankRate', 1500);
-            animateValue(0, {{ ($stats['inflation_rate'] ?? 0) * 100 }}, 'inflationRate', 1500);
-            animateValue(0, {{ $stats['epc_count'] ?? 0 }}, 'epcCount', 2000);
-        }, 300);
-    ">
+    <section class="mt-8 grid grid-cols-2 gap-4 md:grid-cols-6">
         {{-- Property Records --}}
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-all duration-500"
-             :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div class="flex items-center min-w-0">
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">Property Records</p>
-                    <p class="text-base sm:text-base font-bold text-zinc-900 leading-tight tracking-tight tabular-nums break-words" x-text="propertyRecords.toLocaleString()">0</p>
+                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">{{ number_format((int) ($stats['property_records'] ?? 0)) }}</p>
                 </div>
             </div>
         </div>
 
         {{-- EPC Records --}}
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-all duration-500 delay-100"
-             :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div class="flex items-center min-w-0">
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">EPC Records</p>
-                    <p class="text-base sm:text-base font-bold text-zinc-900 leading-tight tracking-tight tabular-nums break-words" x-text="epcCount.toLocaleString()">0</p>
+                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">{{ number_format((int) ($stats['epc_count'] ?? 0)) }}</p>
                 </div>
             </div>
         </div>
 
         {{-- UK Average Price --}}
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-all duration-500 delay-200"
-             :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div class="flex items-center min-w-0">
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">UK House Price</p>
-                    <p class="text-base sm:text-base font-bold text-zinc-900 leading-tight tracking-tight tabular-nums break-words">&pound;<span x-text="ukAvgPrice.toLocaleString()">0</span></p>
+                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">&pound;{{ number_format((int) ($stats['uk_avg_price'] ?? 0)) }}</p>
                 </div>
             </div>
         </div>
 
         {{-- UK Average Rent --}}
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-all duration-500 delay-300"
-             :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div class="flex items-center min-w-0">
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">Average UK Rent</p>
-                    <p class="text-base sm:text-base font-bold text-zinc-900 leading-tight tracking-tight tabular-nums break-words">&pound;<span x-text="ukAvgRent.toLocaleString()">0</span></p>
+                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">&pound;{{ number_format((int) ($stats['uk_avg_rent'] ?? 0)) }}</p>
                 </div>
             </div>
         </div>
 
         {{-- Bank Rate --}}
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-all duration-500 delay-400"
-             :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div class="flex items-center min-w-0">
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">Interest Rate</p>
-                    <p class="text-base sm:text-base font-bold text-zinc-900 leading-tight tracking-tight tabular-nums break-words"><span x-text="(bankRate / 100).toFixed(2)">0</span>%</p>
+                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">{{ number_format((float) (($stats['bank_rate'] ?? 0) * 100), 2) }}%</p>
                 </div>
             </div>
         </div>
 
         {{-- Inflation --}}
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-all duration-500 delay-500"
-             :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div class="flex items-center min-w-0">
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">Inflation (CPIH)</p>
-                    <p class="text-base sm:text-base font-bold text-zinc-900 leading-tight tracking-tight tabular-nums break-words"><span x-text="(inflationRate / 100).toFixed(2)">0</span>%</p>
+                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">{{ number_format((float) (($stats['inflation_rate'] ?? 0) * 100), 2) }}%</p>
                 </div>
             </div>
         </div>
