@@ -110,7 +110,7 @@
             <div class="flex items-center min-w-0">
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">Interest Rate</p>
-                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">{{ number_format((float) (($stats['bank_rate'] ?? 0) * 100), 2) }}%</p>
+                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">{{ number_format((float) ($stats['bank_rate'] ?? 0), 2) }}%</p>
                 </div>
             </div>
         </div>
@@ -120,7 +120,7 @@
             <div class="flex items-center min-w-0">
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">Inflation (CPIH)</p>
-                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">{{ number_format((float) (($stats['inflation_rate'] ?? 0) * 100), 2) }}%</p>
+                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">{{ number_format((float) ($stats['inflation_rate'] ?? 0), 2) }}%</p>
                 </div>
             </div>
         </div>
