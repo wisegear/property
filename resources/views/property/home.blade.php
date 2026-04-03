@@ -39,28 +39,28 @@
 @endphp
 
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white shadow rounded p-4 text-center">
+    <div class="rounded-2xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
         <div class="text-xs text-gray-500 uppercase">LAST 12 MONTHS SALES</div>
         <div class="text-2xl font-semibold">
             {{ number_format($snapshot['rolling_12_sales']) }}
         </div>
     </div>
 
-    <div class="bg-white shadow rounded p-4 text-center">
+    <div class="rounded-2xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
         <div class="text-xs text-gray-500 uppercase">Median Price</div>
         <div class="text-2xl font-semibold">
             £{{ number_format($snapshot['rolling_12_median_price']) }}
         </div>
     </div>
 
-    <div class="bg-white shadow rounded p-4 text-center">
+    <div class="rounded-2xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
         <div class="text-xs text-gray-500 uppercase">MEDIAN PRICE CHANGE</div>
         <div class="text-2xl font-semibold {{ $snapshot['rolling_12_price_yoy'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
             {{ number_format($snapshot['rolling_12_price_yoy'], 1) }}%
         </div>
     </div>
 
-    <div class="bg-white shadow rounded p-4 text-center">
+    <div class="rounded-2xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
         <div class="text-xs text-gray-500 uppercase">SALES VOLUME CHANGE</div>
         <div class="text-2xl font-semibold {{ $snapshot['rolling_12_sales_yoy'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
             {{ number_format($snapshot['rolling_12_sales_yoy'], 1) }}%
