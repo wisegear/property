@@ -77,7 +77,7 @@
     $hasMonthly24  = !empty($sales24Labels) && !empty($sales24Data);
 @endphp
 
-<section class="overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+<section class="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
     <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">National Trend</p>

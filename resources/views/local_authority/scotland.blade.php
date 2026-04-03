@@ -4,9 +4,13 @@
 <div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
 
     {{-- Hero --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-zinc-200 bg-white p-8 shadow-sm flex flex-col md:flex-row justify-between items-center">
+    <section class="relative z-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm flex flex-col md:flex-row justify-between items-center">
         @include('partials.hero-background')
         <div class="max-w-5xl relative z-10">
+            <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
+                <span class="h-2 w-2 rounded-full bg-lime-500"></span>
+                Social Housing
+            </div>
             <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-3xl">
                 Scottish Council Housing Stock Figures
             </h1>
@@ -54,47 +58,71 @@
 
     {{-- Council overview (selected council) --}}
     <section class="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-            <h3 id="totalChartTitle" class="text-md font-semibold text-zinc-900 mb-3">
-                Total housing stock
-            </h3>
-            <div class="relative h-72">
-                <canvas id="councilTotalChart" class="w-full h-full"></canvas>
+        <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Council Stock</p>
+                    <h3 id="totalChartTitle" class="mt-2 text-xl font-semibold text-zinc-900">
+                        Total housing stock
+                    </h3>
+                </div>
+                <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Selected council</span>
             </div>
-        </div>
+            <div class="mt-6 relative h-72 min-w-0 overflow-hidden sm:h-80">
+                <canvas id="councilTotalChart" class="block h-full w-full max-w-full"></canvas>
+            </div>
+        </article>
 
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-            <h3 class="text-md font-semibold text-zinc-900 mb-3">
-                Property age profile – <span id="ageChartCouncil"></span>
-            </h3>
-            <div class="relative h-72">
-                <canvas id="councilAgeChart" class="w-full h-full"></canvas>
+        <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Council Stock</p>
+                    <h3 class="mt-2 text-xl font-semibold text-zinc-900">
+                        Property age profile – <span id="ageChartCouncil"></span>
+                    </h3>
+                </div>
+                <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Selected council</span>
             </div>
-        </div>
+            <div class="mt-6 relative h-72 min-w-0 overflow-hidden sm:h-80">
+                <canvas id="councilAgeChart" class="block h-full w-full max-w-full"></canvas>
+            </div>
+        </article>
     </section>
 
     {{-- Council detail --}}
     <section class="mt-10 grid grid-cols-1 gap-6">
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-            <h3 id="typeChartTitle" class="text-md font-semibold text-zinc-900 mb-3">
-                Property type mix
-            </h3>
-            <div class="relative h-96">
-                <canvas id="councilTypeChart" class="w-full h-full"></canvas>
+        <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Council Stock</p>
+                    <h3 id="typeChartTitle" class="mt-2 text-xl font-semibold text-zinc-900">
+                        Property type mix
+                    </h3>
+                </div>
+                <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Selected council</span>
             </div>
-        </div>
+            <div class="mt-6 relative h-96 min-w-0 overflow-hidden">
+                <canvas id="councilTypeChart" class="block h-full w-full max-w-full"></canvas>
+            </div>
+        </article>
     </section>
 
     {{-- National overview --}}
     <section class="mt-10">
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-semibold text-zinc-900 mb-4">
-                Scotland – Total Council Housing Stock (All Councils)
-            </h2>
-            <div class="relative h-72">
-                <canvas id="nationalTotalChart" class="w-full h-full"></canvas>
+        <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">National View</p>
+                    <h2 class="mt-2 text-xl font-semibold text-zinc-900">
+                        Scotland – Total Council Housing Stock (All Councils)
+                    </h2>
+                </div>
+                <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">All councils</span>
             </div>
-        </div>
+            <div class="mt-6 relative h-72 min-w-0 overflow-hidden sm:h-80">
+                <canvas id="nationalTotalChart" class="block h-full w-full max-w-full"></canvas>
+            </div>
+        </article>
     </section>
 
     {{-- Top movers --}}
@@ -251,6 +279,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!elNational || !elCouncilTotal || !elCouncilType || !elCouncilAge || !select) return;
 
     let nationalChart, totalChart, typeChart, ageChart;
+    const chartGridColor = 'rgba(113, 113, 122, 0.12)';
+    const chartBorderColor = 'rgba(113, 113, 122, 0.22)';
+    const chartTickColor = '#52525b';
 
     const options = {
         responsive: true,
@@ -258,7 +289,10 @@ document.addEventListener('DOMContentLoaded', () => {
         interaction: { mode: 'index', intersect: false },
         scales: {
             x: {
+                grid: { display: false },
+                border: { color: chartBorderColor },
                 ticks: {
+                    color: chartTickColor,
                     callback: (value, index) => {
                         // Chart.js category scale often passes `value` as an index.
                         // Linear/time scales pass the actual year value.
@@ -284,11 +318,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
             y: {
+                grid: { color: chartGridColor, drawBorder: false },
+                border: { color: chartBorderColor },
                 ticks: {
+                    color: chartTickColor,
                     callback: v => v.toLocaleString()
                 }
             }
-        }
+        },
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(24, 24, 27, 0.94)',
+                titleColor: '#fafafa',
+                bodyColor: '#f4f4f5',
+                borderColor: 'rgba(161, 161, 170, 0.35)',
+                borderWidth: 1,
+                padding: 12,
+            }
+        },
     };
 
     const drawNational = () => {
@@ -300,8 +347,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasets: [{
                     label: 'Total stock (Scotland)',
                     data: years.map(y => national[y].total_stock),
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                    fill: true,
                     pointRadius: 3,
-                    pointHoverRadius: 5
+                    pointHoverRadius: 5,
+                    tension: 0.28,
                 }]
             },
             options
@@ -331,8 +382,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasets: [{
                     label: 'Total stock',
                     data: years.map(y => rows[y]?.total_stock ?? 0),
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                    fill: true,
                     pointRadius: 3,
-                    pointHoverRadius: 5
+                    pointHoverRadius: 5,
+                    tension: 0.28,
                 }]
             },
             options
@@ -351,8 +406,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 ].map(([k,l]) => ({
                     label: l,
                     data: years.map(y => rows[y]?.[k] ?? 0),
+                    fill: true,
                     pointRadius: 3,
-                    pointHoverRadius: 5
+                    pointHoverRadius: 5,
+                    tension: 0.28,
                 }))
             },
             options
@@ -371,8 +428,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 ].map(([k,l]) => ({
                     label: l,
                     data: years.map(y => rows[y]?.[k] ?? 0),
+                    fill: true,
                     pointRadius: 3,
-                    pointHoverRadius: 5
+                    pointHoverRadius: 5,
+                    tension: 0.28,
                 }))
             },
             options

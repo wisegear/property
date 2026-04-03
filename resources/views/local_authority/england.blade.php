@@ -4,9 +4,13 @@
 <div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
 
     {{-- Hero --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-zinc-200 bg-white p-8 shadow-sm flex flex-col md:flex-row justify-between items-center">
+    <section class="relative z-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm flex flex-col md:flex-row justify-between items-center">
         @include('partials.hero-background')
         <div class="max-w-5xl relative z-10">
+            <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
+                <span class="h-2 w-2 rounded-full bg-lime-500"></span>
+                Social Housing
+            </div>
             <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-3xl">
                 English Council Housing Stock Figures
             </h1>
@@ -54,42 +58,90 @@
     {{-- Charts --}}
     <div class="mt-10 grid grid-cols-1 gap-8">
         {{-- Full-width total stock chart --}}
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm max-h-[340px]">
-            <h2 id="stockTitle" class="mb-4 text-lg font-semibold">Total council housing stock</h2>
-            <canvas id="stockChart" height="120" style="max-height: 260px;"></canvas>
-        </div>
+        <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Council Stock</p>
+                    <h2 id="stockTitle" class="mt-2 text-xl font-semibold text-zinc-900">Total council housing stock</h2>
+                </div>
+                <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Selected region</span>
+            </div>
+            <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                <canvas id="stockChart" class="block h-full w-full max-w-full"></canvas>
+            </div>
+        </article>
 
         {{-- Two charts side-by-side --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm max-h-[340px]">
-                <h2 id="newBuildsTitle" class="mb-4 text-lg font-semibold">New builds</h2>
-                <canvas id="newBuildsChart" height="120" style="max-height: 260px;"></canvas>
-            </div>
+            <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Council Stock</p>
+                        <h2 id="newBuildsTitle" class="mt-2 text-xl font-semibold text-zinc-900">New builds</h2>
+                    </div>
+                    <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Selected region</span>
+                </div>
+                <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                    <canvas id="newBuildsChart" class="block h-full w-full max-w-full"></canvas>
+                </div>
+            </article>
 
-            <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm max-h-[340px]">
-                <h2 id="acquisitionsTitle" class="mb-4 text-lg font-semibold">Acquisitions</h2>
-                <canvas id="acquisitionsChart" height="120" style="max-height: 260px;"></canvas>
-            </div>
+            <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Council Stock</p>
+                        <h2 id="acquisitionsTitle" class="mt-2 text-xl font-semibold text-zinc-900">Acquisitions</h2>
+                    </div>
+                    <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Selected region</span>
+                </div>
+                <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                    <canvas id="acquisitionsChart" class="block h-full w-full max-w-full"></canvas>
+                </div>
+            </article>
         </div>
     </div>
 
     {{-- England-wide charts --}}
     <div class="mt-10 grid grid-cols-1 gap-8">
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm max-h-[340px]">
-            <h2 class="mb-4 text-lg font-semibold">All England – total council housing stock</h2>
-            <canvas id="englandStockChart" height="120" style="max-height: 260px;"></canvas>
-        </div>
+        <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">National View</p>
+                    <h2 class="mt-2 text-xl font-semibold text-zinc-900">All England – total council housing stock</h2>
+                </div>
+                <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">All regions</span>
+            </div>
+            <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                <canvas id="englandStockChart" class="block h-full w-full max-w-full"></canvas>
+            </div>
+        </article>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm max-h-[340px]">
-                <h2 class="mb-4 text-lg font-semibold">All England – new builds</h2>
-                <canvas id="englandNewBuildsChart" height="120" style="max-height: 260px;"></canvas>
-            </div>
+            <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">National View</p>
+                        <h2 class="mt-2 text-xl font-semibold text-zinc-900">All England – new builds</h2>
+                    </div>
+                    <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">All regions</span>
+                </div>
+                <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                    <canvas id="englandNewBuildsChart" class="block h-full w-full max-w-full"></canvas>
+                </div>
+            </article>
 
-            <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm max-h-[340px]">
-                <h2 class="mb-4 text-lg font-semibold">All England – acquisitions</h2>
-                <canvas id="englandAcquisitionsChart" height="120" style="max-height: 260px;"></canvas>
-            </div>
+            <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">National View</p>
+                        <h2 class="mt-2 text-xl font-semibold text-zinc-900">All England – acquisitions</h2>
+                    </div>
+                    <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">All regions</span>
+                </div>
+                <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                    <canvas id="englandAcquisitionsChart" class="block h-full w-full max-w-full"></canvas>
+                </div>
+            </article>
         </div>
     </div>
 
@@ -204,6 +256,9 @@
     const years = @json($years);
     const byRegion = @json($byRegion);
     const national = @json($national);
+    const chartGridColor = 'rgba(113, 113, 122, 0.12)';
+    const chartBorderColor = 'rgba(113, 113, 122, 0.22)';
+    const chartTickColor = '#52525b';
 
     function buildNationalSeries(key) {
         return years.map(y => national[y]?.[key] ?? null);
@@ -244,18 +299,33 @@
                 datasets: [{
                     label,
                     data,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                    fill: true,
                     borderWidth: 2,
-                    tension: 0.25,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    tension: 0.28,
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
                 scales: {
-                    x: { ticks: { maxRotation: 0 } },
-                    y: { beginAtZero: false }
+                    x: { grid: { display: false }, border: { color: chartBorderColor }, ticks: { color: chartTickColor, maxRotation: 0 } },
+                    y: { beginAtZero: false, grid: { color: chartGridColor, drawBorder: false }, border: { color: chartBorderColor }, ticks: { color: chartTickColor } }
                 },
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(24, 24, 27, 0.94)',
+                        titleColor: '#fafafa',
+                        bodyColor: '#f4f4f5',
+                        borderColor: 'rgba(161, 161, 170, 0.35)',
+                        borderWidth: 1,
+                        padding: 12,
+                    }
                 }
             }
         });
