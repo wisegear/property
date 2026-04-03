@@ -77,22 +77,25 @@
     $hasMonthly24  = !empty($sales24Labels) && !empty($sales24Data);
 @endphp
 
-<section class="relative overflow-hidden rounded-lg border border-gray-200 bg-white p-4 shadow-sm mb-6">
-    <div class="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 class="text-lg text-gray-900">Monthly sales — last 24 months (England &amp; Wales)</h2>
+<section class="overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">National Trend</p>
+            <h2 class="mt-2 text-xl font-semibold text-zinc-900">Monthly sales</h2>
+            <p class="mt-2 text-sm text-zinc-600">England and Wales transaction flow over the last 24 months.</p>
+        </div>
+        <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Last 24 months</span>
     </div>
-    <p class="mt-1 text-xs text-gray-500 italic">
+    <p class="mt-4 text-xs text-zinc-500 italic">
         Note: Land Registry backfills the most recent months; the last few months may be incomplete. April 2025 is likely a rush ahead of year end.
     </p>
-    <div class="flex flex-wrap items-baseline justify-between gap-3">
-    </div>
 
-    <div class="mt-4 h-64">
-        <canvas id="sales24Chart"></canvas>
+    <div class="mt-5 h-72 min-w-0 overflow-hidden sm:h-80">
+        <canvas id="sales24Chart" class="block h-full w-full max-w-full"></canvas>
     </div>
 
     @unless($hasMonthly24)
-        <p class="mt-3 text-sm text-gray-500">
+        <p class="mt-3 text-sm text-zinc-500">
             Monthly data not loaded yet. Add <code>$sales24Labels</code> and <code>$sales24Data</code> in the controller to enable this chart.
         </p>
     @endunless
@@ -117,8 +120,10 @@
           label: 'Sales',
           data,
           type: 'bar',
-          backgroundColor: 'rgba(54, 162, 235, 0.9)',
-          borderWidth: 0,
+          backgroundColor: 'rgba(37, 99, 235, 0.74)',
+          borderColor: '#2563eb',
+          borderWidth: 1,
+          borderRadius: 8,
           maxBarThickness: 28
         }
       ]
@@ -130,6 +135,12 @@
       plugins: {
         legend: { display: false },
         tooltip: {
+          backgroundColor: 'rgba(24, 24, 27, 0.94)',
+          titleColor: '#fafafa',
+          bodyColor: '#f4f4f5',
+          borderColor: 'rgba(161, 161, 170, 0.35)',
+          borderWidth: 1,
+          padding: 12,
           callbacks: {
             label: (ctx) => {
               const v = ctx.parsed.y ?? 0;
@@ -141,7 +152,9 @@
       scales: {
         x: {
           grid: { display: false },
+          border: { color: 'rgba(113, 113, 122, 0.22)' },
           ticks: {
+            color: '#52525b',
             autoSkip: false,       // show every label
             maxRotation: 0,
             minRotation: 0,
@@ -160,7 +173,13 @@
         },
         y: {
           beginAtZero: true,
+          grid: {
+            color: 'rgba(113, 113, 122, 0.12)',
+            drawBorder: false,
+          },
+          border: { color: 'rgba(113, 113, 122, 0.22)' },
           ticks: {
+            color: '#52525b',
             callback: (v) => new Intl.NumberFormat('en-GB').format(v)
           }
         }
@@ -171,53 +190,144 @@
 </script>
 @endpush
 
-<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-    <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <canvas id="salesChart" class="w-full h-full"></canvas>
-    </div>
-    <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <canvas id="topSaleChart" class="w-full h-full"></canvas>
-    </div>
-    <div class="border p-4 bg-white rounded-lg shadow h-80 md:col-span-2 overflow-hidden">
-        <p class="mb-2 text-xs text-zinc-500 text-center">Method: median for broad price level, average for top 5% tail activity.</p>
-        <canvas id="p90AvgTop5Chart" class="w-full h-full"></canvas>
-    </div>
-    <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Property type split for rolling 12 months</h3>
-        <canvas id="propertyTypeSplitChart" class="w-full h-full"></canvas>
-    </div>
-    <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Median price by property type for rolling 12 months</h3>
-        <canvas id="avgPriceByTypeChart" class="w-full h-full"></canvas>
-    </div>
-    <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">New build vs existing for rolling 12 months (%)</h3>
-        <canvas id="newBuildSplitChart" class="w-full h-full"></canvas>
-    </div>
-    <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Leasehold vs freehold for rolling 12 months (%)</h3>
-        <canvas id="durationSplitChart" class="w-full h-full"></canvas>
-    </div>
+<div class="max-w-7xl mx-auto grid grid-cols-1 gap-6 xl:grid-cols-2">
+    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Market Activity</p>
+                <h2 class="mt-2 text-xl font-semibold text-zinc-900">Rolling sales volume</h2>
+            </div>
+            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">12-month rolling</span>
+        </div>
+        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+            <canvas id="salesChart" class="block h-full w-full max-w-full"></canvas>
+        </div>
+    </article>
+    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Prime Signals</p>
+                <h2 class="mt-2 text-xl font-semibold text-zinc-900">Largest recorded sale</h2>
+            </div>
+            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Top 3 on hover</span>
+        </div>
+        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+            <canvas id="topSaleChart" class="block h-full w-full max-w-full"></canvas>
+        </div>
+    </article>
+    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-2">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Ladder</p>
+                <h2 class="mt-2 text-xl font-semibold text-zinc-900">Median, 90th percentile, and top 5% average</h2>
+                <p class="mt-2 text-sm text-zinc-600">Median tracks the broader market while the top 5% average preserves higher-end tail activity.</p>
+            </div>
+            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">England &amp; Wales</span>
+        </div>
+        <div class="mt-6 h-80 min-w-0 overflow-hidden sm:h-[26rem]">
+            <canvas id="p90AvgTop5Chart" class="block h-full w-full max-w-full"></canvas>
+        </div>
+    </article>
+    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Housing Mix</p>
+                <h2 class="mt-2 text-xl font-semibold text-zinc-900">Property type split</h2>
+            </div>
+            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">12-month rolling</span>
+        </div>
+        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+            <canvas id="propertyTypeSplitChart" class="block h-full w-full max-w-full"></canvas>
+        </div>
+    </article>
+    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Housing Mix</p>
+                <h2 class="mt-2 text-xl font-semibold text-zinc-900">Median price by property type</h2>
+            </div>
+            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">12-month rolling</span>
+        </div>
+        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+            <canvas id="avgPriceByTypeChart" class="block h-full w-full max-w-full"></canvas>
+        </div>
+    </article>
+    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Stock Profile</p>
+                <h2 class="mt-2 text-xl font-semibold text-zinc-900">New build vs existing</h2>
+            </div>
+            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Share of sales</span>
+        </div>
+        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+            <canvas id="newBuildSplitChart" class="block h-full w-full max-w-full"></canvas>
+        </div>
+    </article>
+    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Tenure Mix</p>
+                <h2 class="mt-2 text-xl font-semibold text-zinc-900">Leasehold vs freehold</h2>
+            </div>
+            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Share of sales</span>
+        </div>
+        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+            <canvas id="durationSplitChart" class="block h-full w-full max-w-full"></canvas>
+        </div>
+    </article>
 </div>
 
-<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 md:col-span-2 mt-6">
-    <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Sales Volume YoY % Change</h3>
-        <canvas id="salesYoyBar" class="w-full h-full"></canvas>
-    </div>
-    <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Median Price YoY % Change</h3>
-        <canvas id="avgYoyBar" class="w-full h-full"></canvas>
-    </div>
-    <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">90th Percentile YoY % Change</h3>
-        <canvas id="p90YoyBar" class="w-full h-full"></canvas>
-    </div>
-    <div class="border p-4 bg-white rounded-lg shadow h-80 overflow-hidden flex flex-col">
-        <h3 class="text-sm font-medium text-zinc-700 mb-2 text-center">Top 5% Avg YoY % Change</h3>
-        <p class="mb-2 text-xs text-zinc-500 text-center">Top 5% uses average to preserve high-end outlier signal.</p>
-        <canvas id="top5YoyBar" class="w-full flex-1 min-h-0"></canvas>
-    </div>
+<div class="max-w-7xl mx-auto mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
+                <h2 class="mt-2 text-xl font-semibold text-zinc-900">Sales volume YoY change</h2>
+            </div>
+            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Rolling 12 month YoY</span>
+        </div>
+        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+            <canvas id="salesYoyBar" class="block h-full w-full max-w-full"></canvas>
+        </div>
+    </article>
+    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
+                <h2 class="mt-2 text-xl font-semibold text-zinc-900">Median price YoY change</h2>
+            </div>
+            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Rolling 12 month YoY</span>
+        </div>
+        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+            <canvas id="avgYoyBar" class="block h-full w-full max-w-full"></canvas>
+        </div>
+    </article>
+    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
+                <h2 class="mt-2 text-xl font-semibold text-zinc-900">90th percentile YoY change</h2>
+            </div>
+            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Rolling 12 month YoY</span>
+        </div>
+        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+            <canvas id="p90YoyBar" class="block h-full w-full max-w-full"></canvas>
+        </div>
+    </article>
+    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
+                <h2 class="mt-2 text-xl font-semibold text-zinc-900">Top 5% average YoY change</h2>
+                <p class="mt-2 text-sm text-zinc-600">Average is retained here to keep higher-end outlier moves visible.</p>
+            </div>
+            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Rolling 12 month YoY</span>
+        </div>
+        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+            <canvas id="top5YoyBar" class="block h-full w-full max-w-full"></canvas>
+        </div>
+    </article>
 </div>
 
 @php
@@ -578,6 +688,80 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
         };
     }
 
+    const chartGridColor = 'rgba(113, 113, 122, 0.12)';
+    const chartBorderColor = 'rgba(113, 113, 122, 0.22)';
+    const chartTickColor = '#52525b';
+    const chartTitleColor = '#71717a';
+    const chartLegendColor = '#3f3f46';
+
+    function buildCommonChartOptions(overrides = {}) {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    labels: {
+                        usePointStyle: true,
+                        boxWidth: 10,
+                        boxHeight: 10,
+                        color: chartLegendColor,
+                    },
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(24, 24, 27, 0.94)',
+                    titleColor: '#fafafa',
+                    bodyColor: '#f4f4f5',
+                    borderColor: 'rgba(161, 161, 170, 0.35)',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                },
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false,
+                    },
+                    border: {
+                        color: chartBorderColor,
+                    },
+                    ticks: {
+                        color: chartTickColor,
+                    },
+                    title: {
+                        color: chartTitleColor,
+                        font: {
+                            size: 11,
+                            weight: '600',
+                        },
+                    },
+                },
+                y: {
+                    grid: {
+                        color: chartGridColor,
+                        drawBorder: false,
+                    },
+                    border: {
+                        color: chartBorderColor,
+                    },
+                    ticks: {
+                        color: chartTickColor,
+                    },
+                    title: {
+                        color: chartTitleColor,
+                        font: {
+                            size: 11,
+                            weight: '600',
+                        },
+                    },
+                },
+            },
+            ...overrides,
+        };
+    }
+
     const ctx = document.getElementById('salesChart').getContext('2d');
 
     new Chart(ctx, {
@@ -587,24 +771,23 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
             datasets: [{
                 label: 'Sales across England & Wales',
                 data: {!! json_encode($salesByYear->pluck('total')) !!},
-                borderColor: 'rgb(54, 162, 235)',
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                tension: 0.1,
+                borderColor: '#65a30d',
+                backgroundColor: 'rgba(101, 163, 13, 0.14)',
+                fill: true,
+                tension: 0.28,
                 showLine: !isSinglePeriod,
                 pointBackgroundColor: function(ctx) {
                     const index = ctx.dataIndex;
                     const data = ctx.dataset.data;
-                    if (index === 0) return 'rgb(54, 162, 235)';
-                    return data[index] < data[index-1] ? 'red' : 'rgb(54, 162, 235)';
+                    if (index === 0) return '#65a30d';
+                    return data[index] < data[index-1] ? '#dc2626' : '#65a30d';
                 },
                 pointRadius: isSinglePeriod ? 8 : 3,
-                pointHoverRadius: isSinglePeriod ? 10 : 5
+                pointHoverRadius: isSinglePeriod ? 10 : 5,
+                pointBorderWidth: 0,
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: { padding: { top: 12, right: 12, bottom: 8, left: 12 } },
+        options: buildCommonChartOptions({
             scales: {
                 x: {
                     offset: false,
@@ -619,10 +802,13 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 },
                 y: {
                     beginAtZero: false,
-                    suggestedMin: Math.max(0, salesMinVal * 0.9)
+                    suggestedMin: Math.max(0, salesMinVal * 0.9),
+                    ticks: {
+                        callback: (value) => new Intl.NumberFormat('en-GB').format(value),
+                    },
                 }
             }
-        }
+        })
     });
 </script>
 
@@ -647,8 +833,8 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 {
                     label: 'Largest Sale (hover over points to see top 3)',
                     data: scatterData,
-                    borderColor: 'rgb(255, 99, 132)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                    borderColor: '#0f766e',
+                    backgroundColor: 'rgba(15, 118, 110, 0.82)',
                     showLine: false,
                     pointRadius: isSinglePeriod ? 8 : 4,
                     pointHoverRadius: isSinglePeriod ? 10 : 6,
@@ -656,13 +842,24 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 }
             ]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: { padding: { top: 12, right: 12, bottom: 8, left: 12 } },
+        options: buildCommonChartOptions({
             plugins: {
-                legend: { position: 'top' },
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        boxWidth: 10,
+                        boxHeight: 10,
+                        color: chartLegendColor,
+                    },
+                },
                 tooltip: {
+                    backgroundColor: 'rgba(24, 24, 27, 0.94)',
+                    titleColor: '#fafafa',
+                    bodyColor: '#f4f4f5',
+                    borderColor: 'rgba(161, 161, 170, 0.35)',
+                    borderWidth: 1,
+                    padding: 12,
                     callbacks: {
                         // Show the year as the primary label
                         label: function(context) {
@@ -713,10 +910,13 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 },
                 y: {
                     beginAtZero: false,
-                    suggestedMin: Math.max(0, topSaleMinVal * 0.9)
+                    suggestedMin: Math.max(0, topSaleMinVal * 0.9),
+                    ticks: {
+                        callback: (value) => '£' + new Intl.NumberFormat('en-GB', { notation: 'compact', maximumFractionDigits: 1 }).format(value),
+                    },
                 }
             }
-        }
+        })
     });
 </script>
 
@@ -730,9 +930,10 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 {
                     label: 'Median Sale Price',
                     data: {!! json_encode($avgPriceByYear->pluck('avg_price')) !!},
-                    borderColor: 'rgb(54, 162, 235)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    tension: 0.1,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                    fill: true,
+                    tension: 0.28,
                     showLine: !isSinglePeriod,
                     pointRadius: isSinglePeriod ? 8 : 3,
                     pointHoverRadius: isSinglePeriod ? 10 : 4
@@ -740,10 +941,11 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 {
                     label: '90th Percentile',
                     data: {!! json_encode($ewP90Series) !!},
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.15)',
+                    borderColor: '#0f766e',
+                    backgroundColor: 'rgba(15, 118, 110, 0.1)',
                     borderDash: [6,1],
-                    tension: 0.1,
+                    fill: true,
+                    tension: 0.28,
                     showLine: !isSinglePeriod,
                     pointRadius: isSinglePeriod ? 8 : 4,
                     pointHoverRadius: isSinglePeriod ? 10 : 5
@@ -751,20 +953,46 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 {
                     label: 'Top 5% Average',
                     data: {!! json_encode($ewTop5Series) !!},
-                    borderColor: 'rgb(255, 159, 64)',
-                    backgroundColor: 'rgba(255, 159, 64, 0.15)',
-                    tension: 0.1,
+                    borderColor: '#ea580c',
+                    backgroundColor: 'rgba(234, 88, 12, 0.1)',
+                    fill: true,
+                    tension: 0.28,
                     showLine: !isSinglePeriod,
                     pointRadius: isSinglePeriod ? 8 : 3,
                     pointHoverRadius: isSinglePeriod ? 10 : 5
                 }
             ]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: { padding: { top: 12, right: 12, bottom: 8, left: 12 } },
-            plugins: { legend: { position: 'top' } },
+        options: buildCommonChartOptions({
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        boxWidth: 10,
+                        boxHeight: 10,
+                        color: chartLegendColor,
+                    },
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(24, 24, 27, 0.94)',
+                    titleColor: '#fafafa',
+                    bodyColor: '#f4f4f5',
+                    borderColor: 'rgba(161, 161, 170, 0.35)',
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            if (value === null || typeof value === 'undefined') {
+                                return `${context.dataset.label}: n/a`;
+                            }
+
+                            return `${context.dataset.label}: £${new Intl.NumberFormat('en-GB').format(value)}`;
+                        }
+                    }
+                }
+            },
             scales: { 
                 x: { 
                     offset: false,
@@ -779,10 +1007,13 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                 }, 
                 y: {
                     beginAtZero: false,
-                    suggestedMin: Math.max(0, p90BlockMinVal * 0.9)
+                    suggestedMin: Math.max(0, p90BlockMinVal * 0.9),
+                    ticks: {
+                        callback: (value) => '£' + new Intl.NumberFormat('en-GB', { notation: 'compact', maximumFractionDigits: 1 }).format(value),
+                    },
                 }
             }
-        }
+        })
     });
 </script>
 
@@ -815,13 +1046,12 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     data: series,
                     backgroundColor: barColorsFrom(series),
                     borderColor: borderColorsFrom(series),
-                    borderWidth: 1
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    maxBarThickness: 28,
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: { padding: { top: 12, right: 12, bottom: 28, left: 12 } },
+            options: buildCommonChartOptions({
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -854,7 +1084,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                         grid: { drawBorder: false }
                     }
                 }
-            }
+            })
         });
     }
 
@@ -878,13 +1108,12 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     data: p90SeriesYoY,
                     backgroundColor: barColorsFrom(p90SeriesYoY),
                     borderColor: borderColorsFrom(p90SeriesYoY),
-                    borderWidth: 1
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    maxBarThickness: 28,
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: { padding: { top: 12, right: 12, bottom: 28, left: 12 } },
+            options: buildCommonChartOptions({
                 plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c){ const v=c.parsed.y; if (v==null) return 'No prior year'; const s=v>=0?'+':''; return `${s}${v.toFixed(2)}%`; } } } },
                 scales: {
                     x: { 
@@ -898,7 +1127,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     },
                     y: { beginAtZero: false, ticks: { callback: v => v + '%' } }
                 }
-            }
+            })
         });
 
         // Top 5%
@@ -911,13 +1140,12 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     data: top5SeriesYoY,
                     backgroundColor: barColorsFrom(top5SeriesYoY),
                     borderColor: borderColorsFrom(top5SeriesYoY),
-                    borderWidth: 1
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    maxBarThickness: 28,
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: { padding: { top: 12, right: 12, bottom: 28, left: 12 } },
+            options: buildCommonChartOptions({
                 plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c){ const v=c.parsed.y; if (v==null) return 'No prior year'; const s=v>=0?'+':''; return `${s}${v.toFixed(2)}%`; } } } },
                 scales: {
                     x: { 
@@ -931,7 +1159,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     },
                     y: { beginAtZero: false, ticks: { callback: v => v + '%' } }
                 }
-            }
+            })
         });
 
         // Sales Volume
@@ -959,19 +1187,23 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
             data: {
                 labels,
                 datasets: [
-                    { label: 'Detached',      data: dataD, backgroundColor: 'rgba(54, 162, 235, 0.70)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 1, stack: 'types' },
-                    { label: 'Semi-detached', data: dataS, backgroundColor: 'rgba(75, 192, 192, 0.70)', borderColor: 'rgba(75, 192, 192, 1)', borderWidth: 1, stack: 'types' },
-                    { label: 'Terraced',      data: dataT, backgroundColor: 'rgba(255, 159, 64, 0.70)', borderColor: 'rgba(255, 159, 64, 1)', borderWidth: 1, stack: 'types' },
-                    { label: 'Flat',          data: dataF, backgroundColor: 'rgba(255, 99, 132, 0.70)', borderColor: 'rgba(255, 99, 132, 1)', borderWidth: 1, stack: 'types' },
+                    { label: 'Detached',      data: dataD, backgroundColor: 'rgba(37, 99, 235, 0.72)', borderColor: '#2563eb', borderWidth: 1, borderRadius: 8, stack: 'types' },
+                    { label: 'Semi-detached', data: dataS, backgroundColor: 'rgba(15, 118, 110, 0.72)', borderColor: '#0f766e', borderWidth: 1, borderRadius: 8, stack: 'types' },
+                    { label: 'Terraced',      data: dataT, backgroundColor: 'rgba(234, 88, 12, 0.72)', borderColor: '#ea580c', borderWidth: 1, borderRadius: 8, stack: 'types' },
+                    { label: 'Flat',          data: dataF, backgroundColor: 'rgba(225, 29, 72, 0.72)', borderColor: '#e11d48', borderWidth: 1, borderRadius: 8, stack: 'types' },
                 ]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: { padding: { top: 12, right: 12, bottom: 28, left: 12 } },
-                interaction: { mode: 'index', intersect: false },
+            options: buildCommonChartOptions({
                 plugins: {
-                    legend: { position: 'top' },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            color: chartLegendColor,
+                        },
+                    },
                     tooltip: {
                         callbacks: {
                             label: function(c){
@@ -1001,7 +1233,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                         }
                     }
                 }
-            }
+            })
         });
     })();
 </script>
@@ -1026,19 +1258,23 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
             data: {
                 labels,
                 datasets: [
-                    { label: 'Detached',      data: d, borderColor: 'rgb(54, 162, 235)', backgroundColor: 'rgba(54, 162, 235, 0.12)', tension: 0.1, pointRadius: 3, pointHoverRadius: 5 },
-                    { label: 'Semi-detached', data: s, borderColor: 'rgb(75, 192, 192)', backgroundColor: 'rgba(75, 192, 192, 0.10)', tension: 0.1, pointRadius: 3, pointHoverRadius: 5 },
-                    { label: 'Terraced',      data: t, borderColor: 'rgb(255, 159, 64)', backgroundColor: 'rgba(255, 159, 64, 0.10)', tension: 0.1, pointRadius: 3, pointHoverRadius: 5 },
-                    { label: 'Flat',          data: f, borderColor: 'rgb(255, 99, 132)', backgroundColor: 'rgba(255, 99, 132, 0.10)', tension: 0.1, pointRadius: 3, pointHoverRadius: 5 },
+                    { label: 'Detached',      data: d, borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.12)', fill: true, tension: 0.28, pointRadius: 3, pointHoverRadius: 5 },
+                    { label: 'Semi-detached', data: s, borderColor: '#0f766e', backgroundColor: 'rgba(15, 118, 110, 0.1)', fill: true, tension: 0.28, pointRadius: 3, pointHoverRadius: 5 },
+                    { label: 'Terraced',      data: t, borderColor: '#ea580c', backgroundColor: 'rgba(234, 88, 12, 0.1)', fill: true, tension: 0.28, pointRadius: 3, pointHoverRadius: 5 },
+                    { label: 'Flat',          data: f, borderColor: '#e11d48', backgroundColor: 'rgba(225, 29, 72, 0.1)', fill: true, tension: 0.28, pointRadius: 3, pointHoverRadius: 5 },
                 ]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: { padding: { top: 12, right: 12, bottom: 28, left: 12 } },
-                interaction: { mode: 'index', intersect: false },
+            options: buildCommonChartOptions({
                 plugins: {
-                    legend: { position: 'top' },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            color: chartLegendColor,
+                        },
+                    },
                     tooltip: {
                         callbacks: {
                             label: function(c){
@@ -1067,7 +1303,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                         }
                     }
                 }
-            }
+            })
         });
     })();
 </script>
@@ -1092,17 +1328,21 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
             data: {
                 labels,
                 datasets: [
-                    { label: 'New build (Y)', data: pctNew, backgroundColor: 'rgba(87, 161, 0, 0.70)', borderColor: 'rgba(87, 161, 0, 1)', borderWidth: 1, stack: 'nb' },
-                    { label: 'Existing (N)',  data: pctOld, backgroundColor: 'rgba(54, 162, 235, 0.70)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 1, stack: 'nb' },
+                    { label: 'New build (Y)', data: pctNew, backgroundColor: 'rgba(101, 163, 13, 0.72)', borderColor: '#65a30d', borderWidth: 1, borderRadius: 8, stack: 'nb' },
+                    { label: 'Existing (N)',  data: pctOld, backgroundColor: 'rgba(37, 99, 235, 0.72)', borderColor: '#2563eb', borderWidth: 1, borderRadius: 8, stack: 'nb' },
                 ]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: { padding: { top: 12, right: 12, bottom: 28, left: 12 } },
-                interaction: { mode: 'index', intersect: false },
+            options: buildCommonChartOptions({
                 plugins: {
-                    legend: { position: 'top' },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            color: chartLegendColor,
+                        },
+                    },
                     tooltip: {
                         callbacks: {
                             label: function(c){
@@ -1133,7 +1373,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                         }
                     }
                 }
-            }
+            })
         });
     })();
 </script>
@@ -1156,17 +1396,22 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
             data: {
                 labels,
                 datasets: [
-                    { label: 'Leasehold (L)', data: pctL, backgroundColor: 'rgba(255, 159, 64, 0.70)', borderColor: 'rgba(255, 159, 64, 1)', borderWidth: 1, stack: 'dur', order: 0 },
-                    { label: 'Freehold (F)',  data: pctF, backgroundColor: 'rgba(87, 161, 0, 0.70)', borderColor: 'rgba(87, 161, 0, 1)', borderWidth: 1, stack: 'dur', order: 1 },
+                    { label: 'Leasehold (L)', data: pctL, backgroundColor: 'rgba(234, 88, 12, 0.72)', borderColor: '#ea580c', borderWidth: 1, borderRadius: 8, stack: 'dur', order: 0 },
+                    { label: 'Freehold (F)',  data: pctF, backgroundColor: 'rgba(101, 163, 13, 0.72)', borderColor: '#65a30d', borderWidth: 1, borderRadius: 8, stack: 'dur', order: 1 },
                 ]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: { padding: { top: 12, right: 12, bottom: 28, left: 12 } },
-                interaction: { mode: 'index', intersect: false },
+            options: buildCommonChartOptions({
                 plugins: {
-                    legend: { position: 'top', reverse: true },
+                    legend: {
+                        position: 'top',
+                        reverse: true,
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            color: chartLegendColor,
+                        },
+                    },
                     tooltip: {
                         callbacks: {
                             label: function(c){
@@ -1195,7 +1440,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                         ticks: { callback: (v) => v + '%' }
                     }
                 }
-            }
+            })
         });
     })();
 </script>

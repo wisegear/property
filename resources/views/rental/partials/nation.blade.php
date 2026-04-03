@@ -1,21 +1,25 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-7xl mx-auto p-6 space-y-6">
+<div class="mx-auto max-w-7xl space-y-6 px-4 py-8 md:py-10">
     {{-- Hero / summary card --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
+    <section class="relative z-0 mb-8 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:flex md:flex-row md:items-center md:justify-between md:p-8">
         @include('partials.hero-background')
-        <div class="max-w-3xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">{{ $nationName }} Rental Dashboard</h1>
-            <p class="mt-2 text-sm leading-6 text-gray-700">
+        <div class="relative z-10 max-w-3xl">
+            <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
+                <span class="h-2 w-2 rounded-full bg-lime-500"></span>
+                Rental Trends
+            </div>
+            <h1 class="mt-4 text-2xl font-bold tracking-tight text-zinc-900 md:text-3xl">{{ $nationName }} Rental Dashboard</h1>
+            <p class="mt-4 text-sm leading-6 text-zinc-600">
                 <span class="font-semibold">Quarterly rental costs and changes for {{ $nationName }}.</span>
             </p>
-            <p class="mt-2 text-sm leading-6 text-gray-700">
+            <p class="mt-2 text-sm leading-6 text-zinc-600">
                 Charts show average rent levels alongside quarter-on-quarter percentage changes.  Information shows average overall and then splits it down into 1,2,3, 
                 and 4+ bedroom properties. Alsco covers detached, semi-detached, terraced, and flats.
             </p>
             @if($latestPeriod)
-                <p class="mt-2 text-sm leading-6 text-gray-700">
+                <p class="mt-2 text-sm leading-6 text-zinc-600">
                     Latest data: <span class="font-semibold">{{ $latestPeriod }}</span>
                 </p>
             @endif
@@ -47,34 +51,46 @@
                 @endif
             </div>
         </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
+        <div class="relative z-10 mt-6 flex-shrink-0 md:mt-0 md:ml-8">
             <img src="{{ asset('assets/images/site/rental.jpg') }}" alt="Rental dashboard" class="w-80 h-auto">
         </div>
     </section>
 
-    <h2 class="text-xl font-semibold mt-8">Quarterly Rent Change</h2>
-    <p class="mb-4 text-sm text-zinc-700">Rental price line uses pounds; quarterly change line uses percentage.</p>
+    <h2 class="mt-8 text-xl font-semibold text-zinc-900">Quarterly Rent Change</h2>
+    <p class="mb-4 text-sm text-zinc-600">Rental price line uses pounds; quarterly change line uses percentage.</p>
 
     @if(isset($seriesByArea[0]))
-        <div class="rounded-lg border bg-white p-4 mb-8">
-            <div class="mb-2 text-sm text-neutral-600 font-semibold">{{ $seriesByArea[0]['name'] }}</div>
-            <div class="h-64">
-                <canvas id="rentalChart0" aria-label="{{ $seriesByArea[0]['name'] }} rental change" class="w-full h-full"></canvas>
+        <article class="mb-8 min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Rental Trend</p>
+                    <h3 class="mt-2 text-xl font-semibold text-zinc-900">{{ $seriesByArea[0]['name'] }}</h3>
+                </div>
+                <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Quarterly</span>
             </div>
-        </div>
+            <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                <canvas id="rentalChart0" aria-label="{{ $seriesByArea[0]['name'] }} rental change" class="block h-full w-full max-w-full"></canvas>
+            </div>
+        </article>
     @endif
 
-    <h2 class="text-xl font-semibold mt-8">Quarterly Rental Change by Property Type</h2>
-    <p class="mb-4 text-sm text-zinc-700">Series reflect the same quarterly aggregation for each property type.</p>
+    <h2 class="mt-8 text-xl font-semibold text-zinc-900">Quarterly Rental Change by Property Type</h2>
+    <p class="mb-4 text-sm text-zinc-600">Series reflect the same quarterly aggregation for each property type.</p>
 
     <div class="grid gap-6 md:grid-cols-2">
         @foreach($typeSeries as $type)
-            <div class="rounded-lg border bg-white p-4">
-                <div class="mb-2 text-sm text-neutral-600 font-semibold">{{ $type['label'] }}</div>
-                <div class="h-56">
-                    <canvas id="rentalTypeChart_{{ $type['key'] }}" aria-label="{{ $type['label'] }} rental change" class="w-full h-full"></canvas>
+            <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Property Type</p>
+                        <h3 class="mt-2 text-xl font-semibold text-zinc-900">{{ $type['label'] }}</h3>
+                    </div>
+                    <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Quarterly</span>
                 </div>
-            </div>
+                <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                    <canvas id="rentalTypeChart_{{ $type['key'] }}" aria-label="{{ $type['label'] }} rental change" class="block h-full w-full max-w-full"></canvas>
+                </div>
+            </article>
         @endforeach
     </div>
 </div>
@@ -86,6 +102,10 @@
         const typeSeries = @json($typeSeries);
         const PRICE = '#2563eb';
         const CHANGE = '#16a34a';
+        const chartGridColor = 'rgba(113, 113, 122, 0.12)';
+        const chartBorderColor = 'rgba(113, 113, 122, 0.22)';
+        const chartTickColor = '#52525b';
+        const chartLegendColor = '#3f3f46';
 
         const formatQuarterTick = (value, index, ticks, scale) => {
             const label = scale.getLabelForValue(value);
@@ -122,24 +142,26 @@
                             data: prices,
                             yAxisID: 'y1',
                             borderColor: PRICE,
-                            backgroundColor: 'transparent',
+                            backgroundColor: 'rgba(37, 99, 235, 0.12)',
                             spanGaps: true,
                             pointRadius: 2,
                             pointHoverRadius: 4,
                             borderWidth: 2,
-                            tension: 0.2,
+                            tension: 0.28,
+                            fill: true,
                         },
                         {
                             label: 'Quarterly change',
                             data: changes,
                             yAxisID: 'y',
                             borderColor: CHANGE,
-                            backgroundColor: 'transparent',
+                            backgroundColor: 'rgba(22, 163, 74, 0.10)',
                             spanGaps: true,
                             pointRadius: 2,
                             pointHoverRadius: 4,
                             borderWidth: 2,
-                            tension: 0.2,
+                            tension: 0.28,
+                            fill: true,
                         },
                     ],
                 },
@@ -156,9 +178,16 @@
                                 usePointStyle: true,
                                 boxWidth: 10,
                                 boxHeight: 10,
+                                color: chartLegendColor,
                             },
                         },
                         tooltip: {
+                            backgroundColor: 'rgba(24, 24, 27, 0.94)',
+                            titleColor: '#fafafa',
+                            bodyColor: '#f4f4f5',
+                            borderColor: 'rgba(161, 161, 170, 0.35)',
+                            borderWidth: 1,
+                            padding: 12,
                             callbacks: {
                                 label: function (context) {
                                     const dsLabel = context.dataset.label || '';
@@ -181,7 +210,10 @@
                     },
                     scales: {
                         x: {
+                            grid: { display: false },
+                            border: { color: chartBorderColor },
                             ticks: {
+                                color: chartTickColor,
                                 autoSkip: false,
                                 maxRotation: 0,
                                 minRotation: 0,
@@ -192,11 +224,14 @@
                         },
                         y: {
                             position: 'left',
+                            grid: { color: chartGridColor, drawBorder: false },
+                            border: { color: chartBorderColor },
                             title: {
                                 display: true,
                                 text: 'Quarterly change (%)',
                             },
                             ticks: {
+                                color: chartTickColor,
                                 callback: function (value) {
                                     return value + '%';
                                 },
@@ -211,7 +246,9 @@
                             grid: {
                                 drawOnChartArea: false,
                             },
+                            border: { color: chartBorderColor },
                             ticks: {
+                                color: chartTickColor,
                                 callback: function (value) {
                                     try {
                                         return '£' + value.toLocaleString('en-GB', { maximumFractionDigits: 0 });

@@ -97,7 +97,7 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
 
         $this->get('/property')
             ->assertOk()
-            ->assertSee('Rolling 12 month period ending Jan 2026');
+            ->assertSee('Data range: Jan 1995 - Jan 2026 (12-month rolling)');
     }
 
     public function test_property_show_route_loads_without_mysql_index_hints(): void

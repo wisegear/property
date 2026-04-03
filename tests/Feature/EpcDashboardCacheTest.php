@@ -11,6 +11,13 @@ class EpcDashboardCacheTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+    }
+
     public function test_epc_dashboard_warms_expected_cache_keys_for_ew(): void
     {
         DB::table('epc_certificates')->insert([

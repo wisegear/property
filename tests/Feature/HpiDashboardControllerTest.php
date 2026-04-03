@@ -13,6 +13,8 @@ class HpiDashboardControllerTest extends TestCase
     {
         parent::setUp();
 
+        config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+
         $this->ensureHpiMonthlyTableExists();
     }
 

@@ -3,44 +3,48 @@
 @section('content')
 <div class="mx-auto max-w-7xl px-4 py-8">
     {{-- Hero / summary card --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-6 flex flex-col md:flex-row justify-between items-center">
+    <section class="relative z-0 mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:flex md:flex-row md:items-center md:justify-between md:p-8">
         @include('partials.hero-background')
-        <div class="max-w-4xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900 mb-2">Repossession Actions</h1>
-            <p class="text-zinc-500 text-sm">
+        <div class="relative z-10 max-w-4xl">
+            <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
+                <span class="h-2 w-2 rounded-full bg-lime-500"></span>
+                Court Actions
+            </div>
+            <h1 class="mb-2 mt-4 text-2xl font-bold tracking-tight text-zinc-900 md:text-3xl">Repossession Actions</h1>
+            <p class="text-sm text-zinc-600">
                 Data from 2003 to 2025 provided by the court service. Next update January 2026, data is provided quarterly. It's important to note that Repossessions are part 
                 of a long process, only the possession action title "Repossession" reflects a property being repossessed.
             </p>
-            <p class="text-zinc-500 text-sm pt-1">
+            <p class="pt-1 text-sm text-zinc-600">
                 This section covers <span class="font-bold">England & Wales</span> only.
             </p>            
         </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
+        <div class="relative z-10 mt-6 flex-shrink-0 md:mt-0 md:ml-8">
             <img src="{{ asset('assets/images/site/repo.jpg') }}" alt="Repossessions" class="w-72 h-auto">
         </div>
     </section>
 
     {{-- Summary panels --}}
     <div class="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="text-xs uppercase tracking-wide text-gray-500">Total claims year to date</div>
-            <div class="mt-1 text-2xl font-semibold">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <div class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Total Claims Year To Date</div>
+            <div class="mt-3 text-2xl font-semibold text-zinc-900">
                 {{ (int)($latest->year ?? 0) }}
-                <span class="ml-2 text-sm text-gray-500">{{ number_format((int)($latest->total ?? 0)) }}</span>
+                <span class="ml-2 text-sm text-zinc-500">{{ number_format((int)($latest->total ?? 0)) }}</span>
             </div>
         </div>
 
-        <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="text-xs uppercase tracking-wide text-gray-500">Total Claims in the Previous year</div>
-            <div class="mt-1 text-2xl font-semibold">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <div class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Total Claims In The Previous Year</div>
+            <div class="mt-3 text-2xl font-semibold text-zinc-900">
                 {{ (int)($previous->year ?? 0) }}
-                <span class="ml-2 text-sm text-gray-500">{{ number_format((int)($previous->total ?? 0)) }}</span>
+                <span class="ml-2 text-sm text-zinc-500">{{ number_format((int)($previous->total ?? 0)) }}</span>
             </div>
         </div>
 
-        <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="text-xs uppercase tracking-wide text-gray-500">Year-on-year Change</div>
-            <div class="mt-1 text-2xl font-semibold {{ ($yoy ?? 0) < 0 ? 'text-lime-700' : 'text-rose-700' }}">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <div class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Year-On-Year Change</div>
+            <div class="mt-3 text-2xl font-semibold {{ ($yoy ?? 0) < 0 ? 'text-lime-700' : 'text-rose-700' }}">
                 {{ $yoy === null ? '—' : (($yoy >= 0 ? '+' : '') . number_format((int)$yoy)) }}
             </div>
         </div>
@@ -69,31 +73,49 @@
     </div>
 
     {{-- Total repossessions (yearly) --}}
-    <section class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm mb-6">
-        <div class="mb-2 text-sm font-medium text-gray-700">Total number of actions</div>
-        <div class="h-80">
-            <canvas id="reposTotalChart"></canvas>
+    <section class="mb-6 min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Repossessions</p>
+                <h2 class="mt-2 text-xl font-semibold text-zinc-900">Total number of actions</h2>
+            </div>
+            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Annual totals</span>
+        </div>
+        <div class="mt-6 h-80 min-w-0 overflow-hidden">
+            <canvas id="reposTotalChart" class="block h-full w-full max-w-full"></canvas>
         </div>
     </section>
 
     {{-- Charts --}}
     <div class="grid grid-cols-1 gap-6">
         {{-- Possession type (yearly) --}}
-        <section class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-2 text-sm font-medium text-gray-700">Who is raising actions?</div>
-            <div class="h-80">
-                <canvas id="reposTypeChart"></canvas>
+        <section class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Breakdown</p>
+                    <h2 class="mt-2 text-xl font-semibold text-zinc-900">Who is raising actions?</h2>
+                </div>
+                <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Annual totals</span>
             </div>
-            <p class="mt-3 text-xs text-gray-500">Types: Accelerated Landlord, Mortgage, Private Landlord, Social Landlord.</p>
+            <div class="mt-6 h-80 min-w-0 overflow-hidden">
+                <canvas id="reposTypeChart" class="block h-full w-full max-w-full"></canvas>
+            </div>
+            <p class="mt-3 text-xs text-zinc-500">Types: Accelerated Landlord, Mortgage, Private Landlord, Social Landlord.</p>
         </section>
 
         {{-- Possession action (yearly) --}}
-        <section class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="mb-2 text-sm font-medium text-gray-700">Possession actions</div>
-            <div class="h-80">
-                <canvas id="reposActionChart"></canvas>
+        <section class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Breakdown</p>
+                    <h2 class="mt-2 text-xl font-semibold text-zinc-900">Possession actions</h2>
+                </div>
+                <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Stacked totals</span>
             </div>
-            <p class="mt-3 text-xs text-gray-500">Showing top actions overall + “Other” to keep the chart readable desipte there being virtually none.</p>
+            <div class="mt-6 h-80 min-w-0 overflow-hidden">
+                <canvas id="reposActionChart" class="block h-full w-full max-w-full"></canvas>
+            </div>
+            <p class="mt-3 text-xs text-zinc-500">Showing top actions overall + “Other” to keep the chart readable desipte there being virtually none.</p>
         </section>
     </div>
 
@@ -174,6 +196,18 @@
 <script>
 (function() {
     const labels = @json($year_labels);
+    const chartGridColor = 'rgba(113, 113, 122, 0.12)';
+    const chartBorderColor = 'rgba(113, 113, 122, 0.22)';
+    const chartTickColor = '#52525b';
+    const chartLegendColor = '#3f3f46';
+    const tooltipBase = {
+        backgroundColor: 'rgba(24, 24, 27, 0.94)',
+        titleColor: '#fafafa',
+        bodyColor: '#f4f4f5',
+        borderColor: 'rgba(161, 161, 170, 0.35)',
+        borderWidth: 1,
+        padding: 12,
+    };
 
     // 1) Total (yearly)
     const totals = @json($year_totals);
@@ -186,7 +220,10 @@
             datasets: [{
                 label: 'Total',
                 data: totals,
-                tension: 0.2,
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                fill: true,
+                tension: 0.28,
                 pointRadius: 2,
             }]
         },
@@ -196,11 +233,11 @@
             animation: false,
             plugins: {
                 legend: { display: false },
-                tooltip: { mode: 'index', intersect: false },
+                tooltip: { ...tooltipBase, mode: 'index', intersect: false },
             },
             scales: {
-                x: { ticks: { maxRotation: 0, autoSkip: true } },
-                y: { beginAtZero: true, grace: '5%' }
+                x: { grid: { display: false }, border: { color: chartBorderColor }, ticks: { color: chartTickColor, maxRotation: 0, autoSkip: true } },
+                y: { beginAtZero: true, grace: '5%', grid: { color: chartGridColor, drawBorder: false }, border: { color: chartBorderColor }, ticks: { color: chartTickColor } }
             }
         }
     });
@@ -210,7 +247,7 @@
     const typeDatasets = Object.keys(typeSeries).map(k => ({
         label: k.replaceAll('_',' '),
         data: typeSeries[k],
-        tension: 0.2,
+        tension: 0.28,
         pointRadius: 2,
         pointHoverRadius: 4,
         pointStyle: 'circle',
@@ -224,17 +261,17 @@
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            animation: false,
-            plugins: {
-                legend: { position: 'bottom' },
-                tooltip: { mode: 'index', intersect: false },
-            },
-            scales: {
-                x: { ticks: { maxRotation: 0, autoSkip: true } },
-                y: { beginAtZero: true, grace: '5%' }
+                animation: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 10, boxHeight: 10, color: chartLegendColor } },
+                    tooltip: { ...tooltipBase, mode: 'index', intersect: false },
+                },
+                scales: {
+                    x: { grid: { display: false }, border: { color: chartBorderColor }, ticks: { color: chartTickColor, maxRotation: 0, autoSkip: true } },
+                    y: { beginAtZero: true, grace: '5%', grid: { color: chartGridColor, drawBorder: false }, border: { color: chartBorderColor }, ticks: { color: chartTickColor } }
+                }
             }
-        }
-    });
+        });
 
     // 3) Actions (yearly) - stacked bar
     const actionSeries = @json($action_series);
@@ -242,6 +279,7 @@
         label: k.replaceAll('_',' '),
         data: actionSeries[k],
         stack: 'actions',
+        borderRadius: 8,
     }));
 
     const actionCtx = document.getElementById('reposActionChart').getContext('2d');
@@ -252,17 +290,17 @@
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            animation: false,
-            plugins: {
-                legend: { position: 'bottom' },
-                tooltip: { mode: 'index', intersect: false },
-            },
-            scales: {
-                x: { stacked: true, ticks: { maxRotation: 0, autoSkip: true } },
-                y: { stacked: true, beginAtZero: true, grace: '5%' }
+                animation: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 10, boxHeight: 10, color: chartLegendColor } },
+                    tooltip: { ...tooltipBase, mode: 'index', intersect: false },
+                },
+                scales: {
+                    x: { stacked: true, grid: { display: false }, border: { color: chartBorderColor }, ticks: { color: chartTickColor, maxRotation: 0, autoSkip: true } },
+                    y: { stacked: true, beginAtZero: true, grace: '5%', grid: { color: chartGridColor, drawBorder: false }, border: { color: chartBorderColor }, ticks: { color: chartTickColor } }
+                }
             }
-        }
-    });
+        });
 })();
 
 // Local authority search (client-side JSON lookup)

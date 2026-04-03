@@ -15,16 +15,20 @@
 @endphp
 <div class="mx-auto max-w-7xl px-4 py-8 md:py-12">
     {{-- Hero / summary card --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
+    <section class="relative z-0 mb-8 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:flex md:flex-row md:items-center md:justify-between md:p-8">
         @include('partials.hero-background')
-        <div class="max-w-4xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">{{ $pageTitle }}</h1>
-            <p class="mt-2 text-sm leading-6 text-gray-700">
+        <div class="relative z-10 max-w-4xl">
+            <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
+                <span class="h-2 w-2 rounded-full bg-lime-500"></span>
+                Prime Dashboard
+            </div>
+            <h1 class="mt-4 text-2xl font-bold tracking-tight text-zinc-900 md:text-3xl">{{ $pageTitle }}</h1>
+            <p class="mt-4 text-sm leading-6 text-zinc-600">
                 {!! $heroDescription !!}
             </p>
-            <p class="mt-1 text-sm leading-6 text-gray-700">
+            <p class="mt-3 text-sm leading-6 text-zinc-600">
                 30-year history • sourced from Land Registry
-                <span class="ml-2 text-neutral-600">|
+                <span class="ml-2 text-zinc-500">|
                     Data last cached:
                     @php
                         $ts = $lastCachedAt ?? null;
@@ -45,8 +49,8 @@
                 </span>
             </p>
         </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="{{ $pageTitle }}" class="w-72 h-auto">
+        <div class="relative z-10 mt-6 flex-shrink-0 md:mt-0 md:ml-8">
+            <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="{{ $pageTitle }}" class="h-auto w-72">
         </div>
     </section>
 
@@ -80,90 +84,172 @@
     </div>
 
     @if(($districts ?? collect())->isEmpty())
-        <div class="rounded border p-6 bg-neutral-50">{{ $emptyDistrictMessage }}</div>
+        <div class="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-zinc-600">{{ $emptyDistrictMessage }}</div>
     @else
         @foreach($districts as $district)
             @php $__label = ($district === 'ALL') ? $allDistrictLabel : $district; @endphp
             <section class="mb-10 district-section" data-district="{{ $district }}">
                 @if($district === 'ALL')
-                    <div class="mb-4 rounded-md border border-zinc-200 bg-white p-4 text-sm text-neutral-700">
-                        <h2 class="text-lg font-semibold mb-2">{{ $allDistrictOverviewTitle }}</h2>
+                    <div class="mb-4 rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Overview</p>
+                        <h2 class="mt-2 text-lg font-semibold text-zinc-900">{{ $allDistrictOverviewTitle }}</h2>
                         <p>{!! $allDistrictOverviewDescription !!}</p>
                     </div>
                 @elseif(!empty($notes[$district] ?? null))
-                    <div class="mb-4 rounded-md border border-zinc-200 bg-white p-4 text-sm text-neutral-700">
-                        <h2 class="text-lg font-semibold mb-2">{{ $district }} – Overview</h2>
+                    <div class="mb-4 rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Overview</p>
+                        <h2 class="mt-2 text-lg font-semibold text-zinc-900">{{ $district }} – Overview</h2>
                         <p>{{ $notes[$district] }}</p>
                     </div>
                 @endif
 
-                <div class="flex flex-col gap-4 md:grid md:grid-cols-2">
-                    <!-- Number of Sales (line) -->
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="font-semibold mb-2">Total property sales (12-month rolling period)</h3>
-                        <canvas id="sc_{{ $district }}" class="w-full h-full"></canvas>
-                    </div>
-                    <!-- Average Price (line) -->
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="font-semibold mb-2">Median property price</h3>
-                        <canvas id="ap_{{ $district }}" class="w-full h-full"></canvas>
-                    </div>
-
-
-                    <!-- Property Types (stacked bar) -->
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="font-semibold mb-2">Sales by property type</h3>
-                        <canvas id="pt_{{ $district }}" class="w-full h-full"></canvas>
-                    </div>
-
-                    <!-- Median Price by Property Type (line) -->
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="font-semibold mb-2">Median price by property type</h3>
-                        <canvas id="apt_{{ $district }}" class="w-full h-full"></canvas>
-                    </div>
-
-                    <!-- New Build vs Existing (% stacked bar) -->
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="font-semibold mb-2">New builds vs existing homes</h3>
-                        <canvas id="nb_{{ $district }}" class="w-full h-full"></canvas>
-                    </div>
-
-                    <!-- Freehold vs Leasehold (% stacked bar) -->
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="font-semibold mb-2">Freehold vs leasehold sales</h3>
-                        <canvas id="dur_{{ $district }}" class="w-full h-full"></canvas>
-                    </div>
-
-                    <!-- Top Sale Marker (scatter) -->
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72 col-span-2">
-                        <h3 class="font-semibold mb-2">Largest property sale each year</h3>
-                        <canvas id="ts_{{ $district }}" class="w-full h-full"></canvas>
-                    </div>
-
-                    <!-- Average + Prime Indicators (line) -->
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72 col-span-2 flex flex-col">
-                        <h3 class="font-semibold mb-2">Property prices across the market</h3>
-                        <p class="mb-2 text-xs text-zinc-500">Method: median for broad price level, average for top 5% tail activity.</p>
-                        <canvas id="api_{{ $district }}" class="w-full flex-1 min-h-0"></canvas>
-                    </div>
-                    <!-- YoY % Change Charts -->
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="text-sm font-medium text-zinc-700 mb-2">Year-on-year change in sales volume</h3>
-                        <canvas id="yoy_sales_{{ $district }}" class="w-full h-full"></canvas>
-                    </div>
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="text-sm font-medium text-zinc-700 mb-2">Year-on-year change in high-value property prices</h3>
-                        <canvas id="yoy_p90_{{ $district }}" class="w-full h-full"></canvas>
-                    </div>
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72">
-                        <h3 class="text-sm font-medium text-zinc-700 mb-2">Year-on-year change in median price</h3>
-                        <canvas id="yoy_avg_{{ $district }}" class="w-full h-full"></canvas>
-                    </div>
-                    <div class="rounded-lg border p-4 bg-white overflow-hidden h-56 sm:h-60 md:h-64 lg:h-72 flex flex-col">
-                        <h3 class="text-sm font-medium text-zinc-700 mb-2">Year-on-year change in prime property prices</h3>
-                        <p class="mb-2 text-xs text-zinc-500">Top 5% uses average to preserve high-end outlier signal.</p>
-                        <canvas id="yoy_top5_{{ $district }}" class="w-full flex-1 min-h-0"></canvas>
-                    </div>
+                <div class="grid gap-6 xl:grid-cols-2">
+                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Market Activity</p>
+                                <h3 class="mt-2 text-xl font-semibold text-zinc-900">Total property sales</h3>
+                            </div>
+                            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">12-month rolling</span>
+                        </div>
+                        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                            <canvas id="sc_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
+                        </div>
+                    </article>
+                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Trend</p>
+                                <h3 class="mt-2 text-xl font-semibold text-zinc-900">Median property price</h3>
+                            </div>
+                            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">12-month rolling</span>
+                        </div>
+                        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                            <canvas id="ap_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
+                        </div>
+                    </article>
+                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Housing Mix</p>
+                                <h3 class="mt-2 text-xl font-semibold text-zinc-900">Sales by property type</h3>
+                            </div>
+                            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">12-month rolling</span>
+                        </div>
+                        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                            <canvas id="pt_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
+                        </div>
+                    </article>
+                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Housing Mix</p>
+                                <h3 class="mt-2 text-xl font-semibold text-zinc-900">Median price by property type</h3>
+                            </div>
+                            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">12-month rolling</span>
+                        </div>
+                        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                            <canvas id="apt_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
+                        </div>
+                    </article>
+                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Stock Profile</p>
+                                <h3 class="mt-2 text-xl font-semibold text-zinc-900">New builds vs existing homes</h3>
+                            </div>
+                            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Share of sales</span>
+                        </div>
+                        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                            <canvas id="nb_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
+                        </div>
+                    </article>
+                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Tenure Mix</p>
+                                <h3 class="mt-2 text-xl font-semibold text-zinc-900">Freehold vs leasehold sales</h3>
+                            </div>
+                            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Share of sales</span>
+                        </div>
+                        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                            <canvas id="dur_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
+                        </div>
+                    </article>
+                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-2">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Prime Signals</p>
+                                <h3 class="mt-2 text-xl font-semibold text-zinc-900">Largest property sale each year</h3>
+                            </div>
+                            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Top 3 on hover</span>
+                        </div>
+                        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                            <canvas id="ts_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
+                        </div>
+                    </article>
+                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-2">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Ladder</p>
+                                <h3 class="mt-2 text-xl font-semibold text-zinc-900">Property prices across the market</h3>
+                                <p class="mt-2 text-sm text-zinc-600">Median tracks the broader market while the top 5% average preserves higher-end tail activity.</p>
+                            </div>
+                            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">District view</span>
+                        </div>
+                        <div class="mt-6 h-80 min-w-0 overflow-hidden sm:h-[26rem]">
+                            <canvas id="api_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
+                        </div>
+                    </article>
+                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
+                                <h3 class="mt-2 text-xl font-semibold text-zinc-900">Year-on-year sales volume</h3>
+                            </div>
+                            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Rolling 12 month YoY</span>
+                        </div>
+                        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                            <canvas id="yoy_sales_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
+                        </div>
+                    </article>
+                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
+                                <h3 class="mt-2 text-xl font-semibold text-zinc-900">High-value price change</h3>
+                            </div>
+                            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Rolling 12 month YoY</span>
+                        </div>
+                        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                            <canvas id="yoy_p90_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
+                        </div>
+                    </article>
+                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
+                                <h3 class="mt-2 text-xl font-semibold text-zinc-900">Median price change</h3>
+                            </div>
+                            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Rolling 12 month YoY</span>
+                        </div>
+                        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                            <canvas id="yoy_avg_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
+                        </div>
+                    </article>
+                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
+                                <h3 class="mt-2 text-xl font-semibold text-zinc-900">Prime property price change</h3>
+                                <p class="mt-2 text-sm text-zinc-600">Top 5% uses average to preserve high-end outlier signal.</p>
+                            </div>
+                            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Rolling 12 month YoY</span>
+                        </div>
+                        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                            <canvas id="yoy_top5_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
+                        </div>
+                    </article>
                 </div>
             </section>
         @endforeach
@@ -214,7 +300,12 @@
             if (Number.isNaN(d.getTime())) return 'Unknown date';
             return d.toLocaleDateString('en-GB');
         };
-        const baseColors = ['#60a5fa','#f472b6','#fbbf24','#34d399','#a78bfa'];
+        const baseColors = ['#2563eb', '#0f766e', '#ea580c', '#e11d48', '#7c3aed'];
+        const chartGridColor = 'rgba(113, 113, 122, 0.12)';
+        const chartBorderColor = 'rgba(113, 113, 122, 0.22)';
+        const chartTickColor = '#52525b';
+        const chartTitleColor = '#71717a';
+        const chartLegendColor = '#3f3f46';
         const snapshotSalesEl = document.getElementById('snapshot-sales');
         const snapshotMedianPriceEl = document.getElementById('snapshot-median-price');
         const snapshotPriceYoyEl = document.getElementById('snapshot-price-yoy');
@@ -231,6 +322,74 @@
             }
 
             return Math.round((((currentNumber - previousNumber) / previousNumber) * 100) * 10) / 10;
+        }
+
+        function buildCommonChartOptions(overrides = {}) {
+            return {
+                animation: false,
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            color: chartLegendColor,
+                        },
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(24, 24, 27, 0.94)',
+                        titleColor: '#fafafa',
+                        bodyColor: '#f4f4f5',
+                        borderColor: 'rgba(161, 161, 170, 0.35)',
+                        borderWidth: 1,
+                        padding: 12,
+                    },
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false,
+                            drawBorder: false,
+                        },
+                        border: {
+                            color: chartBorderColor,
+                        },
+                        ticks: {
+                            color: chartTickColor,
+                        },
+                        title: {
+                            color: chartTitleColor,
+                            font: {
+                                size: 11,
+                                weight: '600',
+                            },
+                        },
+                    },
+                    y: {
+                        grid: {
+                            color: chartGridColor,
+                            drawBorder: false,
+                        },
+                        border: {
+                            color: chartBorderColor,
+                        },
+                        ticks: {
+                            color: chartTickColor,
+                        },
+                        title: {
+                            color: chartTitleColor,
+                            font: {
+                                size: 11,
+                                weight: '600',
+                            },
+                        },
+                    },
+                },
+                ...overrides,
+            };
         }
 
         function snapshotForDistrict(district) {
@@ -427,23 +586,15 @@
                             {
                                 label: 'Median Price (£)',
                                 data: apData,
+                                borderColor: '#2563eb',
+                                backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                                fill: true,
                                 pointRadius: 3,
-                                tension: 0.2
+                                tension: 0.28
                             }
                         ]
                     },
-                    options: {
-                        animation: false,
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        layout: {
-                            padding: {
-                                top: 12,
-                                right: 12,
-                                bottom: 28,
-                                left: 12
-                            }
-                        },
+                    options: buildCommonChartOptions({
                         plugins: {
                             legend: { display: true },
                             tooltip: {
@@ -470,7 +621,7 @@
                                 }
                             }
                         }
-                    }
+                    })
                 });
 
                 apCtx.style.backgroundColor = '#ffffff';
@@ -496,23 +647,15 @@
                             {
                                 label: 'Sales Count',
                                 data: scData,
+                                borderColor: '#65a30d',
+                                backgroundColor: 'rgba(101, 163, 13, 0.14)',
+                                fill: true,
                                 pointRadius: 3,
-                                tension: 0.2
+                                tension: 0.28
                             }
                         ]
                     },
-                    options: {
-                        animation: false,
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        layout: {
-                            padding: {
-                                top: 12,
-                                right: 12,
-                                bottom: 24,
-                                left: 8
-                            }
-                        },
+                    options: buildCommonChartOptions({
                         plugins: {
                             legend: { display: true },
                             tooltip: {
@@ -539,7 +682,7 @@
                                 }
                             }
                         }
-                    }
+                    })
                 });
 
                 scCtx.style.backgroundColor = '#ffffff';
@@ -567,27 +710,17 @@
                 const datasets = allTypes.map((t, i) => ({
                     label: TYPE_LABELS[t] || t,
                     data: years.map(y => (yearTypeMap.get(y)?.get(t)) || 0),
-                    backgroundColor: baseColors[i % baseColors.length],
+                    backgroundColor: `${baseColors[i % baseColors.length]}bb`,
                     borderWidth: 1,
-                    borderColor: 'rgba(0,0,0,0.1)'
+                    borderRadius: 8,
+                    borderColor: baseColors[i % baseColors.length]
                 }));
 
                 window.__upclCharts[ptId] = new Chart(ptCtx, {
                     type: 'bar',
                     plugins: [whiteBgPlugin],
                     data: { labels: years, datasets },
-                    options: {
-                        animation: false,
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        layout: {
-                            padding: {
-                                top: 12,
-                                right: 12,
-                                bottom: 24,
-                                left: 8
-                            }
-                        },
+                    options: buildCommonChartOptions({
                         plugins: {
                             legend: { display: true },
                             tooltip: {
@@ -614,7 +747,7 @@
                                 ticks: { callback: (v) => fmtNum(v) }
                             }
                         }
-                    }
+                    })
                 });
 
                 ptCtx.style.backgroundColor = '#ffffff';
@@ -650,10 +783,11 @@
                         label: `${TYPE_LABELS[t] || t} Median (£)`,
                         data: years.map(y => (yearTypeAvg.get(y)?.get(t)) ?? null),
                         pointRadius: 2,
-                        tension: 0.2,
+                        fill: true,
+                        tension: 0.28,
                         borderWidth: 2,
                         borderColor: baseColors[i % baseColors.length],
-                        backgroundColor: baseColors[i % baseColors.length]
+                        backgroundColor: `${baseColors[i % baseColors.length]}1f`
                     }));
 
                     window.__upclCharts[aptId] = new Chart(aptCtx, {
@@ -663,18 +797,7 @@
                             labels: years,
                             datasets
                         },
-                        options: {
-                            animation: false,
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            layout: {
-                                padding: {
-                                    top: 12,
-                                    right: 12,
-                                    bottom: 24,
-                                    left: 8
-                                }
-                            },
+                        options: buildCommonChartOptions({
                             plugins: {
                                 legend: { display: true },
                                 tooltip: {
@@ -698,7 +821,7 @@
                                     ticks: { callback: (v) => fmtGBP(v) }
                                 }
                             }
-                        }
+                        })
                     });
 
                     aptCtx.style.backgroundColor = '#ffffff';
@@ -733,31 +856,22 @@
                                 {
                                     label: 'New Build %',
                                     data: newData,
-                                    backgroundColor: baseColors[3] || '#34d399',
+                                    backgroundColor: 'rgba(101, 163, 13, 0.72)',
                                     borderWidth: 1,
-                                    borderColor: 'rgba(0,0,0,0.1)'
+                                    borderRadius: 8,
+                                    borderColor: '#65a30d'
                                 },
                                 {
                                     label: 'Existing %',
                                     data: exData,
-                                    backgroundColor: baseColors[0] || '#60a5fa',
+                                    backgroundColor: 'rgba(37, 99, 235, 0.72)',
                                     borderWidth: 1,
-                                    borderColor: 'rgba(0,0,0,0.1)'
+                                    borderRadius: 8,
+                                    borderColor: '#2563eb'
                                 }
                             ]
                         },
-                        options: {
-                            animation: false,
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            layout: {
-                                padding: {
-                                    top: 12,
-                                    right: 12,
-                                    bottom: 24,
-                                    left: 8
-                                }
-                            },
+                        options: buildCommonChartOptions({
                             plugins: {
                                 legend: { display: true },
                                 tooltip: {
@@ -788,7 +902,7 @@
                                     ticks: { callback: (v) => v + '%' }
                                 }
                             }
-                        }
+                        })
                     });
 
                     nbCtx.style.backgroundColor = '#ffffff';
@@ -823,31 +937,22 @@
                                 {
                                     label: 'Freehold %',
                                     data: freeData,
-                                    backgroundColor: baseColors[2] || '#fbbf24',
+                                    backgroundColor: 'rgba(101, 163, 13, 0.72)',
                                     borderWidth: 1,
-                                    borderColor: 'rgba(0,0,0,0.1)'
+                                    borderRadius: 8,
+                                    borderColor: '#65a30d'
                                 },
                                 {
                                     label: 'Leasehold %',
                                     data: leaseData,
-                                    backgroundColor: baseColors[1] || '#f472b6',
+                                    backgroundColor: 'rgba(234, 88, 12, 0.72)',
                                     borderWidth: 1,
-                                    borderColor: 'rgba(0,0,0,0.1)'
+                                    borderRadius: 8,
+                                    borderColor: '#ea580c'
                                 }
                             ]
                         },
-                        options: {
-                            animation: false,
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            layout: {
-                                padding: {
-                                    top: 12,
-                                    right: 12,
-                                    bottom: 24,
-                                    left: 8
-                                }
-                            },
+                        options: buildCommonChartOptions({
                             plugins: {
                                 legend: { display: true },
                                 tooltip: {
@@ -878,7 +983,7 @@
                                     ticks: { callback: (v) => v + '%' }
                                 }
                             }
-                        }
+                        })
                     });
 
                     durCtx.style.backgroundColor = '#ffffff';
@@ -911,22 +1016,12 @@
                                 label: 'Top Sale (£)',
                                 data: tsData,
                                 pointRadius: 5,
-                                backgroundColor: '#ef4444'
+                                backgroundColor: 'rgba(15, 118, 110, 0.82)',
+                                borderColor: '#0f766e'
                             }
                         ]
                     },
-                    options: {
-                        animation: false,
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        layout: {
-                            padding: {
-                                top: 12,
-                                right: 12,
-                                bottom: 24,
-                                left: 8
-                            }
-                        },
+                    options: buildCommonChartOptions({
                         parsing: false,
                         plugins: {
                             legend: { display: true },
@@ -969,7 +1064,7 @@
                                 ticks: { callback: (v) => fmtGBP(v) }
                             }
                         }
-                    }
+                    })
                 });
 
                 tsCtx.style.backgroundColor = '#ffffff';
@@ -1002,36 +1097,34 @@
                                 label: 'Median Price (£)',
                                 data: apData,
                                 pointRadius: 3,
-                                tension: 0.2
+                                fill: true,
+                                tension: 0.28,
+                                borderColor: '#2563eb',
+                                backgroundColor: 'rgba(37, 99, 235, 0.12)'
                             },
                             {
                                 label: '90th Percentile (£)',
                                 data: p90Data,
                                 pointRadius: 0,
                                 borderDash: [6, 4],
-                                tension: 0.1
+                                fill: true,
+                                tension: 0.28,
+                                borderColor: '#0f766e',
+                                backgroundColor: 'rgba(15, 118, 110, 0.1)'
                             },
                             {
                                 label: 'Top 5% Avg (£)',
                                 data: top5Data,
                                 pointRadius: 2,
                                 borderWidth: 1,
-                                tension: 0.15
+                                fill: true,
+                                tension: 0.28,
+                                borderColor: '#ea580c',
+                                backgroundColor: 'rgba(234, 88, 12, 0.1)'
                             }
                         ]
                     },
-                    options: {
-                        animation: false,
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        layout: {
-                            padding: {
-                                top: 12,
-                                right: 12,
-                                bottom: 24,
-                                left: 8
-                            }
-                        },
+                    options: buildCommonChartOptions({
                         plugins: {
                             legend: { display: true },
                             tooltip: {
@@ -1058,7 +1151,7 @@
                                 }
                             }
                         }
-                    }
+                    })
                 });
 
                 apiCtx.style.backgroundColor = '#ffffff';
@@ -1077,14 +1170,12 @@
                             data: yoySales,
                             backgroundColor: barColorsFrom(yoySales),
                             borderColor: borderColorsFrom(yoySales),
-                            borderWidth: 1
+                            borderWidth: 1,
+                            borderRadius: 8,
+                            maxBarThickness: 28
                         }]
                     },
-                    options: {
-                        animation: false,
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        layout: { padding: { top: 12, right: 12, bottom: 20, left: 12 } },
+                    options: buildCommonChartOptions({
                         plugins: {
                             legend: { display: false },
                             tooltip: { callbacks: { label: (ctx) => {
@@ -1108,7 +1199,7 @@
                             },
                             y: { ticks: { callback: (v) => v + '%' } }
                         }
-                    }
+                    })
                 });
                 window.__upclCharts[id] = Chart.getChart(yoySalesCtx);
                 yoySalesCtx.style.backgroundColor = '#ffffff';
@@ -1127,14 +1218,12 @@
                             data: yoyP90,
                             backgroundColor: barColorsFrom(yoyP90),
                             borderColor: borderColorsFrom(yoyP90),
-                            borderWidth: 1
+                            borderWidth: 1,
+                            borderRadius: 8,
+                            maxBarThickness: 28
                         }]
                     },
-                    options: {
-                        animation: false,
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        layout: { padding: { top: 12, right: 12, bottom: 20, left: 12 } },
+                    options: buildCommonChartOptions({
                         plugins: {
                             legend: { display: false },
                             tooltip: { callbacks: { label: (ctx) => {
@@ -1158,7 +1247,7 @@
                             },
                             y: { ticks: { callback: (v) => v + '%' } }
                         }
-                    }
+                    })
                 });
                 window.__upclCharts[id] = Chart.getChart(yoyP90Ctx);
                 yoyP90Ctx.style.backgroundColor = '#ffffff';
@@ -1177,14 +1266,12 @@
                             data: yoyAvg,
                             backgroundColor: barColorsFrom(yoyAvg),
                             borderColor: borderColorsFrom(yoyAvg),
-                            borderWidth: 1
+                            borderWidth: 1,
+                            borderRadius: 8,
+                            maxBarThickness: 28
                         }]
                     },
-                    options: {
-                        animation: false,
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        layout: { padding: { top: 12, right: 12, bottom: 20, left: 12 } },
+                    options: buildCommonChartOptions({
                         plugins: {
                             legend: { display: false },
                             tooltip: { callbacks: { label: (ctx) => {
@@ -1208,7 +1295,7 @@
                             },
                             y: { ticks: { callback: (v) => v + '%' } }
                         }
-                    }
+                    })
                 });
                 window.__upclCharts[id] = Chart.getChart(yoyAvgCtx);
                 yoyAvgCtx.style.backgroundColor = '#ffffff';
@@ -1227,14 +1314,12 @@
                             data: yoyTop5,
                             backgroundColor: barColorsFrom(yoyTop5),
                             borderColor: borderColorsFrom(yoyTop5),
-                            borderWidth: 1
+                            borderWidth: 1,
+                            borderRadius: 8,
+                            maxBarThickness: 28
                         }]
                     },
-                    options: {
-                        animation: false,
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        layout: { padding: { top: 12, right: 12, bottom: 20, left: 12 } },
+                    options: buildCommonChartOptions({
                         plugins: {
                             legend: { display: false },
                             tooltip: { callbacks: { label: (ctx) => {
@@ -1258,7 +1343,7 @@
                             },
                             y: { ticks: { callback: (v) => v + '%' } }
                         }
-                    }
+                    })
                 });
                 window.__upclCharts[id] = Chart.getChart(yoyTop5Ctx);
                 yoyTop5Ctx.style.backgroundColor = '#ffffff';

@@ -37,6 +37,9 @@ class PropertyDashboardHeroTest extends TestCase
         $view->assertSee('Property Search');
         $view->assertSee($searchUrl, false);
         $view->assertSeeInOrder(['Property Search', 'Outer Prime London']);
+        $view->assertSee('rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6', false);
+        $view->assertSee('Housing Mix', false);
+        $view->assertSee('buildCommonChartOptions', false);
     }
 
     public function test_prime_dashboard_snapshot_has_dynamic_targets_for_district_switching(): void
@@ -86,8 +89,9 @@ class PropertyDashboardHeroTest extends TestCase
         $view->assertSee('id="snapshot-sales-yoy"', false);
         $view->assertSee('function updateSnapshot(district)', false);
         $view->assertSee('updateSnapshot(val);', false);
-        $view->assertSee('canvas id="api_ALL" class="w-full flex-1 min-h-0"', false);
-        $view->assertSee('canvas id="yoy_top5_ALL" class="w-full flex-1 min-h-0"', false);
+        $view->assertSee('canvas id="api_ALL" class="block h-full w-full max-w-full"', false);
+        $view->assertSee('canvas id="yoy_top5_ALL" class="block h-full w-full max-w-full"', false);
+        $view->assertSee('Prime Signals', false);
         $view->assertSee('text: yoyRangeTitle,', false);
         $view->assertSee('font: {', false);
         $view->assertSee('size: 12', false);

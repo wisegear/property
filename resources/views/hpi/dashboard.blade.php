@@ -1,34 +1,38 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-7xl mx-auto p-6 space-y-6">
+<div class="mx-auto max-w-7xl space-y-6 px-4 py-8 md:py-10">
 
     {{-- Hero / summary card --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
+    <section class="relative z-0 mb-8 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:flex md:flex-row md:items-center md:justify-between md:p-8">
         @include('partials.hero-background')
-        <div class="max-w-4xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">HPI Dashboard</h1>
-            <p class="mt-2 text-sm leading-6 text-gray-700">
+        <div class="relative z-10 max-w-4xl">
+            <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
+                <span class="h-2 w-2 rounded-full bg-lime-500"></span>
+                House Price Index
+            </div>
+            <h1 class="mt-4 text-2xl font-bold tracking-tight text-zinc-900 md:text-3xl">HPI Dashboard</h1>
+            <p class="mt-4 text-sm leading-6 text-zinc-600">
                 <span class="font-semibold">House Price Index for UK and England, Wales, Scotland & Northern Ireland.</span>
             </p>
-            <p class="mt-2 text-sm leading-6 text-gray-700">All data provided by gov.uk from the various nations and presented here without modification.  There are many
+            <p class="mt-2 text-sm leading-6 text-zinc-600">All data provided by gov.uk from the various nations and presented here without modification.  There are many
               versions of HPI from the Halifax, Nationwide, Rightmove etc but this is the official government data.  That is why figures may differ from other sources.
             </p>
-            <p class="mt-1 text-sm leading-6 text-gray-700">
+            <p class="mt-2 text-sm leading-6 text-zinc-600">
                 Data covers the period from 1969 to 2026 (January).  Next Update expected March 2026.
             </p>
         </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
+        <div class="relative z-10 mt-6 flex-shrink-0 md:mt-0 md:ml-8">
             <img src="{{ asset('assets/images/site/hp_index.jpg') }}" alt="HPI Dashboard" class="w-64 h-auto">
         </div>
     </section>
 
-  <div class="grid md:grid-cols-5 gap-4">
+  <div class="grid gap-4 md:grid-cols-5">
     @foreach($nations as $n)
-      <div class="border rounded-lg p-4 shadow-sm {{ $n->twelve_m_change > 0 ? 'bg-lime-50' : ($n->twelve_m_change < 0 ? 'bg-rose-50' : 'bg-white') }}">
-        <div class="text-xs text-neutral-500">{{ $n->RegionName }}</div>
-        <div class="text-2xl font-semibold">£{{ number_format($n->AveragePrice,0) }}</div>
-        <div class="text-xs">
+      <div class="rounded-2xl border border-zinc-200 p-4 shadow-sm {{ $n->twelve_m_change > 0 ? 'bg-lime-50' : ($n->twelve_m_change < 0 ? 'bg-rose-50' : 'bg-white') }}">
+        <div class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">{{ $n->RegionName }}</div>
+        <div class="mt-3 text-2xl font-semibold text-zinc-900">£{{ number_format($n->AveragePrice,0) }}</div>
+        <div class="mt-2 text-xs text-zinc-600">
           12m change: 
           @if($n->twelve_m_change > 0)
             <span class="text-green-600">+{{ number_format($n->twelve_m_change,2) }}%</span>
@@ -42,35 +46,47 @@
     @endforeach
   </div>
 
-  <div class="flex gap-4 mb-6">
+  <div class="mb-6 flex gap-4">
     <button type="button" data-section="change" class="inner-button filter-btn">12m Change</button>
     <button type="button" data-section="types" class="inner-button filter-btn">Property Types</button>
     <button type="button" data-section="movers" class="inner-button filter-btn">Movers / Losers</button>
   </div>
   <div id="section-change">
-  <h2 class="text-xl font-semibold mt-8">12‑Month Change by Nation &amp; UK</h2>
-  <p class="mb-4 text-sm text-zinc-700">The change in average house prices per year for UK and each nation.</p>
+  <h2 class="mt-8 text-xl font-semibold text-zinc-900">12‑Month Change by Nation &amp; UK</h2>
+  <p class="mb-4 text-sm text-zinc-600">The change in average house prices per year for UK and each nation.</p>
 
   {{-- UK wide chart (index 0) --}}
   @if(isset($seriesByArea[0]))
-    <div class="rounded-lg border bg-white p-4 mb-6">
-      <div class="mb-2 text-sm text-neutral-600">{{ $seriesByArea[0]['name'] }}</div>
-      <div class="h-64">
-        <canvas id="hpiChangeChart0" aria-label="{{ $seriesByArea[0]['name'] }} 12 month change" class="w-full h-full"></canvas>
+    <article class="mb-6 min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">HPI Trend</p>
+          <h3 class="mt-2 text-xl font-semibold text-zinc-900">{{ $seriesByArea[0]['name'] }}</h3>
+        </div>
+        <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Annual points</span>
       </div>
-    </div>
+      <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+        <canvas id="hpiChangeChart0" aria-label="{{ $seriesByArea[0]['name'] }} 12 month change" class="block h-full w-full max-w-full"></canvas>
+      </div>
+    </article>
   @endif
 
   {{-- Four nation charts (indexes 1..4) in 2 columns --}}
   <div class="grid gap-6 md:grid-cols-1">
     @foreach($seriesByArea as $i => $s)
       @continue($i === 0)
-      <div class="rounded-lg border bg-white p-4">
-        <div class="mb-2 text-sm text-neutral-600">{{ $s['name'] }}</div>
-        <div class="h-56">
-          <canvas id="hpiChangeChart{{ $i }}" aria-label="{{ $s['name'] }} 12 month change" class="w-full h-full"></canvas>
+      <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">HPI Trend</p>
+            <h3 class="mt-2 text-xl font-semibold text-zinc-900">{{ $s['name'] }}</h3>
+          </div>
+          <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Annual points</span>
         </div>
-      </div>
+        <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+          <canvas id="hpiChangeChart{{ $i }}" aria-label="{{ $s['name'] }} 12 month change" class="block h-full w-full max-w-full"></canvas>
+        </div>
+      </article>
     @endforeach
   </div>
 
@@ -86,6 +102,49 @@
     if (!Array.isArray(series) || series.length === 0) {
       console.warn('seriesByArea is empty or missing');
       return;
+    }
+
+    const chartGridColor = 'rgba(113, 113, 122, 0.12)';
+    const chartBorderColor = 'rgba(113, 113, 122, 0.22)';
+    const chartTickColor = '#52525b';
+    const chartTitleColor = '#71717a';
+
+    function commonChartOptions(extra = {}) {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(24, 24, 27, 0.94)',
+            titleColor: '#fafafa',
+            bodyColor: '#f4f4f5',
+            borderColor: 'rgba(161, 161, 170, 0.35)',
+            borderWidth: 1,
+            padding: 12
+          }
+        },
+        scales: {
+          y: {
+            border: { color: chartBorderColor },
+            ticks: { color: chartTickColor },
+            title: {
+              color: chartTitleColor,
+              font: { size: 11, weight: '600' }
+            }
+          },
+          x: {
+            border: { color: chartBorderColor },
+            ticks: { color: chartTickColor },
+            title: {
+              color: chartTitleColor,
+              font: { size: 11, weight: '600' }
+            }
+          }
+        },
+        ...extra
+      };
     }
 
     // Build a consistent [FIRST_YEAR..lastYear] axis, using the *latest* month in each year
@@ -136,7 +195,7 @@
             label: '12m % change',
             data: values,
             borderColor: POS,
-            backgroundColor: 'transparent',
+            backgroundColor: 'rgba(101, 163, 13, 0.12)',
             spanGaps: true,
             pointRadius: 3,
             pointHoverRadius: 5,
@@ -145,32 +204,37 @@
             borderWidth: 2.5,
             tension: 0.35,
             cubicInterpolationMode: 'monotone',
-            fill: false,
+            fill: true,
             segment: {
               // colour each segment by the direction of the ending point
               borderColor: (ctx) => {
                 const y = ctx?.p1?.parsed?.y;
                 if (y == null) return 'rgba(0,0,0,0.2)';
                 return y >= 0 ? POS : NEG;
+              },
+              backgroundColor: (ctx) => {
+                const y = ctx?.p1?.parsed?.y;
+                if (y == null) return 'rgba(113, 113, 122, 0.08)';
+                return y >= 0 ? 'rgba(101, 163, 13, 0.12)' : 'rgba(220, 38, 38, 0.12)';
               }
             }
           }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
+        options: commonChartOptions({
           layout: { padding: { right: 10 } },
           scales: {
             y: {
               title: { display: true, text: '%' },
               // keep zero line visible, but allow negatives
               beginAtZero: true,
+              border: { color: chartBorderColor },
               grid: {
                 color: (ctx) => (ctx.tick && ctx.tick.value === 0 ? '#111827' : 'rgba(0,0,0,0.12)'),
                 lineWidth: (ctx) => (ctx.tick && ctx.tick.value === 0 ? 2 : 1)
               }
             },
             x: {
+              border: { color: chartBorderColor },
               ticks: {
                 autoSkip: false,
                 maxRotation: 0,
@@ -189,6 +253,12 @@
           plugins: {
             legend: { display: false },
             tooltip: {
+              backgroundColor: 'rgba(24, 24, 27, 0.94)',
+              titleColor: '#fafafa',
+              bodyColor: '#f4f4f5',
+              borderColor: 'rgba(161, 161, 170, 0.35)',
+              borderWidth: 1,
+              padding: 12,
               callbacks: {
                 title: items => `Year ${items[0].label}`,
                 label: (ctx) => {
@@ -203,7 +273,7 @@
           elements: {
             point: { hitRadius: 6 }
           }
-        }
+        })
       });
     });
   } catch (e) {
@@ -215,44 +285,56 @@
 
   <div id="section-types" class="hidden">
   @isset($typePriceSeries)
-  <h2 class="text-xl font-semibold mt-8">Property Type – Average Price (UK &amp; Nations)</h2>
-  <p class="text-sm text-zinc-700">You can use the property type buttons on each chart to view individual property type instead of all.</p>
-  <p class="text-sm text-zinc-700 mb-4">Note that not all nations started recording property type at the same time, which is why they are different.  The UK chart starts at 2005 as that's the first year all nations data exists.</p>
+  <h2 class="mt-8 text-xl font-semibold text-zinc-900">Property Type – Average Price (UK &amp; Nations)</h2>
+  <p class="text-sm text-zinc-600">You can use the property type buttons on each chart to view individual property type instead of all.</p>
+  <p class="mb-4 text-sm text-zinc-600">Note that not all nations started recording property type at the same time, which is why they are different.  The UK chart starts at 2005 as that's the first year all nations data exists.</p>
 
   {{-- UK wide property-type chart (index 0) --}}
   @if(isset($typePriceSeries[0]))
-    <div class="rounded-lg border bg-white p-4 mb-6">
-      <div class="mb-2 text-lg font-bold text-neutral-600">{{ $typePriceSeries[0]['name'] }}</div>
-      <div class="mb-4 flex flex-wrap gap-2 text-xs">
+    <article class="mb-6 min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Property Types</p>
+          <h3 class="mt-2 text-xl font-semibold text-zinc-900">{{ $typePriceSeries[0]['name'] }}</h3>
+        </div>
+        <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Average price</span>
+      </div>
+      <div class="mt-5 mb-4 flex flex-wrap gap-2 text-xs">
         <button type="button" data-action="showAll" class="inner-small-button">All</button>
         <button type="button" data-action="focus" data-type="Detached" class="inner-small-button">Detached</button>
         <button type="button" data-action="focus" data-type="SemiDetached" class="inner-small-button">Semi-detached</button>
         <button type="button" data-action="focus" data-type="Terraced" class="inner-small-button">Terraced</button>
         <button type="button" data-action="focus" data-type="Flat" class="inner-small-button">Flat</button>
       </div>
-      <div class="h-64">
-        <canvas id="typePriceChart0" aria-label="{{ $typePriceSeries[0]['name'] }} property type prices" class="w-full h-full"></canvas>
+      <div class="h-72 min-w-0 overflow-hidden sm:h-80">
+        <canvas id="typePriceChart0" aria-label="{{ $typePriceSeries[0]['name'] }} property type prices" class="block h-full w-full max-w-full"></canvas>
       </div>
-    </div>
+    </article>
   @endif
 
   {{-- Four nation property-type charts (indexes 1..4) in 2 columns --}}
   <div class="grid gap-6 md:grid-cols-2">
     @foreach($typePriceSeries as $i => $s)
       @continue($i === 0)
-      <div class="rounded-lg border bg-white p-4">
-        <div class="mb-2 text-lg font-bold text-neutral-600">{{ $s['name'] }}</div>
-        <div class="mb-4 flex flex-wrap gap-2 text-xs">
+      <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Property Types</p>
+            <h3 class="mt-2 text-xl font-semibold text-zinc-900">{{ $s['name'] }}</h3>
+          </div>
+          <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Average price</span>
+        </div>
+        <div class="mt-5 mb-4 flex flex-wrap gap-2 text-xs">
           <button type="button" data-action="showAll" class="inner-small-button">All</button>
           <button type="button" data-action="focus" data-type="Detached" class="inner-small-button">Detached</button>
           <button type="button" data-action="focus" data-type="SemiDetached" class="inner-small-button">Semi-detached</button>
           <button type="button" data-action="focus" data-type="Terraced" class="inner-small-button">Terraced</button>
           <button type="button" data-action="focus" data-type="Flat" class="inner-small-button">Flat</button>
         </div>
-        <div class="h-56">
-          <canvas id="typePriceChart{{ $i }}" aria-label="{{ $s['name'] }} property type prices" class="w-full h-full"></canvas>
+        <div class="h-72 min-w-0 overflow-hidden sm:h-80">
+          <canvas id="typePriceChart{{ $i }}" aria-label="{{ $s['name'] }} property type prices" class="block h-full w-full max-w-full"></canvas>
         </div>
-      </div>
+      </article>
     @endforeach
   </div>
 
@@ -296,19 +378,27 @@
             data: {
               labels,
               datasets: [
-                { label: 'Detached',      data: filtered.Detached,     borderColor: COLORS.Detached,     backgroundColor: 'transparent', spanGaps: true, pointRadius: 0, borderWidth: 2.5, tension: 0.35, cubicInterpolationMode: 'monotone', fill: false },
-                { label: 'Semi-detached', data: filtered.SemiDetached, borderColor: COLORS.SemiDetached, backgroundColor: 'transparent', spanGaps: true, pointRadius: 0, borderWidth: 2.5, tension: 0.35, cubicInterpolationMode: 'monotone', fill: false },
-                { label: 'Terraced',      data: filtered.Terraced,     borderColor: COLORS.Terraced,     backgroundColor: 'transparent', spanGaps: true, pointRadius: 0, borderWidth: 2.5, tension: 0.35, cubicInterpolationMode: 'monotone', fill: false },
-                { label: 'Flat',          data: filtered.Flat,         borderColor: COLORS.Flat,         backgroundColor: 'transparent', spanGaps: true, pointRadius: 0, borderWidth: 2.5, tension: 0.35, cubicInterpolationMode: 'monotone', fill: false }
+                { label: 'Detached',      data: filtered.Detached,     borderColor: COLORS.Detached,     backgroundColor: 'rgba(59,130,246,0.09)', spanGaps: true, pointRadius: 0, borderWidth: 2.5, tension: 0.35, cubicInterpolationMode: 'monotone', fill: false },
+                { label: 'Semi-detached', data: filtered.SemiDetached, borderColor: COLORS.SemiDetached, backgroundColor: 'rgba(249,115,22,0.09)', spanGaps: true, pointRadius: 0, borderWidth: 2.5, tension: 0.35, cubicInterpolationMode: 'monotone', fill: false },
+                { label: 'Terraced',      data: filtered.Terraced,     borderColor: COLORS.Terraced,     backgroundColor: 'rgba(87,161,0,0.09)', spanGaps: true, pointRadius: 0, borderWidth: 2.5, tension: 0.35, cubicInterpolationMode: 'monotone', fill: false },
+                { label: 'Flat',          data: filtered.Flat,         borderColor: COLORS.Flat,         backgroundColor: 'rgba(239,68,68,0.09)', spanGaps: true, pointRadius: 0, borderWidth: 2.5, tension: 0.35, cubicInterpolationMode: 'monotone', fill: false }
               ]
             },
             options: {
               responsive: true,
               maintainAspectRatio: false,
+              interaction: { mode: 'index', intersect: false },
               scales: {
-                y: { title: { display: false }, ticks: { callback: (v) => '£' + new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 }).format(v) } },
+                y: {
+                  grid: { color: 'rgba(113, 113, 122, 0.12)', drawBorder: false },
+                  border: { color: 'rgba(113, 113, 122, 0.22)' },
+                  ticks: { color: '#52525b', callback: (v) => '£' + new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 }).format(v) }
+                },
                 x: {
+                  grid: { display: false },
+                  border: { color: 'rgba(113, 113, 122, 0.22)' },
                   ticks: {
+                    color: '#52525b',
                     callback: function(value){
                       const label = this.getLabelForValue(value);
                       return label && label.length >= 4 ? label.substring(0,4) : label;
@@ -318,8 +408,18 @@
                 }
               },
               plugins: {
-                legend: { display: true, position: 'bottom' },
+                legend: {
+                  display: true,
+                  position: 'bottom',
+                  labels: { usePointStyle: true, boxWidth: 10, boxHeight: 10, color: '#3f3f46' }
+                },
                 tooltip: {
+                  backgroundColor: 'rgba(24, 24, 27, 0.94)',
+                  titleColor: '#fafafa',
+                  bodyColor: '#f4f4f5',
+                  borderColor: 'rgba(161, 161, 170, 0.35)',
+                  borderWidth: 1,
+                  padding: 12,
                   callbacks: {
                     label: (ctx) => {
                       const v = ctx.parsed.y;
@@ -377,13 +477,15 @@
   </div>
 
   <div id="section-movers" class="hidden">
-    <h2 class="text-xl font-semibold mt-4">Top Movers &amp; Losers (latest month)</h2>
-    <p class="mb-4 text-sm text-zinc-700">Top 30 regions that have gained and lost the most over the past 12 months.</p>
+    <h2 class="mt-4 text-xl font-semibold text-zinc-900">Top Movers &amp; Losers (latest month)</h2>
+    <p class="mb-4 text-sm text-zinc-600">Top 30 regions that have gained and lost the most over the past 12 months.</p>
     <div class="grid md:grid-cols-2 gap-6">
-      <div>
+      <div class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+        <div class="border-b border-zinc-200 px-5 py-4">
         <h3 class="text-lg font-semibold mb-2">Top Movers</h3>
-        <table class="w-full text-sm border">
-          <thead class="bg-neutral-100">
+        </div>
+        <table class="w-full text-sm">
+          <thead class="bg-zinc-50">
             <tr>
               <th class="p-2 text-left w-1/2">Region</th>
               <th class="p-2 w-1/4">Price</th>
@@ -409,10 +511,12 @@
           </tbody>
         </table>
       </div>
-      <div>
+      <div class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+        <div class="border-b border-zinc-200 px-5 py-4">
         <h3 class="text-lg font-semibold mb-2">Top Losers</h3>
-        <table class="w-full text-sm border">
-          <thead class="bg-neutral-100">
+        </div>
+        <table class="w-full text-sm">
+          <thead class="bg-zinc-50">
             <tr>
               <th class="p-2 text-left w-1/2">Region</th>
               <th class="p-2 w-1/4">Price</th>

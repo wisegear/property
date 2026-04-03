@@ -20,6 +20,8 @@ class PostgresControllerRouteSmokeTest extends TestCase
     {
         parent::setUp();
 
+        config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+
         if (! Schema::hasColumn('land_registry', 'YearDate')) {
             Schema::table('land_registry', function (Blueprint $table): void {
                 $table->unsignedSmallInteger('YearDate')->nullable();

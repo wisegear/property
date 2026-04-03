@@ -89,15 +89,21 @@
     {{-- EPCs by Year & Tenure --}}
     <div class="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- Certificates issued by year --}}
-        <div class="border rounded-lg bg-white p-4 shadow">
-            <h2 class="text-lg font-semibold">Certificates issued each year</h2>
-            <p class="mb-2 text-xs text-gray-600">
-                Number of EPC certificates lodged each year for the selected area.
-            </p>
-            <div class="w-full h-72">
-                <canvas id="certificatesByYearChart" class="w-full h-full"></canvas>
+        <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Certificates</p>
+                    <h2 class="mt-2 text-xl font-semibold text-zinc-900">Certificates issued each year</h2>
+                    <p class="mt-2 text-sm text-zinc-600">
+                        Number of EPC certificates lodged each year for the selected area.
+                    </p>
+                </div>
+                <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Issued volume</span>
             </div>
-        </div>
+            <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
+                <canvas id="certificatesByYearChart" class="block h-full w-full max-w-full"></canvas>
+            </div>
+        </article>
 
         {{-- Tenure by year --}}
         <div class="border rounded-lg bg-white p-4 shadow">
@@ -130,24 +136,51 @@
               datasets: [{
                 label: 'Certificates',
                 data: @json($byYear->pluck('cnt')),
-                borderWidth: 1,
-                fill: false
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                tension: 0.28,
+                fill: true
               }]
             },
             options: {
               responsive: true,
               maintainAspectRatio: false,
+              interaction: { mode: 'index', intersect: false },
               plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                  backgroundColor: 'rgba(24, 24, 27, 0.94)',
+                  titleColor: '#fafafa',
+                  bodyColor: '#f4f4f5',
+                  borderColor: 'rgba(161, 161, 170, 0.35)',
+                  borderWidth: 1,
+                  padding: 12,
+                  callbacks: {
+                    label: function (context) {
+                      return 'Certificates: ' + Number(context.parsed.y || 0).toLocaleString('en-GB');
+                    }
+                  }
+                }
               },
               scales: {
-                x: { title: { display: false } },
+                x: {
+                  grid: { display: false },
+                  border: { color: 'rgba(113, 113, 122, 0.22)' },
+                  ticks: { color: '#52525b' },
+                  title: { display: false }
+                },
                 y: {
+                  grid: { color: 'rgba(113, 113, 122, 0.12)', drawBorder: false },
+                  border: { color: 'rgba(113, 113, 122, 0.22)' },
                   title: { display: true, text: 'Count' },
                   beginAtZero: true,
                   ticks: {
+                    color: '#52525b',
                     callback: function (value) {
-                      return value.toLocaleString();
+                      return Number(value).toLocaleString('en-GB');
                     }
                   }
                 }
