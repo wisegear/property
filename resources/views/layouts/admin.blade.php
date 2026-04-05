@@ -18,10 +18,7 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-        <!-- TinyMCE (open CDN for now) -->
-        <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js" referrerpolicy="origin"></script>
-        
+        @stack('head')
     </head>
 
     <body class="font-sans antialiased">

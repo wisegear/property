@@ -1,4 +1,7 @@
 @extends('layouts.app')
+@push('head')
+    <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js" referrerpolicy="origin"></script>
+@endpush
 @section('content')
 <div class="bg-gradient-to-b from-zinc-50 to-white border-b border-zinc-200">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12">
