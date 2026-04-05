@@ -1406,7 +1406,7 @@
     function boot() {
         if (typeof window.Chart === 'undefined') {
             const s = document.createElement('script');
-            s.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+            s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js';
             s.onload = renderCharts;
             document.head.appendChild(s);
         } else {

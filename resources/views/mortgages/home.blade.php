@@ -239,7 +239,7 @@
 </div>
 
 {{-- Chart.js library for rendering mortgage approval charts --}}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
 
 <script>
 (function() {

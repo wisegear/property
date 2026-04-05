@@ -122,7 +122,7 @@
         $tenureCategoriesJs = ['Owner-occupied','Rented (private)','Rented (social)'];
     @endphp
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", function() {
         // Certificates issued by year
