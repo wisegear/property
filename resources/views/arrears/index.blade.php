@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@include('partials.chartjs-head')
 
 @section('title', 'Mortgage arrears — MLAR')
 

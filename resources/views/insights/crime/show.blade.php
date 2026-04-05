@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@include('partials.chartjs-head')
 
 @section('title', $area.' Crime Trends | PropertyResearch.uk')
 @section('description', 'Regional crime drilldown for '.$area.' using monthly crime data.')

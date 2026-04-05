@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@include('partials.chartjs-head')
 
 @section('content')
 <div class="max-w-7xl mx-auto">

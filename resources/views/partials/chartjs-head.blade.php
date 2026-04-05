@@ -1,0 +1,3 @@
+@push('head')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+@endpush

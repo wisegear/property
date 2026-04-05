@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@include('partials.chartjs-head')
 
 @section('title', 'Housing Market Movement Dashboard')
 @section('description', 'Quarter-on-quarter housing market movements across England and Wales using Land Registry transaction data.')

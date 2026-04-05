@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@include('partials.chartjs-head')
 
 @section('content')
 <div class="mx-auto max-w-7xl px-4 py-10 md:py-12">

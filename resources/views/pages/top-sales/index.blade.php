@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@include('partials.chartjs-head')
 
 @section('title', 'Top Property Sales')
 @section('description', 'The highest value residential property sales recorded by the Land Registry.')

@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@include('partials.chartjs-head')
 
 @section('title', 'Crime Insights Dashboard | PropertyResearch.uk')
 @section('description', 'National and regional crime trends using the latest monthly crime data.')

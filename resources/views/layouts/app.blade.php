@@ -82,9 +82,6 @@
 
     <!-- Vite Assets - Moved to top to prevent FOUC (Flash of Unstyled Content) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
-    <!-- Chart.js Library for Data Visualizations -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
 
     <!-- Bunny Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
