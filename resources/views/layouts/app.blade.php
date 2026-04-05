@@ -140,6 +140,8 @@
                 <div class="flex-1 flex items-center justify-center gap-1">
                     <img src="{{ asset('assets/images/site/research-logo-4.png') }}" 
                          alt="PropertyResearch.uk logo" 
+                         width="512"
+                         height="512"
                          class="h-20 w-auto">
                     <span class="text-xl font-semibold tracking-tight text-slate-800">
                         PropertyResearch<span class="text-lime-900 text-sm">.uk</span>
@@ -538,6 +540,8 @@
                 <a href="{{ url('/') }}" class="flex items-center gap-1">
                     <img src="{{ asset('assets/images/site/research-logo-4.png') }}" 
                          alt="PropertyResearch.uk logo" 
+                         width="512"
+                         height="512"
                          class="h-10 w-auto">
                     <span class="text-lg font-semibold tracking-tight text-slate-800">
                         PropertyResearch<span class="text-lime-900 text-sm">.uk</span>

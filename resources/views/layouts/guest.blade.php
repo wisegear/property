@@ -20,6 +20,8 @@
                 <a href="/">
                     <img src="{{ asset('assets/images/site/research-logo-4.png') }}"
                          alt="PropertyResearch.uk logo"
+                         width="512"
+                         height="512"
                          class="h-20 w-auto">
                 </a>
                 <span class="text-xl font-semibold tracking-tight text-slate-800">
