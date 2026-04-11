@@ -31,6 +31,7 @@ class ScottishPricesController extends Controller
         $selectedAuthority = in_array($requestedAuthority, $localAuthorities, true) ? $requestedAuthority : null;
 
         $dataset = $this->yearlyDataset($selectedAuthority);
+        $latestCoveredMonth = $this->latestCoveredMonth();
 
         $stats = [
             'latestYear' => $dataset['years'] !== [] ? end($dataset['years']) : null,
@@ -48,6 +49,7 @@ class ScottishPricesController extends Controller
             'medianPrices' => $dataset['medianPrices'],
             'salesVolumes' => $dataset['salesVolumes'],
             'salesValues' => $dataset['salesValues'],
+            'latestCoveredMonth' => $latestCoveredMonth,
             'stats' => $stats,
         ]);
     }
@@ -107,5 +109,37 @@ class ScottishPricesController extends Controller
             'sqlite' => "CASE WHEN substr(trim({$wrappedColumn}), -4) GLOB '[0-9][0-9][0-9][0-9]' THEN CAST(substr(trim({$wrappedColumn}), -4) AS integer) ELSE NULL END",
             default => "CASE WHEN RIGHT(TRIM({$wrappedColumn}), 4) REGEXP '^[0-9]{4}$' THEN CAST(RIGHT(TRIM({$wrappedColumn}), 4) AS UNSIGNED) ELSE NULL END",
         };
+    }
+
+    private function latestCoveredMonth(): ?string
+    {
+        return Cache::remember('scottish_prices:latest_month', now()->addDays(45), function (): ?string {
+            $months = DB::table('scottish_property_prices')
+                ->whereNotNull('month')
+                ->whereRaw("trim(month) <> ''")
+                ->distinct()
+                ->pluck('month');
+
+            $latestLabel = null;
+            $latestTimestamp = null;
+
+            foreach ($months as $month) {
+                $label = trim((string) $month);
+                $date = \DateTimeImmutable::createFromFormat('!F Y', $label);
+
+                if (! $date instanceof \DateTimeImmutable) {
+                    continue;
+                }
+
+                $timestamp = $date->getTimestamp();
+
+                if ($latestTimestamp === null || $timestamp > $latestTimestamp) {
+                    $latestTimestamp = $timestamp;
+                    $latestLabel = $date->format('F Y');
+                }
+            }
+
+            return $latestLabel;
+        });
     }
 }

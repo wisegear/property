@@ -10,15 +10,22 @@
         @include('partials.hero-background')
         <div class="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div class="max-w-4xl">
-                <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
+                <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase text-zinc-600">
                     <span class="h-2 w-2 rounded-full bg-lime-500"></span>
                     Scotland
                 </div>
+                @if ($latestCoveredMonth)
+                    <div class="mt-3 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase text-zinc-600">
+                        <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                        Latest data: {{ $latestCoveredMonth }}
+                    </div>
+                @endif
                 <h1 class="mt-4 text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">Scottish House Prices</h1>
                 <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-600 md:text-base">
                     Explore yearly Scottish residential property data across the whole of Scotland or focus on an individual local authority.
                     The charts below aggregate official monthly records into annual averages for prices and annual totals for sales activity.
-                    There is limited data for Scotland but hopefully this will grow over time depending on the availability of official records.
+                    There is limited data for Scotland but hopefully this will grow over time depending on the availability of official records.  Current
+                    year is year to date.
                 </p>
             </div>
 
