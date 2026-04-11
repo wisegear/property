@@ -274,6 +274,12 @@
                                        class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
                                         Ultra Prime Central London
                                     </a>
+                                    <a href="{{ route('property.scottish-prices', absolute: false) }}"
+                                       role="menuitem"
+                                       tabindex="-1"
+                                       class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
+                                        Scottish Prices
+                                    </a>
                                 </div>
 
                                 <!-- Vertical Divider -->
@@ -598,6 +604,10 @@
                         <a href="{{ url('/property/ultra-prime-central-london') }}" 
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
                             Ultra Prime Central London
+                        </a>
+                        <a href="{{ route('property.scottish-prices', absolute: false) }}"
+                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                            Scottish Prices
                         </a>
                         <a href="{{ url('/hpi') }}" 
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
