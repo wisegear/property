@@ -278,7 +278,7 @@
                                        role="menuitem"
                                        tabindex="-1"
                                        class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700">
-                                        Scottish Prices
+                                        Scottish House Prices
                                     </a>
                                 </div>
 
@@ -607,7 +607,7 @@
                         </a>
                         <a href="{{ route('property.scottish-prices', absolute: false) }}"
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Scottish Prices
+                            Scottish House Prices
                         </a>
                         <a href="{{ url('/hpi') }}" 
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
