@@ -5,6 +5,9 @@
 @section('description', 'Yearly Scottish residential property prices and sales activity for Scotland or an individual local authority.')
 
 @section('content')
+@php
+    $chartScopeLabel = $selectedAuthority ?? 'All Scotland';
+@endphp
 <div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
     <section class="relative z-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
         @include('partials.hero-background')
@@ -62,10 +65,6 @@
         </form>
     </section>
 
-    <div class="my-8 rounded-xl border border-lime-200 bg-lime-50/70 px-4 py-3 text-center text-sm text-lime-900">
-        Showing yearly Scottish residential property data for {{ $selectedAuthority ?? 'all Scotland' }}.
-    </div>
-
     @if ($years !== [])
         <section class="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
             <article class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
@@ -94,11 +93,10 @@
             <article class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Trend</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Trend · {{ $chartScopeLabel }}</p>
                         <h2 class="mt-2 text-xl font-semibold text-zinc-900">Average residential property price by year</h2>
                         <p class="mt-2 text-sm text-zinc-600">Yearly average of mean residential property prices.</p>
                     </div>
-                    <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">GBP</span>
                 </div>
                 <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
                     <canvas id="mean-price-chart" class="block h-full w-full max-w-full"></canvas>
@@ -108,11 +106,10 @@
             <article class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Trend</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Trend · {{ $chartScopeLabel }}</p>
                         <h2 class="mt-2 text-xl font-semibold text-zinc-900">Median residential property price by year</h2>
                         <p class="mt-2 text-sm text-zinc-600">Yearly average of median residential property prices.</p>
                     </div>
-                    <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">GBP</span>
                 </div>
                 <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
                     <canvas id="median-price-chart" class="block h-full w-full max-w-full"></canvas>
@@ -122,11 +119,10 @@
             <article class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Sales Activity</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Sales Activity · {{ $chartScopeLabel }}</p>
                         <h2 class="mt-2 text-xl font-semibold text-zinc-900">Volume of residential property sales by year</h2>
                         <p class="mt-2 text-sm text-zinc-600">Total residential property sales recorded each year.</p>
                     </div>
-                    <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Sales</span>
                 </div>
                 <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
                     <canvas id="sales-volume-chart" class="block h-full w-full max-w-full"></canvas>
@@ -136,11 +132,10 @@
             <article class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Sales Activity</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Sales Activity · {{ $chartScopeLabel }}</p>
                         <h2 class="mt-2 text-xl font-semibold text-zinc-900">Value of property sales by year</h2>
                         <p class="mt-2 text-sm text-zinc-600">Total value of residential property sales recorded each year.</p>
                     </div>
-                    <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">GBP</span>
                 </div>
                 <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
                     <canvas id="sales-value-chart" class="block h-full w-full max-w-full"></canvas>
