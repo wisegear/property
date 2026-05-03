@@ -17,7 +17,7 @@ return new class extends Migration
             CREATE OR REPLACE VIEW v_postcode_deprivation_wales AS
             SELECT
                 o.pcds                           AS postcode,
-                o.lsoa11                         AS lsoa_code,      -- Wales LSOA code
+                o.lsoa11cd                       AS lsoa_code,      -- Wales LSOA code
                 w."LSOA_name"                    AS lsoa_name,
                 w."Local_authority_name"         AS local_authority_name,
                 w."WIMD_2019"                    AS "rank",         -- 1 = most deprived ... 1909 = least
@@ -32,10 +32,10 @@ return new class extends Migration
                 w."Physical_environment"         AS physical_environment_rank,
                 o.lat,
                 o."long"
-            FROM onspd o
+            FROM onspd_v2 o
             JOIN wimd2019 w
-              ON o.lsoa11 = w."LSOA_code"
-            WHERE o.ctry = 'W92000004'  -- Wales only
+              ON o.lsoa11cd = w."LSOA_code"
+            WHERE o.ctry25cd = 'W92000004'  -- Wales only
         SQL);
     }
 

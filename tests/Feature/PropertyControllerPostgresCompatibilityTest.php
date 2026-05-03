@@ -113,7 +113,7 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             ),
         ]);
 
-        DB::table('onspd')->insert([
+        DB::table('onspd_v2')->insert([
             'pcds' => 'AB1 2CD',
             'lat' => 52.123456,
             'long' => -1.123456,
@@ -168,7 +168,7 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             ),
         ]);
 
-        DB::table('onspd')->insert([
+        DB::table('onspd_v2')->insert([
             'pcds' => 'AB1 2CD',
             'lat' => 52.123456,
             'long' => -1.123456,
@@ -221,7 +221,7 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             ]),
         ]);
 
-        DB::table('onspd')->insert([
+        DB::table('onspd_v2')->insert([
             'pcds' => 'AB1 2CD',
             'lat' => 52.123456,
             'long' => -1.123456,
@@ -247,7 +247,7 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             ]),
         ]);
 
-        DB::table('onspd')->insert([
+        DB::table('onspd_v2')->insert([
             'pcds' => 'SW7 5PH',
             'lat' => 51.4994,
             'long' => -0.1792,
@@ -277,7 +277,7 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             ),
         ]);
 
-        DB::table('onspd')->insert([
+        DB::table('onspd_v2')->insert([
             'pcds' => 'AB1 2CD',
             'lat' => 52.123456,
             'long' => -1.123456,
@@ -307,7 +307,7 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             ),
         ]);
 
-        DB::table('onspd')->insert([
+        DB::table('onspd_v2')->insert([
             'pcds' => 'AB1 2CD',
             'lat' => 52.123456,
             'long' => -1.123456,

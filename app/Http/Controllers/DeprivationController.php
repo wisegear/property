@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 
 class DeprivationController extends Controller
 {
+    private const ONSPD_TABLE = 'onspd_v2';
+
     public function index(Request $req)
     {
         // Filters
@@ -42,8 +44,13 @@ class DeprivationController extends Controller
                 // 1) Try exact indexed match on PCDS for current records first
                 $hit = null;
                 if ($pcStd !== '') {
-                    $hit = DB::table('onspd')
-                        ->select(['lsoa21', 'lsoa11', 'ctry', 'pcds'])
+                    $hit = DB::table(self::ONSPD_TABLE)
+                        ->select([
+                            'lsoa21cd as lsoa21',
+                            'lsoa11cd as lsoa11',
+                            'ctry25cd as ctry',
+                            'pcds',
+                        ])
                         ->where('pcds', $pcStd)
                         ->where(function ($q) {
                             $q->whereNull('doterm')->orWhere('doterm', '');
@@ -54,11 +61,16 @@ class DeprivationController extends Controller
 
                 if (! $hit) {
                     // 2) Fallback to normalized comparisons across pcds/pcd2/pcd
-                    $hit = DB::table('onspd')
-                        ->select(['lsoa21', 'lsoa11', 'ctry', 'pcds'])
+                    $hit = DB::table(self::ONSPD_TABLE)
+                        ->select([
+                            'lsoa21cd as lsoa21',
+                            'lsoa11cd as lsoa11',
+                            'ctry25cd as ctry',
+                            'pcds',
+                        ])
                         ->whereRaw("REPLACE(UPPER(pcds),' ','') = ?", [$pcKey])
-                        ->orWhereRaw("REPLACE(UPPER(pcd2),' ','') = ?", [$pcKey])
-                        ->orWhereRaw("REPLACE(UPPER(pcd),' ','') = ?", [$pcKey])
+                        ->orWhereRaw("REPLACE(UPPER(pcd8),' ','') = ?", [$pcKey])
+                        ->orWhereRaw("REPLACE(UPPER(pcd7),' ','') = ?", [$pcKey])
                         ->orderByDesc('dointr')
                         ->first();
                 }

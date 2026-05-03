@@ -155,14 +155,14 @@ class FormAnalyticsTrackingTest extends TestCase
 
     public function test_deprivation_postcode_lookup_records_only_on_successful_resolution(): void
     {
-        DB::table('onspd')->insert([
-            'pcd' => 'WR53EU',
-            'pcd2' => 'WR5 3EU',
+        DB::table('onspd_v2')->insert([
+            'pcd7' => 'WR53EU',
+            'pcd8' => 'WR5 3EU',
             'pcds' => 'WR5 3EU',
             'dointr' => '202401',
             'doterm' => null,
-            'ctry' => 'E92000001',
-            'lsoa21' => 'E01000001',
+            'ctry25cd' => 'E92000001',
+            'lsoa21cd' => 'E01000001',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

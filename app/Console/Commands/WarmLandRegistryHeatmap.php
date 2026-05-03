@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Schema;
 
 class WarmLandRegistryHeatmap extends Command
 {
+    private const ONSPD_TABLE = 'onspd_v2';
+
     protected $signature = 'property:heatmap-warm {--force : Rebuild even if cache exists}';
 
     protected $description = 'Warm the Land Registry heatmap cache (England & Wales only).';
@@ -29,8 +31,8 @@ class WarmLandRegistryHeatmap extends Command
         $lrPostcodeColumn = $grammar->wrap('lr.Postcode');
         $ppdCategoryColumn = $grammar->wrap('lr.PPDCategoryType');
         $oPcdsColumn = $grammar->wrap('o.pcds');
-        $oLsoa21Column = $grammar->wrap('o.lsoa21');
-        $oLsoa11Column = $grammar->wrap('o.lsoa11');
+        $oLsoa21Column = $grammar->wrap('o.lsoa21cd');
+        $oLsoa11Column = $grammar->wrap('o.lsoa11cd');
         $oLatColumn = $grammar->wrap('o.lat');
         $oLongColumn = $grammar->wrap('o.long');
         $m11Lsoa21Column = $grammar->wrap('m11.LSOA21CD');
@@ -46,7 +48,7 @@ class WarmLandRegistryHeatmap extends Command
             : $oLsoa21Column;
 
         $query = DB::table('land_registry as lr')
-            ->join('onspd as o', DB::raw("REPLACE({$oPcdsColumn}, ' ', '')"), '=', DB::raw("REPLACE({$lrPostcodeColumn}, ' ', '')"))
+            ->join(self::ONSPD_TABLE.' as o', DB::raw("REPLACE({$oPcdsColumn}, ' ', '')"), '=', DB::raw("REPLACE({$lrPostcodeColumn}, ' ', '')"))
             ->whereIn(DB::raw($ppdCategoryColumn), ['A', 'B'])
             ->whereNotNull(DB::raw($lsoa21Expr))
             ->where(function ($q) use ($lsoa21Expr) {

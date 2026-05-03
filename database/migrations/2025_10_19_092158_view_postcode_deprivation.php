@@ -19,9 +19,9 @@ WITH base AS (
   SELECT
     REPLACE(UPPER(o.pcds), ' ', '') AS postcode_norm,
     o.pcds                           AS postcode_raw,
-    o.lsoa11                         AS lsoa11_raw,
-    o.lsoa21                         AS lsoa21_raw
-  FROM onspd o
+    o.lsoa11cd                       AS lsoa11_raw,
+    o.lsoa21cd                       AS lsoa21_raw
+  FROM onspd_v2 o
 )
 SELECT
   b.postcode_norm,

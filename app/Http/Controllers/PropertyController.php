@@ -16,6 +16,8 @@ class PropertyController extends Controller
 {
     private const CACHE_TTL = 60 * 60 * 24 * 45; // 45 days
 
+    private const ONSPD_TABLE = 'onspd_v2';
+
     public function home(Request $request)
     {
         $window = $this->rollingWindow();
@@ -215,7 +217,7 @@ class PropertyController extends Controller
             if ($pagePostcodes->isNotEmpty()) {
                 // If multiple ONSPD rows exist historically, take the latest by `dointr`.
                 // We do this by ordering desc and keeping the first seen per `pcds`.
-                $rows = DB::table('onspd')
+                $rows = DB::table(self::ONSPD_TABLE)
                     ->select(['pcds', 'lat', 'long', 'dointr'])
                     ->whereIn('pcds', $pagePostcodes)
                     ->orderBy('pcds')
@@ -303,7 +305,7 @@ class PropertyController extends Controller
         $bboxKey = sprintf('%.3f:%.3f:%.3f:%.3f:z%d:l%d', $south, $west, $north, $east, $zoom, $limit);
 
         $payload = Cache::remember('land_registry_points:'.$bboxKey, now()->addMinutes(10), function () use ($south, $west, $north, $east, $limit) {
-            $rows = DB::table('onspd as o')
+            $rows = DB::table(self::ONSPD_TABLE.' as o')
                 ->join('land_registry as lr', 'lr.Postcode', '=', 'o.pcds')
                 ->whereIn('lr.PPDCategoryType', ['A', 'B'])
                 ->whereNotNull('o.lat')
@@ -444,7 +446,7 @@ class PropertyController extends Controller
         if ($pcds) {
             $coordCacheKey = 'onspd:coords:pcds:'.$pcds;
             $coords = Cache::remember($coordCacheKey, now()->addDays(90), function () use ($pcds) {
-                return DB::table('onspd')
+                return DB::table(self::ONSPD_TABLE)
                     ->select(['lat', 'long'])
                     ->where('pcds', $pcds)
                     ->first();
@@ -917,7 +919,16 @@ class PropertyController extends Controller
         // Show deprivation if it looks like an English (E01...) or Welsh (W01...) LSOA code.
         if ($pcds) {
             $onspdRow = Cache::remember('onspd:row:pcds:'.$pcds, now()->addDays(90), function () use ($pcds) {
-                return DB::table('onspd')->where('pcds', $pcds)->first();
+                return DB::table(self::ONSPD_TABLE)
+                    ->select([
+                        'pcds',
+                        'lsoa21cd as lsoa21',
+                        'lsoa11cd as lsoa11',
+                        'lat',
+                        'long',
+                    ])
+                    ->where('pcds', $pcds)
+                    ->first();
             });
 
             if (! $onspdRow) {

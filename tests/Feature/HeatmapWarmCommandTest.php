@@ -35,42 +35,42 @@ class HeatmapWarmCommandTest extends TestCase
             });
         }
 
-        if (! Schema::hasTable('onspd')) {
-            Schema::create('onspd', function (Blueprint $table): void {
+        if (! Schema::hasTable('onspd_v2')) {
+            Schema::create('onspd_v2', function (Blueprint $table): void {
                 $table->string('pcds');
-                $table->string('lsoa21')->nullable();
-                $table->string('lsoa11')->nullable();
+                $table->string('lsoa21cd')->nullable();
+                $table->string('lsoa11cd')->nullable();
                 $table->decimal('lat', 10, 6)->nullable();
                 $table->decimal('long', 10, 6)->nullable();
             });
         }
 
-        if (! Schema::hasColumn('onspd', 'pcds')) {
-            Schema::table('onspd', function (Blueprint $table): void {
+        if (! Schema::hasColumn('onspd_v2', 'pcds')) {
+            Schema::table('onspd_v2', function (Blueprint $table): void {
                 $table->string('pcds');
             });
         }
 
-        if (! Schema::hasColumn('onspd', 'lsoa21')) {
-            Schema::table('onspd', function (Blueprint $table): void {
-                $table->string('lsoa21')->nullable();
+        if (! Schema::hasColumn('onspd_v2', 'lsoa21cd')) {
+            Schema::table('onspd_v2', function (Blueprint $table): void {
+                $table->string('lsoa21cd')->nullable();
             });
         }
 
-        if (! Schema::hasColumn('onspd', 'lsoa11')) {
-            Schema::table('onspd', function (Blueprint $table): void {
-                $table->string('lsoa11')->nullable();
+        if (! Schema::hasColumn('onspd_v2', 'lsoa11cd')) {
+            Schema::table('onspd_v2', function (Blueprint $table): void {
+                $table->string('lsoa11cd')->nullable();
             });
         }
 
-        if (! Schema::hasColumn('onspd', 'lat')) {
-            Schema::table('onspd', function (Blueprint $table): void {
+        if (! Schema::hasColumn('onspd_v2', 'lat')) {
+            Schema::table('onspd_v2', function (Blueprint $table): void {
                 $table->decimal('lat', 10, 6)->nullable();
             });
         }
 
-        if (! Schema::hasColumn('onspd', 'long')) {
-            Schema::table('onspd', function (Blueprint $table): void {
+        if (! Schema::hasColumn('onspd_v2', 'long')) {
+            Schema::table('onspd_v2', function (Blueprint $table): void {
                 $table->decimal('long', 10, 6)->nullable();
             });
         }
@@ -159,10 +159,10 @@ class HeatmapWarmCommandTest extends TestCase
             'PPDCategoryType' => 'A',
         ]);
 
-        DB::table('onspd')->insert([
+        DB::table('onspd_v2')->insert([
             'pcds' => 'AB12CD',
-            'lsoa21' => null,
-            'lsoa11' => 'E01000001',
+            'lsoa21cd' => null,
+            'lsoa11cd' => 'E01000001',
             'lat' => 51.501,
             'long' => -0.142,
         ]);

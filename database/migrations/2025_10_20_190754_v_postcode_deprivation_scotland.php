@@ -15,7 +15,7 @@ return new class extends Migration
 CREATE OR REPLACE VIEW v_postcode_deprivation_scotland AS
 SELECT
     o.pcds  AS postcode,
-    o.lsoa11 AS data_zone,  -- S010… in Scotland
+    o.lsoa11cd AS data_zone,  -- S010… in Scotland
     s."Council_area",
     s."Intermediate_Zone",
     s."SIMD2020v2_Rank"                       AS "rank",
@@ -28,10 +28,10 @@ SELECT
     s."SIMD2020_Access_Domain_Rank"           AS access_rank,
     s."SIMD2020_Housing_Domain_Rank"          AS housing_rank,
     o.lat, o."long"
-FROM onspd o
+FROM onspd_v2 o
 JOIN simd2020 s
-  ON o.lsoa11 = s."Data_Zone"
-WHERE o.ctry = 'S92000003';
+  ON o.lsoa11cd = s."Data_Zone"
+WHERE o.ctry25cd = 'S92000003';
 SQL);
     }
 
