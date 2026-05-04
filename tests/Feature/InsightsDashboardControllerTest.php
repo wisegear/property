@@ -89,6 +89,29 @@ class InsightsDashboardControllerTest extends TestCase
         });
     }
 
+    public function test_dashboard_uses_latest_land_registry_month_for_periods_and_chart_labels(): void
+    {
+        $this->ensureLandRegistryTable();
+
+        DB::table('land_registry')->insert([
+            ...$this->dashboardRows(),
+            ...$this->latestQuarterRows(),
+        ]);
+
+        $response = $this->get(route('insights.dashboard', absolute: false));
+
+        $response->assertOk();
+        $response->assertSee('Benchmark: 01 Oct 2025 to 31 Dec 2025');
+        $response->assertSee('Comparison: 01 Jan 2026 to 31 Mar 2026');
+        $response->assertViewHas('monthlyTrends', function (array $monthlyTrends): bool {
+            return $monthlyTrends['labels'][11] === 'Mar 2026'
+                && $monthlyTrends['transactions_values'][10] === 8
+                && $monthlyTrends['transactions_values'][11] === 9
+                && $monthlyTrends['benchmark_quarter_transactions_values'] === [30, 41, 31]
+                && $monthlyTrends['comparison_quarter_transactions_values'] === [30, 8, 9];
+        });
+    }
+
     private function ensureLandRegistryTable(): void
     {
         if (Schema::hasTable('land_registry')) {
@@ -154,6 +177,37 @@ class InsightsDashboardControllerTest extends TestCase
         $insertSales('Tiny', 'F', 90000, '2025-09-01 00:00:00', 1);
         $insertSales('Tiny', 'F', 190000, '2025-11-01 00:00:00', 1);
         $insertSales('Tiny', 'F', 190000, '2025-12-01 00:00:00', 1);
+
+        return $rows;
+    }
+
+    /**
+     * @return array<int, array<string, int|string>>
+     */
+    private function latestQuarterRows(): array
+    {
+        $rows = [];
+        $transactionId = 1000;
+
+        $insertSales = function (string $county, string $propertyType, int $price, string $date, int $count) use (&$rows, &$transactionId): void {
+            for ($i = 0; $i < $count; $i++) {
+                $rows[] = [
+                    'TransactionID' => sprintf('%08d-aaaa-bbbb-cccc-%012d', $transactionId, $transactionId),
+                    'Price' => $price,
+                    'Date' => $date,
+                    'Postcode' => sprintf('ZX%d %dYZ', $transactionId % 9, ($transactionId % 9) + 1),
+                    'PropertyType' => $propertyType,
+                    'County' => $county,
+                    'PPDCategoryType' => 'A',
+                ];
+                $transactionId++;
+            }
+        };
+
+        $insertSales('Alpha', 'D', 214000, '2026-02-15 00:00:00', 5);
+        $insertSales('Beta', 'F', 175000, '2026-02-20 00:00:00', 3);
+        $insertSales('Alpha', 'D', 216000, '2026-03-15 00:00:00', 4);
+        $insertSales('Gamma', 'S', 223000, '2026-03-10 00:00:00', 5);
 
         return $rows;
     }

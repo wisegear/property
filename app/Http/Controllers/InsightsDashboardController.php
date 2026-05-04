@@ -12,10 +12,12 @@ class InsightsDashboardController extends Controller
 
     public function index(): View
     {
-        $benchmarkStart = Carbon::parse('2025-08-01')->startOfDay();
-        $benchmarkEnd = Carbon::parse('2025-10-31')->endOfDay();
-        $comparisonStart = Carbon::parse('2025-11-01')->startOfDay();
-        $comparisonEnd = Carbon::parse('2026-01-31')->endOfDay();
+        [
+            'benchmark_start' => $benchmarkStart,
+            'benchmark_end' => $benchmarkEnd,
+            'comparison_start' => $comparisonStart,
+            'comparison_end' => $comparisonEnd,
+        ] = $this->dashboardPeriods();
 
         $quarterSummary = $this->quarterSummary(
             $benchmarkStart,
@@ -23,7 +25,12 @@ class InsightsDashboardController extends Controller
             $comparisonStart,
             $comparisonEnd,
         );
-        $monthlyTrends = $this->monthlyTrends($comparisonEnd->copy()->startOfMonth()->subMonths(11), $comparisonEnd);
+        $monthlyTrends = $this->monthlyTrends(
+            $comparisonEnd->copy()->startOfMonth()->subMonths(11),
+            $comparisonEnd,
+            $benchmarkStart,
+            $comparisonStart,
+        );
         $countyMovers = $this->countyMovers($benchmarkStart, $benchmarkEnd, $comparisonStart, $comparisonEnd);
         $propertyTypeMovements = $this->propertyTypeMovements($benchmarkStart, $benchmarkEnd, $comparisonStart, $comparisonEnd);
 
@@ -111,8 +118,12 @@ class InsightsDashboardController extends Controller
      *     comparison_quarter_transactions_values:array<int,int>
      * }
      */
-    private function monthlyTrends(Carbon $start, Carbon $end): array
-    {
+    private function monthlyTrends(
+        Carbon $start,
+        Carbon $end,
+        Carbon $benchmarkQuarterStart,
+        Carbon $comparisonQuarterStart,
+    ): array {
         $monthStartExpression = $this->monthStartExpression();
         $medianExpression = $this->medianPriceExpression();
 
@@ -154,8 +165,39 @@ class InsightsDashboardController extends Controller
             'labels' => $labels,
             'transactions_values' => $transactionValues,
             'price_values' => $priceValues,
-            'benchmark_quarter_transactions_values' => $this->quarterMonthlyValues(Carbon::parse('2025-08-01'), $monthlyTransactions),
-            'comparison_quarter_transactions_values' => $this->quarterMonthlyValues(Carbon::parse('2025-11-01'), $monthlyTransactions),
+            'benchmark_quarter_transactions_values' => $this->quarterMonthlyValues($benchmarkQuarterStart, $monthlyTransactions),
+            'comparison_quarter_transactions_values' => $this->quarterMonthlyValues($comparisonQuarterStart, $monthlyTransactions),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     benchmark_start:Carbon,
+     *     benchmark_end:Carbon,
+     *     comparison_start:Carbon,
+     *     comparison_end:Carbon
+     * }
+     */
+    private function dashboardPeriods(): array
+    {
+        $latestDate = $this->landRegistryBaseQuery()->max('Date');
+
+        if ($latestDate === null) {
+            $comparisonStart = Carbon::parse('2025-11-01')->startOfDay();
+            $comparisonEnd = Carbon::parse('2026-01-31')->endOfDay();
+        } else {
+            $comparisonStart = Carbon::parse((string) $latestDate)->startOfMonth()->subMonths(2)->startOfDay();
+            $comparisonEnd = $comparisonStart->copy()->addMonths(2)->endOfMonth();
+        }
+
+        $benchmarkStart = $comparisonStart->copy()->subMonths(3)->startOfMonth()->startOfDay();
+        $benchmarkEnd = $benchmarkStart->copy()->addMonths(2)->endOfMonth();
+
+        return [
+            'benchmark_start' => $benchmarkStart,
+            'benchmark_end' => $benchmarkEnd,
+            'comparison_start' => $comparisonStart,
+            'comparison_end' => $comparisonEnd,
         ];
     }
 
