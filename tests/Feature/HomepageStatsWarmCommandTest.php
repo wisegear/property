@@ -56,6 +56,8 @@ class HomepageStatsWarmCommandTest extends TestCase
             ...$this->countySalesRows('LONC', 14000000, '2025-11-15 00:00:00', 30, 'Belgrave Square', 'GREATER LONDON'),
             ...$this->countySalesRows('ROY', 3500000, '2025-08-12 00:00:00', 30, 'Park Row', 'West Yorkshire'),
             ...$this->countySalesRows('ROYC', 3800000, '2025-11-12 00:00:00', 25, 'Park Row', 'West Yorkshire'),
+            ...$this->countySalesRows('LOND', 15000000, '2026-01-15 00:00:00', 30, 'Belgrave Square', 'GREATER LONDON'),
+            ...$this->countySalesRows('ROYD', 4200000, '2026-03-12 00:00:00', 30, 'Park Row', 'West Yorkshire'),
         ]);
 
         DB::table('market_insights')->insert([
@@ -87,8 +89,13 @@ class HomepageStatsWarmCommandTest extends TestCase
             ],
         ]);
 
+        Cache::put('top_sales:ultra', collect([(object) ['Price' => 999999]]), now()->addDays(45));
+        Cache::put('top_sales:london', collect([(object) ['Price' => 888888]]), now()->addDays(45));
+        Cache::put('top_sales:rest', collect([(object) ['Price' => 777777]]), now()->addDays(45));
+
         $this->artisan('home:stats-warm')
             ->expectsOutput('Warming homepage stats cache...')
+            ->expectsOutput('→ top_sales caches refreshed')
             ->expectsOutput('→ homepage_stats cached for 30 days')
             ->expectsOutput('→ homepage_panels cached for 30 days')
             ->expectsOutput('Homepage stats cache warmed successfully.')
@@ -97,7 +104,7 @@ class HomepageStatsWarmCommandTest extends TestCase
         $stats = Cache::get('homepage_stats');
         $panels = Cache::get('homepage_panels');
 
-        $this->assertSame(115, $stats['property_records']);
+        $this->assertSame(175, $stats['property_records']);
         $this->assertSame(275500, $stats['uk_avg_price']);
         $this->assertSame(1450, $stats['uk_avg_rent']);
         $this->assertSame(4.25, (float) $stats['bank_rate']);
@@ -108,14 +115,17 @@ class HomepageStatsWarmCommandTest extends TestCase
         $this->assertSame('Demand Collapse', $panels['topSignal']['type']);
         $this->assertSame('M1', $panels['topSignal']['postcode']);
         $this->assertSame(-33.3, $panels['topSignal']['change']);
-        $this->assertSame(-8.3, $panels['homepageMarketMovements']['transaction_change_percent']);
-        $this->assertSame(20.8, $panels['homepageMarketMovements']['median_price_change_percent']);
+        $this->assertSame(9.1, $panels['homepageMarketMovements']['transaction_change_percent']);
+        $this->assertSame(2.5, $panels['homepageMarketMovements']['median_price_change_percent']);
         $this->assertSame(2, $panels['homepageMarketMovements']['rising_price_counties']);
-        $this->assertSame(1, $panels['homepageMarketMovements']['declining_counties']);
+        $this->assertSame(0, $panels['homepageMarketMovements']['declining_counties']);
         $this->assertSame('Ultra Prime London', $panels['homepageTopSales'][0]['label']);
-        $this->assertSame(14000000, (int) $panels['homepageTopSales'][0]['sale']->Price);
+        $this->assertSame(15000000, (int) $panels['homepageTopSales'][0]['sale']->Price);
         $this->assertSame('Rest of UK', $panels['homepageTopSales'][2]['label']);
-        $this->assertSame(3800000, (int) $panels['homepageTopSales'][2]['sale']->Price);
+        $this->assertSame(4200000, (int) $panels['homepageTopSales'][2]['sale']->Price);
+        $this->assertSame(15000000, (int) Cache::get('top_sales:ultra')->first()->Price);
+        $this->assertSame(4200000, (int) Cache::get('top_sales:rest')->first()->Price);
+        $this->assertNotNull(Cache::get('top_sales:last_warmed_at'));
     }
 
     /**

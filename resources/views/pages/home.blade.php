@@ -139,7 +139,7 @@
                     <div>
                         <h2 class="text-lg font-semibold text-zinc-900">UK Housing Market Snapshot <span class="text-xs font-normal text-zinc-500">(Last 2 quarters)</span></h2>
                         <p class="mt-1 text-sm text-zinc-600">
-                            The latest Land Registry window indicates a broad market slowdown, with transaction volumes declining across all counties and only limited price growth remaining.
+                            These indicators compare the latest complete Land Registry quarter with the prior quarter, tracking changes in transaction volume, pricing, and county-level breadth.
                         </p>
                     </div>
                 </div>

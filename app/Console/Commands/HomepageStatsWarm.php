@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\HomepageDataService;
+use App\Services\TopSalesService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 
@@ -12,11 +13,19 @@ class HomepageStatsWarm extends Command
 
     protected $description = 'Warm cached stats displayed on the homepage';
 
-    public function handle(HomepageDataService $homepageDataService): int
+    public function handle(HomepageDataService $homepageDataService, TopSalesService $topSalesService): int
     {
         $this->info('Warming homepage stats cache...');
 
         $ttl = now()->addDays(30);
+
+        foreach (['ultra', 'london', 'rest'] as $mode) {
+            $topSalesService->warmMode($mode);
+        }
+
+        Cache::put($topSalesService->lastWarmedCacheKey(), now()->toIso8601String(), now()->addDays(45));
+        $this->line('→ top_sales caches refreshed');
+
         $stats = $homepageDataService->homepageStats();
         $homepagePanels = $homepageDataService->homepagePanels();
 
