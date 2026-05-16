@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Imports\ScottishPropertyPricesImport;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Throwable;
 
@@ -30,6 +32,7 @@ class ImportScottishPropertyPrices extends Command
             $import = new ScottishPropertyPricesImport;
 
             Excel::import($import, $filePath);
+            $this->flushScottishPricesCaches();
 
             $this->info("Import complete. Imported {$import->importedRowCount()} row(s).");
 
@@ -71,5 +74,24 @@ class ImportScottishPropertyPrices extends Command
         }
 
         throw new \RuntimeException('Unable to resolve the current user home directory.');
+    }
+
+    private function flushScottishPricesCaches(): void
+    {
+        Cache::forget('scottish_prices:authorities');
+        Cache::forget('scottish_prices:latest_month');
+        Cache::forget('scottish_prices:scotland');
+
+        DB::table('scottish_property_prices')
+            ->whereNotNull('local_authority')
+            ->whereRaw("trim(local_authority) <> ''")
+            ->distinct()
+            ->pluck('local_authority')
+            ->map(fn (string $authority): string => trim($authority))
+            ->filter()
+            ->unique()
+            ->each(function (string $authority): void {
+                Cache::forget('scottish_prices:la:'.md5(mb_strtolower($authority)));
+            });
     }
 }

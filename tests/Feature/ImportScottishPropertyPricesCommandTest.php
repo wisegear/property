@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -143,6 +144,78 @@ class ImportScottishPropertyPricesCommandTest extends TestCase
                 'median_residential_property_price' => 52000,
                 'value_of_residential_property_sales' => 37500000,
             ]);
+        } finally {
+            $this->restoreHome($previousHome);
+            @unlink($filePath);
+            @rmdir($downloads);
+            @rmdir($home);
+        }
+    }
+
+    public function test_it_clears_scottish_prices_caches_after_a_successful_import(): void
+    {
+        $home = sys_get_temp_dir().'/scottish-prices-cache-'.uniqid('', true);
+        $downloads = $home.'/Downloads';
+        mkdir($downloads, 0777, true);
+
+        $previousHome = $_SERVER['HOME'] ?? getenv('HOME') ?: null;
+
+        $_SERVER['HOME'] = $home;
+        putenv("HOME={$home}");
+
+        $filePath = $downloads.'/ros.xlsx';
+
+        try {
+            DB::table('scottish_property_prices')->insert([
+                [
+                    'month' => 'February 2026',
+                    'local_authority' => 'Aberdeen City',
+                    'local_authority_code' => 'S12000033',
+                    'volume_of_residential_property_sales' => 100,
+                    'mean_residential_property_price' => 200000,
+                    'median_residential_property_price' => 190000,
+                    'value_of_residential_property_sales' => 20000000,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+
+            Cache::put('scottish_prices:authorities', ['Aberdeen City'], now()->addDays(45));
+            Cache::put('scottish_prices:latest_month', 'February 2026', now()->addDays(45));
+            Cache::put('scottish_prices:scotland', ['years' => [2026]], now()->addDays(45));
+            Cache::put('scottish_prices:la:'.md5('aberdeen city'), ['years' => [2026]], now()->addDays(45));
+
+            $this->writeWorkbook($filePath, [
+                [
+                    'Month',
+                    'Local authority code',
+                    'Volume of residential property sales',
+                    'Mean residential property price',
+                    'Median residential property price',
+                    'Value of residential property sales',
+                    'Local authority',
+                ],
+                [
+                    'March 2026',
+                    'S12000033',
+                    '101',
+                    '205000',
+                    '195000',
+                    '20705000',
+                    'Aberdeen City',
+                ],
+            ]);
+
+            $this->artisan('scottish-prices:import')
+                ->expectsOutput('Starting Scottish property prices import...')
+                ->expectsOutput("Using file: {$filePath}")
+                ->expectsOutput('Import complete. Imported 1 row(s).')
+                ->assertExitCode(0);
+
+            $this->assertNull(Cache::get('scottish_prices:authorities'));
+            $this->assertNull(Cache::get('scottish_prices:latest_month'));
+            $this->assertNull(Cache::get('scottish_prices:scotland'));
+            $this->assertNull(Cache::get('scottish_prices:la:'.md5('aberdeen city')));
         } finally {
             $this->restoreHome($previousHome);
             @unlink($filePath);
