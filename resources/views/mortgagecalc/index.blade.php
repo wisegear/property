@@ -27,7 +27,7 @@
 
             <div class="flex flex-col md:flex-row gap-4">
                 <div class="flex-1">
-                    <label for="amount" class="block text-sm font-medium text-gray-700">Mortgage Amount (GBP)</label>
+                    <label for="amount" class="block text-sm font-medium text-gray-700">Mortgage Amount</label>
                     <input type="text" name="amount" id="amount" value="{{ $input['amount'] ?? old('amount') }}" placeholder="e.g. 250,000" class="p-2 mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-lime-500 focus:ring-lime-500 sm:text-sm" required>
                     <x-input-error class="mt-2" :messages="$errors->get('amount')" />
                 </div>
@@ -45,7 +45,7 @@
                 </div>
 
                 <div class="flex-1">
-                    <label for="annual_overpayment" class="block text-sm font-medium text-gray-700">Annual overpayment (GBP)</label>
+                    <label for="annual_overpayment" class="block text-sm font-medium text-gray-700">Annual overpayment (Optional)</label>
                     <input type="text" name="annual_overpayment" id="annual_overpayment" value="{{ $input['annual_overpayment'] ?? old('annual_overpayment') }}" placeholder="e.g. 2,500" class="p-2 mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-lime-500 focus:ring-lime-500 sm:text-sm">
                     <x-input-error class="mt-2" :messages="$errors->get('annual_overpayment')" />
                 </div>
