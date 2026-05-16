@@ -10,7 +10,7 @@
             <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">Mortgage Calculator</h1>
             <p class="mt-2 text-sm leading-6 text-gray-700">
                 <span class="text-zinc-600">Calculate mortgage payments for repayment and interest only mortgages.  Select term, interest rate and get information that factors
-                    in a lender stress rate to see the potential impact on payments.</span><br>
+                    in a lender stress rate to see the potential impact on payments.  You can also add an annual overpayment amount to see how it affects your mortgage.</span><br>
                 </span>
             </p>
         </div>
