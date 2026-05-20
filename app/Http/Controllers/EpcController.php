@@ -21,29 +21,47 @@ class EpcController extends Controller
     {
         $nation = request()->query('nation', 'ew'); // 'ew' | 'scotland'
         $driver = DB::connection()->getDriverName();
+        $ewTable = 'epc_certificates';
+        $scotlandTable = 'epc_certificates_scotland';
+
+        $ewDateColumn = $this->resolveColumn($ewTable, ['LODGEMENT_DATE', 'lodgement_date']);
+        $ewCurrentRatingColumn = $this->resolveColumn($ewTable, ['CURRENT_ENERGY_RATING', 'current_energy_rating']);
+        $ewPotentialRatingColumn = $this->resolveColumn($ewTable, ['POTENTIAL_ENERGY_RATING', 'potential_energy_rating']);
+        $ewRoomsColumn = $this->resolveColumn($ewTable, ['NUMBER_HABITABLE_ROOMS', 'number_habitable_rooms']);
+        $ewAgeColumn = $this->resolveColumn($ewTable, ['CONSTRUCTION_AGE_BAND', 'construction_age_band']);
+        $ewTenureColumn = $this->resolveColumn($ewTable, ['TENURE', 'tenure']);
+
+        $scotlandDateColumn = $this->resolveColumn($scotlandTable, ['LODGEMENT_DATE', 'lodgement_date']);
+        $scotlandCurrentRatingColumn = $this->resolveColumn($scotlandTable, ['CURRENT_ENERGY_RATING', 'current_energy_rating']);
+        $scotlandPotentialRatingColumn = $this->resolveColumn($scotlandTable, ['POTENTIAL_ENERGY_RATING', 'potential_energy_rating']);
+        $scotlandRoomsColumn = $this->resolveColumn($scotlandTable, ['NUMBER_HABITABLE_ROOMS', 'number_habitable_rooms']);
+        $scotlandAgeColumn = $this->resolveColumn($scotlandTable, ['CONSTRUCTION_AGE_BAND', 'construction_age_band']);
+        $scotlandTenureColumn = $this->resolveColumn($scotlandTable, ['TENURE', 'tenure']);
 
         // Nation-specific config to avoid duplicated query blocks
         $cfg = ($nation === 'scotland')
             ? [
-                'table' => 'epc_certificates_scotland',
-                'dateExpr' => $this->scotlandDateExpr($driver),
-                'yearExpr' => $this->scotlandYearExpr($driver),
-                'dateCol' => 'LODGEMENT_DATE',
-                'currentCol' => 'CURRENT_ENERGY_RATING',
-                'potentialCol' => 'POTENTIAL_ENERGY_RATING',
-                'roomsCol' => 'NUMBER_HABITABLE_ROOMS',
-                'ageCol' => 'CONSTRUCTION_AGE_BAND',
+                'table' => $scotlandTable,
+                'dateExpr' => $this->scotlandDateExpr($driver, $scotlandDateColumn),
+                'yearExpr' => $this->scotlandYearExpr($driver, $scotlandDateColumn),
+                'dateCol' => $scotlandDateColumn,
+                'currentCol' => $scotlandCurrentRatingColumn,
+                'potentialCol' => $scotlandPotentialRatingColumn,
+                'roomsCol' => $scotlandRoomsColumn,
+                'ageCol' => $scotlandAgeColumn,
+                'tenureCol' => $scotlandTenureColumn,
                 'since' => Carbon::create(2015, 1, 1),
             ]
             : [
-                'table' => 'epc_certificates',
-                'dateExpr' => 'lodgement_date',
-                'yearExpr' => $this->ewYearExpr($driver),
-                'dateCol' => 'lodgement_date',
-                'currentCol' => 'current_energy_rating',
-                'potentialCol' => 'potential_energy_rating',
-                'roomsCol' => 'number_habitable_rooms',
-                'ageCol' => 'construction_age_band',
+                'table' => $ewTable,
+                'dateExpr' => $this->ewDateExpr($driver, $ewDateColumn),
+                'yearExpr' => $this->ewYearExpr($driver, $ewDateColumn),
+                'dateCol' => $ewDateColumn,
+                'currentCol' => $ewCurrentRatingColumn,
+                'potentialCol' => $ewPotentialRatingColumn,
+                'roomsCol' => $ewRoomsColumn,
+                'ageCol' => $ewAgeColumn,
+                'tenureCol' => $ewTenureColumn,
                 'since' => Carbon::create(2008, 1, 1),
             ];
 
@@ -92,27 +110,31 @@ class EpcController extends Controller
 
         // 3) Actual energy ratings by year (A–G only)
         $ratingByYear = Cache::remember($ck('ratingByYear'), $ttl, function () use ($cfg, $ratings) {
+            $currentColumn = $this->wrapColumn($cfg['currentCol']);
+
             return DB::table($cfg['table'])
-                ->selectRaw("{$cfg['yearExpr']} as yr, {$cfg['currentCol']} as rating, COUNT(*) as cnt")
+                ->selectRaw("{$cfg['yearExpr']} as yr, {$currentColumn} as rating, COUNT(*) as cnt")
                 ->whereRaw("{$cfg['dateExpr']} IS NOT NULL")
                 ->whereRaw("{$cfg['dateExpr']} >= ?", [$cfg['since']])
                 ->whereIn($cfg['currentCol'], $ratings)
                 ->groupBy('yr', 'rating')
                 ->orderBy('yr', 'asc')
-                ->orderByRaw($this->ratingOrderExpression('rating'))
+                ->orderByRaw($this->ratingOrderExpression($currentColumn))
                 ->get();
         });
 
         // 4) Potential energy ratings by year (A–G only)
         $potentialByYear = Cache::remember($ck('potentialByYear'), $ttl, function () use ($cfg, $ratings) {
+            $potentialColumn = $this->wrapColumn($cfg['potentialCol']);
+
             return DB::table($cfg['table'])
-                ->selectRaw("{$cfg['yearExpr']} as yr, {$cfg['potentialCol']} as rating, COUNT(*) as cnt")
+                ->selectRaw("{$cfg['yearExpr']} as yr, {$potentialColumn} as rating, COUNT(*) as cnt")
                 ->whereRaw("{$cfg['dateExpr']} IS NOT NULL")
                 ->whereRaw("{$cfg['dateExpr']} >= ?", [$cfg['since']])
                 ->whereIn($cfg['potentialCol'], $ratings)
                 ->groupBy('yr', 'rating')
                 ->orderBy('yr', 'asc')
-                ->orderByRaw($this->ratingOrderExpression('rating'))
+                ->orderByRaw($this->ratingOrderExpression($potentialColumn))
                 ->get();
         });
 
@@ -122,10 +144,11 @@ class EpcController extends Controller
 
         $tenureByYear = Cache::remember($ck('tenureByYear'), $ttl, function () use ($cfg) {
             // Normalise common variants into our 3 labels. Anything else is ignored.
+            $tenureColumn = $this->wrapColumn($cfg['tenureCol']);
             $tenureCase = "CASE\n"
-                ."  WHEN tenure IN ('Owner-occupied','Owner occupied','Owner Occupied','Owner-Occupied') THEN 'Owner-occupied'\n"
-                ."  WHEN tenure IN ('Rented (private)','Rental (private)','Private rented','Private Rented','Rented - private','Rental - private') THEN 'Rented (private)'\n"
-                ."  WHEN tenure IN ('Rented (social)','Rental (social)','Social rented','Social Rented','Rented - social','Rental - social') THEN 'Rented (social)'\n"
+                ."  WHEN {$tenureColumn} IN ('Owner-occupied','owner-occupied','Owner occupied','owner occupied','Owner Occupied','Owner-Occupied') THEN 'Owner-occupied'\n"
+                ."  WHEN {$tenureColumn} IN ('Rented (private)','rented (private)','Rental (private)','rental (private)','Private rented','private rented','Private Rented','Rented - private','rented - private','Rental - private','rental - private') THEN 'Rented (private)'\n"
+                ."  WHEN {$tenureColumn} IN ('Rented (social)','rented (social)','Rental (social)','rental (social)','Social rented','social rented','Social Rented','Rented - social','rented - social','Rental - social','rental - social') THEN 'Rented (social)'\n"
                 ."  ELSE NULL\n"
                 .'END';
 
@@ -133,26 +156,29 @@ class EpcController extends Controller
                 ->selectRaw("{$cfg['yearExpr']} as yr, {$tenureCase} as tenure, COUNT(*) as cnt")
                 ->whereRaw("{$cfg['dateExpr']} IS NOT NULL")
                 ->whereRaw("{$cfg['dateExpr']} >= ?", [$cfg['since']])
-                ->whereNotNull('tenure')
+                ->whereNotNull($cfg['tenureCol'])
                 ->groupBy('yr', 'tenure')
                 ->orderBy('yr', 'asc')
-                ->orderByRaw($this->tenureOrderExpression('tenure'))
+                ->orderByRaw($this->tenureOrderExpression("({$tenureCase})"))
                 ->get();
         });
 
         // 5) Distribution of current ratings (optional for Scotland too)
         $ratingDist = Cache::remember($ck('ratingDist'), $ttl, function () use ($cfg) {
+            $currentColumn = $this->wrapColumn($cfg['currentCol']);
+            $ratingCase = "CASE
+                        WHEN {$currentColumn} IN ('A','B','C','D','E','F','G') THEN {$currentColumn}
+                        WHEN {$currentColumn} IS NULL THEN 'Unknown'
+                        ELSE 'Other'
+                    END";
+
             return DB::table($cfg['table'])
                 ->selectRaw("
-                    CASE
-                        WHEN {$cfg['currentCol']} IN ('A','B','C','D','E','F','G') THEN {$cfg['currentCol']}
-                        WHEN {$cfg['currentCol']} IS NULL THEN 'Unknown'
-                        ELSE 'Other'
-                    END as rating,
+                    {$ratingCase} as rating,
                     COUNT(*) as cnt
                 ")
                 ->groupBy('rating')
-                ->orderByRaw($this->ratingOrderExpression('rating', true))
+                ->orderByRaw($this->ratingOrderExpression("({$ratingCase})", true))
                 ->get();
         });
 
@@ -167,31 +193,48 @@ class EpcController extends Controller
         ]);
     }
 
-    private function ewYearExpr(string $driver): string
+    private function ewDateExpr(string $driver, string $column): string
     {
+        $wrappedColumn = $this->wrapColumn($column);
+
         if ($driver === 'pgsql') {
-            return 'EXTRACT(YEAR FROM "lodgement_date")::int';
+            return "CAST({$wrappedColumn} AS date)";
         }
 
-        return 'CAST(strftime(\'%Y\', "lodgement_date") AS INTEGER)';
+        return "date({$wrappedColumn})";
     }
 
-    private function scotlandDateExpr(string $driver): string
+    private function ewYearExpr(string $driver, string $column): string
     {
+        $wrappedColumn = $this->wrapColumn($column);
+
         if ($driver === 'pgsql') {
-            return 'CAST("LODGEMENT_DATE" AS date)';
+            return "EXTRACT(YEAR FROM CAST({$wrappedColumn} AS date))::int";
         }
 
-        return 'date("LODGEMENT_DATE")';
+        return "CAST(strftime('%Y', {$wrappedColumn}) AS INTEGER)";
     }
 
-    private function scotlandYearExpr(string $driver): string
+    private function scotlandDateExpr(string $driver, string $column): string
     {
+        $wrappedColumn = $this->wrapColumn($column);
+
         if ($driver === 'pgsql') {
-            return 'EXTRACT(YEAR FROM CAST("LODGEMENT_DATE" AS date))::int';
+            return "CAST({$wrappedColumn} AS date)";
         }
 
-        return 'CAST(strftime(\'%Y\', "LODGEMENT_DATE") AS INTEGER)';
+        return "date({$wrappedColumn})";
+    }
+
+    private function scotlandYearExpr(string $driver, string $column): string
+    {
+        $wrappedColumn = $this->wrapColumn($column);
+
+        if ($driver === 'pgsql') {
+            return "EXTRACT(YEAR FROM CAST({$wrappedColumn} AS date))::int";
+        }
+
+        return "CAST(strftime('%Y', {$wrappedColumn}) AS INTEGER)";
     }
 
     private function ratingOrderExpression(string $column, bool $includeTail = false): string

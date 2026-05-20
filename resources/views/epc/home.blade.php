@@ -89,7 +89,7 @@
     {{-- EPCs by Year & Tenure --}}
     <div class="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- Certificates issued by year --}}
-        <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <article class="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Certificates</p>
@@ -106,13 +106,13 @@
         </article>
 
         {{-- Tenure by year --}}
-        <div class="border rounded-lg bg-white p-4 shadow">
+        <div class="flex min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
             <h2 class="text-lg font-semibold">Reason for EPC by year</h2>
-            <p class="mb-2 text-xs text-gray-600">
+            <p class="mt-2 text-xs text-gray-600">
                 Count of EPCs by reason for each year.
             </p>
-            <div class="w-full h-72">
-                <canvas id="tenureByYearChart" class="w-full h-full"></canvas>
+            <div class="mt-6 min-h-[18rem] flex-1">
+                <canvas id="tenureByYearChart" class="block h-full w-full"></canvas>
             </div>
         </div>
     </div>

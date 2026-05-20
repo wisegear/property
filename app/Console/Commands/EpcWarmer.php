@@ -107,13 +107,13 @@ class EpcWarmer extends Command
             Cache::put($cacheKey($nation, 'potentialByYear'), $potentialByYear, $ttl);
 
             $tenureByYear = DB::table($cfg['table'])
-                ->selectRaw("\n                    {$cfg['yearExpr']} as yr,\n                    CASE\n                        WHEN {$this->column($cfg['tenureCol'])} IN ('Owner-occupied','owner-occupied') THEN 'Owner-occupied'\n                        WHEN {$this->column($cfg['tenureCol'])} IN ('Rented (private)','rental (private)') THEN 'Rented (private)'\n                        WHEN {$this->column($cfg['tenureCol'])} IN ('Rented (social)','rental (social)') THEN 'Rented (social)'\n                        ELSE NULL\n                    END as tenure,\n                    COUNT(*) as cnt\n                ")
+                ->selectRaw("\n                    {$cfg['yearExpr']} as yr,\n                    CASE\n                        WHEN {$this->column($cfg['tenureCol'])} IN ('Owner-occupied','owner-occupied') THEN 'Owner-occupied'\n                        WHEN {$this->column($cfg['tenureCol'])} IN ('Rented (private)','rented (private)','Rental (private)','rental (private)','Private rented','private rented','Rented - private','rented - private','Rental - private','rental - private') THEN 'Rented (private)'\n                        WHEN {$this->column($cfg['tenureCol'])} IN ('Rented (social)','rented (social)','Rental (social)','rental (social)','Social rented','social rented','Rented - social','rented - social','Rental - social','rental - social') THEN 'Rented (social)'\n                        ELSE NULL\n                    END as tenure,\n                    COUNT(*) as cnt\n                ")
                 ->whereRaw("{$cfg['dateExpr']} IS NOT NULL")
                 ->whereRaw("{$cfg['dateExpr']} >= ?", [$cfg['since']])
                 ->whereIn($cfg['tenureCol'], [
                     'Owner-occupied', 'owner-occupied',
-                    'Rented (private)', 'rental (private)',
-                    'Rented (social)', 'rental (social)',
+                    'Rented (private)', 'rented (private)', 'Rental (private)', 'rental (private)', 'Private rented', 'private rented', 'Rented - private', 'rented - private', 'Rental - private', 'rental - private',
+                    'Rented (social)', 'rented (social)', 'Rental (social)', 'rental (social)', 'Social rented', 'social rented', 'Rented - social', 'rented - social', 'Rental - social', 'rental - social',
                 ])
                 ->groupBy('yr', 'tenure')
                 ->orderBy('yr')
