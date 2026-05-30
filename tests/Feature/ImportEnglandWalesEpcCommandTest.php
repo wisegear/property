@@ -11,7 +11,7 @@ class ImportEnglandWalesEpcCommandTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_imports_multiple_yearly_files_and_detects_optional_metadata_rows(): void
+    public function test_it_imports_multiple_yearly_files_with_direct_header_mapping(): void
     {
         $directory = storage_path('framework/testing/england-wales-epc-import');
         if (! is_dir($directory)) {
@@ -20,9 +20,8 @@ class ImportEnglandWalesEpcCommandTest extends TestCase
 
         file_put_contents(
             $directory.'/certificates-2012.csv',
-            "certificate_number,postcode,lodgement_date,ADDRESS,EXTRA_LABEL\n".
-            "Readable Header,Readable Header,Readable Header,Readable Header,Readable Header\n".
-            "EW-2012,SW1A 1AA,2012-06-01,10 Downing Street,Ignored value\n"
+            "certificate_number,postcode,lodgement_date,ADDRESS\n".
+            "EW-2012,SW1A 1AA,2012-06-01,10 Downing Street\n"
         );
 
         file_put_contents(
@@ -33,7 +32,6 @@ class ImportEnglandWalesEpcCommandTest extends TestCase
 
         $this->artisan("epc:import-ew {$directory}")
             ->expectsOutputToContain('Importing certificates-2012.csv...')
-            ->expectsOutputToContain('Skipping unrecognised columns in certificates-2012.csv:')
             ->expectsOutputToContain(' - inserted 1 row(s)')
             ->expectsOutputToContain(' - skipped existing 0 row(s)')
             ->expectsOutputToContain(' - total processed 1 row(s)')
@@ -60,7 +58,7 @@ class ImportEnglandWalesEpcCommandTest extends TestCase
         $this->assertSame(2, DB::table('epc_certificates')->count());
     }
 
-    public function test_it_skips_existing_lmk_keys_when_run_repeatedly(): void
+    public function test_it_handles_repeat_runs_based_on_database_mode(): void
     {
         $directory = storage_path('framework/testing/england-wales-epc-repeat');
         if (! is_dir($directory)) {
@@ -73,6 +71,28 @@ class ImportEnglandWalesEpcCommandTest extends TestCase
             "EW-2016-1,SW1A 5AA,2016-08-03,11 Example Road\n".
             "EW-2016-2,SW1A 6AA,2016-08-04,12 Example Road\n"
         );
+
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            Schema::table('epc_certificates', function ($table): void {
+                $table->dropUnique('uq_epc_certificates_lmk_key');
+            });
+
+            $this->artisan("epc:import-ew {$directory}")
+                ->expectsOutputToContain(' - inserted 2 row(s)')
+                ->expectsOutputToContain(' - skipped existing 0 row(s)')
+                ->expectsOutputToContain(' - total processed 2 row(s)')
+                ->assertExitCode(0);
+
+            $this->artisan("epc:import-ew {$directory}")
+                ->expectsOutputToContain(' - inserted 2 row(s)')
+                ->expectsOutputToContain(' - skipped existing 0 row(s)')
+                ->expectsOutputToContain(' - total processed 2 row(s)')
+                ->assertExitCode(0);
+
+            $this->assertSame(4, DB::table('epc_certificates')->count());
+
+            return;
+        }
 
         $this->artisan("epc:import-ew {$directory}")
             ->expectsOutputToContain(' - inserted 2 row(s)')

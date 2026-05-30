@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Throwable;
+use Symfony\Component\Process\Process;
 
 class ImportEnglandWalesEpc extends Command
 {
@@ -79,6 +79,12 @@ class ImportEnglandWalesEpc extends Command
                 $this->warn('Skipping unrecognised columns in '.basename($file).':');
                 foreach ($missing as $column) {
                     $this->line(' - '.$column);
+                }
+
+                if ($isPostgres) {
+                    $this->error('Fast PostgreSQL COPY mode cannot skip columns. Add matching columns first or remove the unmapped CSV fields.');
+
+                    return self::FAILURE;
                 }
             }
 
@@ -441,114 +447,53 @@ class ImportEnglandWalesEpc extends Command
      */
     private function importFileWithPostgresCopy($handle, int $dataStartsAtRow, string $base, array $columnMap, bool $hasUniqueLmkKeyIndex): ?array
     {
-        $connection = $this->openPgsqlConnection();
-        if ($connection === false) {
-            $this->error('Unable to open a native PostgreSQL connection for COPY.');
+        if ($dataStartsAtRow !== 2) {
+            $this->error("Fast PostgreSQL COPY mode requires a single CSV header row in {$base}.");
 
             return null;
         }
 
-        $stagingTable = 'epc_staging_'.bin2hex(random_bytes(6));
-        $stageColumns = array_values(array_unique([...array_values($columnMap), 'source_file']));
-        $copyColumnsSql = implode(', ', array_map(
-            fn (string $column): string => pg_escape_identifier($connection, $column),
-            $stageColumns,
-        ));
-        $quotedStagingTable = pg_escape_identifier($connection, $stagingTable);
-
-        try {
-            $createStageSql = sprintf(
-                'CREATE UNLOGGED TABLE %s (LIKE %s INCLUDING DEFAULTS)',
-                $quotedStagingTable,
-                pg_escape_identifier($connection, 'epc_certificates'),
-            );
-
-            if (pg_query($connection, $createStageSql) === false) {
-                throw new \RuntimeException('Failed to create staging table.');
+        $unrecognisedColumns = [];
+        foreach ($columnMap as $index => $column) {
+            if ($column === '') {
+                $unrecognisedColumns[] = (string) $index;
             }
+        }
 
-            $copySql = sprintf(
-                'COPY %s (%s) FROM STDIN WITH (FORMAT csv, HEADER true)',
-                $quotedStagingTable,
-                $copyColumnsSql,
-            );
+        $copyColumns = [];
+        foreach ($columnMap as $targetColumn) {
+            $copyColumns[] = '"'.str_replace('"', '""', $targetColumn).'"';
+        }
 
-            if (pg_query($connection, $copySql) === false) {
-                throw new \RuntimeException('Failed to start COPY.');
-            }
+        $copySql = sprintf(
+            "\\copy public.epc_certificates (%s) FROM %s WITH (FORMAT csv, HEADER true, QUOTE '\"', ESCAPE '\"', NULL '')",
+            implode(', ', $copyColumns),
+            $this->quoteSqlString((string) realpath(stream_get_meta_data($handle)['uri'] ?? ''))
+        );
 
-            pg_put_line($connection, $this->csvLine($stageColumns));
-            $this->skipRows($handle, $dataStartsAtRow - 1);
+        $process = $this->buildPsqlProcess($copySql);
+        $process->run();
 
-            while (($row = fgetcsv($handle)) !== false) {
-                if ($row === [null] || $row === []) {
-                    continue;
-                }
-
-                pg_put_line($connection, $this->buildStagingCsvLine($row, $columnMap, $base, $stageColumns));
-            }
-
-            if (! pg_end_copy($connection)) {
-                throw new \RuntimeException('Failed to finish COPY.');
-            }
-
-            $quotedStageColumns = implode(', ', array_map(
-                fn (string $column): string => pg_escape_identifier($connection, $column),
-                $stageColumns,
-            ));
-            $conflictClause = $hasUniqueLmkKeyIndex ? 'ON CONFLICT ("LMK_KEY") DO NOTHING' : '';
-            $insertResult = pg_query(
-                $connection,
-                <<<SQL
-                WITH stats AS (
-                    SELECT
-                        COUNT(*)::bigint AS processed_rows,
-                        COUNT(*) FILTER (WHERE "LMK_KEY" IS NULL OR BTRIM("LMK_KEY") = '')::bigint AS missing_lmk_rows
-                    FROM {$quotedStagingTable}
-                ),
-                inserted AS (
-                    INSERT INTO "epc_certificates" ({$quotedStageColumns})
-                    SELECT {$quotedStageColumns}
-                    FROM {$quotedStagingTable}
-                    WHERE "LMK_KEY" IS NOT NULL
-                      AND BTRIM("LMK_KEY") <> ''
-                    {$conflictClause}
-                    RETURNING 1
-                )
-                SELECT
-                    stats.processed_rows,
-                    stats.missing_lmk_rows,
-                    COUNT(inserted.*)::bigint AS inserted_rows
-                FROM stats
-                LEFT JOIN inserted ON true
-                GROUP BY stats.processed_rows, stats.missing_lmk_rows
-                SQL
-            );
-
-            if ($insertResult === false) {
-                throw new \RuntimeException('Failed to insert staged EPC rows.');
-            }
-
-            $statsRow = pg_fetch_assoc($insertResult);
-            $processedRows = (int) ($statsRow['processed_rows'] ?? 0);
-            $missingLmkRows = (int) ($statsRow['missing_lmk_rows'] ?? 0);
-            $insertedRows = (int) ($statsRow['inserted_rows'] ?? 0);
-            $skippedExisting = $hasUniqueLmkKeyIndex ? max(0, $processedRows - $missingLmkRows - $insertedRows) : 0;
-
-            return [
-                'inserted' => $insertedRows,
-                'processed' => $processedRows,
-                'skippedExisting' => $skippedExisting,
-                'skippedMissingLmkKey' => $missingLmkRows,
-            ];
-        } catch (Throwable $throwable) {
-            $this->error($throwable->getMessage());
+        if (! $process->isSuccessful()) {
+            $output = trim($process->getErrorOutput()."\n".$process->getOutput());
+            $this->error($output === '' ? 'PostgreSQL COPY failed.' : $output);
 
             return null;
-        } finally {
-            @pg_query($connection, 'DROP TABLE IF EXISTS '.$quotedStagingTable);
-            pg_close($connection);
         }
+
+        $output = trim($process->getOutput()."\n".$process->getErrorOutput());
+        preg_match('/COPY\s+(\d+)/i', $output, $matches);
+        $rowCount = isset($matches[1]) ? (int) $matches[1] : 0;
+        DB::table('epc_certificates')
+            ->whereNull('source_file')
+            ->update(['source_file' => $base]);
+
+        return [
+            'inserted' => $rowCount,
+            'processed' => $rowCount,
+            'skippedExisting' => 0,
+            'skippedMissingLmkKey' => 0,
+        ];
     }
 
     /**
@@ -565,73 +510,36 @@ class ImportEnglandWalesEpc extends Command
         return count($batch);
     }
 
-    /**
-     * @param  array<int, string|int|float|null>  $values
-     */
-    private function csvLine(array $values): string
-    {
-        $stream = fopen('php://temp', 'r+');
-        fputcsv($stream, $values);
-        rewind($stream);
-        $line = (string) stream_get_contents($stream);
-        fclose($stream);
-
-        return $line;
-    }
-
-    /**
-     * @param  array<int, string|null>  $row
-     * @param  array<int, string>  $columnMap
-     * @param  array<int, string>  $stageColumns
-     */
-    private function buildStagingCsvLine(array $row, array $columnMap, string $base, array $stageColumns): string
-    {
-        $record = ['source_file' => $base];
-        foreach ($columnMap as $index => $targetColumn) {
-            $value = $row[$index] ?? null;
-            $record[$targetColumn] = $value === '' ? null : $value;
-        }
-
-        $orderedValues = [];
-        foreach ($stageColumns as $column) {
-            $orderedValues[] = $record[$column] ?? null;
-        }
-
-        return $this->csvLine($orderedValues);
-    }
-
-    /**
-     * @return resource|false
-     */
-    private function openPgsqlConnection()
+    private function buildPsqlProcess(string $copySql): Process
     {
         $config = config('database.connections.pgsql');
         if (! is_array($config)) {
-            return false;
+            throw new \RuntimeException('PostgreSQL connection configuration is missing.');
         }
 
-        $parts = [];
-        foreach (['host', 'port', 'database', 'username', 'password', 'sslmode'] as $key) {
-            $value = $config[$key] ?? null;
-            if (! is_string($value) || $value === '') {
-                continue;
-            }
+        $command = [
+            'psql',
+            '-h', (string) ($config['host'] ?? '127.0.0.1'),
+            '-p', (string) ($config['port'] ?? '5432'),
+            '-U', (string) ($config['username'] ?? ''),
+            '-d', (string) ($config['database'] ?? ''),
+            '-c', $copySql,
+        ];
 
-            $connectionKey = match ($key) {
-                'database' => 'dbname',
-                'username' => 'user',
-                default => $key,
-            };
+        $environment = [
+            'PGPASSWORD' => (string) ($config['password'] ?? ''),
+        ];
 
-            $parts[] = sprintf("%s='%s'", $connectionKey, str_replace(['\\', '\''], ['\\\\', '\\\''], $value));
+        if (is_string($config['sslmode'] ?? null) && $config['sslmode'] !== '') {
+            $environment['PGSSLMODE'] = (string) $config['sslmode'];
         }
 
-        $searchPath = $config['search_path'] ?? null;
-        if (is_string($searchPath) && $searchPath !== '') {
-            $parts[] = sprintf("options='-c search_path=%s'", str_replace(['\\', '\''], ['\\\\', '\\\''], $searchPath));
-        }
+        return new Process($command, base_path(), $environment, null, null);
+    }
 
-        return pg_connect(implode(' ', $parts));
+    private function quoteSqlString(string $value): string
+    {
+        return "'".str_replace("'", "''", $value)."'";
     }
 
     /**
