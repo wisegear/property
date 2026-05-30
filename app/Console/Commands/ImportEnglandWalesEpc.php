@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class ImportEnglandWalesEpc extends Command
 {
@@ -55,6 +56,8 @@ class ImportEnglandWalesEpc extends Command
             $this->warn('No unique index or constraint found on [epc_certificates.LMK_KEY]. Duplicate protection is disabled for this run.');
         }
 
+        $isPostgres = DB::connection()->getDriverName() === 'pgsql';
+
         foreach ($files as $file) {
             $header = $this->readHeaderDetails($file, array_keys($normalizedTableCols));
             if ($header === null) {
@@ -92,60 +95,23 @@ class ImportEnglandWalesEpc extends Command
                 return self::FAILURE;
             }
 
-            $this->skipRows($fh, $header['dataStartsAtRow'] - 1);
-
             $base = basename($file);
             $this->info("Importing {$base}...");
-            $inserted = 0;
-            $processed = 0;
-            $skippedExisting = 0;
-            $skippedMissingLmkKey = 0;
-            $batch = [];
-            $insertColumns = array_values(array_unique([...array_values($columnMap), 'source_file']));
-            $batchSize = $this->batchSize(count($insertColumns));
-
-            while (($row = fgetcsv($fh)) !== false) {
-                if ($row === [null] || $row === []) {
-                    continue;
-                }
-
-                $processed++;
-
-                $record = ['source_file' => $base];
-                foreach ($columnMap as $index => $targetColumn) {
-                    $value = $row[$index] ?? null;
-                    $record[$targetColumn] = $value === '' ? null : $value;
-                }
-
-                $lmkKey = $record['LMK_KEY'] ?? null;
-                if (! is_string($lmkKey) || trim($lmkKey) === '') {
-                    $skippedMissingLmkKey++;
-
-                    continue;
-                }
-
-                $batch[] = $record;
-                if (count($batch) >= $batchSize) {
-                    $insertedBatch = $this->insertBatch($batch, $hasUniqueLmkKeyIndex);
-                    $inserted += $insertedBatch;
-                    $skippedExisting += count($batch) - $insertedBatch;
-                    $batch = [];
-                }
-            }
+            $stats = $isPostgres
+                ? $this->importFileWithPostgresCopy($fh, $header['dataStartsAtRow'], $base, $columnMap, $hasUniqueLmkKeyIndex)
+                : $this->importFileWithBatchInserts($fh, $header['dataStartsAtRow'], $base, $columnMap, $hasUniqueLmkKeyIndex);
 
             fclose($fh);
 
-            if (! empty($batch)) {
-                $insertedBatch = $this->insertBatch($batch, $hasUniqueLmkKeyIndex);
-                $inserted += $insertedBatch;
-                $skippedExisting += count($batch) - $insertedBatch;
+            if ($stats === null) {
+                return self::FAILURE;
             }
 
-            $this->line(" - inserted {$inserted} row(s)");
-            $this->line(" - skipped existing {$skippedExisting} row(s)");
-            $this->line(" - total processed {$processed} row(s)");
-            if ($skippedMissingLmkKey > 0) {
-                $this->line(" - skipped missing LMK_KEY {$skippedMissingLmkKey} row(s)");
+            $this->line(' - inserted '.$stats['inserted'].' row(s)');
+            $this->line(' - skipped existing '.$stats['skippedExisting'].' row(s)');
+            $this->line(' - total processed '.$stats['processed'].' row(s)');
+            if ($stats['skippedMissingLmkKey'] > 0) {
+                $this->line(' - skipped missing LMK_KEY '.$stats['skippedMissingLmkKey'].' row(s)');
             }
         }
 
@@ -409,6 +375,183 @@ class ImportEnglandWalesEpc extends Command
     }
 
     /**
+     * @param  resource  $handle
+     * @param  array<int, string>  $columnMap
+     * @return array{inserted: int, processed: int, skippedExisting: int, skippedMissingLmkKey: int}|null
+     */
+    private function importFileWithBatchInserts($handle, int $dataStartsAtRow, string $base, array $columnMap, bool $hasUniqueLmkKeyIndex): ?array
+    {
+        $this->skipRows($handle, $dataStartsAtRow - 1);
+
+        $inserted = 0;
+        $processed = 0;
+        $skippedExisting = 0;
+        $skippedMissingLmkKey = 0;
+        $batch = [];
+        $insertColumns = array_values(array_unique([...array_values($columnMap), 'source_file']));
+        $batchSize = $this->batchSize(count($insertColumns));
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if ($row === [null] || $row === []) {
+                continue;
+            }
+
+            $processed++;
+
+            $record = ['source_file' => $base];
+            foreach ($columnMap as $index => $targetColumn) {
+                $value = $row[$index] ?? null;
+                $record[$targetColumn] = $value === '' ? null : $value;
+            }
+
+            $lmkKey = $record['LMK_KEY'] ?? null;
+            if (! is_string($lmkKey) || trim($lmkKey) === '') {
+                $skippedMissingLmkKey++;
+
+                continue;
+            }
+
+            $batch[] = $record;
+            if (count($batch) >= $batchSize) {
+                $insertedBatch = $this->insertBatch($batch, $hasUniqueLmkKeyIndex);
+                $inserted += $insertedBatch;
+                $skippedExisting += count($batch) - $insertedBatch;
+                $batch = [];
+            }
+        }
+
+        if (! empty($batch)) {
+            $insertedBatch = $this->insertBatch($batch, $hasUniqueLmkKeyIndex);
+            $inserted += $insertedBatch;
+            $skippedExisting += count($batch) - $insertedBatch;
+        }
+
+        return [
+            'inserted' => $inserted,
+            'processed' => $processed,
+            'skippedExisting' => $skippedExisting,
+            'skippedMissingLmkKey' => $skippedMissingLmkKey,
+        ];
+    }
+
+    /**
+     * @param  resource  $handle
+     * @param  array<int, string>  $columnMap
+     * @return array{inserted: int, processed: int, skippedExisting: int, skippedMissingLmkKey: int}|null
+     */
+    private function importFileWithPostgresCopy($handle, int $dataStartsAtRow, string $base, array $columnMap, bool $hasUniqueLmkKeyIndex): ?array
+    {
+        $connection = $this->openPgsqlConnection();
+        if ($connection === false) {
+            $this->error('Unable to open a native PostgreSQL connection for COPY.');
+
+            return null;
+        }
+
+        $stagingTable = 'epc_staging_'.bin2hex(random_bytes(6));
+        $stageColumns = array_values(array_unique([...array_values($columnMap), 'source_file']));
+        $copyColumnsSql = implode(', ', array_map(
+            fn (string $column): string => pg_escape_identifier($connection, $column),
+            $stageColumns,
+        ));
+        $quotedStagingTable = pg_escape_identifier($connection, $stagingTable);
+
+        try {
+            $createStageSql = sprintf(
+                'CREATE UNLOGGED TABLE %s (LIKE %s INCLUDING DEFAULTS)',
+                $quotedStagingTable,
+                pg_escape_identifier($connection, 'epc_certificates'),
+            );
+
+            if (pg_query($connection, $createStageSql) === false) {
+                throw new \RuntimeException('Failed to create staging table.');
+            }
+
+            $copySql = sprintf(
+                'COPY %s (%s) FROM STDIN WITH (FORMAT csv, HEADER true)',
+                $quotedStagingTable,
+                $copyColumnsSql,
+            );
+
+            if (pg_query($connection, $copySql) === false) {
+                throw new \RuntimeException('Failed to start COPY.');
+            }
+
+            pg_put_line($connection, $this->csvLine($stageColumns));
+            $this->skipRows($handle, $dataStartsAtRow - 1);
+
+            while (($row = fgetcsv($handle)) !== false) {
+                if ($row === [null] || $row === []) {
+                    continue;
+                }
+
+                pg_put_line($connection, $this->buildStagingCsvLine($row, $columnMap, $base, $stageColumns));
+            }
+
+            if (! pg_end_copy($connection)) {
+                throw new \RuntimeException('Failed to finish COPY.');
+            }
+
+            $quotedStageColumns = implode(', ', array_map(
+                fn (string $column): string => pg_escape_identifier($connection, $column),
+                $stageColumns,
+            ));
+            $conflictClause = $hasUniqueLmkKeyIndex ? 'ON CONFLICT ("LMK_KEY") DO NOTHING' : '';
+            $insertResult = pg_query(
+                $connection,
+                <<<SQL
+                WITH stats AS (
+                    SELECT
+                        COUNT(*)::bigint AS processed_rows,
+                        COUNT(*) FILTER (WHERE "LMK_KEY" IS NULL OR BTRIM("LMK_KEY") = '')::bigint AS missing_lmk_rows
+                    FROM {$quotedStagingTable}
+                ),
+                inserted AS (
+                    INSERT INTO "epc_certificates" ({$quotedStageColumns})
+                    SELECT {$quotedStageColumns}
+                    FROM {$quotedStagingTable}
+                    WHERE "LMK_KEY" IS NOT NULL
+                      AND BTRIM("LMK_KEY") <> ''
+                    {$conflictClause}
+                    RETURNING 1
+                )
+                SELECT
+                    stats.processed_rows,
+                    stats.missing_lmk_rows,
+                    COUNT(inserted.*)::bigint AS inserted_rows
+                FROM stats
+                LEFT JOIN inserted ON true
+                GROUP BY stats.processed_rows, stats.missing_lmk_rows
+                SQL
+            );
+
+            if ($insertResult === false) {
+                throw new \RuntimeException('Failed to insert staged EPC rows.');
+            }
+
+            $statsRow = pg_fetch_assoc($insertResult);
+            $processedRows = (int) ($statsRow['processed_rows'] ?? 0);
+            $missingLmkRows = (int) ($statsRow['missing_lmk_rows'] ?? 0);
+            $insertedRows = (int) ($statsRow['inserted_rows'] ?? 0);
+            $skippedExisting = $hasUniqueLmkKeyIndex ? max(0, $processedRows - $missingLmkRows - $insertedRows) : 0;
+
+            return [
+                'inserted' => $insertedRows,
+                'processed' => $processedRows,
+                'skippedExisting' => $skippedExisting,
+                'skippedMissingLmkKey' => $missingLmkRows,
+            ];
+        } catch (Throwable $throwable) {
+            $this->error($throwable->getMessage());
+
+            return null;
+        } finally {
+            @pg_query($connection, 'DROP TABLE IF EXISTS '.$quotedStagingTable);
+            pg_close($connection);
+        }
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $batch
      */
     private function insertBatch(array $batch, bool $hasUniqueLmkKeyIndex): int
@@ -420,6 +563,75 @@ class ImportEnglandWalesEpc extends Command
         DB::table('epc_certificates')->insert($batch);
 
         return count($batch);
+    }
+
+    /**
+     * @param  array<int, string|int|float|null>  $values
+     */
+    private function csvLine(array $values): string
+    {
+        $stream = fopen('php://temp', 'r+');
+        fputcsv($stream, $values);
+        rewind($stream);
+        $line = (string) stream_get_contents($stream);
+        fclose($stream);
+
+        return $line;
+    }
+
+    /**
+     * @param  array<int, string|null>  $row
+     * @param  array<int, string>  $columnMap
+     * @param  array<int, string>  $stageColumns
+     */
+    private function buildStagingCsvLine(array $row, array $columnMap, string $base, array $stageColumns): string
+    {
+        $record = ['source_file' => $base];
+        foreach ($columnMap as $index => $targetColumn) {
+            $value = $row[$index] ?? null;
+            $record[$targetColumn] = $value === '' ? null : $value;
+        }
+
+        $orderedValues = [];
+        foreach ($stageColumns as $column) {
+            $orderedValues[] = $record[$column] ?? null;
+        }
+
+        return $this->csvLine($orderedValues);
+    }
+
+    /**
+     * @return resource|false
+     */
+    private function openPgsqlConnection()
+    {
+        $config = config('database.connections.pgsql');
+        if (! is_array($config)) {
+            return false;
+        }
+
+        $parts = [];
+        foreach (['host', 'port', 'database', 'username', 'password', 'sslmode'] as $key) {
+            $value = $config[$key] ?? null;
+            if (! is_string($value) || $value === '') {
+                continue;
+            }
+
+            $connectionKey = match ($key) {
+                'database' => 'dbname',
+                'username' => 'user',
+                default => $key,
+            };
+
+            $parts[] = sprintf("%s='%s'", $connectionKey, str_replace(['\\', '\''], ['\\\\', '\\\''], $value));
+        }
+
+        $searchPath = $config['search_path'] ?? null;
+        if (is_string($searchPath) && $searchPath !== '') {
+            $parts[] = sprintf("options='-c search_path=%s'", str_replace(['\\', '\''], ['\\\\', '\\\''], $searchPath));
+        }
+
+        return pg_connect(implode(' ', $parts));
     }
 
     /**
