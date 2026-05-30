@@ -151,6 +151,36 @@ class ImportEnglandWalesEpcCommandTest extends TestCase
             ->assertExitCode(1);
     }
 
+    public function test_it_imports_without_unique_lmk_key_constraint_when_table_is_reloaded_fresh(): void
+    {
+        Schema::table('epc_certificates', function ($table): void {
+            $table->dropUnique('uq_epc_certificates_lmk_key');
+        });
+
+        $directory = storage_path('framework/testing/england-wales-epc-no-unique-index');
+        if (! is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        file_put_contents(
+            $directory.'/certificates-2018.csv',
+            "certificate_number,postcode,lodgement_date\n".
+            "EW-2018-1,SW1A 9AA,2018-10-01\n"
+        );
+
+        $this->artisan("epc:import-ew {$directory}")
+            ->expectsOutputToContain('No unique index or constraint found on [epc_certificates.LMK_KEY]. Duplicate protection is disabled for this run.')
+            ->expectsOutputToContain(' - inserted 1 row(s)')
+            ->expectsOutputToContain(' - skipped existing 0 row(s)')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseHas('epc_certificates', [
+            'LMK_KEY' => 'EW-2018-1',
+            'POSTCODE' => 'SW1A 9AA',
+            'LODGEMENT_DATE' => '2018-10-01',
+        ]);
+    }
+
     public function test_scan_only_reports_union_and_writes_migration_stub_for_missing_columns(): void
     {
         $directory = storage_path('framework/testing/england-wales-epc-scan');

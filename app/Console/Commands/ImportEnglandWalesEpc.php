@@ -50,10 +50,9 @@ class ImportEnglandWalesEpc extends Command
             return self::FAILURE;
         }
 
-        if (! $this->hasUniqueLmkKeyIndex()) {
-            $this->error('A unique index or constraint on [epc_certificates.LMK_KEY] is required before importing.');
-
-            return self::FAILURE;
+        $hasUniqueLmkKeyIndex = $this->hasUniqueLmkKeyIndex();
+        if (! $hasUniqueLmkKeyIndex) {
+            $this->warn('No unique index or constraint found on [epc_certificates.LMK_KEY]. Duplicate protection is disabled for this run.');
         }
 
         foreach ($files as $file) {
@@ -127,7 +126,7 @@ class ImportEnglandWalesEpc extends Command
 
                 $batch[] = $record;
                 if (count($batch) >= $batchSize) {
-                    $insertedBatch = DB::table('epc_certificates')->insertOrIgnore($batch);
+                    $insertedBatch = $this->insertBatch($batch, $hasUniqueLmkKeyIndex);
                     $inserted += $insertedBatch;
                     $skippedExisting += count($batch) - $insertedBatch;
                     $batch = [];
@@ -137,7 +136,7 @@ class ImportEnglandWalesEpc extends Command
             fclose($fh);
 
             if (! empty($batch)) {
-                $insertedBatch = DB::table('epc_certificates')->insertOrIgnore($batch);
+                $insertedBatch = $this->insertBatch($batch, $hasUniqueLmkKeyIndex);
                 $inserted += $insertedBatch;
                 $skippedExisting += count($batch) - $insertedBatch;
             }
@@ -407,6 +406,20 @@ class ImportEnglandWalesEpc extends Command
     private function batchSize(int $columnCount): int
     {
         return max(1, min(500, intdiv(65000, max(1, $columnCount))));
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $batch
+     */
+    private function insertBatch(array $batch, bool $hasUniqueLmkKeyIndex): int
+    {
+        if ($hasUniqueLmkKeyIndex) {
+            return DB::table('epc_certificates')->insertOrIgnore($batch);
+        }
+
+        DB::table('epc_certificates')->insert($batch);
+
+        return count($batch);
     }
 
     /**
