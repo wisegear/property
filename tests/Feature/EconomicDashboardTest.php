@@ -180,4 +180,55 @@ class EconomicDashboardTest extends TestCase
         $response->assertSee('Dec 2025');
         $this->assertSame('Dec 2025', $response->viewData('hpiDateLabel'));
     }
+
+    public function test_repossessions_stays_red_when_rises_are_separated_by_flat_quarters(): void
+    {
+        DB::table('mlar_arrears')->insert([
+            [
+                'year' => 2024,
+                'quarter' => 'Q4',
+                'description' => 'In possession',
+                'value' => 0.060,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'year' => 2025,
+                'quarter' => 'Q1',
+                'description' => 'In possession',
+                'value' => 0.060,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'year' => 2025,
+                'quarter' => 'Q2',
+                'description' => 'In possession',
+                'value' => 0.070,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'year' => 2025,
+                'quarter' => 'Q3',
+                'description' => 'In possession',
+                'value' => 0.070,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'year' => 2025,
+                'quarter' => 'Q4',
+                'description' => 'In possession',
+                'value' => 0.080,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
+        $response = $this->get(route('economic.dashboard', absolute: false));
+
+        $response->assertOk();
+        $this->assertSame(2, $response->viewData('repossDirection'));
+    }
 }

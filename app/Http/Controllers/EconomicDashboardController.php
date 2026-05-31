@@ -306,39 +306,40 @@ class EconomicDashboardController extends Controller
             return 1;
         };
 
-        // Arrears direction score (quarterly series, higher = worse)
+        // Arrears direction score (quarterly series, higher = worse).
+        // Flat quarters preserve a worsening streak; only an actual improvement resets it.
         // 0 = green (not rising vs previous quarter)
-        // 1 = amber (one worsening quarter)
-        // 2 = red (two consecutive worsening quarters)
-        // 3 = dark red (three consecutive worsening quarters)
+        // 1 = amber (one worsening move since the last improvement)
+        // 2 = red (two worsening moves since the last improvement)
+        // 3 = dark red (three or more worsening moves since the last improvement)
         $arrearsDirectionScore = function (array $vals) {
             $n = count($vals);
             if ($n < 2) {
                 return 0;
             }
 
-            $latest = (float) $vals[$n - 1];
-            $prev1 = (float) $vals[$n - 2];
-            $prev2 = $n >= 3 ? (float) $vals[$n - 3] : null;
-            $prev3 = $n >= 4 ? (float) $vals[$n - 4] : null;
-
-            // If latest is not higher than previous, treat as green
-            if ($latest <= $prev1) {
+            if ((float) $vals[$n - 1] <= (float) $vals[$n - 2]) {
                 return 0;
             }
 
-            $hasTwoWorsening = $prev2 !== null && $prev1 > $prev2;
-            $hasThreeWorsening = $prev3 !== null && $prev2 !== null && $prev2 > $prev3;
+            $worseningMoves = 0;
 
-            if ($hasTwoWorsening && $hasThreeWorsening) {
-                return 3; // dark red: three consecutive worsening quarters
+            for ($i = $n - 1; $i >= 1; $i--) {
+                $current = (float) $vals[$i];
+                $previous = (float) $vals[$i - 1];
+
+                if ($current > $previous) {
+                    $worseningMoves++;
+
+                    continue;
+                }
+
+                if ($current < $previous) {
+                    break;
+                }
             }
 
-            if ($hasTwoWorsening) {
-                return 2; // red: two consecutive worsening quarters
-            }
-
-            return 1; // amber: one worsening quarter
+            return min($worseningMoves, 3);
         };
 
         // 1. Interest rate level
