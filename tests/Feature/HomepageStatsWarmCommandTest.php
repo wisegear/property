@@ -51,6 +51,49 @@ class HomepageStatsWarmCommandTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        DB::table('swap_rates')->insert([
+            [
+                'rate_date' => '2026-03-27',
+                'curve_type' => 'ois',
+                'term_years' => 2,
+                'rate' => 4.1000,
+                'daily_change' => -0.0200,
+                'source' => 'test',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'rate_date' => '2026-03-31',
+                'curve_type' => 'ois',
+                'term_years' => 2,
+                'rate' => 4.0700,
+                'daily_change' => -0.0390,
+                'source' => 'test',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'rate_date' => '2026-03-31',
+                'curve_type' => 'ois',
+                'term_years' => 5,
+                'rate' => 4.0900,
+                'daily_change' => -0.0330,
+                'source' => 'test',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'rate_date' => '2026-03-31',
+                'curve_type' => 'ois',
+                'term_years' => 10,
+                'rate' => 4.3800,
+                'daily_change' => 0.0450,
+                'source' => 'test',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
         DB::table('land_registry')->insert([
             ...$this->countySalesRows('LON', 12000000, '2025-08-15 00:00:00', 30, 'Belgrave Square', 'GREATER LONDON'),
             ...$this->countySalesRows('LONC', 14000000, '2025-11-15 00:00:00', 30, 'Belgrave Square', 'GREATER LONDON'),
@@ -89,13 +132,8 @@ class HomepageStatsWarmCommandTest extends TestCase
             ],
         ]);
 
-        Cache::put('top_sales:ultra', collect([(object) ['Price' => 999999]]), now()->addDays(45));
-        Cache::put('top_sales:london', collect([(object) ['Price' => 888888]]), now()->addDays(45));
-        Cache::put('top_sales:rest', collect([(object) ['Price' => 777777]]), now()->addDays(45));
-
         $this->artisan('home:stats-warm')
             ->expectsOutput('Warming homepage stats cache...')
-            ->expectsOutput('→ top_sales caches refreshed')
             ->expectsOutput('→ homepage_stats cached for 30 days')
             ->expectsOutput('→ homepage_panels cached for 30 days')
             ->expectsOutput('Homepage stats cache warmed successfully.')
@@ -119,13 +157,13 @@ class HomepageStatsWarmCommandTest extends TestCase
         $this->assertSame(2.5, $panels['homepageMarketMovements']['median_price_change_percent']);
         $this->assertSame(2, $panels['homepageMarketMovements']['rising_price_counties']);
         $this->assertSame(0, $panels['homepageMarketMovements']['declining_counties']);
-        $this->assertSame('Ultra Prime London', $panels['homepageTopSales'][0]['label']);
-        $this->assertSame(15000000, (int) $panels['homepageTopSales'][0]['sale']->Price);
-        $this->assertSame('Rest of UK', $panels['homepageTopSales'][2]['label']);
-        $this->assertSame(4200000, (int) $panels['homepageTopSales'][2]['sale']->Price);
-        $this->assertSame(15000000, (int) Cache::get('top_sales:ultra')->first()->Price);
-        $this->assertSame(4200000, (int) Cache::get('top_sales:rest')->first()->Price);
-        $this->assertNotNull(Cache::get('top_sales:last_warmed_at'));
+        $this->assertSame('2026-03-31', $panels['homepageSwapRates']['latestAvailableDate']->toDateString());
+        $this->assertSame('2Y Swap', $panels['homepageSwapRates']['rates'][0]['label']);
+        $this->assertSame(4.07, $panels['homepageSwapRates']['rates'][0]['rate']);
+        $this->assertSame(-3.9, $panels['homepageSwapRates']['rates'][0]['daily_change']);
+        $this->assertSame('10Y Swap', $panels['homepageSwapRates']['rates'][2]['label']);
+        $this->assertSame(4.38, $panels['homepageSwapRates']['rates'][2]['rate']);
+        $this->assertSame(4.5, $panels['homepageSwapRates']['rates'][2]['daily_change']);
     }
 
     /**

@@ -13,7 +13,7 @@ class ImageDimensionAttributesTest extends TestCase
             'stats' => [],
             'totalStress' => null,
             'homepageMarketMovements' => [],
-            'homepageTopSales' => [],
+            'homepageSwapRates' => ['latestAvailableDate' => null, 'rates' => []],
             'liveSignalsCount' => 0,
             'marketInsightsCount' => 0,
             'signalTypesCount' => 0,

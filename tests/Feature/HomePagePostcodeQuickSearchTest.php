@@ -22,7 +22,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
     }
 
-    public function test_home_page_shows_quick_postcode_search_above_market_stress_panel_and_keeps_top_sales_panel(): void
+    public function test_home_page_shows_quick_postcode_search_above_market_stress_panel_and_keeps_swap_rates_panel(): void
     {
         $view = $this->view('pages.home', [
             'posts' => collect(),
@@ -64,54 +64,12 @@ class HomePagePostcodeQuickSearchTest extends TestCase
                     ['county' => 'Bedfordshire', 'price_change_percent' => 4.9],
                 ]),
             ],
-            'homepageTopSales' => [
-                [
-                    'mode' => 'ultra',
-                    'label' => 'Ultra Prime London',
-                    'title' => 'Highest ultra-prime London sale',
-                    'sale' => (object) [
-                        'Price' => 14500000,
-                        'Date' => '2026-01-15 00:00:00',
-                        'PAON' => '1',
-                        'SAON' => null,
-                        'Street' => 'Belgrave Square',
-                        'TownCity' => 'London',
-                        'County' => 'GREATER LONDON',
-                        'Postcode' => 'SW1X 8PP',
-                        'property_slug' => 'sw1x-8pp-1-belgrave-square',
-                    ],
-                ],
-                [
-                    'mode' => 'london',
-                    'label' => 'Prime London',
-                    'title' => 'Highest prime London sale',
-                    'sale' => (object) [
-                        'Price' => 6500000,
-                        'Date' => '2026-01-12 00:00:00',
-                        'PAON' => '8',
-                        'SAON' => null,
-                        'Street' => 'Cheyne Walk',
-                        'TownCity' => 'London',
-                        'County' => 'GREATER LONDON',
-                        'Postcode' => 'SW3 5HL',
-                        'property_slug' => 'sw3-5hl-8-cheyne-walk',
-                    ],
-                ],
-                [
-                    'mode' => 'rest',
-                    'label' => 'Rest of UK',
-                    'title' => 'Highest rest-of-UK sale',
-                    'sale' => (object) [
-                        'Price' => 3800000,
-                        'Date' => '2026-01-10 00:00:00',
-                        'PAON' => '25',
-                        'SAON' => null,
-                        'Street' => 'Park Row',
-                        'TownCity' => 'Leeds',
-                        'County' => 'West Yorkshire',
-                        'Postcode' => 'LS1 5HD',
-                        'property_slug' => 'ls1-5hd-25-park-row',
-                    ],
+            'homepageSwapRates' => [
+                'latestAvailableDate' => Carbon::create(2026, 5, 28),
+                'rates' => [
+                    ['term' => 2, 'label' => '2Y Swap', 'rate' => 4.07, 'daily_change' => -3.9, 'rate_date' => Carbon::create(2026, 5, 28)],
+                    ['term' => 5, 'label' => '5Y Swap', 'rate' => 4.09, 'daily_change' => -3.3, 'rate_date' => Carbon::create(2026, 5, 28)],
+                    ['term' => 10, 'label' => '10Y Swap', 'rate' => 4.38, 'daily_change' => 4.5, 'rate_date' => Carbon::create(2026, 5, 28)],
                 ],
             ],
         ]);
@@ -133,23 +91,24 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertDontSee('animateValue', false);
         $view->assertDontSee('requestAnimationFrame', false);
         $view->assertDontSee('x-text=', false);
-        $view->assertSee('Top Property Sales');
-        $view->assertSee('Open Top Property Sales');
-        $view->assertSee(route('top-sales.index', absolute: false), false);
-        $view->assertSee('Ultra Prime London');
-        $view->assertSee('Prime London');
-        $view->assertSee('Rest of UK');
-        $view->assertDontSee('Highest ultra-prime London sale');
-        $view->assertDontSee('Highest prime London sale');
-        $view->assertDontSee('Highest rest-of-UK sale');
-        $view->assertSee('£14,500,000');
-        $view->assertSee('£6,500,000');
-        $view->assertSee('£3,800,000');
-        $view->assertSee('View Detail');
-        $view->assertSee('15 Jan 2026');
-        $view->assertDontSee('GREATER LONDON');
-        $view->assertDontSee('West Yorkshire');
-        $view->assertSee(route('property.show.slug', ['slug' => 'sw1x-8pp-1-belgrave-square'], false), false);
+        $view->assertSee('UK Swap Rates');
+        $view->assertSee('Explore Swap Rates');
+        $view->assertSee(route('insights.swap-rates', absolute: false), false);
+        $view->assertSee('Fixed mortgage pricing is heavily influenced by swap rates.');
+        $view->assertSee('Latest available date:');
+        $view->assertSee('28 May 2026');
+        $view->assertSee('2Y Swap');
+        $view->assertSee('5Y Swap');
+        $view->assertSee('10Y Swap');
+        $view->assertSee('4.07%');
+        $view->assertSee('4.09%');
+        $view->assertSee('4.38%');
+        $view->assertSee('-3.9 bps');
+        $view->assertSee('-3.3 bps');
+        $view->assertSee('+4.5 bps');
+        $view->assertDontSee('Most Expensive Property Sales');
+        $view->assertDontSee('The current highest sale in each top-sales segment');
+        $view->assertDontSee('Open Top Property Sales');
         $view->assertSee('UK Housing Market Snapshot');
         $view->assertSee('Market Condition:');
         $view->assertSee('Cooling');
@@ -205,7 +164,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'Property Records',
             'Overall Property MArket Stress Index',
             'UK Housing Market Snapshot',
-            'Top Property Sales',
+            'UK Swap Rates',
             'Signals Worth Watching',
         ]);
     }

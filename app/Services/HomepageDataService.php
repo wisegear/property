@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\MarketInsight;
+use App\Models\SwapRate;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -99,7 +100,10 @@ class HomepageDataService
      *         top_declining_counties:Collection<int, array{county:string,sales_change_percent:float}>,
      *         top_rising_price_counties:Collection<int, array{county:string,price_change_percent:float}>
      *     },
-     *     homepageTopSales:array<int, array{mode:string,label:string,title:string,sale:?object}>
+     *     homepageSwapRates:array{
+     *         latestAvailableDate:?Carbon,
+     *         rates:array<int, array{term:int,label:string,rate:?float,daily_change:?float,rate_date:?Carbon}>
+     *     }
      * }
      */
     public function homepagePanels(): array
@@ -107,7 +111,7 @@ class HomepageDataService
         return [
             ...$this->marketInsightsSummary(),
             'homepageMarketMovements' => $this->homepageMarketMovements(),
-            'homepageTopSales' => $this->homepageTopSales(),
+            'homepageSwapRates' => $this->homepageSwapRates(),
         ];
     }
 
@@ -370,30 +374,51 @@ class HomepageDataService
     }
 
     /**
-     * @return array<int, array{mode:string,label:string,title:string,sale:?object}>
+     * @return array{
+     *     latestAvailableDate:?Carbon,
+     *     rates:array<int, array{term:int,label:string,rate:?float,daily_change:?float,rate_date:?Carbon}>
+     * }
      */
-    public function homepageTopSales(): array
+    public function homepageSwapRates(): array
     {
-        if (! Schema::hasTable('land_registry')) {
+        if (! Schema::hasTable('swap_rates')) {
             return [
-                ['mode' => 'ultra', 'label' => 'Ultra Prime London', 'title' => 'Highest ultra-prime London sale', 'sale' => null],
-                ['mode' => 'london', 'label' => 'Prime London', 'title' => 'Highest prime London sale', 'sale' => null],
-                ['mode' => 'rest', 'label' => 'Rest of UK', 'title' => 'Highest rest-of-UK sale', 'sale' => null],
+                'latestAvailableDate' => null,
+                'rates' => [],
             ];
         }
 
-        return collect([
-            'ultra' => ['label' => 'Ultra Prime London', 'title' => 'Highest ultra-prime London sale'],
-            'london' => ['label' => 'Prime London', 'title' => 'Highest prime London sale'],
-            'rest' => ['label' => 'Rest of UK', 'title' => 'Highest rest-of-UK sale'],
-        ])->map(function (array $config, string $mode): array {
-            return [
-                'mode' => $mode,
-                'label' => $config['label'],
-                'title' => $config['title'],
-                'sale' => $this->topSalesService->cachedSales($mode)->first(),
-            ];
-        })->values()->all();
+        $terms = [2, 5, 10];
+        $latestRates = SwapRate::query()
+            ->where('curve_type', 'ois')
+            ->whereIn('term_years', $terms)
+            ->orderBy('rate_date')
+            ->get()
+            ->groupBy('term_years')
+            ->map(fn (Collection $series): ?SwapRate => $series->last());
+
+        $latestAvailableDate = $latestRates
+            ->filter()
+            ->map(fn (SwapRate $rate): string => $rate->rate_date->toDateString())
+            ->sort()
+            ->last();
+
+        return [
+            'latestAvailableDate' => $latestAvailableDate === null ? null : Carbon::parse($latestAvailableDate),
+            'rates' => collect($terms)->map(function (int $termYears) use ($latestRates): array {
+                $latestRate = $latestRates->get($termYears);
+
+                return [
+                    'term' => $termYears,
+                    'label' => $termYears.'Y Swap',
+                    'rate' => $latestRate === null ? null : round((float) $latestRate->rate, 4),
+                    'daily_change' => $latestRate === null || $latestRate->daily_change === null
+                        ? null
+                        : round((float) $latestRate->daily_change * 100, 1),
+                    'rate_date' => $latestRate?->rate_date,
+                ];
+            })->all(),
+        ];
     }
 
     /**

@@ -294,48 +294,48 @@
             <div class="flex h-full flex-col gap-4">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                        <h2 class="text-lg font-semibold text-zinc-900">Most Expensive Property Sales</h2>
+                        <h2 class="text-lg font-semibold text-zinc-900">UK Swap Rates</h2>
                         <p class="mt-1 max-w-3xl text-sm text-zinc-600">
-                            The current highest sale in each top-sales segment, from ultra-prime London to the strongest rest-of-UK outlier.
+                            Fixed mortgage pricing is heavily influenced by swap rates.
                         </p>
+                    </div>
+                    <div class="text-sm text-zinc-500">
+                        Latest available date:
+                        {{ ($homepageSwapRates['latestAvailableDate'] ?? null) instanceof \Carbon\CarbonInterface ? $homepageSwapRates['latestAvailableDate']->format('d M Y') : 'No data available' }}
                     </div>
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    @foreach (($homepageTopSales ?? []) as $summary)
-                        @php
-                            $sale = $summary['sale'];
-                            $saleAddress = $sale
-                                ? collect([
-                                    $sale->PAON ?? null,
-                                    $sale->SAON ?? null,
-                                    $sale->Street ?? null,
-                                ])->filter()->implode(', ')
-                                : null;
-                        @endphp
-
+                    @foreach (($homepageSwapRates['rates'] ?? []) as $rate)
                         <article class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">{{ $summary['label'] }}</p>
+                            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">{{ $rate['label'] }}</p>
+                            <p class="mt-3 text-lg font-semibold text-zinc-900">
+                                {{ $rate['rate'] === null ? '—' : number_format((float) $rate['rate'], 2).'%' }}
+                            </p>
+                            @php
+                                $dailyChange = $rate['daily_change'] ?? null;
+                                $dailyChangeClass = 'text-zinc-900';
 
-                            @if ($sale)
-                                <p class="mt-3 text-lg font-semibold text-zinc-900">£{{ number_format((int) ($sale->Price ?? 0)) }}</p>
-                                <a href="{{ route('property.show.slug', ['slug' => $sale->property_slug], false) }}"
-                                   class="mt-2 block text-sm font-medium text-lime-700 hover:underline">
-                                    View Detail
-                                </a>
-                                <p class="mt-1 text-xs text-zinc-500">
-                                    {{ $sale->Date ? \Illuminate\Support\Carbon::parse($sale->Date)->format('d M Y') : 'Unknown date' }}
-                                </p>
-                            @else
-                                <p class="mt-3 text-sm text-zinc-500">No qualifying sale is cached for this segment yet.</p>
-                            @endif
+                                if ($dailyChange !== null && $dailyChange < 0) {
+                                    $dailyChangeClass = 'text-emerald-600';
+                                } elseif ($dailyChange !== null && $dailyChange > 0) {
+                                    $dailyChangeClass = 'text-rose-600';
+                                }
+                            @endphp
+                            <p class="mt-2 text-sm font-medium {{ $dailyChangeClass }}">
+                                @if ($dailyChange === null)
+                                    —
+                                @else
+                                    {{ $dailyChange > 0 ? '+' : '' }}{{ number_format((float) $dailyChange, 1) }} bps
+                                @endif
+                            </p>
                         </article>
                     @endforeach
                 </div>
 
-                <a href="{{ route('top-sales.index') }}"
+                <a href="{{ route('insights.swap-rates') }}"
                    class="inline-flex items-center gap-2 pt-1 text-sm font-medium text-lime-700 hover:underline sm:mt-auto sm:ml-auto">
-                    Open Top Property Sales
+                    Explore Swap Rates
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                     </svg>
