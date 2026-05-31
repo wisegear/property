@@ -35,6 +35,7 @@ class ChartJsLoadingStrategyTest extends TestCase
             'insights/dashboard.blade.php',
             'insights/crime/index.blade.php',
             'insights/crime/show.blade.php',
+            'insights/swap-rates.blade.php',
         ];
 
         foreach ($chartViews as $chartView) {

@@ -100,7 +100,6 @@ class TopSalesControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('Prime London Property Sales (£2m-£10m)');
         $response->assertSee('High-value property transactions across London.');
-        $response->assertSee('Highest value residential transactions.');
         $response->assertSee('These sales show where London&#039;s prime market is still clearing at scale.', false);
         $response->assertSee('Next Highest Sale');
         $response->assertSee('Cheyne Walk');

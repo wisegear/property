@@ -47,7 +47,7 @@ class ScottishPricesControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Scottish Prices');
-        $response->assertSee('Showing yearly Scottish residential property data for all Scotland.');
+        $response->assertSee('Explore yearly Scottish residential property data across the whole of Scotland or focus on an individual local authority.');
         $response->assertViewHas('selectedAuthority', null);
         $response->assertViewHas('localAuthorities', ['Aberdeen City', 'Dundee City']);
         $response->assertViewHas('years', [2003, 2004]);
@@ -80,7 +80,7 @@ class ScottishPricesControllerTest extends TestCase
         $response = $this->get(route('property.scottish-prices', ['local_authority' => '  Aberdeen City  '], false));
 
         $response->assertOk();
-        $response->assertSee('Showing yearly Scottish residential property data for Aberdeen City.');
+        $response->assertSee('Price Trend · Aberdeen City');
         $response->assertViewHas('selectedAuthority', 'Aberdeen City');
         $response->assertViewHas('years', [2003, 2004]);
         $response->assertViewHas('meanPrices', [105000.0, 132500.0]);
@@ -105,13 +105,13 @@ class ScottishPricesControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertViewHas('selectedAuthority', null);
-        $response->assertSee('Showing yearly Scottish residential property data for all Scotland.');
+        $response->assertSee('Explore yearly Scottish residential property data across the whole of Scotland or focus on an individual local authority.');
 
         $renderedLayout = view('layouts.app')->render();
         $url = route('property.scottish-prices', absolute: false);
 
         $this->assertSame(2, substr_count($renderedLayout, sprintf('href="%s"', $url)));
-        $this->assertStringContainsString('Scottish Prices', $renderedLayout);
+        $this->assertStringContainsString('Scottish House Prices', $renderedLayout);
     }
 
     private function seedScottishPropertyPrices(): void

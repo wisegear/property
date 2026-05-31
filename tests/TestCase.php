@@ -11,6 +11,10 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        if (! is_string(config('app.key')) || config('app.key') === '') {
+            config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+        }
+
         $db = config('database.connections.pgsql.database');
 
         if ($db === 'prop') {

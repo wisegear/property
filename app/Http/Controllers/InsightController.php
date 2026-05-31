@@ -282,9 +282,15 @@ class InsightController extends Controller
             ->whereRaw($this->normalizedPostcodeExpression()." LIKE (? || '%')", [$sector])
             ->whereBetween('Date', [$start->toDateString(), $end->toDateString()]);
 
-        $medianPrice = DB::connection()->getDriverName() === 'pgsql'
-            ? $query->selectRaw('PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "Price") as median_price')->value('median_price')
-            : $query->selectRaw('AVG("Price") as median_price')->value('median_price');
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return $this->medianFromValues(
+                $query->orderBy('Price')->pluck('Price')->map(fn ($price): float => (float) $price)
+            );
+        }
+
+        $medianPrice = $query
+            ->selectRaw('PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "Price") as median_price')
+            ->value('median_price');
 
         return is_numeric($medianPrice) ? (float) $medianPrice : null;
     }
@@ -454,7 +460,12 @@ class InsightController extends Controller
             ->selectRaw('COUNT(DISTINCT '.$monthExpression.') as month_count')
             ->value('month_count');
 
-        if ((int) $monthCount < 12) {
+        $yearCount = (int) DB::table('land_registry')
+            ->whereNotNull('Date')
+            ->selectRaw('COUNT(DISTINCT '.$yearExpression.') as year_count')
+            ->value('year_count');
+
+        if ((int) $monthCount < 12 && $yearCount > 1) {
             $this->excludedHistoricalYearResolved = true;
 
             return $this->excludedHistoricalYearCache = $latestYear;
@@ -536,11 +547,26 @@ class InsightController extends Controller
                     ->get();
             } else {
                 $rows = $query
-                    ->selectRaw($yearExpression.' as year, COUNT(*) as sales, AVG("Price") as median_price')
+                    ->selectRaw($yearExpression.' as year, "Price" as price')
                     ->whereNotNull('Price')
-                    ->groupBy(DB::raw($yearExpression))
                     ->orderBy('year')
                     ->get();
+            }
+
+            if (DB::connection()->getDriverName() !== 'pgsql') {
+                return collect($rows)
+                    ->groupBy(fn (object $row): int => (int) $row->year)
+                    ->map(function (Collection $group, int $year): array {
+                        return [
+                            'year' => $year,
+                            'sales' => $group->count(),
+                            'median_price' => $this->medianFromValues(
+                                $group->pluck('price')->map(fn ($price): float => (float) $price)->sort()->values()
+                            ),
+                        ];
+                    })
+                    ->sortBy('year')
+                    ->values();
             }
 
             return collect($rows)->map(function (object $row): array {
@@ -551,5 +577,24 @@ class InsightController extends Controller
                 ];
             })->values();
         });
+    }
+
+    private function medianFromValues(Collection $values): ?float
+    {
+        $values = $values->filter(fn ($value): bool => is_numeric($value))->map(fn ($value): float => (float) $value)->sort()->values();
+
+        $count = $values->count();
+
+        if ($count === 0) {
+            return null;
+        }
+
+        $middleIndex = intdiv($count, 2);
+
+        if ($count % 2 === 1) {
+            return (float) $values->get($middleIndex);
+        }
+
+        return ((float) $values->get($middleIndex - 1) + (float) $values->get($middleIndex)) / 2;
     }
 }

@@ -41,4 +41,9 @@ return [
         'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
     ],
 
+    'boe' => [
+        'yield_curve_latest_zip_url' => env('BOE_YIELD_CURVE_LATEST_ZIP_URL', 'https://www.bankofengland.co.uk/-/media/boe/files/statistics/yield-curves/latest-yield-curve-data.zip'),
+        'yield_curve_ois_archive_zip_url' => env('BOE_YIELD_CURVE_OIS_ARCHIVE_ZIP_URL', 'https://www.bankofengland.co.uk/-/media/boe/files/statistics/yield-curves/oisddata.zip'),
+    ],
+
 ];

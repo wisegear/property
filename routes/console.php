@@ -18,6 +18,7 @@ Artisan::command('inspire', function () {
 
 // Sitemap
 Schedule::command('sitemap:generate')->dailyAt('01:10');
+Schedule::command('swaps:import-boe')->weekdays()->at('13:00');
 
 // Spatie Backups
 

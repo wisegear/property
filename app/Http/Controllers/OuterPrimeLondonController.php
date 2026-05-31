@@ -64,8 +64,8 @@ class OuterPrimeLondonController extends Controller
     private function baseAllDistrictsQuery(): Builder
     {
         return DB::table('land_registry')
-            ->join(DB::raw("(SELECT DISTINCT postcode FROM prime_postcodes WHERE category = '".self::CATEGORY."') as pp"), function ($join) {
-                $join->on(DB::raw($this->normalizedPostcodeExpression()), 'LIKE', DB::raw("(pp.postcode || '%')"));
+            ->join(DB::raw("(SELECT DISTINCT postcode as match_postcode FROM prime_postcodes WHERE category = '".self::CATEGORY."') as pp"), function ($join) {
+                $join->on(DB::raw("REPLACE(land_registry.Postcode, ' ', '')"), 'LIKE', DB::raw("(pp.match_postcode || '%')"));
             })
             ->where('PPDCategoryType', 'A');
     }

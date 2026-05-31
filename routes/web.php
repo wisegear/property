@@ -1,20 +1,26 @@
 <?php
 
 use App\Http\Controllers\Admin\DataUpdateController;
+use App\Http\Controllers\AdminArrearsController;
 use App\Http\Controllers\AdminBlogController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminInflationController;
+use App\Http\Controllers\AdminInterestRateController;
+use App\Http\Controllers\AdminMortgageApprovalController;
 use App\Http\Controllers\AdminPostCodesController;
 use App\Http\Controllers\AdminSupportController;
 use App\Http\Controllers\AdminUnemploymentController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AdminWageGrowthController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CommentsController;
 use App\Http\Controllers\CrimeController;
 use App\Http\Controllers\DeprivationController;
+use App\Http\Controllers\EconomicDashboardController;
 use App\Http\Controllers\EpcController;
 use App\Http\Controllers\EpcPostcodeController;
 use App\Http\Controllers\HpiDashboardController;
+use App\Http\Controllers\InflationController;
 use App\Http\Controllers\InsightController;
 use App\Http\Controllers\InsightsController;
 use App\Http\Controllers\InsightsDashboardController;
@@ -31,15 +37,17 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PropertyAreaController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\RentalController;
+// 3rd Party packages
+
 use App\Http\Controllers\RepossessionsController;
 use App\Http\Controllers\ScottishPricesController;
 use App\Http\Controllers\StampDutyController;
 use App\Http\Controllers\SupportController;
+use App\Http\Controllers\SwapRateController;
 use App\Http\Controllers\TopSalesController;
-// 3rd Party packages
-
 use App\Http\Controllers\UltraLondonController;
 use App\Http\Controllers\UnemploymentController;
+use App\Http\Controllers\WageGrowthController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
@@ -71,8 +79,8 @@ Route::get('/epc/points_scotland', [EpcController::class, 'pointsScotland'])->na
 Route::get('/epc/postcode/{postcode}', [EpcPostcodeController::class, 'englandWales'])->where('postcode', '[A-Z0-9\-]+');
 Route::get('/epc/scotland/postcode/{postcode}', [EpcPostcodeController::class, 'scotland'])->where('postcode', '[A-Z0-9\-]+');
 // routes/web.php
-Route::get('/epc/search_scotland', [\App\Http\Controllers\EpcController::class, 'searchScotland'])->name('epc.search_scotland');
-Route::get('/epc/scotland/{rrn}', [\App\Http\Controllers\EpcController::class, 'showScotland'])->name('epc.scotland.show');
+Route::get('/epc/search_scotland', [EpcController::class, 'searchScotland'])->name('epc.search_scotland');
+Route::get('/epc/scotland/{rrn}', [EpcController::class, 'showScotland'])->name('epc.scotland.show');
 Route::get('/epc/{lmk}', [EpcController::class, 'show'])->name('epc.show');
 Route::get('/hpi', [HpiDashboardController::class, 'index'])->name('hpi.home');
 Route::get('/rental', [RentalController::class, 'index'])->name('rental.index');
@@ -89,10 +97,10 @@ Route::post('/stamp-duty/calc', [StampDutyController::class, 'calculate']);
 
 Route::get('/interest-rates', [InterestRateController::class, 'home'])->name('interest.home');
 Route::get('/unemployment', [UnemploymentController::class, 'index'])->name('unemployment.home');
-Route::get('/inflation', [\App\Http\Controllers\InflationController::class, 'index'])->name('inflation.home');
-Route::get('/wage-growth', [\App\Http\Controllers\WageGrowthController::class, 'index'])->name('wagegrowth.home');
+Route::get('/inflation', [InflationController::class, 'index'])->name('inflation.home');
+Route::get('/wage-growth', [WageGrowthController::class, 'index'])->name('wagegrowth.home');
 Route::get('/hpi-overview', [HpiDashboardController::class, 'overview'])->name('hpi.overview');
-Route::get('/economic-dashboard', [\App\Http\Controllers\EconomicDashboardController::class, 'index'])->name('economic.dashboard');
+Route::get('/economic-dashboard', [EconomicDashboardController::class, 'index'])->name('economic.dashboard');
 Route::get('/approvals', [MortgageApprovalController::class, 'home'])->name('mortgages.home');
 Route::get('/repossessions/local-authority/{slug}', [RepossessionsController::class, 'localAuthority'])->name('repossessions.local-authority');
 Route::get('/repossessions', [RepossessionsController::class, 'index'])->name('repossessions.index');
@@ -102,6 +110,7 @@ Route::get('/insights/search', [InsightsController::class, 'search'])->name('ins
 Route::get('/insights/dashboard', [InsightsDashboardController::class, 'index'])->name('insights.dashboard');
 Route::get('/insights/crime', [CrimeController::class, 'index'])->name('insights.crime.index');
 Route::get('/insights/crime/{area}', [CrimeController::class, 'show'])->name('insights.crime.show');
+Route::get('/insights/swap-rates', [SwapRateController::class, 'index'])->name('insights.swap-rates');
 Route::get('/top-property-sales', [TopSalesController::class, 'index'])->name('top-sales.index');
 Route::get('/insights/{sector}', [InsightController::class, 'show'])
     ->where('sector', '[A-Za-z0-9]+')
@@ -113,7 +122,7 @@ Route::get('/social-housing-england', [LocalAuthorityController::class, 'england
 // Deprivation Routes
 Route::get('/deprivation', [DeprivationController::class, 'index'])->name('deprivation.index');
 Route::get('/deprivation/{lsoa21cd}', [DeprivationController::class, 'show'])->name('deprivation.show');
-Route::get('/deprivation/scotland/{dz}', [\App\Http\Controllers\DeprivationController::class, 'showScotland'])->name('deprivation.scot.show');
+Route::get('/deprivation/scotland/{dz}', [DeprivationController::class, 'showScotland'])->name('deprivation.scot.show');
 Route::get('/deprivation/wales/{lsoa}', [DeprivationController::class, 'showWales'])->name('deprivation.wales.show');
 Route::get('/deprivation/northern-ireland/{sa}', [DeprivationController::class, 'showNorthernIreland'])->name('deprivation.ni.show');
 
@@ -168,26 +177,26 @@ Route::middleware('auth')->group(function () {
             Route::post('/unemployment', [AdminUnemploymentController::class, 'store'])->name('unemployment.store');
             Route::delete('/unemployment/{id}', [AdminUnemploymentController::class, 'destroy'])->name('unemployment.destroy');
             // Wage Growth (admin)
-            Route::get('/wage-growth', [\App\Http\Controllers\AdminWageGrowthController::class, 'index'])->name('wagegrowth.index');
-            Route::post('/wage-growth/add', [\App\Http\Controllers\AdminWageGrowthController::class, 'add'])->name('wagegrowth.add');
-            Route::post('/wage-growth', [\App\Http\Controllers\AdminWageGrowthController::class, 'store'])->name('wagegrowth.store');
-            Route::delete('/wage-growth/{id}', [\App\Http\Controllers\AdminWageGrowthController::class, 'destroy'])->name('wagegrowth.destroy');
+            Route::get('/wage-growth', [AdminWageGrowthController::class, 'index'])->name('wagegrowth.index');
+            Route::post('/wage-growth/add', [AdminWageGrowthController::class, 'add'])->name('wagegrowth.add');
+            Route::post('/wage-growth', [AdminWageGrowthController::class, 'store'])->name('wagegrowth.store');
+            Route::delete('/wage-growth/{id}', [AdminWageGrowthController::class, 'destroy'])->name('wagegrowth.destroy');
             // Interest Rates (admin)
-            Route::get('/interest-rates', [\App\Http\Controllers\AdminInterestRateController::class, 'index'])->name('interestrates.index');
-            Route::post('/interest-rates/add', [\App\Http\Controllers\AdminInterestRateController::class, 'add'])->name('interestrates.add');
-            Route::post('/interest-rates', [\App\Http\Controllers\AdminInterestRateController::class, 'store'])->name('interestrates.store');
-            Route::delete('/interest-rates/{id}', [\App\Http\Controllers\AdminInterestRateController::class, 'destroy'])->name('interestrates.destroy');
+            Route::get('/interest-rates', [AdminInterestRateController::class, 'index'])->name('interestrates.index');
+            Route::post('/interest-rates/add', [AdminInterestRateController::class, 'add'])->name('interestrates.add');
+            Route::post('/interest-rates', [AdminInterestRateController::class, 'store'])->name('interestrates.store');
+            Route::delete('/interest-rates/{id}', [AdminInterestRateController::class, 'destroy'])->name('interestrates.destroy');
             // Arrears (admin)
-            Route::get('/arrears', [\App\Http\Controllers\AdminArrearsController::class, 'index'])->name('arrears.index');
-            Route::post('/arrears/add', [\App\Http\Controllers\AdminArrearsController::class, 'add'])->name('arrears.add');
-            Route::post('/arrears', [\App\Http\Controllers\AdminArrearsController::class, 'store'])->name('arrears.store');
-            Route::delete('/arrears/{id}', [\App\Http\Controllers\AdminArrearsController::class, 'destroy'])->name('arrears.destroy');
+            Route::get('/arrears', [AdminArrearsController::class, 'index'])->name('arrears.index');
+            Route::post('/arrears/add', [AdminArrearsController::class, 'add'])->name('arrears.add');
+            Route::post('/arrears', [AdminArrearsController::class, 'store'])->name('arrears.store');
+            Route::delete('/arrears/{id}', [AdminArrearsController::class, 'destroy'])->name('arrears.destroy');
 
             // Mortgage Approvals (admin)
-            Route::get('/approvals', [\App\Http\Controllers\AdminMortgageApprovalController::class, 'index'])->name('approvals.index');
-            Route::post('/approvals/add', [\App\Http\Controllers\AdminMortgageApprovalController::class, 'add'])->name('approvals.add');
-            Route::post('/approvals', [\App\Http\Controllers\AdminMortgageApprovalController::class, 'store'])->name('approvals.store');
-            Route::delete('/approvals/{id}', [\App\Http\Controllers\AdminMortgageApprovalController::class, 'destroy'])->name('approvals.destroy');
+            Route::get('/approvals', [AdminMortgageApprovalController::class, 'index'])->name('approvals.index');
+            Route::post('/approvals/add', [AdminMortgageApprovalController::class, 'add'])->name('approvals.add');
+            Route::post('/approvals', [AdminMortgageApprovalController::class, 'store'])->name('approvals.store');
+            Route::delete('/approvals/{id}', [AdminMortgageApprovalController::class, 'destroy'])->name('approvals.destroy');
         });
 
     // Logout route to clear session.

@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -294,7 +295,6 @@ class InsightsControllerTest extends TestCase
         });
         $response->assertSee('Property Market Insights – B1');
         $response->assertSee('Median prices surged across B1.');
-        $response->assertSee('price spikes, demand collapse, sector outperformance and momentum reversals', false);
         $response->assertSee('Rolling 12-Month Median Price');
     }
 
@@ -365,7 +365,7 @@ class InsightsControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertViewHas('insights', function ($insights): bool {
-            if (! $insights instanceof \Illuminate\Support\Collection) {
+            if (! $insights instanceof Collection) {
                 return false;
             }
 

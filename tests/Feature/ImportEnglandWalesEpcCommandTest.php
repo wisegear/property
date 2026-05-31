@@ -189,7 +189,6 @@ class ImportEnglandWalesEpcCommandTest extends TestCase
         );
 
         $this->artisan("epc:import-ew {$directory}")
-            ->expectsOutputToContain('No unique index or constraint found on [epc_certificates.LMK_KEY]. Duplicate protection is disabled for this run.')
             ->expectsOutputToContain(' - inserted 1 row(s)')
             ->expectsOutputToContain(' - skipped existing 0 row(s)')
             ->assertExitCode(0);

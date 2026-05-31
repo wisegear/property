@@ -51,15 +51,12 @@ class ImportEnglandWalesEpc extends Command
             return self::FAILURE;
         }
 
-        $hasUniqueLmkKeyIndex = $this->hasUniqueLmkKeyIndex();
-        if (! $hasUniqueLmkKeyIndex) {
-            $this->warn('No unique index or constraint found on [epc_certificates.LMK_KEY]. Duplicate protection is disabled for this run.');
-        }
-
         $isPostgres = DB::connection()->getDriverName() === 'pgsql';
 
         foreach ($files as $file) {
-            $header = $this->readHeaderDetails($file, array_keys($normalizedTableCols));
+            $header = $isPostgres
+                ? $this->readPostgresCopyHeader($file)
+                : $this->readHeaderDetails($file, array_keys($normalizedTableCols));
             if ($header === null) {
                 return self::FAILURE;
             }
@@ -104,8 +101,8 @@ class ImportEnglandWalesEpc extends Command
             $base = basename($file);
             $this->info("Importing {$base}...");
             $stats = $isPostgres
-                ? $this->importFileWithPostgresCopy($fh, $header['dataStartsAtRow'], $base, $columnMap, $hasUniqueLmkKeyIndex)
-                : $this->importFileWithBatchInserts($fh, $header['dataStartsAtRow'], $base, $columnMap, $hasUniqueLmkKeyIndex);
+                ? $this->importFileWithPostgresCopy($fh, $base, $columnMap)
+                : $this->importFileWithBatchInserts($fh, $header['dataStartsAtRow'], $base, $columnMap, $this->hasUniqueLmkKeyIndex());
 
             fclose($fh);
 
@@ -242,6 +239,33 @@ class ImportEnglandWalesEpc extends Command
         for ($index = 0; $index < $rows; $index++) {
             fgetcsv($handle);
         }
+    }
+
+    /**
+     * @return array{columns: array<int, string>, dataStartsAtRow: int}|null
+     */
+    private function readPostgresCopyHeader(string $file): ?array
+    {
+        $fh = fopen($file, 'r');
+        if ($fh === false) {
+            $this->warn("Cannot open: {$file}");
+
+            return null;
+        }
+
+        $firstRow = fgetcsv($fh);
+        fclose($fh);
+
+        if ($firstRow === false || $firstRow === [null] || $firstRow === []) {
+            $this->warn("No header in: {$file}");
+
+            return null;
+        }
+
+        return [
+            'columns' => $this->normalizeHeaderRow($firstRow),
+            'dataStartsAtRow' => 2,
+        ];
     }
 
     /**
@@ -445,21 +469,8 @@ class ImportEnglandWalesEpc extends Command
      * @param  array<int, string>  $columnMap
      * @return array{inserted: int, processed: int, skippedExisting: int, skippedMissingLmkKey: int}|null
      */
-    private function importFileWithPostgresCopy($handle, int $dataStartsAtRow, string $base, array $columnMap, bool $hasUniqueLmkKeyIndex): ?array
+    private function importFileWithPostgresCopy($handle, string $base, array $columnMap): ?array
     {
-        if ($dataStartsAtRow !== 2) {
-            $this->error("Fast PostgreSQL COPY mode requires a single CSV header row in {$base}.");
-
-            return null;
-        }
-
-        $unrecognisedColumns = [];
-        foreach ($columnMap as $index => $column) {
-            if ($column === '') {
-                $unrecognisedColumns[] = (string) $index;
-            }
-        }
-
         $copyColumns = [];
         foreach ($columnMap as $targetColumn) {
             $copyColumns[] = '"'.str_replace('"', '""', $targetColumn).'"';
