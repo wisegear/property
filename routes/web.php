@@ -174,11 +174,13 @@ Route::middleware('auth')->group(function () {
             // Unemployment
             Route::get('/unemployment', [AdminUnemploymentController::class, 'index'])->name('unemployment.index');
             Route::post('/unemployment/add', [AdminUnemploymentController::class, 'add'])->name('unemployment.add');
+            Route::post('/unemployment/import', [AdminUnemploymentController::class, 'import'])->name('unemployment.import');
             Route::post('/unemployment', [AdminUnemploymentController::class, 'store'])->name('unemployment.store');
             Route::delete('/unemployment/{id}', [AdminUnemploymentController::class, 'destroy'])->name('unemployment.destroy');
             // Wage Growth (admin)
             Route::get('/wage-growth', [AdminWageGrowthController::class, 'index'])->name('wagegrowth.index');
             Route::post('/wage-growth/add', [AdminWageGrowthController::class, 'add'])->name('wagegrowth.add');
+            Route::post('/wage-growth/import', [AdminWageGrowthController::class, 'import'])->name('wagegrowth.import');
             Route::post('/wage-growth', [AdminWageGrowthController::class, 'store'])->name('wagegrowth.store');
             Route::delete('/wage-growth/{id}', [AdminWageGrowthController::class, 'destroy'])->name('wagegrowth.destroy');
             // Interest Rates (admin)
@@ -189,12 +191,14 @@ Route::middleware('auth')->group(function () {
             // Arrears (admin)
             Route::get('/arrears', [AdminArrearsController::class, 'index'])->name('arrears.index');
             Route::post('/arrears/add', [AdminArrearsController::class, 'add'])->name('arrears.add');
+            Route::post('/arrears/import', [AdminArrearsController::class, 'import'])->name('arrears.import');
             Route::post('/arrears', [AdminArrearsController::class, 'store'])->name('arrears.store');
             Route::delete('/arrears/{id}', [AdminArrearsController::class, 'destroy'])->name('arrears.destroy');
 
             // Mortgage Approvals (admin)
             Route::get('/approvals', [AdminMortgageApprovalController::class, 'index'])->name('approvals.index');
             Route::post('/approvals/add', [AdminMortgageApprovalController::class, 'add'])->name('approvals.add');
+            Route::post('/approvals/import', [AdminMortgageApprovalController::class, 'import'])->name('approvals.import');
             Route::post('/approvals', [AdminMortgageApprovalController::class, 'store'])->name('approvals.store');
             Route::delete('/approvals/{id}', [AdminMortgageApprovalController::class, 'destroy'])->name('approvals.destroy');
         });

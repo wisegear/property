@@ -12,7 +12,6 @@ class WageGrowthHeroImageTest extends TestCase
         $all = collect([
             (object) [
                 'date' => Carbon::parse('2025-01-01'),
-                'single_month_yoy' => 4.1,
                 'three_month_avg_yoy' => 3.9,
             ],
         ]);
@@ -22,7 +21,6 @@ class WageGrowthHeroImageTest extends TestCase
             'latest' => $all->last(),
             'previous' => null,
             'labels' => ['2025-01-01'],
-            'values_single' => [4.1],
             'values_three' => [3.9],
         ]);
 

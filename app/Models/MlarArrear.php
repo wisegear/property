@@ -14,7 +14,6 @@ class MlarArrear extends Model
     ];
 
     protected $fillable = [
-        'band',
         'description',
         'year',
         'quarter',

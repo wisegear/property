@@ -12,7 +12,9 @@ class UnemploymentHeroImageTest extends TestCase
         $series = collect([
             (object) [
                 'date' => Carbon::parse('2025-01-01'),
-                'rate' => 4.3,
+                'single_month' => 2938,
+                'single' => 4.4,
+                'three_month' => 4.3,
             ],
         ]);
 

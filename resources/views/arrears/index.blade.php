@@ -150,10 +150,10 @@
             </p>
 
             <div class="space-y-6">
-                @foreach($seriesByBand as $bandKey => $series)
+                @foreach($seriesByDescription as $descriptionKey => $series)
                     @php
                         /** @var \Illuminate\Support\Collection $series */
-                        $bandDescription = $bands[$bandKey]->description ?? $bandKey;
+                        $bandDescription = $descriptions[$descriptionKey]->description ?? $descriptionKey;
                         $isRepossession = \Illuminate\Support\Str::contains(strtolower($bandDescription), 'repossess');
                     @endphp
 
@@ -210,9 +210,9 @@
     $chartDatasets = [];
 @endphp
 
-@foreach($seriesByBand as $bandKey => $series)
+@foreach($seriesByDescription as $descriptionKey => $series)
     @php
-        $bandDescription = $bands[$bandKey]->description ?? $bandKey;
+        $bandDescription = $descriptions[$descriptionKey]->description ?? $descriptionKey;
         $isRepossession = \Illuminate\Support\Str::contains(strtolower($bandDescription), 'repossess');
     @endphp
 

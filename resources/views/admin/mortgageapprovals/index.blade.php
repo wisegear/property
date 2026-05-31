@@ -15,6 +15,22 @@
 
     <div class="bg-white p-6 rounded shadow mb-6">
 
+        <h2 class="text-lg font-semibold mb-3">Import CSV</h2>
+        <p class="text-sm text-zinc-600 mb-4">Upload the Bank of England approvals CSV with the series codes across the top, such as <span class="font-medium">Date,LPMB3C8,LPMB4B3,LPMB4B4,LPMVTVX</span>. Dates like <span class="font-medium">31-Mar-26</span> are converted to the first day of that month automatically.</p>
+
+        <form action="{{ route('admin.approvals.import') }}" method="POST" enctype="multipart/form-data" class="mb-6 grid grid-cols-1 gap-4 items-end sm:grid-cols-3">
+            @csrf
+            <div class="sm:col-span-2">
+                <label class="block text-sm text-zinc-700 mb-1">CSV file</label>
+                <input type="file" name="csv_file" accept=".csv,.txt,text/csv" class="border rounded p-2 w-full" required>
+            </div>
+            <div>
+                <button class="bg-zinc-800 hover:bg-zinc-900 text-white px-4 py-2 rounded w-full sm:w-auto">
+                    Import CSV
+                </button>
+            </div>
+        </form>
+
         {{-- Validation Errors --}}
         @if ($errors->any())
             <div class="bg-red-100 text-red-700 p-2 rounded mb-3">
@@ -36,7 +52,7 @@
         {{-- Add New Entry --}}
         <form action="{{ route('admin.approvals.add') }}" method="POST" class="mb-6">
             @csrf
-            <div class="grid grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-5">
                 <input type="text" name="series_code" placeholder="Series Code (e.g. LPMVTVX)"
                        class="border rounded p-2 w-full" required>
 

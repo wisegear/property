@@ -506,7 +506,7 @@
                 
                 @if($wages)
                     @php
-                        $wageValue = $wages->three_month_avg_yoy ?? $wages->single_month_yoy ?? null;
+                        $wageValue = $wages->three_month_avg_yoy ?? null;
                         $realWage = (!is_null($wageValue) && isset($cpihValue)) 
                             ? (float)$wageValue - (float)$cpihValue 
                             : null;
@@ -572,13 +572,8 @@
                 </div>
                 
                 @if($unemp)
-                    @php
-                        $unempValue = collect(get_object_vars($unemp))
-                            ->except(['id', 'date', 'created_at', 'updated_at'])
-                            ->first();
-                    @endphp
                     <div class="text-2xl font-semibold">
-                        {{ !is_null($unempValue) ? number_format((float) $unempValue, 1) . '%' : 'n/a' }}
+                        {{ !is_null($unemp->three_month ?? null) ? number_format((float) $unemp->three_month, 1) . '%' : 'n/a' }}
                     </div>
                     <div class="text-sm text-gray-600 mt-1">
                         {{ \Carbon\Carbon::parse($unemp->date)->format('M Y') }}

@@ -28,18 +28,28 @@
             </div>
         @endif
 
+        <h2 class="text-lg font-semibold mb-3">Import CSV</h2>
+        <p class="text-sm text-zinc-600 mb-4">Upload the MLAR CSV with the year row above the quarter row. The first column should be the description, followed by quarterly values across the sheet.</p>
+
+        <form action="{{ route('admin.arrears.import') }}" method="POST" enctype="multipart/form-data" class="mb-6 grid grid-cols-1 gap-4 items-end sm:grid-cols-3">
+            @csrf
+            <div class="sm:col-span-2">
+                <label class="block text-sm text-zinc-700 mb-1">CSV file</label>
+                <input type="file" name="csv_file" accept=".csv,.txt,text/csv" class="border rounded p-2 w-full" required>
+            </div>
+            <div>
+                <button class="bg-zinc-800 hover:bg-zinc-900 text-white px-4 py-2 rounded w-full sm:w-auto">
+                    Import CSV
+                </button>
+            </div>
+        </form>
+
         {{-- Add new arrears row --}}
         <form action="{{ route('admin.arrears.add') }}" method="POST" class="mb-6">
             @csrf
             <h2 class="text-lg font-semibold mb-3">Add new row</h2>
 
-            <div class="grid grid-cols-1 sm:grid-cols-6 gap-4 items-end">
-
-                <div>
-                    <label class="block text-sm text-zinc-700 mb-1">Band</label>
-                    <input type="text" name="band" class="border rounded p-2 w-full" required>
-                </div>
-
+            <div class="grid grid-cols-1 gap-4 items-end sm:grid-cols-5">
                 <div class="sm:col-span-2">
                     <label class="block text-sm text-zinc-700 mb-1">Description</label>
                     <input type="text" name="description" class="border rounded p-2 w-full" required>
@@ -86,7 +96,6 @@
             <table class="w-full table-auto border-collapse mb-4">
                 <thead>
                     <tr class="bg-gray-100 text-left">
-                        <th class="p-2 border">Band</th>
                         <th class="p-2 border">Description</th>
                         <th class="p-2 border">Year</th>
                         <th class="p-2 border">Quarter</th>
@@ -100,10 +109,6 @@
                         <tr>
                             <td class="border p-2">
                                 <input type="hidden" name="rows[{{$i}}][id]" value="{{ $row->id }}">
-                                <input type="text" name="rows[{{$i}}][band]" value="{{ $row->band }}" class="border rounded p-1 w-full">
-                            </td>
-
-                            <td class="border p-2">
                                 <input type="text" name="rows[{{$i}}][description]" value="{{ $row->description }}" class="border rounded p-1 w-full">
                             </td>
 

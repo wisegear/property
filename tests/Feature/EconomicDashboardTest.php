@@ -43,7 +43,6 @@ class EconomicDashboardTest extends TestCase
                 $table->id();
                 $table->date('date');
                 $table->decimal('three_month_avg_yoy', 8, 3)->nullable();
-                $table->decimal('single_month_yoy', 8, 3)->nullable();
                 $table->timestamps();
             });
         }
@@ -52,7 +51,9 @@ class EconomicDashboardTest extends TestCase
             Schema::create('unemployment_monthly', function (Blueprint $table) {
                 $table->id();
                 $table->date('date');
-                $table->bigInteger('value')->nullable();
+                $table->unsignedInteger('single_month')->nullable();
+                $table->decimal('single', 5, 2)->nullable();
+                $table->decimal('three_month', 5, 2)->nullable();
                 $table->timestamps();
             });
         }
@@ -75,7 +76,6 @@ class EconomicDashboardTest extends TestCase
                 $table->unsignedInteger('year')->nullable();
                 $table->string('quarter', 2)->nullable();
                 $table->string('description')->nullable();
-                $table->string('band')->nullable();
                 $table->decimal('value', 8, 3)->nullable();
                 $table->timestamps();
             });

@@ -21,13 +21,21 @@
             {{-- Display latest unemployment rate --}}
             <p class="mt-2 text-sm leading-6 text-gray-700">
                 @if($latestRow)
-                    Latest estimate: <span class="font-semibold">{{ number_format((float)$latestRow->rate, 1) }}%</span>
+                    Latest 3-month rate: <span class="font-semibold">{{ number_format((float) $latestRow->three_month, 1) }}%</span>
                     <span class="text-gray-600">for</span>
                     <span class="font-medium">{{ optional($latestRow->date)->format('M Y') }}</span>.
                 @else
                     No unemployment data available yet.
                 @endif
             </p>
+
+            @if($latestRow)
+                <p class="mt-1 text-sm leading-6 text-gray-700">
+                    Single-month level: <span class="font-semibold">{{ number_format((int) $latestRow->single_month) }}</span>
+                    <span class="text-gray-600">and single rate</span>
+                    <span class="font-semibold">{{ number_format((float) $latestRow->single, 1) }}%</span>.
+                </p>
+            @endif
             
             {{-- Display data coverage range --}}
             @if($firstRow && $latestRow && $firstRow !== $latestRow)
@@ -55,7 +63,7 @@
                         @endif
                     </span>
                     <span class="text-gray-600">
-                        ({{ optional($previousYear->date)->format('M Y') }}: {{ number_format((float)$previousYear->rate, 1) }}%).
+                        ({{ optional($previousYear->date)->format('M Y') }}: {{ number_format((float) $previousYear->three_month, 1) }}%).
                     </span>
                 </p>
             @endif
@@ -73,7 +81,7 @@
     <section class="mb-6">
         <div class="border p-4 bg-white rounded-lg shadow">
             <div class="mb-2 text-sm font-medium text-gray-700">
-                Unemployment (%) over time (hover for details)
+                Unemployment 3-month rate (%) over time (hover for details)
             </div>
             
             @if($sorted->isEmpty())
@@ -139,11 +147,10 @@
     {{-- SUMMARY CARDS: Key statistics at a glance --}}
     @if($sorted->isNotEmpty())
         @php
-            // Find highest and lowest unemployment rates
-            $maxRate = $sorted->max('rate');
-            $minRate = $sorted->min('rate');
-            $maxRow = $sorted->where('rate', $maxRate)->last();
-            $minRow = $sorted->where('rate', $minRate)->last();
+            $maxRate = $sorted->max('three_month');
+            $minRate = $sorted->min('three_month');
+            $maxRow = $sorted->where('three_month', $maxRate)->last();
+            $minRow = $sorted->where('three_month', $minRate)->last();
 
             // Calculate last 12 months average
             $lastDate = $sorted->last()->date ?? null;
@@ -152,7 +159,7 @@
             $last12 = $last12Start
                 ? $sorted->filter(fn($r) => $r->date >= $last12Start && $r->date <= $lastDate)
                 : collect();
-            $last12Avg = $last12->isNotEmpty() ? $last12->avg('rate') : null;
+            $last12Avg = $last12->isNotEmpty() ? $last12->avg('three_month') : null;
         @endphp
 
         <section class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -204,7 +211,9 @@
                 <thead class="bg-gray-50 text-left text-gray-600">
                     <tr>
                         <th class="border-b border-gray-200 px-4 py-2">Month</th>
-                        <th class="border-b border-gray-200 px-4 py-2">Unemployed (%)</th>
+                        <th class="border-b border-gray-200 px-4 py-2">Single Month</th>
+                        <th class="border-b border-gray-200 px-4 py-2">Single (%)</th>
+                        <th class="border-b border-gray-200 px-4 py-2">Three Month (%)</th>
                     </tr>
                 </thead>
                 
@@ -215,12 +224,18 @@
                                 {{ optional($row->date)->format('M Y') }}
                             </td>
                             <td class="border-b border-gray-100 px-4 py-2 font-medium">
-                                {{ number_format((float)$row->rate, 1) }}%
+                                {{ number_format((int) $row->single_month) }}
+                            </td>
+                            <td class="border-b border-gray-100 px-4 py-2 font-medium">
+                                {{ number_format((float) $row->single, 1) }}%
+                            </td>
+                            <td class="border-b border-gray-100 px-4 py-2 font-medium">
+                                {{ number_format((float) $row->three_month, 1) }}%
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="2" class="px-4 py-6 text-center text-gray-500">
+                            <td colspan="4" class="px-4 py-6 text-center text-gray-500">
                                 No data to display.
                             </td>
                         </tr>
@@ -269,7 +284,7 @@
         data: {
             labels: yearLabels,
             datasets: [{
-                label: 'Unemployed (%)',
+                label: 'Unemployment 3-month rate (%)',
                 data: data,
                 borderColor: 'rgb(54, 162, 235)',
                 backgroundColor: 'rgba(54, 162, 235, 0.15)',

@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class EconomicDashboardController extends Controller
 {
-    public function index(): \Illuminate\View\View
+    public function index(): View
     {
         $ttl = now()->addHours(6);
         $approvalsSeriesCode = 'LPMVTVX';
@@ -171,16 +172,7 @@ class EconomicDashboardController extends Controller
         $sparklines['wages'] = $makeMonthlySeries(
             $wageSeries,
             'date',
-            function ($row) {
-                if (isset($row->three_month_avg_yoy)) {
-                    return $row->three_month_avg_yoy;
-                }
-                if (isset($row->single_month_yoy)) {
-                    return $row->single_month_yoy;
-                }
-
-                return 0;
-            }
+            fn ($row) => $row->three_month_avg_yoy ?? 0
         );
 
         // Unemployment: last 24 months
@@ -193,9 +185,7 @@ class EconomicDashboardController extends Controller
         $sparklines['unemployment'] = $makeMonthlySeries(
             $unempSeries,
             'date',
-            function ($row) use ($getMetric) {
-                return $getMetric($row) ?? 0;
-            }
+            fn ($row) => $row->three_month ?? 0
         );
 
         // Mortgage Approvals: monthly series
@@ -227,11 +217,10 @@ class EconomicDashboardController extends Controller
         ];
 
         // Mortgage arrears (MLAR)
-        // Sparkline: total arrears across all bands except the lowest (1.5–2.5%),
-        // which mainly captures minor/one-off missed payments.
         $arrearsSeries = DB::table('mlar_arrears')
             ->select('year', 'quarter', DB::raw('SUM(value) as total'))
-            ->where('band', '!=', '1.5_2.5')
+            ->where('description', '!=', '1.5 < 2.5% in arrears')
+            ->where('description', '!=', '1.5 < 2.5% in arrears ')
             ->groupBy('year', 'quarter')
             ->orderBy('year')
             ->orderByRaw("CASE quarter WHEN 'Q1' THEN 1 WHEN 'Q2' THEN 2 WHEN 'Q3' THEN 3 WHEN 'Q4' THEN 4 ELSE 5 END")
@@ -391,11 +380,11 @@ class EconomicDashboardController extends Controller
         $stress['wages'] += $directionScore($realSeries, true);
 
         // 4. Unemployment level + direction
-        $uVal = $unemp ? (float) $getMetric($unemp) : null;
+        $uVal = $unemp?->three_month !== null ? (float) $unemp->three_month : null;
         if (! is_null($uVal)) {
-            if ($uVal >= 2000000) {
+            if ($uVal >= 6.0) {
                 $stress['unemp'] += 2;
-            } elseif ($uVal >= 1500000) {
+            } elseif ($uVal >= 5.0) {
                 $stress['unemp'] += 1;
             }
         }

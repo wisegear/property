@@ -10,11 +10,15 @@ class UnemploymentMonthly extends Model
 
     protected $fillable = [
         'date',
-        'rate',
+        'single_month',
+        'single',
+        'three_month',
     ];
 
     protected $casts = [
         'date' => 'date',
-        'rate' => 'float',
+        'single_month' => 'integer',
+        'single' => 'float',
+        'three_month' => 'float',
     ];
 }

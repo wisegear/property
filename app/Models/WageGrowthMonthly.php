@@ -10,13 +10,11 @@ class WageGrowthMonthly extends Model
 
     protected $fillable = [
         'date',
-        'single_month_yoy',
         'three_month_avg_yoy',
     ];
 
     protected $casts = [
         'date' => 'date',
-        'single_month_yoy' => 'float',
         'three_month_avg_yoy' => 'float',
     ];
 }

@@ -9,19 +9,51 @@
     </div>
 
     <div class="bg-white p-6 rounded shadow mb-6">
+        <h2 class="text-lg font-semibold mb-3">Import CSV</h2>
+        <p class="text-sm text-zinc-600 mb-4">Upload a CSV with columns like <span class="font-medium">date,single_month,single,three_month</span>. Dates such as <span class="font-medium">Jun-92</span> are converted to the first day of that month automatically.</p>
+
+        @if($errors->has('csv_file'))
+            <div class="bg-red-100 text-red-700 p-2 rounded mb-3">
+                {{ $errors->first('csv_file') }}
+            </div>
+        @endif
+
+        <form action="{{ route('admin.unemployment.import') }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 gap-4 items-end sm:grid-cols-3">
+            @csrf
+            <div class="sm:col-span-2">
+                <label class="block text-sm text-zinc-700 mb-1">CSV file</label>
+                <input type="file" name="csv_file" accept=".csv,.txt,text/csv" class="border rounded p-2 w-full" required>
+            </div>
+            <div>
+                <button class="bg-zinc-800 hover:bg-zinc-900 text-white px-4 py-2 rounded w-full sm:w-auto">
+                    Import CSV
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white p-6 rounded shadow mb-6">
 
         {{-- Add new unemployment row --}}
         <form action="{{ route('admin.unemployment.add') }}" method="POST" class="mb-6">
             @csrf
             <h2 class="text-lg font-semibold mb-3">Add new row</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+            <div class="grid grid-cols-1 gap-4 items-end sm:grid-cols-5">
                 <div>
                     <label class="block text-sm text-zinc-700 mb-1">Date (YYYY-MM-01)</label>
                     <input type="date" name="date" class="border rounded p-2 w-full" required>
                 </div>
                 <div>
-                    <label class="block text-sm text-zinc-700 mb-1">Rate (%)</label>
-                    <input type="number" step="0.01" name="rate" class="border rounded p-2 w-full" required>
+                    <label class="block text-sm text-zinc-700 mb-1">Single Month</label>
+                    <input type="number" step="1" name="single_month" class="border rounded p-2 w-full">
+                </div>
+                <div>
+                    <label class="block text-sm text-zinc-700 mb-1">Single (%)</label>
+                    <input type="number" step="0.01" name="single" class="border rounded p-2 w-full">
+                </div>
+                <div>
+                    <label class="block text-sm text-zinc-700 mb-1">Three Month (%)</label>
+                    <input type="number" step="0.01" name="three_month" class="border rounded p-2 w-full">
                 </div>
                 <div>
                     <button class="mt-1 bg-zinc-800 hover:bg-zinc-900 text-white px-4 py-2 rounded w-full sm:w-auto">
@@ -50,7 +82,9 @@
                 <thead>
                     <tr class="bg-gray-100 text-left">
                         <th class="p-2 border">Date (YYYY-MM-01)</th>
-                        <th class="p-2 border">Rate (%)</th>
+                        <th class="p-2 border">Single Month</th>
+                        <th class="p-2 border">Single (%)</th>
+                        <th class="p-2 border">Three Month (%)</th>
                         <th class="p-2 border">Delete</th>
                     </tr>
                 </thead>
@@ -64,7 +98,15 @@
                                        class="border rounded p-1 w-full">
                             </td>
                             <td class="border p-2">
-                                <input type="number" step="0.01" name="rows[{{$i}}][rate]" value="{{ $row->rate }}"
+                                <input type="number" step="1" name="rows[{{$i}}][single_month]" value="{{ $row->single_month }}"
+                                       class="border rounded p-1 w-full">
+                            </td>
+                            <td class="border p-2">
+                                <input type="number" step="0.01" name="rows[{{$i}}][single]" value="{{ $row->single }}"
+                                       class="border rounded p-1 w-full">
+                            </td>
+                            <td class="border p-2">
+                                <input type="number" step="0.01" name="rows[{{$i}}][three_month]" value="{{ $row->three_month }}"
                                        class="border rounded p-1 w-full">
                             </td>
                             <td class="border text-center">
