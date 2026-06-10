@@ -23,6 +23,8 @@ class MlarArrearsControllerTest extends TestCase
             ['description' => 'In arrears', 'year' => 2024, 'quarter' => 'Q1', 'value' => 0.4],
             ['description' => 'In arrears', 'year' => 2024, 'quarter' => 'Q4', 'value' => 0.9],
             ['description' => 'In arrears', 'year' => 2024, 'quarter' => 'Q2', 'value' => 0.6],
+            ['description' => 'Possessions', 'year' => 2025, 'quarter' => 'Q4', 'value' => 0.2],
+            ['description' => '10%+ in arrears', 'year' => 2025, 'quarter' => 'Q4', 'value' => 0.1],
             ['description' => 'In arrears', 'year' => 2025, 'quarter' => 'Q1', 'value' => 0.5],
             ['description' => 'In arrears', 'year' => 2025, 'quarter' => 'Q4', 'value' => 1.0],
         ]);
@@ -37,6 +39,10 @@ class MlarArrearsControllerTest extends TestCase
         );
         $this->assertSame(2025, $response->viewData('latest')->year);
         $this->assertSame('Q4', $response->viewData('latest')->quarter);
+        $this->assertSame(
+            ['10%+ in arrears', 'In arrears', 'Possessions'],
+            $response->viewData('latestValues')->pluck('description')->all()
+        );
     }
 
     protected function ensureMlarArrearsTableExists(): void

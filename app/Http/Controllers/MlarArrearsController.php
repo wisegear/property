@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\MlarArrear;
+use Illuminate\View\View;
 
 class MlarArrearsController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $descriptions = MlarArrear::select('description')
             ->distinct()
@@ -38,7 +39,7 @@ class MlarArrearsController extends Controller
         if ($latest) {
             $latestValues = MlarArrear::where('year', $latest->year)
                 ->where('quarter', $latest->quarter)
-                ->orderBy('band')
+                ->orderBy('description')
                 ->get();
         }
 
