@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\HpiMonthly;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class HpiDashboardController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         // Latest global date (useful for UK rollup)
         $latestGlobal = HpiMonthly::latestDate();
@@ -44,7 +45,9 @@ class HpiDashboardController extends Controller
             $seriesByArea[] = [
                 'name' => $name,
                 'code' => $code,
-                'dates' => $rows->pluck('Date')->map(fn ($d) => \Carbon\Carbon::parse($d)->format('Y-m'))->all(),
+                'dates' => $rows->pluck('Date')->map(function ($date): string {
+                    return HpiMonthly::normalizedDate($date)?->format('Y-m') ?? (string) $date;
+                })->all(),
                 'twelve_m_change' => $rows->pluck('twelve_m_change')->map(fn ($v) => is_null($v) ? null : (float) $v)->all(),
             ];
         }
@@ -79,7 +82,7 @@ class HpiDashboardController extends Controller
         ]);
     }
 
-    public function overview()
+    public function overview(): View
     {
         // Lightweight national HPI overview for Economic Indicators
         // Fetch UK monthly series (AreaCode K02000001)
@@ -97,6 +100,7 @@ class HpiDashboardController extends Controller
             return view('hpi.overview', [
                 'latest' => null,
                 'previous' => null,
+                'latestDisplayMonth' => null,
                 'labels' => [],
                 'prices' => [],
                 'changes' => [],
@@ -106,14 +110,11 @@ class HpiDashboardController extends Controller
         // Latest and previous rows
         $latest = $ukRows->last();
         $previous = $ukRows->count() > 1 ? $ukRows[$ukRows->count() - 2] : null;
+        $latestDisplayMonth = HpiMonthly::normalizedDate($latest->Date)?->format('M Y');
 
         // Build simple time series for charting
         $labels = $ukRows->map(function ($row) {
-            try {
-                return \Carbon\Carbon::parse($row->Date)->format('Y-m-d');
-            } catch (\Throwable $e) {
-                return (string) $row->Date;
-            }
+            return HpiMonthly::normalizedDate($row->Date)?->format('Y-m-d') ?? (string) $row->Date;
         })->values();
 
         $prices = $ukRows->map(function ($row) {
@@ -127,6 +128,7 @@ class HpiDashboardController extends Controller
         return view('hpi.overview', [
             'latest' => $latest,
             'previous' => $previous,
+            'latestDisplayMonth' => $latestDisplayMonth,
             'labels' => $labels,
             'prices' => $prices,
             'changes' => $changes,

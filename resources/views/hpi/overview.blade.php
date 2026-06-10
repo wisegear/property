@@ -24,7 +24,7 @@
                     <span class="font-semibold">£{{ number_format($latestPrice, 0) }}</span>
                     <span class="text-gray-600">for</span>
                     <span class="font-medium">
-                        {{ \Illuminate\Support\Carbon::parse($latest->Date)->format('M Y') }}
+                        {{ $latestDisplayMonth ?? \Illuminate\Support\Carbon::parse($latest->Date)->format('M Y') }}
                     </span>.
                 </p>
 

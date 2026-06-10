@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class HpiMonthly extends Model
@@ -42,7 +45,7 @@ class HpiMonthly extends Model
     }
 
     /** Time series of average prices by property type for a given area */
-    public static function typePriceSeries(string $areaCode): \Illuminate\Support\Collection
+    public static function typePriceSeries(string $areaCode): Collection
     {
         return static::query()
             ->select(['Date', 'DetachedPrice', 'SemiDetachedPrice', 'TerracedPrice', 'FlatPrice'])
@@ -61,7 +64,9 @@ class HpiMonthly extends Model
             $out[] = [
                 'name' => $name,
                 'code' => $code,
-                'dates' => $rows->pluck('Date')->map(fn ($d) => \Carbon\Carbon::parse($d)->format('Y-m'))->all(),
+                'dates' => $rows->pluck('Date')->map(function ($date): string {
+                    return self::normalizedDate($date)?->format('Y-m') ?? (string) $date;
+                })->all(),
                 'types' => [
                     'Detached' => $rows->pluck('DetachedPrice')->map(fn ($v) => is_null($v) ? null : (float) $v)->all(),
                     'SemiDetached' => $rows->pluck('SemiDetachedPrice')->map(fn ($v) => is_null($v) ? null : (float) $v)->all(),
@@ -93,7 +98,7 @@ class HpiMonthly extends Model
     }
 
     /** Nations snapshot at their own latest dates (avoids misaligned months) */
-    public static function latestNations(): \Illuminate\Support\Collection
+    public static function latestNations(): Collection
     {
         return collect(self::nationCodes())
             ->map(function ($code, $name) {
@@ -119,7 +124,7 @@ class HpiMonthly extends Model
     }
 
     /** UK time series (for charts) */
-    public static function ukSeries(): \Illuminate\Support\Collection
+    public static function ukSeries(): Collection
     {
         return static::query()
             ->select([
@@ -131,5 +136,37 @@ class HpiMonthly extends Model
             ->where('AreaCode', 'K02000001')
             ->orderBy('Date')
             ->get();
+    }
+
+    public static function normalizedDate(mixed $date): ?Carbon
+    {
+        if ($date instanceof CarbonInterface) {
+            if ($date->month === 1 && $date->day >= 1 && $date->day <= 12) {
+                return Carbon::create($date->year, $date->day, 1);
+            }
+
+            return Carbon::instance($date);
+        }
+
+        $stringDate = (string) $date;
+
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $stringDate, $matches) === 1) {
+            $middlePart = $matches[2];
+            $lastPart = (int) $matches[3];
+
+            if ($middlePart === '01' && $lastPart >= 1 && $lastPart <= 12) {
+                try {
+                    return Carbon::createFromFormat('Y-d-m', $stringDate);
+                } catch (\Throwable $e) {
+                    return null;
+                }
+            }
+        }
+
+        try {
+            return Carbon::parse($stringDate);
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

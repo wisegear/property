@@ -41,6 +41,64 @@ class HpiDashboardControllerTest extends TestCase
         $response->assertSee('assets/images/site/hpi.jpg', false);
     }
 
+    public function test_hpi_overview_normalizes_malformed_month_dates_for_display(): void
+    {
+        DB::table('hpi_monthly')->insert([
+            [
+                'AreaCode' => 'K02000001',
+                'Date' => '2026-01-01',
+                'RegionName' => 'United Kingdom',
+                'AveragePrice' => 267826,
+                'Index' => 100.000,
+                'SalesVolume' => 100,
+                'DetachedPrice' => 350000,
+                'SemiDetachedPrice' => 280000,
+                'TerracedPrice' => 230000,
+                'FlatPrice' => 200000,
+                '1m%Change' => -0.2,
+                '12m%Change' => 1.1,
+            ],
+            [
+                'AreaCode' => 'K02000001',
+                'Date' => '2026-01-02',
+                'RegionName' => 'United Kingdom',
+                'AveragePrice' => 269204,
+                'Index' => 100.000,
+                'SalesVolume' => 100,
+                'DetachedPrice' => 350000,
+                'SemiDetachedPrice' => 280000,
+                'TerracedPrice' => 230000,
+                'FlatPrice' => 200000,
+                '1m%Change' => 0.5,
+                '12m%Change' => 1.7,
+            ],
+            [
+                'AreaCode' => 'K02000001',
+                'Date' => '2026-01-03',
+                'RegionName' => 'United Kingdom',
+                'AveragePrice' => 268132,
+                'Index' => 100.000,
+                'SalesVolume' => 100,
+                'DetachedPrice' => 350000,
+                'SemiDetachedPrice' => 280000,
+                'TerracedPrice' => 230000,
+                'FlatPrice' => 200000,
+                '1m%Change' => -0.4,
+                '12m%Change' => 0.0,
+            ],
+        ]);
+
+        $response = $this->get(route('hpi.overview', absolute: false));
+
+        $response->assertOk();
+        $this->assertSame('Mar 2026', $response->viewData('latestDisplayMonth'));
+        $this->assertSame(
+            ['2026-01-01', '2026-02-01', '2026-03-01'],
+            $response->viewData('labels')->all()
+        );
+        $response->assertSeeInOrder(['Mar 2026', 'Feb 2026', 'Jan 2026'], false);
+    }
+
     protected function seedHpiRows(): void
     {
         $rows = [
