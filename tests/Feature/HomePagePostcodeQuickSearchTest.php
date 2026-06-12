@@ -135,6 +135,10 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('rotate(-2.00, 60, 60)', false);
         $view->assertSee('rotate(14.46, 60, 60)', false);
         $view->assertSee('rotate(-90.00, 60, 60)', false);
+        $view->assertSee('stroke="#65a30d"', false);
+        $view->assertSee('stroke="#facc15"', false);
+        $view->assertSee('stroke="#f97316"', false);
+        $view->assertSee('x1="110" y1="110" x2="110" y2="56"', false);
         $view->assertSee('Top Counties with Falling Sales');
         $view->assertSee('Torfaen');
         $view->assertSee('Portsmouth');

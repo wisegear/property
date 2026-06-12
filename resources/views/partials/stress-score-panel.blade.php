@@ -63,42 +63,55 @@
 
             {{-- Center: Semi-circular gauge --}}
             <div class="flex flex-col items-center md:col-span-1">
-                <div class="relative w-44 h-24">
-                    <svg class="w-44 h-24" viewBox="0 0 200 120" aria-hidden="true">
-                        <!-- Green zone (0–40) -->
-                        <path d="M 20 100 A 80 80 0 0 1 75 24"
+                <div class="relative h-28 w-52">
+                    <svg class="h-28 w-52" viewBox="0 0 220 130" aria-hidden="true">
+                        <!-- Outer dial -->
+                        <path d="M 24 110 A 86 86 0 0 1 75 34"
                               fill="none"
-                              stroke="#d1fae5"
-                              stroke-width="16"
-                              stroke-linecap="round" />
+                              stroke="#65a30d"
+                              stroke-width="28"
+                              stroke-linecap="butt" />
+                        <path d="M 78 31 A 86 86 0 0 1 142 31"
+                              fill="none"
+                              stroke="#facc15"
+                              stroke-width="28"
+                              stroke-linecap="butt" />
+                        <path d="M 145 34 A 86 86 0 0 1 196 110"
+                              fill="none"
+                              stroke="#f97316"
+                              stroke-width="28"
+                              stroke-linecap="butt" />
 
-                        <!-- Amber zone (40–69) -->
-                        <path d="M 75 24 A 80 80 0 0 1 145 33"
+                        <!-- Inner shading -->
+                        <path d="M 31 110 A 79 79 0 0 1 77 40"
                               fill="none"
-                              stroke="#fef3c7"
-                              stroke-width="16"
-                              stroke-linecap="round" />
+                              stroke="#5faa1f"
+                              stroke-width="14"
+                              stroke-linecap="butt" />
+                        <path d="M 80 38 A 79 79 0 0 1 140 38"
+                              fill="none"
+                              stroke="#eab308"
+                              stroke-width="14"
+                              stroke-linecap="butt" />
+                        <path d="M 143 40 A 79 79 0 0 1 189 110"
+                              fill="none"
+                              stroke="#ea580c"
+                              stroke-width="14"
+                              stroke-linecap="butt" />
 
-                        <!-- Red zone (70–100) -->
-                        <path d="M 145 33 A 80 80 0 0 1 180 100"
-                              fill="none"
-                              stroke="#fecaca"
-                              stroke-width="16"
-                              stroke-linecap="round" />
+                        <!-- Clean dividers -->
+                        <path d="M 76 35 L 79 43" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+                        <path d="M 144 35 L 141 43" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
 
                         <!-- Needle -->
-                        <g transform="rotate({{ $gaugeRotation }}, 100, 100)">
-                            <line x1="100" y1="100" x2="100" y2="32"
-                                  stroke="#1f2937"
-                                  stroke-width="3"
+                        <g transform="rotate({{ $gaugeRotation }}, 110, 110)">
+                            <line x1="110" y1="110" x2="110" y2="56"
+                                  stroke="#241c27"
+                                  stroke-width="4"
                                   stroke-linecap="round" />
-                            <circle cx="100" cy="100" r="5" fill="#1f2937" />
+                            <circle cx="110" cy="110" r="8" fill="#241c27" />
+                            <circle cx="110" cy="110" r="3.5" fill="#ffffff" />
                         </g>
-
-                        <!-- Scale labels -->
-                        <text x="16" y="118" class="text-[10px] fill-gray-500">0</text>
-                        <text x="96" y="26" class="text-[10px] fill-gray-500">50</text>
-                        <text x="176" y="118" class="text-[10px] fill-gray-500">100</text>
                     </svg>
                 </div>
                 <div class="flex items-baseline gap-1 -mt-2">
