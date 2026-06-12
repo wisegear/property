@@ -236,6 +236,7 @@
                                     'value' => $stat['gaugeValue'],
                                     'title' => $stat['formatted'],
                                     'color' => $stat['color'],
+                                    'variant' => 'stress',
                                     'wrapperClass' => 'ml-0 -mt-2',
                                 ])
                             </div>
