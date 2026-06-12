@@ -250,151 +250,15 @@
                     @endforeach
                 </div>
 
-                <div class="">
-                    <div class="flex flex-wrap items-center gap-3 text-sm">
-                        <p class="font-semibold text-zinc-900">Top Counties with Falling Sales:</p>
-                        <div class="flex flex-wrap gap-6">
-                            @forelse (($homepageMarketMovements['top_declining_counties'] ?? collect()) as $county)
-                                <div class="flex items-center gap-1">
-                                    <span class="text-zinc-700">{{ \Illuminate\Support\Str::title(strtolower($county['county'])) }}</span>
-                                    <span class="font-semibold text-red-600">▼ {{ number_format((float) $county['sales_change_percent'], 1) }}%</span>
-                                </div>
-                            @empty
-                                <span class="text-zinc-500">No counties recorded falling sales in this window.</span>
-                            @endforelse
-                        </div>
-                    </div>
-                    <div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
-                        <p class="font-semibold text-zinc-900">Top Counties with Rising Prices:</p>
-                        <div class="flex flex-wrap gap-6">
-                            @forelse (($homepageMarketMovements['top_rising_price_counties'] ?? collect()) as $county)
-                                <div class="flex items-center gap-1">
-                                    <span class="text-zinc-700">{{ \Illuminate\Support\Str::title(strtolower($county['county'])) }}</span>
-                                    <span class="font-semibold text-green-600">▲ {{ number_format((float) $county['price_change_percent'], 1) }}%</span>
-                                </div>
-                            @empty
-                                <span class="text-zinc-500">No counties recorded rising prices in this window.</span>
-                            @endforelse
-                        </div>
-                        <a href="{{ route('insights.dashboard') }}"
-                           class="inline-flex items-center gap-2 text-sm font-medium text-lime-700 hover:underline sm:ml-auto">
-                            View Market Insights
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                            </svg>
-                        </a>
-                    </div>
+                <div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
+                    <a href="{{ route('insights.dashboard') }}"
+                       class="inline-flex items-center gap-2 text-sm font-medium text-lime-700 hover:underline sm:ml-auto">
+                        View Market Insights
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                        </svg>
+                    </a>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)]">
-        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <div class="flex h-full flex-col gap-4">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <h2 class="text-lg font-semibold text-zinc-900">UK Swap Rates</h2>
-                        <p class="mt-1 max-w-3xl text-sm text-zinc-600">
-                            Fixed mortgage pricing is heavily influenced by swap rates.
-                        </p>
-                    </div>
-                    <div class="text-sm text-zinc-500">
-                        Latest available date:
-                        {{ ($homepageSwapRates['latestAvailableDate'] ?? null) instanceof \Carbon\CarbonInterface ? $homepageSwapRates['latestAvailableDate']->format('d M Y') : 'No data available' }}
-                    </div>
-                </div>
-
-                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    @foreach (($homepageSwapRates['rates'] ?? []) as $rate)
-                        <article class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">{{ $rate['label'] }}</p>
-                            <p class="mt-3 text-lg font-semibold text-zinc-900">
-                                {{ $rate['rate'] === null ? '—' : number_format((float) $rate['rate'], 2).'%' }}
-                            </p>
-                            @php
-                                $dailyChange = $rate['daily_change'] ?? null;
-                                $dailyChangeClass = 'text-zinc-900';
-
-                                if ($dailyChange !== null && $dailyChange < 0) {
-                                    $dailyChangeClass = 'text-emerald-600';
-                                } elseif ($dailyChange !== null && $dailyChange > 0) {
-                                    $dailyChangeClass = 'text-rose-600';
-                                }
-                            @endphp
-                            <p class="mt-2 text-sm font-medium {{ $dailyChangeClass }}">
-                                @if ($dailyChange === null)
-                                    —
-                                @else
-                                    {{ $dailyChange > 0 ? '+' : '' }}{{ number_format((float) $dailyChange, 1) }} bps
-                                @endif
-                            </p>
-                        </article>
-                    @endforeach
-                </div>
-
-                <a href="{{ route('insights.swap-rates') }}"
-                   class="inline-flex items-center gap-2 pt-1 text-sm font-medium text-lime-700 hover:underline sm:mt-auto sm:ml-auto">
-                    Explore Swap Rates
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                    </svg>
-                </a>
-            </div>
-        </div>
-
-        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <div class="flex h-full flex-col gap-4">
-                <div>
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                        <h2 class="text-lg font-semibold text-zinc-900">Signals Worth Watching</h2>
-                        <div class="flex items-center gap-2">
-                            <span class="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-sm font-medium text-green-700">
-                                ● {{ number_format($liveSignalsCount ?? $marketInsightsCount ?? 0) }} live
-                            </span>
-                            <span class="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-sm font-medium text-amber-700">
-                                {{ $signalTypesCount ?? $marketInsightSignalCount ?? 9 }} signal types
-                            </span>
-                        </div>
-                    </div>
-                    <div class="mt-3 text-sm">
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-500">Top signal (this period)</span>
-                            <span class="font-medium text-red-600">
-                                {{ $topSignal['type'] ?? 'Price Collapse' }}
-                            </span>
-                        </div>
-
-                        <div class="font-medium text-gray-800">
-                            {{ $topSignal['postcode'] ?? 'TA22' }}
-                            @php
-                                $topSignalDirection = $topSignal['direction'] ?? 'down';
-                                $topSignalArrow = $topSignalDirection === 'up' ? '▲' : '▼';
-                                $topSignalColor = $topSignal['color'] ?? ($topSignalDirection === 'up' ? 'text-green-600' : 'text-red-600');
-                                $topSignalChange = (float) ($topSignal['change'] ?? -41.0);
-                            @endphp
-                            <span class="{{ $topSignalColor }}">
-                                {{ $topSignalArrow }} {{ number_format($topSignalChange, 1) }}%
-                            </span>
-                        </div>
-                    </div>
-                    <p class="mt-2 text-sm text-gray-600">
-                        Spot price collapses, demand freezes, and unexpected hotspots before they show in headline data.
-                    </p>
-                    <div class="mt-3 flex h-1 overflow-hidden rounded-full">
-                        <div class="w-1/3 bg-red-400"></div>
-                        <div class="w-1/3 bg-amber-400"></div>
-                        <div class="w-1/3 bg-green-400"></div>
-                    </div>
-                </div>
-
-                <a href="{{ route('insights.index') }}"
-                   class="mt-4 inline-flex items-center gap-2 text-sm font-medium text-lime-700 hover:underline sm:ml-auto">
-                    Explore County Insights
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                    </svg>
-                </a>
             </div>
         </div>
     </section>
@@ -458,6 +322,66 @@
             </div>
             <p class="mt-2 text-sm text-zinc-700">Explore the Deprivation indexes. Search by postcode and see domain breakdowns.  Scotland, England, Wales and Northern Ireland.</p>
             <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open Deprivation Dashboard
+            </div>
+        </a>
+
+        <a href="{{ route('insights.swap-rates') }}"
+           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-zinc-900">UK Swap Rates</h2>
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke-width="1.5"
+                     stroke="currentColor"
+                     class="h-6 w-6 text-zinc-500 group-hover:text-lime-600 transition">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M3.75 15.75 9 10.5l3.75 3.75L20.25 6.75M16.5 6.75h3.75V10.5" />
+                </svg>
+            </div>
+            <p class="mt-2 text-sm text-zinc-700">View current UK swap rates and follow the wholesale pricing moves that influence fixed mortgage costs.</p>
+            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open Swap Rates
+            </div>
+        </a>
+
+        <a href="{{ route('insights.index') }}"
+           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-zinc-900">Signals Worth Watching</h2>
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke-width="1.5"
+                     stroke="currentColor"
+                     class="h-6 w-6 text-zinc-500 group-hover:text-lime-600 transition">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M3.75 15.75 8.25 11.25l3 3 5.25-6.75 3.75 3.75" />
+                </svg>
+            </div>
+            <p class="mt-2 text-sm text-zinc-700">Browse the latest county-level property signals and market insights without crowding the homepage with specialist detail.</p>
+            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open County Insights
+            </div>
+        </a>
+
+        <a href="{{ url('/insights/crime') }}"
+           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-zinc-900">Crime Insights</h2>
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke-width="1.5"
+                     stroke="currentColor"
+                     class="h-6 w-6 text-zinc-500 group-hover:text-lime-600 transition">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-1.5 0h12a1.5 1.5 0 0 1 1.5 1.5v7.5a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 4.5 19.5V12a1.5 1.5 0 0 1 1.5-1.5Z" />
+                </svg>
+            </div>
+            <p class="mt-2 text-sm text-zinc-700">Open the crime dashboard for national and local crime trends, recent movement, and area-level context alongside the property research.</p>
+            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open Crime Insights
             </div>
         </a>
 

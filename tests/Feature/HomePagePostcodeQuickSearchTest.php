@@ -22,7 +22,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
     }
 
-    public function test_home_page_shows_quick_postcode_search_above_market_stress_panel_and_keeps_swap_rates_panel(): void
+    public function test_home_page_shows_quick_postcode_search_above_market_stress_panel_and_links_to_swap_rates_from_the_panel_grid(): void
     {
         $view = $this->view('pages.home', [
             'posts' => collect(),
@@ -92,20 +92,9 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertDontSee('requestAnimationFrame', false);
         $view->assertDontSee('x-text=', false);
         $view->assertSee('UK Swap Rates');
-        $view->assertSee('Explore Swap Rates');
+        $view->assertSee('Open Swap Rates');
         $view->assertSee(route('insights.swap-rates', absolute: false), false);
-        $view->assertSee('Fixed mortgage pricing is heavily influenced by swap rates.');
-        $view->assertSee('Latest available date:');
-        $view->assertSee('28 May 2026');
-        $view->assertSee('2Y Swap');
-        $view->assertSee('5Y Swap');
-        $view->assertSee('10Y Swap');
-        $view->assertSee('4.07%');
-        $view->assertSee('4.09%');
-        $view->assertSee('4.38%');
-        $view->assertSee('-3.9 bps');
-        $view->assertSee('-3.3 bps');
-        $view->assertSee('+4.5 bps');
+        $view->assertSee('View current UK swap rates and follow the wholesale pricing moves that influence fixed mortgage costs.');
         $view->assertDontSee('Most Expensive Property Sales');
         $view->assertDontSee('The current highest sale in each top-sales segment');
         $view->assertDontSee('Open Top Property Sales');
@@ -139,28 +128,21 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('stroke="#facc15"', false);
         $view->assertSee('stroke="#f97316"', false);
         $view->assertSee('x1="110" y1="110" x2="110" y2="56"', false);
-        $view->assertSee('Top Counties with Falling Sales');
-        $view->assertSee('Torfaen');
-        $view->assertSee('Portsmouth');
-        $view->assertSee('Slough');
-        $view->assertSee('Top Counties with Rising Prices');
-        $view->assertSee('Rutland');
-        $view->assertSee('Merseyside');
-        $view->assertSee('Bedfordshire');
+        $view->assertDontSee('Top Counties with Falling Sales');
+        $view->assertDontSee('Top Counties with Rising Prices');
+        $view->assertDontSee('Torfaen');
+        $view->assertDontSee('Rutland');
         $view->assertSee('Signals Worth Watching');
-        $view->assertSee('128 live');
-        $view->assertSee('9 signal types');
-        $view->assertSee('Top signal (this period)');
-        $view->assertSee('Demand Collapse');
-        $view->assertSee('M1');
-        $view->assertSee('▼ -33.3%');
-        $view->assertSee('Spot price collapses, demand freezes, and unexpected hotspots before they show in headline data.');
-        $view->assertSee('w-1/3 bg-red-400', false);
-        $view->assertSee('w-1/3 bg-amber-400', false);
-        $view->assertSee('w-1/3 bg-green-400', false);
-        $view->assertSee('Explore County Insights');
+        $view->assertSee('Open County Insights');
+        $view->assertSee(route('insights.index', absolute: false), false);
+        $view->assertSee('Browse the latest county-level property signals and market insights without crowding the homepage with specialist detail.');
+        $view->assertSee('Crime Insights');
+        $view->assertSee('Open Crime Insights');
+        $view->assertSee('/insights/crime', false);
+        $view->assertSee('Open the crime dashboard for national and local crime trends, recent movement, and area-level context alongside the property research.');
+        $view->assertDontSee('128 live');
+        $view->assertDontSee('Top signal (this period)');
         $view->assertSee('shadow-sm transition hover:shadow-md', false);
-        $view->assertSee('lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)]', false);
         $view->assertSee('md:grid-cols-2 lg:grid-cols-3', false);
         $view->assertSee('flex h-full flex-col', false);
         $view->assertSeeInOrder([
@@ -170,6 +152,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'UK Housing Market Snapshot',
             'UK Swap Rates',
             'Signals Worth Watching',
+            'Crime Insights',
         ]);
     }
 
@@ -220,12 +203,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('3 live');
-        $response->assertSee('9 signal types');
-        $response->assertSee('Top signal (this period)');
-        $response->assertSee('Demand Collapse');
-        $response->assertSee('M1');
-        $response->assertSee('▼ -33.3%');
+        $response->assertSee('Signals Worth Watching');
+        $response->assertSee('UK Swap Rates');
     }
 
     public function test_home_page_normalizes_upward_top_signal_direction_and_sign(): void
@@ -261,11 +240,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('Price Spike');
-        $response->assertSee('B1');
-        $response->assertSee('▲ 89.0%');
-        $response->assertDontSee('▼ -89.0%');
-        $response->assertSee('text-green-600');
+        $response->assertSee('Signals Worth Watching');
+        $response->assertSee('UK Swap Rates');
     }
 
     public function test_home_page_shows_logged_in_banner_for_user_id_one(): void
@@ -304,14 +280,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response->assertSee('rotate(17.28, 60, 60)', false);
         $response->assertSee('rotate(67.50, 60, 60)', false);
         $response->assertSee('rotate(-22.50, 60, 60)', false);
-        $response->assertSeeInOrder([
-            'Top Counties with Falling Sales:',
-            'Beta',
-            'Top Counties with Rising Prices:',
-            'Alpha',
-            'Delta',
-            'Gamma',
-        ], false);
+        $response->assertDontSee('Top Counties with Falling Sales:');
+        $response->assertDontSee('Top Counties with Rising Prices:');
     }
 
     private function ensureLandRegistryTable(): void
