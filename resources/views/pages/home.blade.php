@@ -202,14 +202,14 @@
                         ],
                         [
                             'value' => number_format($risingPriceCounties).' / '.number_format($totalCounties),
-                            'label' => 'Counties rising',
+                            'label' => 'Counties with rising prices',
                             'detail' => $totalCounties > 0 ? number_format($risingPriceTrend, 0).'% market breadth' : 'No counties available',
                             'tone' => $risingBreadthTone,
                             'icon' => 'trend-up',
                         ],
                         [
                             'value' => number_format($decliningCounties).' / '.number_format($totalCounties),
-                            'label' => 'Counties falling sales',
+                            'label' => 'Counties with falling sales',
                             'detail' => $totalCounties > 0 ? number_format($fallingSalesPercent, 0).'% liquidity falling' : 'No counties available',
                             'tone' => $fallingColor === 'red' ? 'negative' : 'neutral',
                             'icon' => 'alert',
