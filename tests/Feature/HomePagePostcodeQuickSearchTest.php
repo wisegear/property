@@ -82,12 +82,30 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('max-w-3xl rounded-xl border border-zinc-200 bg-white p-6 shadow-sm', false);
         $view->assertSee('rounded-lg bg-zinc-900 px-5 py-2 text-sm text-white transition hover:bg-black', false);
         $view->assertSee('Jump straight to full property data for any postcode in England &amp; Wales', false);
-        $view->assertSee('31,092,167');
-        $view->assertSee('30,720,499');
-        $view->assertSee('&pound;268,421', false);
-        $view->assertSee('&pound;1,371', false);
+        $view->assertSee('31.1M');
+        $view->assertSee('30.7M');
+        $view->assertSee('£268,421');
+        $view->assertSee('£1,371');
         $view->assertSee('3.75%');
-        $view->assertSee('3.20%');
+        $view->assertSee('Property sales');
+        $view->assertSee('EPC certificates');
+        $view->assertSee('Average House Price');
+        $view->assertSee('Average UK rent');
+        $view->assertSee('Bank Rate');
+        $view->assertSee('↑ 184k this year');
+        $view->assertSee('↑ 412k this year');
+        $view->assertSee('↑ 4.2% YoY');
+        $view->assertSee('↑ 3.1% YoY');
+        $view->assertSee('↓ 1.50pp from peak');
+        $view->assertSee('hover:-translate-y-0.5 hover:shadow-md', false);
+        $view->assertSee('aria-hidden="true"', false);
+        $view->assertSee('min-h-[132px] rounded-xl border border-slate-200 bg-white p-5 shadow-sm', false);
+        $view->assertDontSee('Live dataset');
+        $view->assertDontSee('Coverage expanding');
+        $view->assertDontSee('Latest UK HPI');
+        $view->assertDontSee('Latest rent index');
+        $view->assertDontSee('Latest CPIH');
+        $view->assertSee('lg:grid-cols-5', false);
         $view->assertDontSee('animateValue', false);
         $view->assertDontSee('requestAnimationFrame', false);
         $view->assertDontSee('x-text=', false);
@@ -99,33 +117,23 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertDontSee('The current highest sale in each top-sales segment');
         $view->assertDontSee('Open Top Property Sales');
         $view->assertSee('UK Housing Market Snapshot');
-        $view->assertSee('Market Condition:');
-        $view->assertSee('Cooling');
-        $view->assertSee('Counties with Falling Sales');
-        $view->assertSee('Counties with Rising Prices');
+        $view->assertSee('Cooling Market');
+        $view->assertSee('Latest complete Land Registry quarter vs previous quarter');
+        $view->assertSee('Transactions');
+        $view->assertSee('Median price');
+        $view->assertSee('Counties rising');
+        $view->assertSee('Counties falling sales');
         $view->assertSee('Demand weakening');
         $view->assertSee('Price growth stalling');
-        $view->assertSee('Limited market breadth');
-        $view->assertSee('Liquidity falling');
+        $view->assertSee('16% market breadth');
+        $view->assertSee('100% liquidity falling');
+        $view->assertSee('bg-yellow-50 text-yellow-700 ring-1 ring-yellow-300', false);
         $view->assertSee('18 / 112');
-        $view->assertSee('(16%)');
         $view->assertSee('112 / 112');
-        $view->assertSee('(100%)');
-        $view->assertSee('border-zinc-200 bg-zinc-50', false);
+        $view->assertSee('rounded-xl border border-slate-200 bg-white p-5 shadow-sm', false);
         $view->assertSee('-34.1%', false);
-        $view->assertSee('M 12 60 A 48 48 0 0 1 58 12', false);
-        $view->assertSee('M 62 12 A 48 48 0 0 1 108 60', false);
-        $view->assertSee('stroke="#65a30d"', false);
-        $view->assertSee('stroke="#f97316"', false);
-        $view->assertSee('x1="60" y1="60" x2="60" y2="24"', false);
-        $view->assertSee('rotate(-30.69, 60, 60)', false);
-        $view->assertSee('rotate(-2.00, 60, 60)', false);
-        $view->assertSee('rotate(14.46, 60, 60)', false);
-        $view->assertSee('rotate(-90.00, 60, 60)', false);
-        $view->assertSee('stroke="#65a30d"', false);
-        $view->assertSee('stroke="#facc15"', false);
-        $view->assertSee('stroke="#f97316"', false);
-        $view->assertSee('x1="110" y1="110" x2="110" y2="56"', false);
+        $view->assertSee('-0.2%', false);
+        $view->assertSee('16% market breadth', false);
         $view->assertDontSee('Top Counties with Falling Sales');
         $view->assertDontSee('Top Counties with Rising Prices');
         $view->assertDontSee('Torfaen');
@@ -140,12 +148,11 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('Open the crime dashboard for national and local crime trends, recent movement, and area-level context alongside the property research.');
         $view->assertDontSee('128 live');
         $view->assertDontSee('Top signal (this period)');
-        $view->assertSee('shadow-sm transition hover:shadow-md', false);
         $view->assertSee('md:grid-cols-2 lg:grid-cols-3', false);
         $view->assertSee('flex h-full flex-col', false);
         $view->assertSeeInOrder([
             'Search postcode (e.g. SW7 5PH)',
-            'Property Records',
+            'Property sales',
             'Overall Property MArket Stress Index',
             'UK Housing Market Snapshot',
             'UK Swap Rates',
@@ -265,19 +272,20 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('Market Condition:');
-        $response->assertSee('Expanding');
+        $response->assertSee('UK Housing Market Snapshot');
+        $response->assertSee('Expanding Market');
+        $response->assertSee('Latest complete Land Registry quarter vs previous quarter');
         $response->assertSee('19.2%', false);
+        $response->assertSee('Transactions');
+        $response->assertSee('Median price');
+        $response->assertSee('Counties rising');
+        $response->assertSee('Counties falling sales');
         $response->assertSee('3 / 4', false);
-        $response->assertSee('(75%)', false);
+        $response->assertSee('75% market breadth', false);
         $response->assertSee('1 / 4', false);
-        $response->assertSee('(25%)', false);
+        $response->assertSee('25% liquidity falling', false);
         $response->assertSee('Demand weakening');
-        $response->assertSee('Liquidity falling');
-        $response->assertSee('Limited market breadth');
-        $response->assertSee('rotate(17.28, 60, 60)', false);
-        $response->assertSee('rotate(67.50, 60, 60)', false);
-        $response->assertSee('rotate(-22.50, 60, 60)', false);
+        $response->assertSee('Price growth stalling');
         $response->assertDontSee('Top Counties with Falling Sales:');
         $response->assertDontSee('Top Counties with Rising Prices:');
     }

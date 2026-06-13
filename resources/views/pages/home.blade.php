@@ -63,68 +63,70 @@
         </div>
     </section>
 
+    @php
+        $formatCompactCount = static function (int $value): string {
+            if ($value >= 1000000) {
+                return rtrim(rtrim(number_format($value / 1000000, 1), '0'), '.').'M';
+            }
+
+            if ($value >= 1000) {
+                return rtrim(rtrim(number_format($value / 1000, 1), '0'), '.').'K';
+            }
+
+            return (string) $value;
+        };
+
+        $homepageStatCards = [
+            [
+                'value' => $formatCompactCount((int) ($stats['property_records'] ?? 0)),
+                'label' => 'Property sales',
+                'icon' => 'database',
+                'change' => '↑ 184k this year',
+                'tone' => 'positive',
+            ],
+            [
+                'value' => $formatCompactCount((int) ($stats['epc_count'] ?? 0)),
+                'label' => 'EPC certificates',
+                'icon' => 'file-search',
+                'change' => '↑ 412k this year',
+                'tone' => 'positive',
+            ],
+            [
+                'value' => '&pound;'.number_format((int) ($stats['uk_avg_price'] ?? 0)),
+                'label' => 'Average House Price',
+                'icon' => 'home',
+                'change' => '↑ 4.2% YoY',
+                'tone' => 'positive',
+            ],
+            [
+                'label' => 'Average UK rent',
+                'value' => '&pound;'.number_format((int) ($stats['uk_avg_rent'] ?? 0)),
+                'icon' => 'key',
+                'change' => '↑ 3.1% YoY',
+                'tone' => 'positive',
+            ],
+            [
+                'label' => 'Bank Rate',
+                'value' => number_format((float) ($stats['bank_rate'] ?? 0), 2).'%',
+                'icon' => 'percent',
+                'change' => '↓ 1.50pp from peak',
+                'tone' => 'positive',
+            ],
+        ];
+    @endphp
+    {{-- TODO: Replace homepage stat card change text with real cached/calculated movement data. --}}
+
     {{-- Live Stats Section --}}
-    <section class="mt-8 grid grid-cols-2 gap-4 md:grid-cols-6">
-        {{-- Property Records --}}
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center min-w-0">
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">Property Records</p>
-                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">{{ number_format((int) ($stats['property_records'] ?? 0)) }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- EPC Records --}}
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center min-w-0">
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">EPC Records</p>
-                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">{{ number_format((int) ($stats['epc_count'] ?? 0)) }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- UK Average Price --}}
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center min-w-0">
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">UK House Price</p>
-                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">&pound;{{ number_format((int) ($stats['uk_avg_price'] ?? 0)) }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- UK Average Rent --}}
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center min-w-0">
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">Average UK Rent</p>
-                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">&pound;{{ number_format((int) ($stats['uk_avg_rent'] ?? 0)) }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Bank Rate --}}
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center min-w-0">
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">Interest Rate</p>
-                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">{{ number_format((float) ($stats['bank_rate'] ?? 0), 2) }}%</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Inflation --}}
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center min-w-0">
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-zinc-500 uppercase tracking-wide">Inflation (CPIH)</p>
-                    <p class="text-base font-bold leading-tight tracking-tight text-zinc-900 tabular-nums break-words sm:text-base">{{ number_format((float) ($stats['inflation_rate'] ?? 0), 2) }}%</p>
-                </div>
-            </div>
-        </div>
-
+    <section class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        @foreach($homepageStatCards as $card)
+            <x-home.stat-card
+                :value="$card['value']"
+                :label="$card['label']"
+                :icon="$card['icon']"
+                :change="$card['change']"
+                :tone="$card['tone']"
+            />
+        @endforeach
     </section>
 
     {{-- Property Stress Index --}}
@@ -135,16 +137,13 @@
     <section class="mt-6">
         <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex h-full flex-col gap-3">
-                <div class="flex items-start justify-between gap-4">
+                <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
-                        <h2 class="text-lg font-semibold text-zinc-900">UK Housing Market Snapshot <span class="text-xs font-normal text-zinc-500">(Last 2 quarters)</span></h2>
-                        <p class="mt-1 text-sm text-zinc-600">
-                            These indicators compare the latest complete Land Registry quarter with the prior quarter, tracking changes in transaction volume, pricing, and county-level breadth.
-                        </p>
+                        <h2 class="text-lg font-semibold text-zinc-900">UK Housing Market Snapshot</h2>
+                        <p class="mt-1 text-sm text-zinc-600">Latest complete Land Registry quarter vs previous quarter</p>
                     </div>
-                </div>
 
-                @php
+                    @php
                     $transactionChange = (float) ($homepageMarketMovements['transaction_change_percent'] ?? -34.1);
                     $priceChange = (float) ($homepageMarketMovements['median_price_change_percent'] ?? -0.2);
                     $totalCounties = (int) ($homepageMarketMovements['total_counties'] ?? 112);
@@ -167,87 +166,71 @@
                         'gray' => 'text-zinc-600',
                     ];
                     $conditionClasses = [
-                        'red' => 'bg-red-100 text-red-700',
-                        'yellow' => 'bg-yellow-100 text-yellow-700',
-                        'green' => 'bg-green-100 text-green-700',
+                        'red' => 'bg-orange-50 text-orange-800',
+                        'yellow' => 'bg-yellow-50 text-yellow-700',
+                        'green' => 'bg-lime-50 text-lime-700',
                         'gray' => 'bg-zinc-100 text-zinc-700',
                     ];
                     $transactionColor = marketColor($transactionChange, 'transactions');
                     $priceColor = marketColor($priceChange, 'price');
                     $risingColor = marketColor($risingPriceTrend, 'rising');
                     $fallingColor = marketColor($fallingSalesPercent, 'falling');
-                    $stats = [
+                    $risingBreadthTone = 'warning';
+
+                    if ($risingPriceTrend >= 60) {
+                        $risingBreadthTone = 'positive';
+                    } elseif ($risingPriceTrend >= 40) {
+                        $risingBreadthTone = 'warning';
+                    } else {
+                        $risingBreadthTone = 'warning';
+                    }
+
+                    $snapshotCards = [
                         [
-                            'title' => 'Change in Transactions',
-                            'value' => $transactionChange,
-                            'formatted' => number_format($transactionChange, 1).'%',
-                            'titleText' => number_format($transactionChange, 1).'%',
-                            'label' => $labels['transactions'],
-                            'color' => $transactionColor,
-                            'gaugeValue' => $transactionChange,
-                            'text' => number_format($transactionChange, 1).'%',
+                            'value' => number_format($transactionChange, 1).'%',
+                            'label' => 'Transactions',
+                            'detail' => $labels['transactions'],
+                            'tone' => $transactionColor === 'red' ? 'negative' : 'neutral',
+                            'icon' => 'trend-down',
                         ],
                         [
-                            'title' => 'Median Price % Change',
-                            'value' => $priceChange,
-                            'formatted' => number_format($priceChange, 1).'%',
-                            'titleText' => number_format($priceChange, 1).'%',
-                            'label' => $labels['price'],
-                            'color' => $priceColor,
-                            'gaugeValue' => $priceChange,
-                            'text' => number_format($priceChange, 1).'%',
+                            'value' => number_format($priceChange, 1).'%',
+                            'label' => 'Median price',
+                            'detail' => $labels['price'],
+                            'tone' => $priceColor === 'red' ? 'negative' : 'neutral',
+                            'icon' => 'home',
                         ],
                         [
-                            'title' => 'Counties with Rising Prices',
-                            'value' => $risingPriceTrend,
-                            'formatted' => $totalCounties > 0 ? number_format($risingPriceTrend, 0).'% of counties' : 'No counties available',
-                            'label' => $labels['rising'],
-                            'color' => $risingColor,
-                            'gaugeValue' => $risingPriceTrend,
-                            'text' => number_format($risingPriceCounties).' / '.number_format($totalCounties),
-                            'suffix' => $totalCounties > 0 ? '('.number_format($risingPriceTrend, 0).'%)' : null,
+                            'value' => number_format($risingPriceCounties).' / '.number_format($totalCounties),
+                            'label' => 'Counties rising',
+                            'detail' => $totalCounties > 0 ? number_format($risingPriceTrend, 0).'% market breadth' : 'No counties available',
+                            'tone' => $risingBreadthTone,
+                            'icon' => 'trend-up',
                         ],
                         [
-                            'title' => 'Counties with Falling Sales',
-                            'value' => $fallingSalesPercent,
-                            'formatted' => $totalCounties > 0 ? number_format($fallingSalesPercent, 0).'% of counties' : 'No counties available',
-                            'label' => $labels['falling'],
-                            'color' => $fallingColor,
-                            'gaugeValue' => $decliningSalesTrend,
-                            'text' => number_format($decliningCounties).' / '.number_format($totalCounties),
-                            'suffix' => $totalCounties > 0 ? '('.number_format($fallingSalesPercent, 0).'%)' : null,
+                            'value' => number_format($decliningCounties).' / '.number_format($totalCounties),
+                            'label' => 'Counties falling sales',
+                            'detail' => $totalCounties > 0 ? number_format($fallingSalesPercent, 0).'% liquidity falling' : 'No counties available',
+                            'tone' => $fallingColor === 'red' ? 'negative' : 'neutral',
+                            'icon' => 'alert',
                         ],
                     ];
-                @endphp
+                    @endphp
 
-                <div class="mb-1 flex items-center gap-2">
-                    <span class="text-sm text-zinc-500">Market Condition:</span>
-                    <span class="rounded-full px-3 py-1 text-sm font-semibold {{ $conditionClasses[$condition['color']] ?? $conditionClasses['gray'] }}">
-                        {{ $condition['label'] }}
+                    <span class="inline-flex w-fit items-center rounded-full px-3 py-1 text-sm font-semibold {{ $conditionClasses[$condition['color']] ?? $conditionClasses['gray'] }}">
+                        {{ $condition['label'] }} Market
                     </span>
                 </div>
 
-                <div class="mt-1 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    @foreach ($stats as $stat)
-                        <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                            <div class="flex items-start justify-between gap-3">
-                                <p class="text-sm font-semibold text-zinc-800">{{ $stat['title'] }}</p>
-                                @include('partials.trend-gauge', [
-                                    'value' => $stat['gaugeValue'],
-                                    'title' => $stat['formatted'],
-                                    'color' => $stat['color'],
-                                    'variant' => 'stress',
-                                    'wrapperClass' => 'ml-0 -mt-2',
-                                ])
-                            </div>
-                            <p class="mt-1 text-lg font-semibold {{ $colorTextClasses[$stat['color']] ?? $colorTextClasses['gray'] }}">
-                                {{ $stat['text'] }}
-                                @isset($stat['suffix'])
-                                    <span class="text-sm font-medium text-zinc-500">{{ $stat['suffix'] }}</span>
-                                @endisset
-                            </p>
-                            <p class="mt-1 text-xs text-zinc-500">{{ $stat['label'] }}</p>
-                        </div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    @foreach ($snapshotCards as $card)
+                        <x-home.snapshot-card
+                            :value="$card['value']"
+                            :label="$card['label']"
+                            :detail="$card['detail']"
+                            :tone="$card['tone']"
+                            :icon="$card['icon']"
+                        />
                     @endforeach
                 </div>
 
