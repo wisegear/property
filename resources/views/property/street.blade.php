@@ -294,16 +294,20 @@
                             </td>
                             <td class="px-3 py-2 whitespace-nowrap text-zinc-900">{{ $sale['price_label'] ?? 'N/A' }}</td>
                             <td class="px-3 py-2 text-zinc-700">{{ $sale['property_type'] }}</td>
-                            <td class="px-3 py-2 whitespace-nowrap">
+                            <td class="px-3 py-2 whitespace-nowrap text-center">
                                 @if(! empty($sale['property_slug']))
                                     <a
                                         href="{{ route('property.show.slug', ['slug' => $sale['property_slug']]) }}"
-                                        class="inline-flex items-center rounded-md bg-zinc-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-500"
+                                        class="inline-flex items-center justify-center rounded-md bg-zinc-700 p-2 text-white hover:bg-zinc-500"
+                                        title="View property details"
+                                        aria-label="View property details"
                                     >
-                                        View property
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clip-rule="evenodd" />
+                                        </svg>
                                     </a>
                                 @else
-                                    <span class="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-500">
+                                    <span class="inline-flex items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-500">
                                         Unavailable
                                     </span>
                                 @endif

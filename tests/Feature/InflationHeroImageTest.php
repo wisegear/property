@@ -7,7 +7,7 @@ use Tests\TestCase;
 
 class InflationHeroImageTest extends TestCase
 {
-    public function test_inflation_hero_uses_wage_growth_image(): void
+    public function test_inflation_hero_uses_inflation_image(): void
     {
         $all = collect([
             (object) [
@@ -25,6 +25,6 @@ class InflationHeroImageTest extends TestCase
             'yearly' => collect(),
         ]);
 
-        $view->assertSee('assets/images/site/wage_growth.jpg', false);
+        $view->assertSee('assets/images/site/inflation.jpg', false);
     }
 }

@@ -221,6 +221,7 @@ Route::middleware('auth')->group(function () {
 // Sitemap by Spatie - Need to run generate-sitemap
 // `sitemap.xml` serves main site URLs (and chunk files when URL count is high).
 // `sitemap-epc-postcodes.xml` serves EPC postcode URLs (also chunked when needed).
+// `sitemap-streets.xml` serves property street URLs (also chunked when needed).
 // `sitemap-index.xml` is the master index intended for robots/search engines.
 
 Route::get('/sitemap.xml', function () {
@@ -278,11 +279,40 @@ Route::get('/sitemap-epc-postcodes-{chunk}.xml', function (string $chunk) {
     ]);
 })->whereNumber('chunk')->name('sitemap.epc-postcodes.chunk');
 
-Route::get('/generate-sitemap', function () {
-    // Convenience endpoint to regenerate main sitemap + index from the browser.
-    Artisan::call('sitemap:generate');
+Route::get('/sitemap-streets.xml', function () {
+    $path = public_path('sitemap-streets.xml');
+    if (! File::exists($path)) {
+        abort(404);
+    }
 
-    return response(Artisan::output(), 200, [
+    return response()->file($path, [
+        'Content-Type' => 'application/xml; charset=UTF-8',
+    ]);
+})->name('sitemap.streets');
+
+Route::get('/sitemap-streets-{chunk}.xml', function (string $chunk) {
+    $path = public_path("sitemap-streets-{$chunk}.xml");
+    if (! File::exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/xml; charset=UTF-8',
+    ]);
+})->whereNumber('chunk')->name('sitemap.streets.chunk');
+
+Route::get('/generate-sitemap', function () {
+    // Convenience endpoint to regenerate the sitemap set from the browser.
+    Artisan::call('sitemap:generate');
+    $output = Artisan::output();
+
+    Artisan::call('sitemap:generate-epc-postcodes');
+    $output .= PHP_EOL.Artisan::output();
+
+    Artisan::call('sitemap:generate-streets');
+    $output .= PHP_EOL.Artisan::output();
+
+    return response($output, 200, [
         'Content-Type' => 'text/plain; charset=UTF-8',
     ]);
 });

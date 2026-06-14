@@ -18,6 +18,8 @@ Artisan::command('inspire', function () {
 
 // Sitemap
 Schedule::command('sitemap:generate')->dailyAt('01:10');
+Schedule::command('sitemap:generate-epc-postcodes')->dailyAt('01:15');
+Schedule::command('sitemap:generate-streets')->dailyAt('01:20');
 Schedule::command('swaps:import-boe')->weekdays()->at('13:00');
 
 // Spatie Backups

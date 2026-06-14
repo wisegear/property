@@ -284,8 +284,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response->assertSee('19.2%', false);
         $response->assertSee('Transactions');
         $response->assertSee('Median price');
-        $response->assertSee('Counties rising');
-        $response->assertSee('Counties falling sales');
+        $response->assertSee('Counties with rising prices');
+        $response->assertSee('Counties with falling sales');
         $response->assertSee('3 / 4', false);
         $response->assertSee('75% market breadth', false);
         $response->assertSee('1 / 4', false);
