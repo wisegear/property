@@ -12,13 +12,12 @@
                 <span class="h-2 w-2 rounded-lg bg-lime-500"></span>
                 Fresh, independent property data
             </div>
-            <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">
-                Property Research > clear, credible & fast datasets
+            <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-3xl">
+                Property prices, sales history and market trends across UK
             </h1>
             <p class="mt-3 text-md leading-7 text-zinc-500">
-                Explore property sales, repossessions, and market signals across England and Wales, with selected coverage of Scotland and Northern Ireland. 
-                Our free property data platform is built for fast, clear, repeatable analysis of the UK housing market. 
-                Best viewed on larger screens, with some data tables better suited to desktop. No fees. No subscriptions.</span>
+                Search millions of property sales and EPC certificates, track house prices and rents, monitor market conditions and 
+                explore detailed property data across England and Wales, with additional coverage for Scotland and Northern Ireland.
             </p>
 
             <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-zinc-600">
@@ -252,7 +251,7 @@
         <a href="{{ Route::has('property.home') ? route('property.home') : url('/property') }}"
            class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">Property Sales</h2>
+                <h2 class="text-lg font-semibold text-zinc-900">Review Property Data</h2>
                 <svg xmlns="http://www.w3.org/2000/svg"
                      fill="none"
                      viewBox="0 0 24 24"
@@ -272,7 +271,7 @@
         <a href="{{ Route::has('epc.home') ? route('epc.home') : url('/epc') }}"
            class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">Energy Performance Certificates</h2>
+                <h2 class="text-lg font-semibold text-zinc-900">Find an EPC report</h2>
                 <svg xmlns="http://www.w3.org/2000/svg"
                      fill="none"
                      viewBox="0 0 24 24"
@@ -292,7 +291,7 @@
         <a href="{{ Route::has('deprivation.index') ? route('deprivation.index') : url('/deprivation') }}"
            class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">Deprivation Indexes</h2>
+                <h2 class="text-lg font-semibold text-zinc-900">View Deprivation by Area</h2>
                 <svg xmlns="http://www.w3.org/2000/svg"
                      fill="none"
                      viewBox="0 0 24 24"
@@ -312,7 +311,7 @@
         <a href="{{ route('insights.swap-rates') }}"
            class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">UK Swap Rates</h2>
+                <h2 class="text-lg font-semibold text-zinc-900">Understand UK Swap Rates</h2>
                 <svg xmlns="http://www.w3.org/2000/svg"
                      fill="none"
                      viewBox="0 0 24 24"
@@ -332,7 +331,7 @@
         <a href="{{ route('insights.index') }}"
            class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">Signals Worth Watching</h2>
+                <h2 class="text-lg font-semibold text-zinc-900">Property Signals Worth Watching</h2>
                 <svg xmlns="http://www.w3.org/2000/svg"
                      fill="none"
                      viewBox="0 0 24 24"
@@ -352,7 +351,7 @@
         <a href="{{ url('/insights/crime') }}"
            class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">Crime Insights</h2>
+                <h2 class="text-lg font-semibold text-zinc-900">View Crime Insights</h2>
                 <svg xmlns="http://www.w3.org/2000/svg"
                      fill="none"
                      viewBox="0 0 24 24"

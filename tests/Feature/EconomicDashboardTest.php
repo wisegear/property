@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\MortgageApproval;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -15,7 +15,25 @@ class EconomicDashboardTest extends TestCase
     {
         parent::setUp();
 
+        $this->forgetDashboardCache();
         $this->ensureDashboardTablesExist();
+    }
+
+    protected function forgetDashboardCache(): void
+    {
+        foreach ([
+            'eco:last_interest',
+            'eco:last_inflation',
+            'eco:last_wages',
+            'eco:last_unemployment',
+            'eco:last_approvals',
+            'eco:last_reposs_v2',
+            'eco:last_hpi',
+            'eco:total_stress',
+            'eco:total_stress_persist',
+        ] as $key) {
+            Cache::forget($key);
+        }
     }
 
     protected function ensureDashboardTablesExist(): void
@@ -151,11 +169,11 @@ class EconomicDashboardTest extends TestCase
         $approvals = $response->viewData('approvals');
 
         $this->assertSame([100.0, 110.0, 120.0], $sparklines['approvals']['values']);
-        $this->assertSame(120.0, (float) $approvals->value);
-        $this->assertSame('2025-03-01', Carbon::parse($approvals->period)->toDateString());
+        $this->assertSame(330.0, (float) $approvals->value);
+        $this->assertSame('Jan 2025 - Mar 2025', $approvals->period);
     }
 
-    public function test_hpi_panel_uses_normalized_month_label_for_legacy_y_d_m_date_format(): void
+    public function test_hpi_panel_uses_normalized_rolling_period_label_for_legacy_y_d_m_date_format(): void
     {
         DB::table('hpi_monthly')->insert([
             [
@@ -177,8 +195,8 @@ class EconomicDashboardTest extends TestCase
         $response = $this->get(route('economic.dashboard', absolute: false));
 
         $response->assertOk();
-        $response->assertSee('Dec 2025');
-        $this->assertSame('Dec 2025', $response->viewData('hpiDateLabel'));
+        $response->assertSee('Nov 2025 - Dec 2025');
+        $this->assertSame('Nov 2025 - Dec 2025', $response->viewData('hpiDateLabel'));
     }
 
     public function test_repossessions_stays_red_when_rises_are_separated_by_flat_quarters(): void
@@ -230,5 +248,129 @@ class EconomicDashboardTest extends TestCase
 
         $response->assertOk();
         $this->assertSame(2, $response->viewData('repossDirection'));
+        $response->assertSee('Repossessions are rising, but from a low base.');
+        $response->assertSee('Repossessions remain a very small share of mortgages, but the trend is worth monitoring.');
+    }
+
+    public function test_dashboard_uses_balanced_summary_when_most_signals_are_supportive_or_neutral(): void
+    {
+        DB::table('interest_rates')->insert([
+            ['effective_date' => '2025-10-01', 'rate' => 3.20, 'created_at' => now(), 'updated_at' => now()],
+            ['effective_date' => '2025-11-01', 'rate' => 3.10, 'created_at' => now(), 'updated_at' => now()],
+            ['effective_date' => '2025-12-01', 'rate' => 3.00, 'created_at' => now(), 'updated_at' => now()],
+            ['effective_date' => '2026-01-01', 'rate' => 3.00, 'created_at' => now(), 'updated_at' => now()],
+            ['effective_date' => '2026-02-01', 'rate' => 2.90, 'created_at' => now(), 'updated_at' => now()],
+            ['effective_date' => '2026-03-01', 'rate' => 2.80, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        DB::table('inflation_cpih_monthly')->insert([
+            ['date' => '2025-10-01', 'value' => 2.6, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2025-11-01', 'value' => 2.5, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2025-12-01', 'value' => 2.4, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-01-01', 'value' => 2.3, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-02-01', 'value' => 2.2, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-03-01', 'value' => 2.1, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        DB::table('wage_growth_monthly')->insert([
+            ['date' => '2025-10-01', 'three_month_avg_yoy' => 4.0, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2025-11-01', 'three_month_avg_yoy' => 4.1, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2025-12-01', 'three_month_avg_yoy' => 4.2, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-01-01', 'three_month_avg_yoy' => 4.3, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-02-01', 'three_month_avg_yoy' => 4.4, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-03-01', 'three_month_avg_yoy' => 4.5, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        DB::table('unemployment_monthly')->insert([
+            ['date' => '2025-10-01', 'single_month' => 0, 'single' => 4.4, 'three_month' => 4.4, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2025-11-01', 'single_month' => 0, 'single' => 4.3, 'three_month' => 4.3, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2025-12-01', 'single_month' => 0, 'single' => 4.3, 'three_month' => 4.3, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-01-01', 'single_month' => 0, 'single' => 4.2, 'three_month' => 4.2, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-02-01', 'single_month' => 0, 'single' => 4.2, 'three_month' => 4.2, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-03-01', 'single_month' => 0, 'single' => 4.1, 'three_month' => 4.1, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        MortgageApproval::query()->create([
+            'series_code' => 'LPMVTVX',
+            'period' => '2025-10-01',
+            'value' => 62000,
+            'unit' => 'count',
+            'source' => 'BoE',
+        ]);
+
+        MortgageApproval::query()->create([
+            'series_code' => 'LPMVTVX',
+            'period' => '2025-11-01',
+            'value' => 63000,
+            'unit' => 'count',
+            'source' => 'BoE',
+        ]);
+
+        MortgageApproval::query()->create([
+            'series_code' => 'LPMVTVX',
+            'period' => '2025-12-01',
+            'value' => 64000,
+            'unit' => 'count',
+            'source' => 'BoE',
+        ]);
+
+        MortgageApproval::query()->create([
+            'series_code' => 'LPMVTVX',
+            'period' => '2026-01-01',
+            'value' => 65000,
+            'unit' => 'count',
+            'source' => 'BoE',
+        ]);
+
+        MortgageApproval::query()->create([
+            'series_code' => 'LPMVTVX',
+            'period' => '2026-02-01',
+            'value' => 66000,
+            'unit' => 'count',
+            'source' => 'BoE',
+        ]);
+
+        MortgageApproval::query()->create([
+            'series_code' => 'LPMVTVX',
+            'period' => '2026-03-01',
+            'value' => 67000,
+            'unit' => 'count',
+            'source' => 'BoE',
+        ]);
+
+        DB::table('mlar_arrears')->insert([
+            ['year' => 2025, 'quarter' => 'Q4', 'description' => 'In possession', 'value' => 0.050, 'created_at' => now(), 'updated_at' => now()],
+            ['year' => 2026, 'quarter' => 'Q1', 'description' => 'In possession', 'value' => 0.080, 'created_at' => now(), 'updated_at' => now()],
+            ['year' => 2025, 'quarter' => 'Q4', 'description' => '2.5% to 5% in arrears', 'value' => 0.700, 'created_at' => now(), 'updated_at' => now()],
+            ['year' => 2026, 'quarter' => 'Q1', 'description' => '2.5% to 5% in arrears', 'value' => 0.720, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        DB::table('hpi_monthly')->insert([
+            ['AreaCode' => 'K02000001', 'Date' => '2025-10-01', 'AveragePrice' => 299000, 'created_at' => now(), 'updated_at' => now()],
+            ['AreaCode' => 'K02000001', 'Date' => '2025-11-01', 'AveragePrice' => 300000, 'created_at' => now(), 'updated_at' => now()],
+            ['AreaCode' => 'K02000001', 'Date' => '2025-12-01', 'AveragePrice' => 301000, 'created_at' => now(), 'updated_at' => now()],
+            ['AreaCode' => 'K02000001', 'Date' => '2026-01-01', 'AveragePrice' => 302000, 'created_at' => now(), 'updated_at' => now()],
+            ['AreaCode' => 'K02000001', 'Date' => '2026-02-01', 'AveragePrice' => 303000, 'created_at' => now(), 'updated_at' => now()],
+            ['AreaCode' => 'K02000001', 'Date' => '2026-03-01', 'AveragePrice' => 304000, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $response = $this->get(route('economic.dashboard', absolute: false));
+
+        $response->assertOk();
+        $response->assertSee('Market signals summary');
+        $response->assertSee('Mortgage approvals');
+        $response->assertSee('Buyer demand is improving.');
+        $response->assertSee('What this means');
+        $response->assertSee('The wider housing market currently looks');
+        $response->assertSee('broadly supportive');
+        $response->assertDontSee('under pressure');
+        $response->assertSee('Current 3-month period');
+        $response->assertSee('Previous 3-month period');
+        $response->assertSee('Current quarter');
+        $response->assertSee('Previous quarter');
+        $response->assertSee('Q1 2026');
+        $response->assertSee('Q4 2025');
+        $response->assertSee('Jan 2026 - Mar 2026');
+        $response->assertSee('Oct 2025 - Dec 2025');
     }
 }
