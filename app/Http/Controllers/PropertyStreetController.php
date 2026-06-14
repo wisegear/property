@@ -16,6 +16,8 @@ class PropertyStreetController extends Controller
 {
     private const CACHE_TTL = 60 * 60 * 24 * 45;
 
+    private const CACHE_VERSION = 'v3';
+
     private const MIN_RELIABLE_SALES = 3;
 
     private const ONSPD_TABLE = 'onspd_v2';
@@ -28,7 +30,7 @@ class PropertyStreetController extends Controller
             abort(404);
         }
 
-        $cacheKey = sprintf('property:street:v1:%s:%s', $street, Str::lower($outcode));
+        $cacheKey = sprintf('property:street:%s:%s:%s', self::CACHE_VERSION, $street, Str::lower($outcode));
 
         $payload = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($street, $outcode): array {
             return $this->buildPayload($street, $outcode);
@@ -53,6 +55,9 @@ class PropertyStreetController extends Controller
             'totalChange' => $payload['crime_total_change'],
             'topIncrease' => $payload['crime_top_increase'],
             'topDecrease' => $payload['crime_top_decrease'],
+            'depr' => $payload['deprivation'] ?? null,
+            'deprMsg' => $payload['deprivation_message'] ?? null,
+            'lsoaLink' => $payload['deprivation_link'] ?? null,
         ]);
     }
 
@@ -74,7 +79,10 @@ class PropertyStreetController extends Controller
      *     crime_trend_values:array<int, int>,
      *     crime_total_change:float,
      *     crime_top_increase:?array<string, mixed>,
-     *     crime_top_decrease:?array<string, mixed>
+     *     crime_top_decrease:?array<string, mixed>,
+     *     deprivation:?array<string, mixed>,
+     *     deprivation_message:?string,
+     *     deprivation_link:?string
      * }
      */
     private function buildPayload(string $streetSlug, string $outcode): array
@@ -122,6 +130,12 @@ class PropertyStreetController extends Controller
                     'tenure' => $this->tenureLabel($row->Duration !== null ? (string) $row->Duration : null),
                     'build_status' => $this->buildStatusLabel($row->NewBuild !== null ? (string) $row->NewBuild : null),
                     'address' => $this->formatAddress($paon, $saon),
+                    'property_slug' => $this->buildPropertySlug(
+                        trim((string) ($row->Postcode ?? '')),
+                        $paon,
+                        trim((string) ($row->Street ?? '')),
+                        $saon !== '' ? $saon : null
+                    ),
                 ];
             })
             ->values()
@@ -188,6 +202,7 @@ class PropertyStreetController extends Controller
             ->all();
 
         $crimePayload = $this->buildCrimePayload($records, $streetName, $outcode);
+        $deprivationPayload = $this->buildDeprivationPayload($records);
 
         return [
             'street_name' => $streetName,
@@ -207,6 +222,256 @@ class PropertyStreetController extends Controller
             'crime_total_change' => $crimePayload['crime_total_change'],
             'crime_top_increase' => $crimePayload['crime_top_increase'],
             'crime_top_decrease' => $crimePayload['crime_top_decrease'],
+            'deprivation' => $deprivationPayload['depr'],
+            'deprivation_message' => $deprivationPayload['deprMsg'],
+            'deprivation_link' => $deprivationPayload['lsoaLink'],
+        ];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $records
+     * @return array{depr:?array<string, mixed>,deprMsg:?string,lsoaLink:?string}
+     */
+    private function buildDeprivationPayload(array $records): array
+    {
+        $emptyPayload = [
+            'depr' => null,
+            'deprMsg' => null,
+            'lsoaLink' => null,
+        ];
+
+        if (! Schema::hasTable(self::ONSPD_TABLE)) {
+            return [
+                ...$emptyPayload,
+                'deprMsg' => 'Unable to resolve this street to ONSPD.',
+            ];
+        }
+
+        $centroid = $this->streetCentroid($records);
+
+        if ($centroid === null) {
+            return [
+                ...$emptyPayload,
+                'deprMsg' => 'Unable to derive a street centroid for deprivation context.',
+            ];
+        }
+
+        $resolveImdForLsoa = function (string $lsoa) {
+            $tables = ['imd2025', 'wimd2019'];
+            $keyCols = ['LSOA_Code_2021', 'LSOA_code', 'lsoa21cd', 'lsoa21', 'LSOA21CD', 'lsoa11cd', 'lsoa11', 'LSOA11CD', 'lsoa_code', 'lsoa', 'LSOA'];
+            $rankCols = ['Index_of_Multiple_Deprivation_Rank', 'rank', 'Rank', 'imd_rank', 'IMD_RANK', 'wimd_rank', 'WIMD_RANK', 'Overall_Rank', 'overall_rank', 'IMD_Rank', 'IMD_rank', 'WIMD_Rank', 'WIMD_rank', 'IMD_Rank_2025', 'IMD_rank_2025', 'Rank_2025', 'WIMD_Rank_2019', 'WIMD_rank_2019', 'Rank_2019'];
+            $decileCols = ['Index_of_Multiple_Deprivation_Decile', 'decile', 'Decile', 'imd_decile', 'IMD_DECILE', 'wimd_decile', 'WIMD_DECILE', 'Overall_Decile', 'overall_decile', 'IMD_Decile', 'IMD_decile', 'WIMD_Decile', 'WIMD_decile', 'IMD_Decile_2025', 'IMD_decile_2025', 'Decile_2025', 'WIMD_Decile_2019', 'WIMD_decile_2019', 'Decile_2019'];
+            $nameCols = ['LSOA_Name_2021', 'name', 'lsoa_name', 'lsoa21nm', 'LSOA21NM', 'lsoa11nm', 'LSOA11NM', 'LSOA_Name', 'LSOA_name'];
+
+            foreach ($tables as $table) {
+                if (! Schema::hasTable($table)) {
+                    continue;
+                }
+
+                $cols = Cache::remember('depr:cols:'.$table, now()->addDays(90), function () use ($table) {
+                    try {
+                        return array_map(fn ($column) => (string) $column, Schema::getColumnListing($table));
+                    } catch (\Throwable $throwable) {
+                        return [];
+                    }
+                });
+
+                $pickCol = function (array $preferred) use ($cols) {
+                    if ($cols === []) {
+                        return null;
+                    }
+
+                    foreach ($preferred as $column) {
+                        if (in_array($column, $cols, true)) {
+                            return $column;
+                        }
+                    }
+
+                    $lowercaseColumns = array_map('strtolower', $cols);
+                    foreach ($preferred as $column) {
+                        $index = array_search(strtolower($column), $lowercaseColumns, true);
+                        if ($index !== false) {
+                            return $cols[$index];
+                        }
+                    }
+
+                    foreach ($preferred as $column) {
+                        $needle = strtolower($column);
+                        foreach ($cols as $candidate) {
+                            if (str_contains(strtolower($candidate), $needle)) {
+                                return $candidate;
+                            }
+                        }
+                    }
+
+                    return null;
+                };
+
+                $forced = null;
+                if ($table === 'imd2025') {
+                    $forced = [
+                        'key' => 'LSOA_Code_2021',
+                        'name' => 'LSOA_Name_2021',
+                        'rank' => 'Index_of_Multiple_Deprivation_Rank',
+                        'decile' => 'Index_of_Multiple_Deprivation_Decile',
+                    ];
+                } elseif ($table === 'wimd2019') {
+                    $forced = [
+                        'key' => 'LSOA_code',
+                        'name' => 'LSOA_name',
+                        'rank' => 'WIMD_2019',
+                        'decile' => null,
+                    ];
+                }
+
+                $keyCol = null;
+                if ($forced !== null && Schema::hasColumn($table, $forced['key'])) {
+                    $keyCol = $forced['key'];
+                } else {
+                    foreach ($keyCols as $candidate) {
+                        if (Schema::hasColumn($table, $candidate)) {
+                            $keyCol = $candidate;
+                            break;
+                        }
+                    }
+                }
+
+                if ($keyCol === null) {
+                    continue;
+                }
+
+                $select = [$keyCol];
+                $rankCol = null;
+                $decileCol = null;
+                $nameCol = null;
+
+                if ($forced !== null) {
+                    if (! empty($forced['rank']) && Schema::hasColumn($table, $forced['rank'])) {
+                        $rankCol = $forced['rank'];
+                        $select[] = $rankCol;
+                    }
+                    if (! empty($forced['decile']) && Schema::hasColumn($table, $forced['decile'])) {
+                        $decileCol = $forced['decile'];
+                        $select[] = $decileCol;
+                    }
+                    if (! empty($forced['name']) && Schema::hasColumn($table, $forced['name'])) {
+                        $nameCol = $forced['name'];
+                        $select[] = $nameCol;
+                    }
+                }
+
+                if ($rankCol === null) {
+                    $rankCol = $pickCol($rankCols);
+                    if ($rankCol !== null) {
+                        $select[] = $rankCol;
+                    }
+                }
+
+                if ($decileCol === null) {
+                    $decileCol = $pickCol($decileCols);
+                    if ($decileCol !== null) {
+                        $select[] = $decileCol;
+                    }
+                }
+
+                if ($nameCol === null) {
+                    $nameCol = $pickCol($nameCols);
+                    if ($nameCol !== null) {
+                        $select[] = $nameCol;
+                    }
+                }
+
+                $row = DB::table($table)
+                    ->select(array_values(array_unique($select)))
+                    ->where($keyCol, trim($lsoa))
+                    ->first();
+
+                if ($row === null) {
+                    continue;
+                }
+
+                $total = Cache::remember('imd:total:'.$table, now()->addDays(90), function () use ($table) {
+                    return (int) DB::table($table)->count();
+                });
+
+                $rank = $rankCol !== null ? (int) ($row->{$rankCol} ?? 0) : 0;
+                $decile = $decileCol !== null ? (int) ($row->{$decileCol} ?? 0) : 0;
+
+                if ($decile === 0 && $rank > 0 && $total > 0) {
+                    $decile = (int) max(1, min(10, ceil(($rank / $total) * 10)));
+                }
+
+                return [
+                    'table' => $table,
+                    'rank' => $rank ?: null,
+                    'decile' => $decile ?: null,
+                    'name' => $nameCol !== null ? ((string) ($row->{$nameCol} ?? '') ?: null) : null,
+                    'total' => $total ?: null,
+                    'pct' => ($rank > 0 && $total > 0) ? round(($rank / $total) * 100, 1) : null,
+                ];
+            }
+
+            return null;
+        };
+
+        $nearestOnspdRow = DB::table(self::ONSPD_TABLE)
+            ->select([
+                'pcds',
+                'lsoa21cd as lsoa21',
+                'lsoa11cd as lsoa11',
+                'lat',
+                'long',
+            ])
+            ->whereNotNull('lat')
+            ->whereNotNull('long')
+            ->orderByRaw('POWER(lat - ?, 2) + POWER("long" - ?, 2)', [$centroid['lat'], $centroid['lng']])
+            ->first();
+
+        if ($nearestOnspdRow === null) {
+            return [
+                ...$emptyPayload,
+                'deprMsg' => 'Unable to resolve the nearest postcode area for deprivation context.',
+            ];
+        }
+
+        $lsoa = trim((string) ($nearestOnspdRow->lsoa21 ?? $nearestOnspdRow->lsoa11 ?? ''));
+        $isEngland = $lsoa !== '' && str_starts_with($lsoa, 'E01');
+        $isWales = $lsoa !== '' && str_starts_with($lsoa, 'W01');
+
+        if (! $isEngland && ! $isWales) {
+            return [
+                ...$emptyPayload,
+                'deprMsg' => 'Unable to resolve this street centroid to an English or Welsh LSOA.',
+            ];
+        }
+
+        $imd = Cache::remember('depr:lsoa:street:'.$lsoa, now()->addDays(90), function () use ($resolveImdForLsoa, $lsoa) {
+            return $resolveImdForLsoa($lsoa);
+        });
+
+        if ($imd === null) {
+            return [
+                ...$emptyPayload,
+                'deprMsg' => 'Closest LSOA found, but no deprivation record could be located in the database.',
+            ];
+        }
+
+        return [
+            'depr' => [
+                'lsoa21' => $lsoa,
+                'name' => $imd['name'] ?? null,
+                'rank' => $imd['rank'] ?? null,
+                'decile' => $imd['decile'] ?? null,
+                'pct' => $imd['pct'] ?? null,
+                'total' => $imd['total'] ?? null,
+                'lat' => $centroid['lat'],
+                'long' => $centroid['lng'],
+                'postcode' => (string) ($nearestOnspdRow->pcds ?? ''),
+            ],
+            'deprMsg' => null,
+            'lsoaLink' => $isEngland
+                ? route('deprivation.show', ['lsoa21cd' => $lsoa])
+                : route('deprivation.wales.show', ['lsoa' => $lsoa]),
         ];
     }
 
@@ -612,5 +877,32 @@ class PropertyStreetController extends Controller
             'N' => 'Existing',
             default => 'Unknown',
         };
+    }
+
+    private function buildPropertySlug(string $postcode, string $paon, string $street, ?string $saon = null): string
+    {
+        $parts = [
+            $this->normalizeSlugPart($postcode),
+            $this->normalizeSlugPart($paon),
+            $this->normalizeSlugPart($street),
+        ];
+
+        if ($saon !== null && trim($saon) !== '') {
+            $parts[] = $this->normalizeSlugPart($saon);
+        }
+
+        $parts = array_values(array_filter($parts, fn (string $part): bool => $part !== ''));
+
+        return preg_replace('/-+/', '-', implode('-', $parts)) ?? '';
+    }
+
+    private function normalizeSlugPart(string $value): string
+    {
+        $normalized = strtolower(trim($value));
+        $normalized = str_replace(',', '', $normalized);
+        $normalized = preg_replace('/\s+/', '-', $normalized) ?? '';
+        $normalized = preg_replace('/-+/', '-', $normalized) ?? '';
+
+        return trim($normalized, '-');
     }
 }

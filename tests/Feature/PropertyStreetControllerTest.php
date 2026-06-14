@@ -15,11 +15,13 @@ class PropertyStreetControllerTest extends TestCase
         $this->ensureLandRegistryTable();
         $this->ensureOnspdTable();
         $this->ensureCrimeTable();
+        $this->ensureImdTables();
 
-        Cache::forget('property:street:v1:cromwell-road:sw7');
+        Cache::forget('property:street:v3:cromwell-road:sw7');
         DB::table('land_registry')->delete();
         DB::table('onspd_v2')->delete();
         DB::table('crime')->delete();
+        DB::table('imd2025')->delete();
 
         DB::table('land_registry')->insert([
             $this->saleRow('tx-101', 'CROMWELL ROAD', 100000, '2023-01-15 00:00:00', 'SW7 5PH', '1', 'FLAT 1'),
@@ -31,9 +33,16 @@ class PropertyStreetControllerTest extends TestCase
         ]);
 
         DB::table('onspd_v2')->insert([
-            ['pcds' => 'SW7 5PH', 'lat' => 51.4970000, 'long' => -0.1820000, 'dointr' => '202501'],
-            ['pcds' => 'SW7 5AA', 'lat' => 51.4972000, 'long' => -0.1817000, 'dointr' => '202501'],
-            ['pcds' => 'SW7 4ZZ', 'lat' => 51.4968000, 'long' => -0.1823000, 'dointr' => '202501'],
+            ['pcds' => 'SW7 5PH', 'lsoa21cd' => 'E01000001', 'lsoa11cd' => 'E01000001', 'lat' => 51.4970000, 'long' => -0.1820000, 'dointr' => '202501'],
+            ['pcds' => 'SW7 5AA', 'lsoa21cd' => 'E01000001', 'lsoa11cd' => 'E01000001', 'lat' => 51.4972000, 'long' => -0.1817000, 'dointr' => '202501'],
+            ['pcds' => 'SW7 4ZZ', 'lsoa21cd' => 'E01000001', 'lsoa11cd' => 'E01000001', 'lat' => 51.4968000, 'long' => -0.1823000, 'dointr' => '202501'],
+        ]);
+
+        DB::table('imd2025')->insert([
+            'LSOA_Code_2021' => 'E01000001',
+            'LSOA_Name_2021' => 'Knightsbridge and Belgravia 001A',
+            'Index_of_Multiple_Deprivation_Rank' => 1200,
+            'Index_of_Multiple_Deprivation_Decile' => 8,
         ]);
 
         DB::table('crime')->insert([
@@ -55,13 +64,17 @@ class PropertyStreetControllerTest extends TestCase
         $response->assertSee('£250,000');
         $response->assertSee('10 Jun 2024');
         $response->assertSee('£400,000');
+        $response->assertSee('Closest Deprivation Area for This Street');
+        $response->assertSee('Knightsbridge and Belgravia 001A');
+        $response->assertSee('Nearest postcode anchor: SW7 5PH');
         $response->assertSee('Crime Trends near CROMWELL ROAD, SW7');
         $response->assertSee('Crime Profile for This Street Area');
-        $response->assertDontSee('Historic sales table');
-        $response->assertDontSee('Top sales on this street');
+        $response->assertSee('Property sales on this street');
+        $response->assertSee('View property');
+        $response->assertSee(route('property.show.slug', ['slug' => 'sw7-5ph-1-cromwell-road-flat-1'], false), false);
         $response->assertDontSee('Sales data for this street is limited, so figures may be less reliable.');
 
-        $cached = Cache::get('property:street:v1:cromwell-road:sw7');
+        $cached = Cache::get('property:street:v3:cromwell-road:sw7');
 
         $this->assertIsArray($cached);
         $this->assertSame('CROMWELL ROAD', $cached['street_name']);
@@ -72,7 +85,7 @@ class PropertyStreetControllerTest extends TestCase
     {
         $this->ensureLandRegistryTable();
 
-        Cache::forget('property:street:v1:union-street:se1');
+        Cache::forget('property:street:v3:union-street:se1');
         DB::table('land_registry')->delete();
 
         DB::table('land_registry')->insert([
@@ -121,6 +134,8 @@ class PropertyStreetControllerTest extends TestCase
 
         Schema::create('onspd_v2', function (Blueprint $table): void {
             $table->string('pcds', 16)->nullable();
+            $table->string('lsoa21cd', 16)->nullable();
+            $table->string('lsoa11cd', 16)->nullable();
             $table->decimal('lat', 10, 7)->nullable();
             $table->decimal('long', 10, 7)->nullable();
             $table->string('dointr', 16)->nullable();
@@ -147,6 +162,26 @@ class PropertyStreetControllerTest extends TestCase
             $table->string('last_outcome_category')->nullable();
             $table->string('context')->nullable();
         });
+    }
+
+    private function ensureImdTables(): void
+    {
+        if (! Schema::hasTable('imd2025')) {
+            Schema::create('imd2025', function (Blueprint $table): void {
+                $table->string('LSOA_Code_2021')->nullable();
+                $table->string('LSOA_Name_2021')->nullable();
+                $table->unsignedInteger('Index_of_Multiple_Deprivation_Rank')->nullable();
+                $table->unsignedTinyInteger('Index_of_Multiple_Deprivation_Decile')->nullable();
+            });
+        }
+
+        if (! Schema::hasTable('wimd2019')) {
+            Schema::create('wimd2019', function (Blueprint $table): void {
+                $table->string('LSOA_code')->nullable();
+                $table->string('LSOA_name')->nullable();
+                $table->unsignedInteger('WIMD_2019')->nullable();
+            });
+        }
     }
 
     /**

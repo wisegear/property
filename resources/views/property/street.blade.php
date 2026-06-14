@@ -4,17 +4,25 @@
 @section('content')
 <div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
     <section class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Street Sales</p>
-        <h1 class="mt-2 text-2xl font-semibold text-zinc-900">{{ $streetName }}, {{ $outcode }} property sales</h1>
-        <p class="mt-2 max-w-3xl text-sm text-zinc-600">
-            Category A Land Registry sales for this street and postcode district, cached for 45 days.
-        </p>
+        <div class="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+            <div class="max-w-3xl">
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Street Sales</p>
+                <h1 class="mt-2 text-2xl font-semibold text-zinc-900">{{ $streetName }}, {{ $outcode }} property sales</h1>
+                <p class="mt-2 text-sm text-zinc-600">
+                    Category A Land Registry sales for this street and postcode district, cached for 45 days.
+                </p>
 
-        @if($limitedData)
-            <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                Sales data for this street is limited, so figures may be less reliable.
+                @if($limitedData)
+                    <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        Sales data for this street is limited, so figures may be less reliable.
+                    </div>
+                @endif
             </div>
-        @endif
+
+            <div class="shrink-0">
+                <img src="{{ asset('assets/images/site/street.png') }}" alt="Street property sales" class="h-auto w-64 md:w-72">
+            </div>
+        </div>
     </section>
 
     <section class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -178,15 +186,151 @@
         </section>
     @endif
 
+    @php
+        $badgeClass = function ($decile) {
+            $d = (int) ($decile ?? 0);
+            if ($d <= 0) return 'bg-zinc-100 text-zinc-800 border-zinc-200';
+            if ($d <= 2) return 'bg-rose-100 text-rose-800 border-rose-200';
+            if ($d <= 4) return 'bg-amber-100 text-amber-800 border-amber-200';
+            if ($d <= 6) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            if ($d <= 8) return 'bg-lime-100 text-lime-800 border-lime-200';
+            return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        };
+    @endphp
+
+    <section class="mt-6">
+        @if($depr)
+            <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-lg">
+                <div class="grid gap-6 lg:grid-cols-[1.2fr,0.8fr]">
+                    <div>
+                        <div class="text-lg font-bold text-zinc-600">Closest Deprivation Area for This Street</div>
+                        <div class="font-medium">
+                            {{ $depr['name'] }}
+                            <span class="text-xs text-zinc-500">({{ $depr['lsoa21'] }})</span>
+                        </div>
+                        <div class="pt-1 text-xs text-zinc-500">
+                            This is the nearest mapped LSOA to the street centroid, so it provides area context rather than street-specific deprivation.
+                        </div>
+
+                        <div class="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div class="mb-1 text-xs text-zinc-600">Decile</div>
+                                    <span class="inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-bold shadow-sm {{ $badgeClass($depr['decile']) }}">
+                                        {{ $depr['decile'] ? $depr['decile'].' / 10' : 'N/A' }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <div class="mb-1 text-xs text-zinc-600">Rank</div>
+                                    <div class="text-2xl font-semibold leading-none">
+                                        @if($depr['rank'])
+                                            {{ number_format($depr['rank']) }} <span class="text-sm font-normal text-zinc-500">/ {{ number_format($depr['total'] ?? 32844) }}</span>
+                                        @else
+                                            N/A
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="mt-4 text-xs text-zinc-500">Higher decile/rank values indicate less deprivation (better).</p>
+                        </div>
+
+                        <div class="mt-4 flex flex-wrap gap-3">
+                            @if($lsoaLink)
+                                <a href="{{ $lsoaLink }}" class="inline-flex items-center gap-1.5 rounded-md border border-lime-200 bg-zinc-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-500">Full details</a>
+                            @endif
+                            @if(! empty($depr['postcode']))
+                                <span class="inline-flex items-center rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-500">
+                                    Nearest postcode anchor: {{ $depr['postcode'] }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="mb-2 text-sm font-medium text-zinc-700">Closest LSOA map context</div>
+                        <div class="relative overflow-hidden rounded-xl border border-zinc-200">
+                            <div id="street-deprivation-map" class="h-72 w-full bg-zinc-100"></div>
+                            <div id="street-deprivation-map-loading" class="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/80 text-sm text-zinc-500">
+                                Loading map…
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @else
+            <div class="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                {{ $deprMsg ?? 'Unable to resolve this street to an English or Welsh LSOA.' }}
+            </div>
+        @endif
+    </section>
+
+    <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Street Sales</p>
+                <h2 class="mt-2 text-lg font-semibold text-zinc-900">Property sales on this street</h2>
+                <p class="mt-2 text-sm text-zinc-600">Open any row to view the normal property detail page for that specific sale address.</p>
+            </div>
+        </div>
+
+        <div class="mt-6 overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-zinc-50 text-left text-zinc-600">
+                    <tr>
+                        <th class="px-3 py-2 font-medium">Date</th>
+                        <th class="px-3 py-2 font-medium">Address</th>
+                        <th class="px-3 py-2 font-medium">Price</th>
+                        <th class="px-3 py-2 font-medium">Type</th>
+                        <th class="px-3 py-2 font-medium">View</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($sales as $sale)
+                        <tr class="border-t border-zinc-200">
+                            <td class="px-3 py-2 whitespace-nowrap text-zinc-700">{{ $sale['date_label'] ?? 'N/A' }}</td>
+                            <td class="px-3 py-2 text-zinc-900">
+                                <div>{{ $sale['address'] !== '' ? $sale['address'] : 'N/A' }}</div>
+                                <div class="text-xs text-zinc-500">{{ $streetName }}, {{ $sale['postcode'] }}</div>
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap text-zinc-900">{{ $sale['price_label'] ?? 'N/A' }}</td>
+                            <td class="px-3 py-2 text-zinc-700">{{ $sale['property_type'] }}</td>
+                            <td class="px-3 py-2 whitespace-nowrap">
+                                @if(! empty($sale['property_slug']))
+                                    <a
+                                        href="{{ route('property.show.slug', ['slug' => $sale['property_slug']]) }}"
+                                        class="inline-flex items-center rounded-md bg-zinc-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-500"
+                                    >
+                                        View property
+                                    </a>
+                                @else
+                                    <span class="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-500">
+                                        Unavailable
+                                    </span>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4">
+            {{ $sales->links() }}
+        </div>
+    </section>
+
 </div>
 
 @push('scripts')
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
     (function () {
         const yearlyMedianPrice = @json($yearlyMedianPrice);
         const yearlySalesCount = @json($yearlySalesCount);
         const crimeSparklineEl = document.getElementById('crimeSparkline');
         const crimeTrendColor = @json($totalChange > 0 ? '#ef4444' : ($totalChange < 0 ? '#16a34a' : '#3b82f6'));
+        const deprivationMapEl = document.getElementById('street-deprivation-map');
 
         const currencyFormatter = new Intl.NumberFormat('en-GB', {
             style: 'currency',
@@ -249,6 +393,44 @@
                 }
             });
         };
+
+        if (deprivationMapEl && typeof L !== 'undefined') {
+            const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            });
+
+            const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                attribution: 'Tiles © Esri, Maxar, Earthstar Geographics'
+            });
+
+            const map = L.map('street-deprivation-map', {
+                center: [{{ $depr['lat'] ?? 0 }}, {{ $depr['long'] ?? 0 }}],
+                zoom: 14,
+                layers: [osm]
+            });
+
+            L.marker([{{ $depr['lat'] ?? 0 }}, {{ $depr['long'] ?? 0 }}]).addTo(map)
+                .bindPopup('Closest LSOA context for this street')
+                .openPopup();
+
+            L.control.layers({
+                'Map': osm,
+                'Satellite': satellite
+            }).addTo(map);
+
+            const loadingEl = document.getElementById('street-deprivation-map-loading');
+            if (loadingEl) {
+                osm.on('load', function () {
+                    loadingEl.style.transition = 'opacity 200ms ease-out';
+                    loadingEl.style.opacity = '0';
+                    setTimeout(function () {
+                        loadingEl.remove();
+                    }, 220);
+                });
+            }
+        }
 
         if (crimeSparklineEl) {
             new Chart(crimeSparklineEl, {
