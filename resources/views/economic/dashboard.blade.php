@@ -136,13 +136,6 @@
                         </div>
                     </div>
 
-                    <div class="rounded-xl border border-dashed border-zinc-200 bg-zinc-50/70 px-4 py-3 text-xs leading-5 text-zinc-500">
-                        <span class="font-semibold text-zinc-600">Debug:</span>
-                        latest data date {{ $card['debug']['latest_data_date'] }},
-                        current {{ $card['debug']['current_start'] }} to {{ $card['debug']['current_end'] }},
-                        previous {{ $card['debug']['previous_start'] }} to {{ $card['debug']['previous_end'] }},
-                        frequency {{ $card['debug']['frequency'] }}.
-                    </div>
                 </div>
             </article>
         @endforeach
