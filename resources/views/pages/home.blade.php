@@ -37,27 +37,51 @@
     </section>
 
     <section class="mt-6">
-        <div class="mx-auto max-w-3xl rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <form method="GET" action="{{ route('property.search') }}" class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <input
-                    id="home-postcode"
-                    name="postcode"
-                    type="text"
-                    value="{{ old('postcode', request('postcode', '')) }}"
-                    placeholder="Search postcode (e.g. SW7 5PH)"
-                    class="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
-                />
+        <div class="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
+            <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <div class="mb-2 text-sm font-medium text-zinc-800">Search by street</div>
+                <div class="relative">
+                    <input
+                        id="home-street-search"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="Search by street"
+                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                    />
+                    <div
+                        id="home-street-suggestions"
+                        class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-y-auto rounded-lg border border-zinc-200 bg-white text-sm shadow-lg">
+                    </div>
+                </div>
 
-                <button
-                    type="submit"
-                    class="rounded-lg bg-zinc-900 px-5 py-2 text-sm text-white transition hover:bg-black"
-                >
-                    Search
-                </button>
-            </form>
+                <div class="mt-2 text-xs text-zinc-500">
+                    Autocomplete matches unique street and postcode district combinations from Land Registry sales.
+                </div>
+            </div>
 
-            <div class="mt-2 text-center text-xs text-zinc-500">
-                Jump straight to full property data for any postcode in England &amp; Wales
+            <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <div class="mb-2 text-sm font-medium text-zinc-800">Search postcode</div>
+                <form method="GET" action="{{ route('property.search') }}" class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <input
+                        id="home-postcode"
+                        name="postcode"
+                        type="text"
+                        value="{{ old('postcode', request('postcode', '')) }}"
+                        placeholder="Search postcode (e.g. SW7 5PH)"
+                        class="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                    />
+
+                    <button
+                        type="submit"
+                        class="rounded-lg bg-zinc-900 px-5 py-2 text-sm text-white transition hover:bg-black"
+                    >
+                        Search
+                    </button>
+                </form>
+
+                <div class="mt-2 text-xs text-zinc-500">
+                    Jump straight to full property data for any postcode in England &amp; Wales
+                </div>
             </div>
         </div>
     </section>
@@ -423,4 +447,91 @@
     @endif
 
 </div>
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const input = document.getElementById('home-street-search');
+        const suggestionsBox = document.getElementById('home-street-suggestions');
+
+        if (!input || !suggestionsBox) {
+            return;
+        }
+
+        let streets = [];
+
+        fetch('{{ asset('data/property_streets.json') }}')
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Street index unavailable');
+                }
+
+                return response.json();
+            })
+            .then(function (payload) {
+                if (Array.isArray(payload)) {
+                    streets = payload;
+                }
+            })
+            .catch(function () {
+                streets = [];
+            });
+
+        const hideSuggestions = function () {
+            suggestionsBox.classList.add('hidden');
+            suggestionsBox.innerHTML = '';
+        };
+
+        const renderSuggestions = function (query) {
+            const normalizedQuery = query.trim().toLowerCase();
+
+            suggestionsBox.innerHTML = '';
+
+            if (normalizedQuery.length < 2) {
+                hideSuggestions();
+
+                return;
+            }
+
+            const matches = streets
+                .filter(function (item) {
+                    const search = item && item.search ? String(item.search) : '';
+
+                    return search.includes(normalizedQuery);
+                })
+                .slice(0, 12);
+
+            if (matches.length === 0) {
+                hideSuggestions();
+
+                return;
+            }
+
+            matches.forEach(function (item) {
+                const option = document.createElement('button');
+                option.type = 'button';
+                option.className = 'block w-full px-4 py-2 text-left text-zinc-700 hover:bg-zinc-100';
+                option.textContent = item.label || '';
+                option.addEventListener('click', function () {
+                    if (item.path) {
+                        window.location.href = item.path;
+                    }
+                });
+                suggestionsBox.appendChild(option);
+            });
+
+            suggestionsBox.classList.remove('hidden');
+        };
+
+        input.addEventListener('input', function () {
+            renderSuggestions(this.value);
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!suggestionsBox.contains(event.target) && event.target !== input) {
+                hideSuggestions();
+            }
+        });
+    });
+</script>
+@endpush
 @endsection

@@ -36,6 +36,7 @@ use App\Http\Controllers\PrimeLondonController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PropertyAreaController;
 use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\PropertyStreetController;
 use App\Http\Controllers\RentalController;
 // 3rd Party packages
 
@@ -63,6 +64,9 @@ Route::get('/dashboard', fn () => redirect('/'))->name('dashboard');
 
 Route::get('/property', [PropertyController::class, 'home'])->name('property.home');
 Route::get('/property/search', [PropertyController::class, 'search'])->name('property.search');
+Route::get('/property/street/{street}', [PropertyStreetController::class, 'show'])
+    ->where('street', '[a-z0-9\-]+')
+    ->name('property.street.show');
 Route::get('/property/heatmap', [PropertyController::class, 'heatmap'])->name('property.heatmap');
 Route::get('/property/points', [PropertyController::class, 'points'])->name('property.points');
 // Legacy property detail URL (query-string based) kept temporarily for backward compatibility.

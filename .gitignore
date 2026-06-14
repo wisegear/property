@@ -31,3 +31,4 @@ Thumbs.db
 /public/geo/northern_ireland/SA2011_full.json
 /public/sitemap*.xml
 public/data/epc-postcodes.json
+public/data/property_streets.json

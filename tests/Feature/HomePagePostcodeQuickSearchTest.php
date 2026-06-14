@@ -79,7 +79,12 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee($searchUrl, false);
         $view->assertSee('name="postcode"', false);
         $view->assertSee('placeholder="Search postcode (e.g. SW7 5PH)"', false);
-        $view->assertSee('max-w-3xl rounded-xl border border-zinc-200 bg-white p-6 shadow-sm', false);
+        $view->assertSee('Search by street');
+        $view->assertSee('id="home-street-search"', false);
+        $view->assertSee('id="home-street-suggestions"', false);
+        $view->assertSee('Search by street', false);
+        $view->assertSee('property_streets.json', false);
+        $view->assertSee('mx-auto grid max-w-5xl gap-4 md:grid-cols-2', false);
         $view->assertSee('rounded-lg bg-zinc-900 px-5 py-2 text-sm text-white transition hover:bg-black', false);
         $view->assertSee('Jump straight to full property data for any postcode in England &amp; Wales', false);
         $view->assertSee('31.1M');
@@ -121,8 +126,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('Latest complete Land Registry quarter vs previous quarter');
         $view->assertSee('Transactions');
         $view->assertSee('Median price');
-        $view->assertSee('Counties rising');
-        $view->assertSee('Counties falling sales');
+        $view->assertSee('Counties with rising prices');
+        $view->assertSee('Counties with falling sales');
         $view->assertSee('Demand weakening');
         $view->assertSee('Price growth stalling');
         $view->assertSee('16% market breadth');
@@ -151,6 +156,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('md:grid-cols-2 lg:grid-cols-3', false);
         $view->assertSee('flex h-full flex-col', false);
         $view->assertSeeInOrder([
+            'Search by street',
             'Search postcode (e.g. SW7 5PH)',
             'Property sales',
             'Overall Property MArket Stress Index',

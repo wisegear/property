@@ -1,0 +1,205 @@
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Tests\TestCase;
+
+class PropertyStreetControllerTest extends TestCase
+{
+    public function test_street_page_renders_summary_table_charts_and_top_sales_for_a_street_and_outcode(): void
+    {
+        $this->ensureLandRegistryTable();
+        $this->ensureOnspdTable();
+        $this->ensureCrimeTable();
+
+        Cache::forget('property:street:v1:cromwell-road:sw7');
+        DB::table('land_registry')->delete();
+        DB::table('onspd_v2')->delete();
+        DB::table('crime')->delete();
+
+        DB::table('land_registry')->insert([
+            $this->saleRow('tx-101', 'CROMWELL ROAD', 100000, '2023-01-15 00:00:00', 'SW7 5PH', '1', 'FLAT 1'),
+            $this->saleRow('tx-102', 'CROMWELL ROAD', 200000, '2023-06-10 00:00:00', 'SW7 5PH', '2', 'FLAT 2'),
+            $this->saleRow('tx-103', 'CROMWELL ROAD', 300000, '2024-02-02 00:00:00', 'SW7 5AA', '3', null),
+            $this->saleRow('tx-104', 'CROMWELL ROAD', 400000, '2024-06-10 00:00:00', 'SW7 4ZZ', '4', null),
+            $this->saleRow('tx-105', 'CROMWELL ROAD', 999999, '2024-07-01 00:00:00', 'SW5 0AA', '5', null),
+            $this->saleRow('tx-106', 'CROMWELL ROAD', 150000, '2024-08-01 00:00:00', 'SW7 9AA', '6', null, 'B'),
+        ]);
+
+        DB::table('onspd_v2')->insert([
+            ['pcds' => 'SW7 5PH', 'lat' => 51.4970000, 'long' => -0.1820000, 'dointr' => '202501'],
+            ['pcds' => 'SW7 5AA', 'lat' => 51.4972000, 'long' => -0.1817000, 'dointr' => '202501'],
+            ['pcds' => 'SW7 4ZZ', 'lat' => 51.4968000, 'long' => -0.1823000, 'dointr' => '202501'],
+        ]);
+
+        DB::table('crime')->insert([
+            $this->crimeRow('2024-06-01', 'burglary', 51.4971000, -0.1819000),
+            $this->crimeRow('2024-08-01', 'burglary', 51.4971000, -0.1819000),
+            $this->crimeRow('2024-10-01', 'criminal damage and arson', 51.4971000, -0.1819000),
+            $this->crimeRow('2024-12-01', 'criminal damage and arson', 51.4971000, -0.1819000),
+            $this->crimeRow('2025-02-01', 'criminal damage and arson', 51.4971000, -0.1819000),
+            $this->crimeRow('2025-04-01', 'possession of weapons', 51.4971000, -0.1819000),
+            $this->crimeRow('2025-05-01', 'burglary', 51.4971000, -0.1819000),
+        ]);
+
+        $response = $this->get('/property/street/cromwell-road?outcode=SW7');
+
+        $response->assertOk();
+        $response->assertSee('CROMWELL ROAD, SW7 property sales');
+        $response->assertSee('Total sales');
+        $response->assertSee('4');
+        $response->assertSee('£250,000');
+        $response->assertSee('10 Jun 2024');
+        $response->assertSee('£400,000');
+        $response->assertSee('Crime Trends near CROMWELL ROAD, SW7');
+        $response->assertSee('Crime Profile for This Street Area');
+        $response->assertDontSee('Historic sales table');
+        $response->assertDontSee('Top sales on this street');
+        $response->assertDontSee('Sales data for this street is limited, so figures may be less reliable.');
+
+        $cached = Cache::get('property:street:v1:cromwell-road:sw7');
+
+        $this->assertIsArray($cached);
+        $this->assertSame('CROMWELL ROAD', $cached['street_name']);
+        $this->assertSame(4, $cached['summary']['total_sales']);
+    }
+
+    public function test_street_page_shows_reliability_warning_for_limited_street_data(): void
+    {
+        $this->ensureLandRegistryTable();
+
+        Cache::forget('property:street:v1:union-street:se1');
+        DB::table('land_registry')->delete();
+
+        DB::table('land_registry')->insert([
+            $this->saleRow('tx-201', 'UNION STREET', 120000, '2024-01-01 00:00:00', 'SE1 1AA', '1', null),
+            $this->saleRow('tx-202', 'UNION STREET', 180000, '2024-03-01 00:00:00', 'SE1 1AB', '2', null),
+        ]);
+
+        $response = $this->get('/property/street/union-street?outcode=SE1');
+
+        $response->assertOk();
+        $response->assertSee('UNION STREET, SE1 property sales');
+        $response->assertSee('Sales data for this street is limited, so figures may be less reliable.');
+    }
+
+    private function ensureLandRegistryTable(): void
+    {
+        if (Schema::hasTable('land_registry')) {
+            return;
+        }
+
+        Schema::create('land_registry', function (Blueprint $table): void {
+            $table->char('TransactionID', 36)->nullable();
+            $table->unsignedInteger('Price')->nullable();
+            $table->dateTime('Date')->nullable();
+            $table->string('Postcode', 10)->nullable();
+            $table->enum('PropertyType', ['D', 'S', 'T', 'F', 'O'])->nullable();
+            $table->enum('NewBuild', ['Y', 'N'])->nullable();
+            $table->enum('Duration', ['F', 'L'])->nullable();
+            $table->string('PAON', 100)->nullable();
+            $table->string('SAON', 100)->nullable();
+            $table->string('Street', 100)->nullable();
+            $table->string('Locality', 100)->nullable();
+            $table->string('TownCity', 100)->nullable();
+            $table->string('District', 100)->nullable();
+            $table->string('County', 100)->nullable();
+            $table->enum('PPDCategoryType', ['A', 'B'])->nullable();
+            $table->char('RecordStatus', 1)->nullable();
+        });
+    }
+
+    private function ensureOnspdTable(): void
+    {
+        if (Schema::hasTable('onspd_v2')) {
+            return;
+        }
+
+        Schema::create('onspd_v2', function (Blueprint $table): void {
+            $table->string('pcds', 16)->nullable();
+            $table->decimal('lat', 10, 7)->nullable();
+            $table->decimal('long', 10, 7)->nullable();
+            $table->string('dointr', 16)->nullable();
+        });
+    }
+
+    private function ensureCrimeTable(): void
+    {
+        if (Schema::hasTable('crime')) {
+            return;
+        }
+
+        Schema::create('crime', function (Blueprint $table): void {
+            $table->string('crime_id')->nullable();
+            $table->date('month')->nullable();
+            $table->string('reported_by')->nullable();
+            $table->string('falls_within')->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->string('location')->nullable();
+            $table->string('lsoa_code')->nullable();
+            $table->string('lsoa_name')->nullable();
+            $table->string('crime_type')->nullable();
+            $table->string('last_outcome_category')->nullable();
+            $table->string('context')->nullable();
+        });
+    }
+
+    /**
+     * @return array<string, int|string|null>
+     */
+    private function saleRow(
+        string $transactionId,
+        string $street,
+        int $price,
+        string $date,
+        string $postcode,
+        string $paon,
+        ?string $saon,
+        string $category = 'A'
+    ): array {
+        return [
+            'TransactionID' => $transactionId,
+            'Price' => $price,
+            'Date' => $date,
+            'Postcode' => $postcode,
+            'PropertyType' => 'F',
+            'NewBuild' => 'N',
+            'Duration' => 'L',
+            'PAON' => $paon,
+            'SAON' => $saon,
+            'Street' => $street,
+            'Locality' => null,
+            'TownCity' => 'London',
+            'District' => 'Kensington',
+            'County' => 'Greater London',
+            'PPDCategoryType' => $category,
+            'RecordStatus' => null,
+        ];
+    }
+
+    /**
+     * @return array<string, float|string|null>
+     */
+    private function crimeRow(string $month, string $crimeType, float $latitude, float $longitude): array
+    {
+        return [
+            'crime_id' => uniqid('crime-', true),
+            'month' => $month,
+            'reported_by' => 'Met Police',
+            'falls_within' => 'Met Police',
+            'longitude' => $longitude,
+            'latitude' => $latitude,
+            'location' => 'Near Cromwell Road',
+            'lsoa_code' => 'E01000001',
+            'lsoa_name' => 'Test LSOA',
+            'crime_type' => $crimeType,
+            'last_outcome_category' => null,
+            'context' => null,
+        ];
+    }
+}
