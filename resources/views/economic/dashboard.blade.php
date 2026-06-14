@@ -79,7 +79,7 @@
 
     <section class="grid grid-cols-1 gap-5 lg:grid-cols-2">
         @foreach ($cards as $card)
-            <article class="overflow-hidden rounded-2xl border p-5 shadow-sm {{ $card['status']['card'] }}">
+            <article class="flex h-full flex-col overflow-hidden rounded-2xl border p-5 shadow-sm {{ $card['status']['card'] }}">
                 <div class="flex items-start justify-between gap-4">
                     <h3 class="text-lg font-semibold text-zinc-900">{{ $card['title'] }}</h3>
                     <span class="inline-flex shrink-0 items-center rounded-full px-3 py-1 text-xs font-semibold {{ $card['status']['badge'] }}">
@@ -87,7 +87,7 @@
                     </span>
                 </div>
 
-                <div class="mt-6 space-y-5">
+                <div class="mt-6 flex flex-1 flex-col gap-5">
                     <div class="space-y-4">
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
@@ -125,7 +125,7 @@
                         </div>
                     </div>
 
-                    <div class="rounded-2xl border border-white/70 bg-white/80 p-4">
+                    <div class="mt-auto rounded-2xl border border-white/70 bg-white/80 p-4">
                         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Recent trend</p>
                         <div class="mt-4 h-36">
                             <canvas id="{{ $card['spark_id'] }}"></canvas>
