@@ -505,13 +505,16 @@ class EconomicDashboardController extends Controller
     {
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
+        $changePercent = is_null($current) || is_null($previous) || $previous == 0.0
+            ? null
+            : (($current - $previous) / $previous) * 100;
+
         $status = match (true) {
             is_null($current) => $this->statusMeta('amber'),
             is_null($previous) => $this->statusMeta('amber'),
-            (($current - $previous) / $previous) * 100 >= 7 => $this->statusMeta('green'),
-            (($current - $previous) / $previous) * 100 > 3 => $this->statusMeta('green'),
-            (($current - $previous) / $previous) * 100 > -3 => $this->statusMeta('amber'),
-            (($current - $previous) / $previous) * 100 > -7 => $this->statusMeta('red'),
+            ! is_null($changePercent) && $changePercent >= 3 => $this->statusMeta('green'),
+            ! is_null($changePercent) && $changePercent > -3 => $this->statusMeta('amber'),
+            ! is_null($changePercent) && $changePercent > -8 => $this->statusMeta('red'),
             default => $this->statusMeta('deep'),
         };
 
@@ -543,9 +546,10 @@ class EconomicDashboardController extends Controller
 
         $status = match (true) {
             is_null($current) => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta >= 4000 => $this->statusMeta('green'),
-            ! is_null($delta) && $delta > -3000 => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta > -8000 => $this->statusMeta('red'),
+            is_null($delta) => $this->statusMeta('amber'),
+            $delta >= 2000 => $this->statusMeta('green'),
+            $delta > -2000 => $this->statusMeta('amber'),
+            $delta > -6000 => $this->statusMeta('red'),
             default => $this->statusMeta('deep'),
         };
 
@@ -577,10 +581,11 @@ class EconomicDashboardController extends Controller
 
         $status = match (true) {
             is_null($current) => $this->statusMeta('amber'),
-            $current >= 5.0 || (! is_null($delta) && $delta > 0.10) => $this->statusMeta('deep'),
-            ! is_null($delta) && $delta <= -0.10 && $current <= 4.5 => $this->statusMeta('green'),
-            ! is_null($delta) && abs($delta) < 0.10 => $this->statusMeta('amber'),
-            $current >= 4.5 || (! is_null($delta) && $delta > 0.0) => $this->statusMeta('red'),
+            ! is_null($delta) && $delta <= -0.10 => $this->statusMeta('green'),
+            ! is_null($delta) && abs($delta) < 0.10 => $current >= 5.0 ? $this->statusMeta('red') : $this->statusMeta('amber'),
+            ! is_null($delta) && $delta <= 0.50 => $current >= 5.5 ? $this->statusMeta('deep') : $this->statusMeta('red'),
+            ! is_null($delta) => $this->statusMeta('deep'),
+            $current >= 5.5 => $this->statusMeta('red'),
             default => $this->statusMeta('amber'),
         };
 
@@ -608,12 +613,15 @@ class EconomicDashboardController extends Controller
     {
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
+        $delta = is_null($current) || is_null($previous) ? null : $current - $previous;
 
         $status = match (true) {
             is_null($current) => $this->statusMeta('amber'),
-            $current < 2.5 && (! is_null($previous) ? $current <= $previous + 0.1 : true) => $this->statusMeta('green'),
-            $current < 3.5 && (! is_null($previous) ? abs($current - $previous) <= 0.3 : true) => $this->statusMeta('amber'),
-            $current < 4.5 => $this->statusMeta('red'),
+            ! is_null($delta) && $delta <= -0.2 => $this->statusMeta('green'),
+            ! is_null($delta) && abs($delta) < 0.2 => $this->statusMeta('amber'),
+            ! is_null($delta) && $delta <= 0.6 => $current >= 5.0 ? $this->statusMeta('deep') : $this->statusMeta('red'),
+            ! is_null($delta) => $this->statusMeta('deep'),
+            $current >= 5.0 => $this->statusMeta('red'),
             default => $this->statusMeta('deep'),
         };
 
@@ -626,12 +634,12 @@ class EconomicDashboardController extends Controller
             change: $this->formatPointChange($current, $previous, $snapshot['previous_period_label'], 1),
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
-                'Supportive' => 'Price pressures are easing.',
-                'Neutral' => 'Inflation looks more contained.',
-                'Warning' => 'Everyday cost pressure is still noticeable.',
-                default => 'Inflation is still putting clear pressure on household budgets.',
+                'Supportive' => 'Inflation is easing.',
+                'Neutral' => 'Inflation is broadly stable.',
+                'Warning' => 'Inflation pressure is building.',
+                default => 'Inflation is rising sharply.',
             },
-            meaning: 'High inflation leaves households with less room for deposits, bills, and mortgage payments. Lower inflation can gradually make affordability easier.',
+            meaning: 'Lower inflation usually eases pressure on household budgets and can support the outlook for interest rates. Higher inflation can keep pressure on borrowing costs and living costs.',
             sparkId: 'spark-inflation',
             sparkKey: 'inflation',
         );
@@ -642,11 +650,17 @@ class EconomicDashboardController extends Controller
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
         $realCurrent = $realSnapshot['current_value'];
+        $delta = is_null($current) || is_null($previous) ? null : $current - $previous;
 
         $status = match (true) {
+            is_null($current) => $this->statusMeta('amber'),
+            ! is_null($delta) && $delta >= 0.2 => $this->statusMeta('green'),
+            ! is_null($delta) && abs($delta) < 0.2 => $this->statusMeta('amber'),
+            ! is_null($delta) && $delta > -0.6 => $this->statusMeta('red'),
+            ! is_null($delta) => $this->statusMeta('deep'),
             is_null($realCurrent) => $this->statusMeta('amber'),
-            $realCurrent >= 1.0 => $this->statusMeta('green'),
-            $realCurrent >= -0.25 => $this->statusMeta('amber'),
+            $realCurrent >= 0.0 => $this->statusMeta('green'),
+            $realCurrent >= -0.5 => $this->statusMeta('amber'),
             $realCurrent >= -1.0 => $this->statusMeta('red'),
             default => $this->statusMeta('deep'),
         };
@@ -660,10 +674,10 @@ class EconomicDashboardController extends Controller
             change: $this->formatPointChange($current, $previous, $snapshot['previous_period_label'], 2),
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
-                'Supportive' => 'Pay growth is keeping up with living costs.',
-                'Neutral' => 'Pay growth is helping, but only modestly.',
-                'Warning' => 'Pay growth is not fully offsetting cost pressure.',
-                default => 'Household incomes are struggling to keep up with prices.',
+                'Supportive' => 'Pay growth is improving.',
+                'Neutral' => 'Pay growth is broadly steady.',
+                'Warning' => 'Pay growth is softening.',
+                default => 'Pay growth is weakening more clearly.',
             },
             meaning: 'If wages are rising faster than inflation, buyers may find it easier to save or borrow. If not, affordability can stay tight even when rates stop rising.',
             sparkId: 'spark-wages',
@@ -676,12 +690,15 @@ class EconomicDashboardController extends Controller
     {
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
+        $delta = is_null($current) || is_null($previous) ? null : $current - $previous;
 
         $status = match (true) {
             is_null($current) => $this->statusMeta('amber'),
-            $current < 4.5 && (! is_null($previous) ? $current <= $previous + 0.1 : true) => $this->statusMeta('green'),
-            ! is_null($previous) && abs($current - $previous) <= 0.2 && $current < 5.0 => $this->statusMeta('amber'),
-            $current < 6.0 => $this->statusMeta('red'),
+            ! is_null($delta) && $delta <= -0.2 => $this->statusMeta('green'),
+            ! is_null($delta) && abs($delta) < 0.2 => $this->statusMeta('amber'),
+            ! is_null($delta) && $delta <= 0.6 => $current >= 6.0 ? $this->statusMeta('deep') : $this->statusMeta('red'),
+            ! is_null($delta) => $this->statusMeta('deep'),
+            $current >= 6.0 => $this->statusMeta('red'),
             default => $this->statusMeta('deep'),
         };
 
@@ -694,10 +711,10 @@ class EconomicDashboardController extends Controller
             change: $this->formatPointChange($current, $previous, $snapshot['previous_period_label'], 1),
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
-                'Supportive' => 'The jobs market still looks supportive.',
+                'Supportive' => 'The jobs market is improving.',
                 'Neutral' => 'The jobs market looks broadly steady.',
-                'Warning' => 'The jobs market is showing signs of weakening.',
-                default => 'The jobs market is adding clear pressure to housing demand.',
+                'Warning' => 'The jobs market is weakening.',
+                default => 'The jobs market is weakening more sharply.',
             },
             meaning: 'Low unemployment usually supports confidence and mortgage repayments. Rising unemployment can reduce demand and increase financial strain for some households.',
             sparkId: 'spark-unemployment',
@@ -709,12 +726,15 @@ class EconomicDashboardController extends Controller
     {
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
+        $delta = is_null($current) || is_null($previous) ? null : $current - $previous;
 
         $status = match (true) {
             is_null($current) => $this->statusMeta('amber'),
-            $current < 0.8 && (! is_null($previous) ? $current <= $previous + 0.03 : true) => $this->statusMeta('green'),
-            ! is_null($previous) && abs($current - $previous) <= 0.05 && $current < 1.2 => $this->statusMeta('amber'),
-            $current < 1.8 => $this->statusMeta('red'),
+            ! is_null($delta) && $delta <= -0.03 => $this->statusMeta('green'),
+            ! is_null($delta) && abs($delta) < 0.03 => $this->statusMeta('amber'),
+            ! is_null($delta) && $delta <= 0.12 => $current >= 1.8 ? $this->statusMeta('deep') : $this->statusMeta('red'),
+            ! is_null($delta) => $this->statusMeta('deep'),
+            $current >= 1.8 => $this->statusMeta('red'),
             default => $this->statusMeta('deep'),
         };
 
@@ -727,10 +747,10 @@ class EconomicDashboardController extends Controller
             change: $this->formatPointChange($current, $previous, $snapshot['previous_period_label'], 3),
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
-                'Supportive' => 'Borrowers look broadly on top of repayments.',
-                'Neutral' => 'Repayment pressure looks contained.',
-                'Warning' => 'More borrowers are starting to fall behind.',
-                default => 'Repayment pressure is becoming more noticeable.',
+                'Supportive' => 'Repayment pressure is easing.',
+                'Neutral' => 'Repayment pressure looks broadly steady.',
+                'Warning' => 'Repayment pressure is building.',
+                default => 'Repayment pressure is rising more sharply.',
             },
             meaning: 'Arrears can be an early sign of financial stress. A rising trend can matter even before repossessions move higher.',
             sparkId: 'spark-arrears',
@@ -742,13 +762,15 @@ class EconomicDashboardController extends Controller
     {
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
-        $isRising = ! is_null($current) && ! is_null($previous) && $current > $previous;
+        $delta = is_null($current) || is_null($previous) ? null : $current - $previous;
 
         $status = match (true) {
             is_null($current) => $this->statusMeta('amber'),
-            $current < 0.08 && ! $isRising => $this->statusMeta('green'),
-            $current < 0.08 => $this->statusMeta('amber'),
-            $current < 0.15 => $this->statusMeta('red'),
+            ! is_null($delta) && $delta <= -0.005 => $this->statusMeta('green'),
+            ! is_null($delta) && abs($delta) < 0.005 => $this->statusMeta('amber'),
+            ! is_null($delta) && $delta <= 0.030 => $current >= 0.15 ? $this->statusMeta('deep') : $this->statusMeta('red'),
+            ! is_null($delta) => $this->statusMeta('deep'),
+            $current >= 0.15 => $this->statusMeta('red'),
             default => $this->statusMeta('deep'),
         };
 
@@ -762,9 +784,9 @@ class EconomicDashboardController extends Controller
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
                 'Supportive' => 'Forced-sale pressure remains low.',
-                'Neutral' => 'Forced-sale pressure looks contained.',
+                'Neutral' => 'Forced-sale pressure looks broadly contained.',
                 'Warning' => 'Repossessions are rising, but from a low base.',
-                default => 'Repossessions are rising enough to watch closely.',
+                default => 'Repossessions are rising and becoming more noticeable.',
             },
             meaning: 'Repossessions are still a very small share of mortgages, but the direction matters. A rising trend can point to pressure building after arrears have already increased.',
             sparkId: 'spark-repossessions',
@@ -814,11 +836,13 @@ class EconomicDashboardController extends Controller
         $warning = collect($cards)->where('status.label', 'Warning')->count();
         $stress = collect($cards)->where('status.label', 'Stress')->count();
         $pressureCount = $warning + $stress;
+        $supportWeight = $supportive + ($neutral * 0.5);
+        $pressureWeight = $warning + ($stress * 2);
 
         $tone = match (true) {
-            $stress >= 3 => 'showing significant pressure',
-            $stress >= 2 || $pressureCount >= 3 => 'under pressure',
-            $supportive + $neutral >= 6 && $pressureCount <= 1 => 'broadly supportive',
+            $stress >= 2 || ($stress >= 1 && $warning >= 2) || ($pressureWeight >= 5 && $pressureCount >= 3) => 'showing significant pressure',
+            $stress >= 1 || $pressureWeight >= 4 || $pressureCount >= 4 => 'under pressure',
+            $supportWeight >= $pressureWeight + 1.5 && $supportive >= $pressureCount + 1 => 'broadly supportive',
             default => 'mixed but broadly balanced',
         };
 

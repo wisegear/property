@@ -403,4 +403,28 @@ class EconomicDashboardTest extends TestCase
         $this->assertSame('event-based', $bankRateCard['debug']['frequency']);
         $this->assertSame([4.0, 4.0, 4.0, 4.0, 3.75], $response->viewData('sparklines')['interest']['values']);
     }
+
+    public function test_falling_inflation_is_treated_as_supportive_for_consumers(): void
+    {
+        DB::table('inflation_cpih_monthly')->insert([
+            ['date' => '2025-10-01', 'value' => 3.6, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2025-11-01', 'value' => 3.6, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2025-12-01', 'value' => 3.6, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-01-01', 'value' => 3.2, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-02-01', 'value' => 3.2, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-03-01', 'value' => 3.2, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $response = $this->get(route('economic.dashboard', absolute: false));
+
+        $response->assertOk();
+
+        $inflationCard = collect($response->viewData('cards'))
+            ->firstWhere('title', 'Inflation');
+
+        $this->assertNotNull($inflationCard);
+        $this->assertSame('Supportive', $inflationCard['status']['label']);
+        $this->assertSame('Inflation is easing.', $inflationCard['signal']);
+        $this->assertSame('-0.4 pts vs Oct 2025 - Dec 2025', $inflationCard['change']);
+    }
 }
