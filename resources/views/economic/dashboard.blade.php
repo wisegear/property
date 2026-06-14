@@ -33,7 +33,7 @@
                 <p class="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">Market signals summary</p>
                 <h2 class="mt-2 text-xl font-semibold text-zinc-900">At-a-glance view</h2>
                 <p class="mt-3 text-sm leading-6 text-zinc-700">
-                    The wider housing market currently looks <span class="font-semibold text-zinc-900">{{ $summary['tone'] }}</span>, with the main pressure coming from <span class="font-semibold text-zinc-900">{{ $summary['main_pressure_source'] }}</span>.
+                    The wider housing market currently looks <span class="font-semibold text-zinc-900">{{ $summary['tone'] }}</span>. The main area to watch is <span class="font-semibold text-zinc-900">{{ $summary['main_pressure_source'] }}</span>, but this should be read alongside the wider mix of supportive, neutral and warning signals.
                 </p>
             </div>
 
@@ -87,7 +87,7 @@
                     </span>
                 </div>
 
-                <div class="mt-6 grid gap-5 sm:grid-cols-[minmax(0,1fr)_160px] sm:items-start">
+                <div class="mt-6 space-y-5">
                     <div class="space-y-4">
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
@@ -125,15 +125,23 @@
                         </div>
                     </div>
 
-                    <div class="rounded-2xl border border-white/70 bg-white/80 p-4 sm:min-h-[180px]">
+                    <div class="rounded-2xl border border-white/70 bg-white/80 p-4">
                         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Recent trend</p>
-                        <div class="mt-4 h-28">
+                        <div class="mt-4 h-36">
                             <canvas id="{{ $card['spark_id'] }}"></canvas>
                         </div>
                         <div class="mt-4 flex items-center gap-2">
                             <span class="h-2.5 w-2.5 rounded-full {{ $card['status']['accent'] }}"></span>
                             <p class="text-xs leading-5 text-zinc-600">Recent trend shown for context only.</p>
                         </div>
+                    </div>
+
+                    <div class="rounded-xl border border-dashed border-zinc-200 bg-zinc-50/70 px-4 py-3 text-xs leading-5 text-zinc-500">
+                        <span class="font-semibold text-zinc-600">Debug:</span>
+                        latest data date {{ $card['debug']['latest_data_date'] }},
+                        current {{ $card['debug']['current_start'] }} to {{ $card['debug']['current_end'] }},
+                        previous {{ $card['debug']['previous_start'] }} to {{ $card['debug']['previous_end'] }},
+                        frequency {{ $card['debug']['frequency'] }}.
                     </div>
                 </div>
             </article>

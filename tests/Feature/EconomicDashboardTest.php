@@ -249,7 +249,7 @@ class EconomicDashboardTest extends TestCase
         $response->assertOk();
         $this->assertSame(2, $response->viewData('repossDirection'));
         $response->assertSee('Repossessions are rising, but from a low base.');
-        $response->assertSee('Repossessions remain a very small share of mortgages, but the trend is worth monitoring.');
+        $response->assertSee('Repossessions are still a very small share of mortgages, but the direction matters.');
     }
 
     public function test_dashboard_uses_balanced_summary_when_most_signals_are_supportive_or_neutral(): void
@@ -341,8 +341,8 @@ class EconomicDashboardTest extends TestCase
         DB::table('mlar_arrears')->insert([
             ['year' => 2025, 'quarter' => 'Q4', 'description' => 'In possession', 'value' => 0.050, 'created_at' => now(), 'updated_at' => now()],
             ['year' => 2026, 'quarter' => 'Q1', 'description' => 'In possession', 'value' => 0.080, 'created_at' => now(), 'updated_at' => now()],
-            ['year' => 2025, 'quarter' => 'Q4', 'description' => '2.5% to 5% in arrears', 'value' => 0.700, 'created_at' => now(), 'updated_at' => now()],
-            ['year' => 2026, 'quarter' => 'Q1', 'description' => '2.5% to 5% in arrears', 'value' => 0.720, 'created_at' => now(), 'updated_at' => now()],
+            ['year' => 2025, 'quarter' => 'Q4', 'description' => '2.5% to 5% in arrears', 'value' => 0.630, 'created_at' => now(), 'updated_at' => now()],
+            ['year' => 2026, 'quarter' => 'Q1', 'description' => '2.5% to 5% in arrears', 'value' => 0.640, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         DB::table('hpi_monthly')->insert([
@@ -372,5 +372,35 @@ class EconomicDashboardTest extends TestCase
         $response->assertSee('Q4 2025');
         $response->assertSee('Jan 2026 - Mar 2026');
         $response->assertSee('Oct 2025 - Dec 2025');
+    }
+
+    public function test_bank_rate_uses_latest_rate_and_previous_distinct_rate_instead_of_rolling_periods(): void
+    {
+        DB::table('interest_rates')->insert([
+            ['effective_date' => '2025-08-07', 'rate' => 4.00, 'created_at' => now(), 'updated_at' => now()],
+            ['effective_date' => '2025-09-01', 'rate' => 4.00, 'created_at' => now(), 'updated_at' => now()],
+            ['effective_date' => '2025-10-01', 'rate' => 4.00, 'created_at' => now(), 'updated_at' => now()],
+            ['effective_date' => '2025-11-01', 'rate' => 4.00, 'created_at' => now(), 'updated_at' => now()],
+            ['effective_date' => '2025-12-18', 'rate' => 3.75, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $response = $this->get(route('economic.dashboard', absolute: false));
+
+        $response->assertOk();
+
+        $bankRateCard = collect($response->viewData('cards'))
+            ->firstWhere('title', 'Bank rate');
+
+        $this->assertNotNull($bankRateCard);
+        $this->assertSame('Current', $bankRateCard['current_heading']);
+        $this->assertSame('Previous', $bankRateCard['previous_heading']);
+        $this->assertSame('Change', $bankRateCard['change_heading']);
+        $this->assertSame('18 Dec 2025', $bankRateCard['current_label']);
+        $this->assertSame('1 Nov 2025', $bankRateCard['previous_label']);
+        $this->assertSame('3.75%', $bankRateCard['current_value']);
+        $this->assertSame('4.00%', $bankRateCard['previous_value']);
+        $this->assertSame('-0.25 percentage points vs 1 Nov 2025', $bankRateCard['change']);
+        $this->assertSame('event-based', $bankRateCard['debug']['frequency']);
+        $this->assertSame([4.0, 4.0, 4.0, 4.0, 3.75], $response->viewData('sparklines')['interest']['values']);
     }
 }

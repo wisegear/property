@@ -38,7 +38,7 @@ class EconomicDashboardController extends Controller
             return null;
         };
 
-        $interestSeries = $this->buildMonthlySeries(
+        $interestSeries = $this->buildEventSeries(
             DB::table('interest_rates')->orderBy('effective_date')->get(),
             fn ($row) => Carbon::parse($row->effective_date),
             fn ($row) => (float) $row->rate
@@ -116,7 +116,7 @@ class EconomicDashboardController extends Controller
             'arrears' => $arrearsSeries,
         ];
 
-        $interestSnapshot = $this->buildRollingThreeMonthSnapshot($interestSeries, 'avg');
+        $interestSnapshot = $this->buildLatestValueSnapshot($interestSeries);
         $inflationSnapshot = $this->buildRollingThreeMonthSnapshot($inflationSeries, 'avg');
         $wagesSnapshot = $this->buildRollingThreeMonthSnapshot($wagesSeries, 'avg');
         $realWagesSnapshot = $this->buildRollingThreeMonthSnapshot($realWagesSeries, 'avg');
@@ -168,7 +168,7 @@ class EconomicDashboardController extends Controller
         ]);
     }
 
-    private function buildMonthlySeries(Collection $rows, callable $dateResolver, callable $valueResolver): array
+    private function buildMonthlySeries(Collection $rows, callable $dateResolver, callable $valueResolver, bool $carryForwardMissingMonths = false): array
     {
         $points = [];
 
@@ -187,7 +187,17 @@ class EconomicDashboardController extends Controller
             ];
         }
 
-        usort($points, fn (array $left, array $right) => $left['date']->lessThan($right['date']) ? -1 : 1);
+        usort($points, function (array $left, array $right): int {
+            if ($left['date']->equalTo($right['date'])) {
+                return 0;
+            }
+
+            return $left['date']->lessThan($right['date']) ? -1 : 1;
+        });
+
+        if ($carryForwardMissingMonths) {
+            $points = $this->fillMissingMonthlyPoints($points);
+        }
 
         return [
             'type' => 'monthly',
@@ -196,6 +206,78 @@ class EconomicDashboardController extends Controller
             'labels' => array_column($points, 'label'),
             'values' => array_column($points, 'value'),
         ];
+    }
+
+    private function buildEventSeries(Collection $rows, callable $dateResolver, callable $valueResolver): array
+    {
+        $points = [];
+
+        foreach ($rows as $row) {
+            $date = $dateResolver($row);
+
+            if (! $date instanceof Carbon) {
+                continue;
+            }
+
+            $points[] = [
+                'key' => $date->format('Y-m-d'),
+                'label' => $date->format('j M Y'),
+                'date' => $date->copy()->startOfDay(),
+                'value' => round((float) $valueResolver($row), 3),
+            ];
+        }
+
+        usort($points, function (array $left, array $right): int {
+            if ($left['date']->equalTo($right['date'])) {
+                return 0;
+            }
+
+            return $left['date']->lessThan($right['date']) ? -1 : 1;
+        });
+
+        return [
+            'type' => 'event',
+            'points' => $points,
+            'keys' => array_column($points, 'key'),
+            'labels' => array_column($points, 'label'),
+            'values' => array_column($points, 'value'),
+        ];
+    }
+
+    private function fillMissingMonthlyPoints(array $points): array
+    {
+        if (empty($points)) {
+            return [];
+        }
+
+        $filled = [];
+        $currentDate = $points[0]['date']->copy()->startOfMonth();
+        $endDate = $points[count($points) - 1]['date']->copy()->startOfMonth();
+        $index = 0;
+        $currentValue = null;
+
+        while ($currentDate->lessThanOrEqualTo($endDate)) {
+            if (
+                isset($points[$index]) &&
+                $points[$index]['date']->format('Y-m') === $currentDate->format('Y-m')
+            ) {
+                $currentValue = $points[$index]['value'];
+                $index++;
+            }
+
+            if (! is_null($currentValue)) {
+                $filled[] = [
+                    'key' => $currentDate->format('Y-m'),
+                    'label' => $currentDate->format('M Y'),
+                    'date' => $currentDate->copy(),
+                    'value' => round((float) $currentValue, 3),
+                ];
+            }
+
+            $currentDate->addMonth();
+        }
+
+        return $filled;
     }
 
     private function buildQuarterSeries(Collection $rows, callable $keyResolver, callable $valueResolver): array
@@ -212,7 +294,13 @@ class EconomicDashboardController extends Controller
             ];
         }
 
-        usort($points, fn (array $left, array $right) => $left['date']->lessThan($right['date']) ? -1 : 1);
+        usort($points, function (array $left, array $right): int {
+            if ($left['date']->equalTo($right['date'])) {
+                return 0;
+            }
+
+            return $left['date']->lessThan($right['date']) ? -1 : 1;
+        });
 
         return [
             'type' => 'quarterly',
@@ -273,6 +361,14 @@ class EconomicDashboardController extends Controller
             'current_period_label' => $this->formatMonthRangeLabel($currentPoints),
             'previous_period_label' => count($previousPoints) === 3 ? $this->formatMonthRangeLabel($previousPoints) : 'Not available',
             'change_heading' => '3-month change',
+            'debug' => [
+                'latest_data_date' => $currentPoints[count($currentPoints) - 1]['date']->format('M Y'),
+                'current_start' => $currentPoints[0]['date']->format('M Y'),
+                'current_end' => $currentPoints[count($currentPoints) - 1]['date']->format('M Y'),
+                'previous_start' => count($previousPoints) === 3 ? $previousPoints[0]['date']->format('M Y') : 'n/a',
+                'previous_end' => count($previousPoints) === 3 ? $previousPoints[count($previousPoints) - 1]['date']->format('M Y') : 'n/a',
+                'frequency' => 'monthly',
+            ],
         ];
     }
 
@@ -296,6 +392,72 @@ class EconomicDashboardController extends Controller
             'current_period_label' => $this->formatQuarterDisplayLabel($currentPoint['key']),
             'previous_period_label' => $previousPoint ? $this->formatQuarterDisplayLabel($previousPoint['key']) : 'Not available',
             'change_heading' => 'Quarterly change',
+            'debug' => [
+                'latest_data_date' => $this->formatQuarterDisplayLabel($currentPoint['key']),
+                'current_start' => $this->formatQuarterDisplayLabel($currentPoint['key']),
+                'current_end' => $this->formatQuarterDisplayLabel($currentPoint['key']),
+                'previous_start' => $previousPoint ? $this->formatQuarterDisplayLabel($previousPoint['key']) : 'n/a',
+                'previous_end' => $previousPoint ? $this->formatQuarterDisplayLabel($previousPoint['key']) : 'n/a',
+                'frequency' => 'quarterly',
+            ],
+        ];
+    }
+
+    private function buildLatestValueSnapshot(array $series): array
+    {
+        $points = $series['points'] ?? [];
+        $count = count($points);
+
+        if ($count < 1) {
+            return [
+                'current_value' => null,
+                'previous_value' => null,
+                'current_label_heading' => 'Current',
+                'previous_label_heading' => 'Previous',
+                'current_period_label' => 'Not available',
+                'previous_period_label' => 'Not available',
+                'change_heading' => 'Change',
+                'debug' => [
+                    'latest_data_date' => 'n/a',
+                    'current_start' => 'n/a',
+                    'current_end' => 'n/a',
+                    'previous_start' => 'n/a',
+                    'previous_end' => 'n/a',
+                    'frequency' => 'event-based',
+                ],
+            ];
+        }
+
+        $currentPoint = $points[$count - 1];
+        $previousPoint = null;
+
+        for ($index = $count - 2; $index >= 0; $index--) {
+            if ($points[$index]['value'] !== $currentPoint['value']) {
+                $previousPoint = $points[$index];
+                break;
+            }
+        }
+
+        if (is_null($previousPoint) && $count >= 2) {
+            $previousPoint = $points[$count - 2];
+        }
+
+        return [
+            'current_value' => $currentPoint['value'],
+            'previous_value' => $previousPoint['value'] ?? null,
+            'current_label_heading' => 'Current',
+            'previous_label_heading' => 'Previous',
+            'current_period_label' => $currentPoint['label'],
+            'previous_period_label' => $previousPoint['label'] ?? 'Not available',
+            'change_heading' => 'Change',
+            'debug' => [
+                'latest_data_date' => $currentPoint['label'],
+                'current_start' => $currentPoint['label'],
+                'current_end' => $currentPoint['label'],
+                'previous_start' => $previousPoint['label'] ?? 'n/a',
+                'previous_end' => $previousPoint['label'] ?? 'n/a',
+                'frequency' => 'event-based',
+            ],
         ];
     }
 
@@ -309,6 +471,14 @@ class EconomicDashboardController extends Controller
             'current_period_label' => 'Not available',
             'previous_period_label' => 'Not available',
             'change_heading' => $currentHeading === 'Current quarter' ? 'Quarterly change' : '3-month change',
+            'debug' => [
+                'latest_data_date' => 'n/a',
+                'current_start' => 'n/a',
+                'current_end' => 'n/a',
+                'previous_start' => 'n/a',
+                'previous_end' => 'n/a',
+                'frequency' => $currentHeading === 'Current quarter' ? 'quarterly' : 'monthly',
+            ],
         ];
     }
 
@@ -335,13 +505,13 @@ class EconomicDashboardController extends Controller
     {
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
-        $isFalling = ! is_null($current) && ! is_null($previous) && $current < $previous;
-
         $status = match (true) {
             is_null($current) => $this->statusMeta('amber'),
-            $current >= 190000 && ! $isFalling => $this->statusMeta('green'),
-            $current >= 160000 && ! $isFalling => $this->statusMeta('amber'),
-            $current >= 160000 => $this->statusMeta('red'),
+            is_null($previous) => $this->statusMeta('amber'),
+            (($current - $previous) / $previous) * 100 >= 7 => $this->statusMeta('green'),
+            (($current - $previous) / $previous) * 100 > 3 => $this->statusMeta('green'),
+            (($current - $previous) / $previous) * 100 > -3 => $this->statusMeta('amber'),
+            (($current - $previous) / $previous) * 100 > -7 => $this->statusMeta('red'),
             default => $this->statusMeta('deep'),
         };
 
@@ -373,9 +543,9 @@ class EconomicDashboardController extends Controller
 
         $status = match (true) {
             is_null($current) => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta >= 3000 => $this->statusMeta('green'),
-            ! is_null($delta) && $delta >= 0 => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta > -5000 => $this->statusMeta('red'),
+            ! is_null($delta) && $delta >= 4000 => $this->statusMeta('green'),
+            ! is_null($delta) && $delta > -3000 => $this->statusMeta('amber'),
+            ! is_null($delta) && $delta > -8000 => $this->statusMeta('red'),
             default => $this->statusMeta('deep'),
         };
 
@@ -407,10 +577,11 @@ class EconomicDashboardController extends Controller
 
         $status = match (true) {
             is_null($current) => $this->statusMeta('amber'),
-            $current <= 3.0 && (! is_null($delta) ? $delta <= 0 : true) => $this->statusMeta('green'),
-            $current <= 4.5 && (! is_null($delta) ? $delta <= 0.25 : true) => $this->statusMeta('amber'),
-            $current <= 5.0 => $this->statusMeta('red'),
-            default => $this->statusMeta('deep'),
+            $current >= 5.0 || (! is_null($delta) && $delta > 0.10) => $this->statusMeta('deep'),
+            ! is_null($delta) && $delta <= -0.10 && $current <= 4.5 => $this->statusMeta('green'),
+            ! is_null($delta) && abs($delta) < 0.10 => $this->statusMeta('amber'),
+            $current >= 4.5 || (! is_null($delta) && $delta > 0.0) => $this->statusMeta('red'),
+            default => $this->statusMeta('amber'),
         };
 
         return $this->baseCard(
@@ -419,13 +590,13 @@ class EconomicDashboardController extends Controller
             snapshot: $snapshot,
             currentValue: is_null($current) ? 'No data' : number_format($current, 2).'%',
             previousValue: is_null($previous) ? 'Not available' : number_format($previous, 2).'%',
-            change: $this->formatPointChange($current, $previous, $snapshot['previous_period_label'], 2),
+            change: $this->formatPercentagePointChange($current, $previous, $snapshot['previous_period_label'], 2),
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
-                'Supportive' => 'Borrowing costs look relatively supportive.',
-                'Neutral' => 'Borrowing costs are elevated but steady.',
-                'Warning' => 'Borrowing costs are still restrictive.',
-                default => 'Borrowing costs are putting strong pressure on affordability.',
+                'Supportive' => 'Borrowing costs are easing.',
+                'Neutral' => 'Borrowing costs are broadly stable.',
+                'Warning' => 'Borrowing costs remain elevated.',
+                default => 'Borrowing costs are rising or remain very high.',
             },
             meaning: 'The Bank rate influences mortgage pricing. Higher rates usually make it harder for buyers and remortgaging households to keep monthly payments comfortable.',
             sparkId: 'spark-interest',
@@ -440,9 +611,9 @@ class EconomicDashboardController extends Controller
 
         $status = match (true) {
             is_null($current) => $this->statusMeta('amber'),
-            $current < 2.5 && (! is_null($previous) ? $current <= $previous : true) => $this->statusMeta('green'),
-            $current < 3.5 => $this->statusMeta('amber'),
-            $current < 5.0 => $this->statusMeta('red'),
+            $current < 2.5 && (! is_null($previous) ? $current <= $previous + 0.1 : true) => $this->statusMeta('green'),
+            $current < 3.5 && (! is_null($previous) ? abs($current - $previous) <= 0.3 : true) => $this->statusMeta('amber'),
+            $current < 4.5 => $this->statusMeta('red'),
             default => $this->statusMeta('deep'),
         };
 
@@ -475,7 +646,7 @@ class EconomicDashboardController extends Controller
         $status = match (true) {
             is_null($realCurrent) => $this->statusMeta('amber'),
             $realCurrent >= 1.0 => $this->statusMeta('green'),
-            $realCurrent >= 0.0 => $this->statusMeta('amber'),
+            $realCurrent >= -0.25 => $this->statusMeta('amber'),
             $realCurrent >= -1.0 => $this->statusMeta('red'),
             default => $this->statusMeta('deep'),
         };
@@ -508,8 +679,8 @@ class EconomicDashboardController extends Controller
 
         $status = match (true) {
             is_null($current) => $this->statusMeta('amber'),
-            $current < 4.5 && (! is_null($previous) ? $current <= $previous : true) => $this->statusMeta('green'),
-            $current < 5.0 => $this->statusMeta('amber'),
+            $current < 4.5 && (! is_null($previous) ? $current <= $previous + 0.1 : true) => $this->statusMeta('green'),
+            ! is_null($previous) && abs($current - $previous) <= 0.2 && $current < 5.0 => $this->statusMeta('amber'),
             $current < 6.0 => $this->statusMeta('red'),
             default => $this->statusMeta('deep'),
         };
@@ -541,8 +712,8 @@ class EconomicDashboardController extends Controller
 
         $status = match (true) {
             is_null($current) => $this->statusMeta('amber'),
-            $current < 0.8 && (! is_null($previous) ? $current <= $previous : true) => $this->statusMeta('green'),
-            $current < 1.2 => $this->statusMeta('amber'),
+            $current < 0.8 && (! is_null($previous) ? $current <= $previous + 0.03 : true) => $this->statusMeta('green'),
+            ! is_null($previous) && abs($current - $previous) <= 0.05 && $current < 1.2 => $this->statusMeta('amber'),
             $current < 1.8 => $this->statusMeta('red'),
             default => $this->statusMeta('deep'),
         };
@@ -593,9 +764,9 @@ class EconomicDashboardController extends Controller
                 'Supportive' => 'Forced-sale pressure remains low.',
                 'Neutral' => 'Forced-sale pressure looks contained.',
                 'Warning' => 'Repossessions are rising, but from a low base.',
-                default => 'Repossessions are rising and becoming more noticeable.',
+                default => 'Repossessions are rising enough to watch closely.',
             },
-            meaning: 'Repossessions remain a very small share of mortgages, but the trend is worth monitoring.',
+            meaning: 'Repossessions are still a very small share of mortgages, but the direction matters. A rising trend can point to pressure building after arrears have already increased.',
             sparkId: 'spark-repossessions',
             sparkKey: 'repossessions',
         );
@@ -632,6 +803,7 @@ class EconomicDashboardController extends Controller
             'spark_id' => $sparkId,
             'spark_key' => $sparkKey,
             'supplementary' => $supplementary,
+            'debug' => $snapshot['debug'],
         ];
     }
 
@@ -644,10 +816,10 @@ class EconomicDashboardController extends Controller
         $pressureCount = $warning + $stress;
 
         $tone = match (true) {
-            $stress >= 2 => 'significant pressure',
-            $pressureCount >= 3 => 'under pressure',
-            $supportive + $neutral >= 6 && $pressureCount <= 2 && $supportive >= $neutral => 'broadly supportive',
-            default => 'balanced',
+            $stress >= 3 => 'showing significant pressure',
+            $stress >= 2 || $pressureCount >= 3 => 'under pressure',
+            $supportive + $neutral >= 6 && $pressureCount <= 1 => 'broadly supportive',
+            default => 'mixed but broadly balanced',
         };
 
         $mainPressureSource = collect($cards)
@@ -764,6 +936,21 @@ class EconomicDashboardController extends Controller
         $direction = $current > $previous ? '+' : '-';
 
         return $direction.number_format(abs($current - $previous), $decimals).' pts vs '.$previousLabel;
+    }
+
+    private function formatPercentagePointChange(?float $current, ?float $previous, string $previousLabel, int $decimals): string
+    {
+        if (is_null($current) || is_null($previous)) {
+            return 'Previous rate comparison not available';
+        }
+
+        if ($current === $previous) {
+            return 'Unchanged vs '.$previousLabel;
+        }
+
+        $direction = $current > $previous ? '+' : '-';
+
+        return $direction.number_format(abs($current - $previous), $decimals).' percentage points vs '.$previousLabel;
     }
 
     private function formatCurrencyChange(?float $current, ?float $previous, string $previousLabel): string
