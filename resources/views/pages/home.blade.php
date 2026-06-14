@@ -55,7 +55,7 @@
                 </div>
 
                 <div class="mt-2 text-xs text-zinc-500">
-                    Autocomplete matches unique street and postcode district combinations from Land Registry sales.
+                    Autocomplete matches unique street and postcode district combinations from Land Registry sales and only returns results where at least 3 sales exist.
                 </div>
             </div>
 
