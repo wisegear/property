@@ -14,7 +14,7 @@
                     </div>
                     @auth
                         @if (Auth::id() === 1)
-                            <div class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/80 px-3 py-1 text-xs font-medium text-emerald-800 shadow-sm">
+                            <div class="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-1 text-xs font-medium text-emerald-800 shadow-sm">
                                 <span class="relative flex h-2.5 w-2.5">
                                     <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70"></span>
                                     <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
