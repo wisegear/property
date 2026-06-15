@@ -267,7 +267,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response = $this->actingAs($user)->get('/');
 
         $response->assertOk();
-        $response->assertSee('Lee Wisener is logged in, probably means he is breaking things, beware :)');
+        $response->assertSee('Admin Online');
+        $response->assertSee('animate-ping rounded-full bg-emerald-400/70', false);
     }
 
     public function test_home_page_shows_dynamic_top_declining_sales_and_rising_price_counties(): void

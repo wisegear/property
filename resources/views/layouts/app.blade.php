@@ -98,7 +98,7 @@
         <!-- Hidden on mobile (xl:block = show on extra large screens only) -->
         <!-- ============================================ -->
         <div class="hidden xl:block bg-white border-b border-zinc-200">
-            <div class="max-w-7xl mx-auto flex items-center">
+            <div class="mx-auto flex max-w-7xl items-center py-4">
                 
                 <!-- Left Section: Social Media Icons -->
                 <div class="flex-1 flex items-center">
@@ -133,16 +133,11 @@
                     </div>
                 </div>
 
-                <!-- Center Section: Logo and Site Name -->
-                <div class="flex-1 flex items-center justify-center gap-1">
-                    <img src="{{ asset('assets/images/site/research-logo-4.png') }}" 
-                         alt="PropertyResearch.uk logo" 
-                         width="512"
-                         height="512"
-                         class="h-20 w-auto">
-                    <span class="text-xl font-semibold tracking-tight text-slate-800">
-                        PropertyResearch<span class="text-lime-900 text-sm">.uk</span>
-                    </span>
+                <!-- Center Section: Site Wordmark -->
+                <div class="flex-1 flex items-center justify-center">
+                    <a href="{{ url('/') }}" class="inline-flex items-baseline tracking-tight text-slate-800">
+                        <span class="text-[1.35rem] font-bold">PropertyResearch</span><span class="text-[1.1rem] font-bold text-lime-700">.uk</span>
+                    </a>
                 </div>
 
                 <!-- Right Section: User Authentication (Login/Register or User Menu) -->
@@ -199,7 +194,7 @@
         <!-- Hidden on mobile, shown on extra large screens -->
         <!-- ============================================ -->
         <nav class="hidden xl:block bg-white border-b border-zinc-200 px-4 py-2">
-            <div class="max-w-7xl mx-auto flex items-center justify-center">
+            <div class="relative mx-auto flex max-w-7xl items-center justify-center">
                 
                 <!-- Mobile Toggle Button (hidden on desktop) -->
                 <button id="navToggle" 
@@ -536,6 +531,7 @@
                         About
                     </a>
                 </div>
+
             </div>
         </nav>
 
@@ -543,18 +539,11 @@
         <!-- MOBILE NAVIGATION -->
         <!-- Hidden on desktop (xl:hidden = hide on extra large screens) -->
         <!-- ============================================ -->
-        <nav class="bg-white border-b border-zinc-200 p-4 xl:hidden">
+        <nav class="bg-white border-b border-zinc-200 px-4 py-5 xl:hidden">
             <div class="w-full flex items-center justify-between">
-                <!-- Mobile Logo -->
-                <a href="{{ url('/') }}" class="flex items-center gap-1">
-                    <img src="{{ asset('assets/images/site/research-logo-4.png') }}" 
-                         alt="PropertyResearch.uk logo" 
-                         width="512"
-                         height="512"
-                         class="h-10 w-auto">
-                    <span class="text-lg font-semibold tracking-tight text-slate-800">
-                        PropertyResearch<span class="text-lime-900 text-sm">.uk</span>
-                    </span>
+                <!-- Mobile Wordmark -->
+                <a href="{{ url('/') }}" class="inline-flex items-baseline tracking-tight text-slate-800">
+                    <span class="text-xl font-bold">PropertyResearch</span><span class="text-base font-bold text-lime-700">.uk</span>
                 </a>
                 
                 <!-- Mobile Menu Toggle Button -->
@@ -854,16 +843,6 @@
                 @endauth
             </div>
         </nav>
-
-        @auth
-            @if (Auth::id() === 1 && request()->routeIs('home'))
-                <div class="px-4 pt-2 text-center text-sm text-zinc-600">
-                    <div class="mx-auto max-w-7xl font-bold text-rose-700">
-                        Lee Wisener is logged in, probably means he is breaking things, beware :)
-                    </div>
-                </div>
-            @endif
-        @endauth
 
         <!-- ============================================ -->
         <!-- MAIN CONTENT AREA -->

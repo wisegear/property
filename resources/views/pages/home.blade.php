@@ -7,9 +7,22 @@
     <section class="relative z-0 overflow-hidden rounded-lg border border-zinc-200 bg-white px-8 py-8 shadow-sm md:min-h-[320px] md:pr-0">
         <div class="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:gap-2 lg:gap-3">
             <div class="md:max-w-4xl md:flex-[1.2] md:pr-4">
-                <div class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white/70 px-3 py-1 text-xs text-zinc-700 shadow-sm">
-                    <span class="h-2 w-2 rounded-lg bg-lime-500"></span>
-                    Independent UK property data
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white/70 px-3 py-1 text-xs text-zinc-700 shadow-sm">
+                        <span class="h-2 w-2 rounded-lg bg-lime-500"></span>
+                        Independent UK property data
+                    </div>
+                    @auth
+                        @if (Auth::id() === 1)
+                            <div class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/80 px-3 py-1 text-xs font-medium text-emerald-800 shadow-sm">
+                                <span class="relative flex h-2.5 w-2.5">
+                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70"></span>
+                                    <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                                </span>
+                                Admin Online
+                            </div>
+                        @endif
+                    @endauth
                 </div>
                 <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-3xl">
                     Explore property prices, sales history and local trends

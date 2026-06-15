@@ -42,5 +42,12 @@ class ExampleTest extends TestCase
         $this->assertStringContainsString(sprintf('href="%s"', $repossessionsUrl), $mobilePropertyMenu);
         $this->assertStringContainsString('Market Insights', $renderedLayout);
         $this->assertStringContainsString('County Insights', $renderedLayout);
+        $this->assertStringContainsString('text-[1.35rem] font-bold', $renderedLayout);
+        $this->assertStringContainsString('text-[1.1rem] font-bold text-lime-700', $renderedLayout);
+        $this->assertStringContainsString('text-xl font-bold', $renderedLayout);
+        $this->assertStringContainsString('text-base font-bold text-lime-700', $renderedLayout);
+        $this->assertStringContainsString('PropertyResearch</span><span', str_replace(["\n", ' '], '', $renderedLayout));
+        $this->assertStringContainsString(sprintf('href="%s"', url('/')), $renderedLayout);
+        $this->assertStringNotContainsString('alt="PropertyResearch.uk logo"', $renderedLayout);
     }
 }
