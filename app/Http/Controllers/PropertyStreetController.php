@@ -22,6 +22,11 @@ class PropertyStreetController extends Controller
 
     private const ONSPD_TABLE = 'onspd_v2';
 
+    public static function cacheKey(string $streetSlug, string $outcode): string
+    {
+        return sprintf('property:street:%s:%s:%s', self::CACHE_VERSION, $streetSlug, Str::lower($outcode));
+    }
+
     public function show(Request $request, string $street): View
     {
         $outcode = $this->normalizeOutcode((string) $request->query('outcode', ''));
@@ -30,11 +35,7 @@ class PropertyStreetController extends Controller
             abort(404);
         }
 
-        $cacheKey = sprintf('property:street:%s:%s:%s', self::CACHE_VERSION, $street, Str::lower($outcode));
-
-        $payload = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($street, $outcode): array {
-            return $this->buildPayload($street, $outcode);
-        });
+        $payload = $this->warmStreetCache($street, $outcode);
 
         return view('property.street', [
             'streetName' => $payload['street_name'],
@@ -59,6 +60,21 @@ class PropertyStreetController extends Controller
             'deprMsg' => $payload['deprivation_message'] ?? null,
             'lsoaLink' => $payload['deprivation_link'] ?? null,
         ]);
+    }
+
+    public function warmStreetCache(string $streetSlug, string $outcode): array
+    {
+        $normalizedOutcode = $this->normalizeOutcode($outcode);
+
+        if ($normalizedOutcode === null) {
+            abort(404);
+        }
+
+        return Cache::remember(
+            self::cacheKey($streetSlug, $normalizedOutcode),
+            self::CACHE_TTL,
+            fn (): array => $this->buildPayload($streetSlug, $normalizedOutcode)
+        );
     }
 
     /**

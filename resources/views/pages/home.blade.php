@@ -4,35 +4,35 @@
 <div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
 
     {{-- Hero --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-zinc-200 bg-white p-8 shadow-sm flex flex-col md:flex-row justify-between items-center">
-        @include('partials.hero-background')
-        <div class="pointer-events-none absolute -left-20 -top-16 h-64 w-64 rounded-full bg-lime-100/60 blur-3xl -z-10"></div>
-        <div class="max-w-5xl relative z-10">
-            <div class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white/70 px-3 py-1 text-xs text-zinc-700 shadow-sm">
-                <span class="h-2 w-2 rounded-lg bg-lime-500"></span>
-                Fresh, independent property data
-            </div>
-            <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-3xl">
-                Property prices, sales history and market trends across UK
-            </h1>
-            <p class="mt-3 text-md leading-7 text-zinc-500">
-                Search millions of property sales and EPC certificates, track house prices and rents, monitor market conditions and 
-                explore detailed property data across England and Wales, with additional coverage for Scotland and Northern Ireland.
-            </p>
-
-            <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-zinc-600">
-                <span class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/70 px-3 py-1">
+    <section class="relative z-0 overflow-hidden rounded-lg border border-zinc-200 bg-white px-8 py-8 shadow-sm md:min-h-[320px] md:pr-0">
+        <div class="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:gap-2 lg:gap-3">
+            <div class="md:max-w-4xl md:flex-[1.2] md:pr-4">
+                <div class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white/70 px-3 py-1 text-xs text-zinc-700 shadow-sm">
                     <span class="h-2 w-2 rounded-lg bg-lime-500"></span>
-                    Latest data: 30th April 2026
-                </span>
-                <span class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/70 px-3 py-1">
-                    <span class="h-2 w-2 rounded-lg bg-zinc-400"></span>
-                    Next update: 30th June 2026
-                </span>
+                    Independent UK property data
+                </div>
+                <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-3xl">
+                    Explore property prices, sales history and local trends
+                </h1>
+                <p class="mt-3 text-md leading-7 text-zinc-500">
+                    Search property sales, EPC certificates and local housing data. Check house prices, explore your street or postcode, 
+                    and understand how the market is changing in your area.
+                </p>
+
+                <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-zinc-600">
+                    <p>31 million property sales • 24 million EPC certificates • Updated monthly</p>
+                </div>
             </div>
-        </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('/assets/images/site/home.jpg') }}" alt="Property Research" width="437" height="300" class="w-88 h-auto">
+
+            <div class="mx-auto w-full max-w-[320px] md:mx-0 md:w-[31%] md:max-w-none md:min-w-[240px] lg:w-[33%]">
+                <img
+                    src="{{ asset('/assets/images/site/logo10.jpg') }}"
+                    alt="Property Research"
+                    width="768"
+                    height="512"
+                    class="h-auto w-full object-contain md:translate-x-8"
+                >
+            </div>
         </div>
     </section>
 

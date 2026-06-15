@@ -20,6 +20,7 @@ Artisan::command('inspire', function () {
 Schedule::command('sitemap:generate')->dailyAt('01:10');
 Schedule::command('sitemap:generate-epc-postcodes')->dailyAt('01:15');
 Schedule::command('sitemap:generate-streets')->dailyAt('01:20');
+Schedule::command('property:street-warm --min-sales=5')->monthlyOn(1, '01:30');
 Schedule::command('swaps:import-boe')->weekdays()->at('13:00');
 
 // Spatie Backups
