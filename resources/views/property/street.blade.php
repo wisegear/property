@@ -125,7 +125,10 @@
 
         <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             @foreach($glanceMetrics as $metric)
-                <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-5">
+                <div @class([
+                    'rounded-xl border border-zinc-200 bg-zinc-50 p-5',
+                    'xl:col-span-2' => $metric['label'] === 'Crime level',
+                ])>
                     <div class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ $metric['label'] }}</div>
                     <div class="mt-2 text-lg font-semibold text-zinc-900">{{ $metric['value'] }}</div>
                 </div>
@@ -367,6 +370,42 @@
         @endif
     </section>
 
+    @if($nearbyStreets !== [])
+        <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Internal Links</p>
+                <h2 class="text-lg font-semibold text-zinc-900">Nearby streets in {{ $outcode }}</h2>
+            </div>
+
+            <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach($nearbyStreets as $nearbyStreet)
+                    <a href="{{ $nearbyStreet['url'] }}" class="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700 transition hover:border-lime-300 hover:text-lime-700">
+                        <span class="block font-medium text-zinc-900">{{ $nearbyStreet['name'] }}</span>
+                        <span class="mt-1 block text-xs text-zinc-500">{{ number_format($nearbyStreet['sales_count']) }} recorded sales</span>
+                    </a>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    @if($faqItems !== [])
+        <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">FAQ</p>
+                <h2 class="text-lg font-semibold text-zinc-900">Questions about {{ $displayStreetName }}</h2>
+            </div>
+
+            <div class="mt-6 grid gap-4">
+                @foreach($faqItems as $item)
+                    <article class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                        <h3 class="text-sm font-semibold text-zinc-900">{{ $item['question'] }}</h3>
+                        <p class="mt-2 text-sm text-zinc-600">{{ $item['answer'] }}</p>
+                    </article>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div class="flex items-start justify-between gap-4">
             <div>
@@ -429,42 +468,6 @@
             {{ $sales->links() }}
         </div>
     </section>
-
-    @if($nearbyStreets !== [])
-        <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <div class="flex flex-col gap-2">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Internal Links</p>
-                <h2 class="text-lg font-semibold text-zinc-900">Nearby streets in {{ $outcode }}</h2>
-            </div>
-
-            <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                @foreach($nearbyStreets as $nearbyStreet)
-                    <a href="{{ $nearbyStreet['url'] }}" class="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700 transition hover:border-lime-300 hover:text-lime-700">
-                        <span class="block font-medium text-zinc-900">{{ $nearbyStreet['name'] }}</span>
-                        <span class="mt-1 block text-xs text-zinc-500">{{ number_format($nearbyStreet['sales_count']) }} recorded sales</span>
-                    </a>
-                @endforeach
-            </div>
-        </section>
-    @endif
-
-    @if($faqItems !== [])
-        <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <div class="flex flex-col gap-2">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">FAQ</p>
-                <h2 class="text-lg font-semibold text-zinc-900">Questions about {{ $displayStreetName }}</h2>
-            </div>
-
-            <div class="mt-6 grid gap-4">
-                @foreach($faqItems as $item)
-                    <article class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                        <h3 class="text-sm font-semibold text-zinc-900">{{ $item['question'] }}</h3>
-                        <p class="mt-2 text-sm text-zinc-600">{{ $item['answer'] }}</p>
-                    </article>
-                @endforeach
-            </div>
-        </section>
-    @endif
 </div>
 
 @push('scripts')
