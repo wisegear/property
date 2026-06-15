@@ -14,13 +14,13 @@
         // Determine stress level and styling
         if ($stressScore >= 70) {
             $stressLabel = 'High stress';
-            $stressClass = 'bg-rose-50 text-rose-800 border-rose-200';
+            $stressClass = 'text-rose-800 border-rose-200';
         } elseif ($stressScore >= 40) {
             $stressLabel = 'Elevated risk';
-            $stressClass = 'bg-amber-50 text-amber-800 border-amber-200';
+            $stressClass = 'text-amber-800 border-amber-200';
         } else {
             $stressLabel = 'Low stress';
-            $stressClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+            $stressClass = 'text-emerald-800 border-emerald-200';
         }
 
         $gaugeRotation = $stressScore <= 40
@@ -118,7 +118,7 @@
                     <span class="text-3xl md:text-4xl font-bold text-gray-900">{{ $stressScore }}</span>
                     <span class="text-xs text-gray-500">/ 100</span>
                 </div>
-                <span class="mt-1 rounded-full border px-3 py-1 text-[11px] font-medium {{ $stressClass }} whitespace-nowrap">
+                <span class="mt-1 rounded-md border bg-white px-3 py-1 text-[12px] font-medium {{ $stressClass }} whitespace-nowrap">
                     {{ $stressLabel }}
                 </span>
             </div>
