@@ -176,14 +176,6 @@ class WarmPropertyStreetPages extends Command
         return 'UPPER(TRIM(SUBSTR("Postcode", 1, CASE WHEN INSTR("Postcode", \' \') = 0 THEN LENGTH("Postcode") ELSE INSTR("Postcode", \' \') - 1 END)))';
     }
 
-    private function normalizeOutcode(string $outcode): ?string
-    {
-        $normalized = strtoupper(preg_replace('/\s+/', '', trim($outcode)) ?? '');
-
-        return $normalized !== '' ? $normalized : null;
-    }
-}
-
     private function shardExpression(string $outcodeExpression): string
     {
         if (DB::connection()->getDriverName() === 'pgsql') {
@@ -192,3 +184,11 @@ class WarmPropertyStreetPages extends Command
 
         return 'MOD(CRC32(CONCAT('.$outcodeExpression.', \'|\', TRIM("Street"))), ?)';
     }
+
+    private function normalizeOutcode(string $outcode): ?string
+    {
+        $normalized = strtoupper(preg_replace('/\s+/', '', trim($outcode)) ?? '');
+
+        return $normalized !== '' ? $normalized : null;
+    }
+}
