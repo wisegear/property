@@ -49,7 +49,7 @@
         </div>
     </section>
 
-    <section class="mt-6">
+    <section class="mt-8">
         <div class="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
             <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                 <div class="mb-2 text-sm font-medium text-zinc-800">Search by street</div>
