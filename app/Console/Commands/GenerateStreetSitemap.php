@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Http\Controllers\PropertyStreetController;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Console\Command;
@@ -154,7 +155,7 @@ class GenerateStreetSitemap extends Command
         $street = trim((string) $row->street);
         $outcode = strtoupper(trim((string) $row->outcode));
 
-        $url = Url::create('/property/street/'.Str::slug($street).'?outcode='.$outcode);
+        $url = Url::create(PropertyStreetController::streetPath($outcode, Str::slug($street)));
 
         if ($row->last_modified !== null) {
             $url->setLastModificationDate(Carbon::parse((string) $row->last_modified));

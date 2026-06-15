@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Http\Controllers\PropertyStreetController;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -64,7 +65,7 @@ class BuildPropertyStreetIndex extends Command
                     'street' => $street,
                     'outcode' => $outcode,
                     'label' => $street.', '.$outcode,
-                    'path' => '/property/street/'.Str::slug($street).'?outcode='.$outcode,
+                    'path' => PropertyStreetController::streetPath($outcode, Str::slug($street)),
                     'search' => Str::lower($street.' '.$outcode),
                 ];
             })

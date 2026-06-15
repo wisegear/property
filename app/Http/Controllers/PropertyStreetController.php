@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Crime;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -16,9 +17,11 @@ class PropertyStreetController extends Controller
 {
     private const CACHE_TTL = 60 * 60 * 24 * 45;
 
-    private const CACHE_VERSION = 'v3';
+    private const CACHE_VERSION = 'v4';
 
-    private const MIN_RELIABLE_SALES = 3;
+    private const MIN_RELIABLE_SALES = 5;
+
+    private const NEARBY_STREETS_LIMIT = 10;
 
     private const ONSPD_TABLE = 'onspd_v2';
 
@@ -27,12 +30,34 @@ class PropertyStreetController extends Controller
         return sprintf('property:street:%s:%s:%s', self::CACHE_VERSION, $streetSlug, Str::lower($outcode));
     }
 
-    public function show(Request $request, string $street): View
+    public static function streetPath(string $outcode, string $streetSlug): string
+    {
+        return '/property/street/'.Str::lower($outcode).'/'.$streetSlug;
+    }
+
+    public function legacy(Request $request, string $street): RedirectResponse
     {
         $outcode = $this->normalizeOutcode((string) $request->query('outcode', ''));
 
         if ($outcode === null) {
             abort(404);
+        }
+
+        return redirect()->to(self::streetPath($outcode, $street), 301);
+    }
+
+    public function show(Request $request, string $outcode, string $street): View|RedirectResponse
+    {
+        $normalizedOutcode = $this->normalizeOutcode($outcode);
+
+        if ($normalizedOutcode === null) {
+            abort(404);
+        }
+
+        $canonicalOutcode = Str::lower($normalizedOutcode);
+
+        if ($outcode !== $canonicalOutcode) {
+            return redirect()->to(self::streetPath($normalizedOutcode, $street), 301);
         }
 
         $payload = $this->warmStreetCache($street, $outcode);
@@ -42,8 +67,16 @@ class PropertyStreetController extends Controller
             'streetSlug' => $street,
             'outcode' => $payload['outcode'],
             'summary' => $payload['summary'],
+            'glanceMetrics' => $payload['glance_metrics'],
+            'canonicalUrl' => $payload['canonical_url'],
+            'metaTitle' => $payload['meta_title'],
+            'metaDescription' => $payload['meta_description'],
             'yearlyMedianPrice' => $payload['yearly_median_price'],
             'yearlySalesCount' => $payload['yearly_sales_count'],
+            'outcodeComparison' => $payload['outcode_comparison'],
+            'nearbyStreets' => $payload['nearby_streets'],
+            'faqItems' => $payload['faq_items'],
+            'pageLastModified' => $payload['page_last_modified'],
             'topSales' => $payload['top_sales'],
             'sales' => $this->paginateSales($payload['sales'], $request),
             'limitedData' => $payload['limited_data'],
@@ -82,8 +115,16 @@ class PropertyStreetController extends Controller
      *     street_name:string,
      *     outcode:string,
      *     summary:array<string, int|string|null>,
+     *     glance_metrics:array<int, array{label:string, value:string}>,
+     *     canonical_url:string,
+     *     meta_title:string,
+     *     meta_description:string,
      *     yearly_median_price:array<int, array{year:int, value:int}>,
      *     yearly_sales_count:array<int, array{year:int, value:int}>,
+     *     outcode_comparison:array<string, mixed>,
+     *     nearby_streets:array<int, array<string, mixed>>,
+     *     faq_items:array<int, array{question:string, answer:string}>,
+     *     page_last_modified:?string,
      *     top_sales:array<int, array<string, mixed>>,
      *     sales:array<int, array<string, mixed>>,
      *     limited_data:bool,
@@ -177,7 +218,9 @@ class PropertyStreetController extends Controller
             'median_sale_price' => $this->medianValue($prices->all()),
             'average_sale_price' => $prices->isNotEmpty() ? (int) round($prices->avg()) : null,
             'latest_sale_date' => $latestSaleDate !== null ? Carbon::parse($latestSaleDate)->format('d M Y') : null,
+            'latest_sale_date_iso' => $latestSaleDate,
             'highest_sale' => $prices->isNotEmpty() ? (int) $prices->last() : null,
+            'most_common_property_type' => $this->mostCommonPropertyType($records),
         ];
 
         $yearly = collect($records)
@@ -219,13 +262,26 @@ class PropertyStreetController extends Controller
 
         $crimePayload = $this->buildCrimePayload($records, $streetName, $outcode);
         $deprivationPayload = $this->buildDeprivationPayload($records);
+        $outcodeComparison = $this->buildOutcodeComparison($streetName, $outcode, $summary);
+        $nearbyStreets = $this->buildNearbyStreets($streetName, $outcode);
+        $glanceMetrics = $this->buildGlanceMetrics($summary, $crimePayload, $deprivationPayload);
+        $metaDescription = $this->buildMetaDescription($streetName, $outcode, $summary);
+        $faqItems = $this->buildFaqItems($streetName, $outcode, $summary, $outcodeComparison);
 
         return [
             'street_name' => $streetName,
             'outcode' => $outcode,
             'summary' => $summary,
+            'glance_metrics' => $glanceMetrics,
+            'canonical_url' => url(self::streetPath($outcode, $streetSlug)),
+            'meta_title' => sprintf('%s %s Sold Prices & Property Data', $this->titleCaseStreetName($streetName), $outcode),
+            'meta_description' => $metaDescription,
             'yearly_median_price' => $yearlyMedianPrice,
             'yearly_sales_count' => $yearlySalesCount,
+            'outcode_comparison' => $outcodeComparison,
+            'nearby_streets' => $nearbyStreets,
+            'faq_items' => $faqItems,
+            'page_last_modified' => $summary['latest_sale_date_iso'],
             'top_sales' => $topSales,
             'sales' => $records,
             'limited_data' => count($records) < self::MIN_RELIABLE_SALES,
@@ -787,6 +843,240 @@ class PropertyStreetController extends Controller
             ->pluck('Street')
             ->map(fn ($street) => trim((string) $street))
             ->first(fn (string $street): bool => Str::slug($street) === $streetSlug);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $records
+     */
+    private function mostCommonPropertyType(array $records): ?string
+    {
+        $counts = collect($records)
+            ->pluck('property_type')
+            ->filter(fn ($propertyType): bool => is_string($propertyType) && $propertyType !== '' && $propertyType !== 'Unknown')
+            ->countBy();
+
+        if ($counts->isEmpty()) {
+            return null;
+        }
+
+        return (string) $counts
+            ->sortDesc()
+            ->keys()
+            ->first();
+    }
+
+    /**
+     * @param  array<string, int|string|null>  $summary
+     * @param  array<string, mixed>  $crimePayload
+     * @param  array<string, mixed>  $deprivationPayload
+     * @return array<int, array{label:string, value:string}>
+     */
+    private function buildGlanceMetrics(array $summary, array $crimePayload, array $deprivationPayload): array
+    {
+        $metrics = [
+            ['label' => 'Total recorded sales', 'value' => number_format((int) ($summary['total_sales'] ?? 0))],
+            ['label' => 'Average sale price', 'value' => $this->formatPrice($summary['average_sale_price'] ?? null)],
+            ['label' => 'Median sale price', 'value' => $this->formatPrice($summary['median_sale_price'] ?? null)],
+            ['label' => 'Latest sale date', 'value' => (string) ($summary['latest_sale_date'] ?? '')],
+            ['label' => 'Highest recorded sale', 'value' => $this->formatPrice($summary['highest_sale'] ?? null)],
+            ['label' => 'Most common property type', 'value' => (string) ($summary['most_common_property_type'] ?? '')],
+        ];
+
+        $deprivation = $deprivationPayload['depr'] ?? null;
+        if (is_array($deprivation) && ! empty($deprivation['decile'])) {
+            $metrics[] = [
+                'label' => 'Deprivation band',
+                'value' => 'Decile '.$deprivation['decile'].' / 10',
+            ];
+        }
+
+        if (! empty($crimePayload['crime_summary'])) {
+            $metrics[] = [
+                'label' => 'Crime level',
+                'value' => (string) $crimePayload['crime_summary'],
+            ];
+        }
+
+        return collect($metrics)
+            ->filter(fn (array $metric): bool => trim($metric['value']) !== '' && $metric['value'] !== 'N/A')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<string, int|string|null>  $summary
+     * @return array<string, mixed>
+     */
+    private function buildOutcodeComparison(string $streetName, string $outcode, array $summary): array
+    {
+        $cacheKey = sprintf('property:street:%s:outcode-comparison:%s', self::CACHE_VERSION, Str::lower($outcode));
+
+        $outcodeSummary = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($outcode): array {
+            $records = DB::table('land_registry')
+                ->select(['Price', 'PropertyType'])
+                ->where('PPDCategoryType', 'A')
+                ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
+                ->orderByDesc('Date')
+                ->get()
+                ->map(fn (object $row): array => [
+                    'price' => $row->Price !== null ? (int) $row->Price : null,
+                    'property_type' => $this->propertyTypeLabel($row->PropertyType !== null ? (string) $row->PropertyType : null),
+                ])
+                ->all();
+
+            $prices = collect($records)
+                ->pluck('price')
+                ->filter(fn ($price): bool => is_int($price) && $price > 0)
+                ->sort()
+                ->values()
+                ->all();
+
+            return [
+                'sales_count' => count($records),
+                'average_sale_price' => $prices !== [] ? (int) round(collect($prices)->avg()) : null,
+                'median_sale_price' => $this->medianValue($prices),
+                'most_common_property_type' => $this->mostCommonPropertyType($records),
+            ];
+        });
+
+        return [
+            'street_label' => $this->titleCaseStreetName($streetName),
+            'outcode_label' => $outcode,
+            'street' => [
+                'sales_count' => (int) ($summary['total_sales'] ?? 0),
+                'average_sale_price' => $summary['average_sale_price'] ?? null,
+                'median_sale_price' => $summary['median_sale_price'] ?? null,
+                'most_common_property_type' => $summary['most_common_property_type'] ?? null,
+            ],
+            'outcode' => $outcodeSummary,
+        ];
+    }
+
+    /**
+     * @return array<int, array{name:string, slug:string, outcode:string, sales_count:int, url:string}>
+     */
+    private function buildNearbyStreets(string $streetName, string $outcode): array
+    {
+        return DB::table('land_registry')
+            ->selectRaw('TRIM("Street") as street')
+            ->selectRaw('COUNT(*) as sales_count')
+            ->where('PPDCategoryType', 'A')
+            ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
+            ->whereNotNull('Street')
+            ->whereRaw('TRIM("Street") <> ?', [''])
+            ->whereRaw('TRIM("Street") <> ?', [$streetName])
+            ->groupByRaw('TRIM("Street")')
+            ->havingRaw('COUNT(*) >= ?', [self::MIN_RELIABLE_SALES])
+            ->orderByDesc('sales_count')
+            ->orderByRaw('TRIM("Street")')
+            ->limit(self::NEARBY_STREETS_LIMIT)
+            ->get()
+            ->map(function (object $row) use ($outcode): array {
+                $name = trim((string) $row->street);
+                $slug = Str::slug($name);
+
+                return [
+                    'name' => $this->titleCaseStreetName($name),
+                    'slug' => $slug,
+                    'outcode' => $outcode,
+                    'sales_count' => (int) $row->sales_count,
+                    'url' => self::streetPath($outcode, $slug),
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * @param  array<string, int|string|null>  $summary
+     */
+    private function buildMetaDescription(string $streetName, string $outcode, array $summary): string
+    {
+        $streetLabel = $this->titleCaseStreetName($streetName);
+
+        if (($summary['average_sale_price'] ?? null) !== null || ($summary['median_sale_price'] ?? null) !== null) {
+            return sprintf(
+                'Sold property data for %s, %s. View average sale prices, recent transactions, property types, EPC ratings and local market trends.',
+                $streetLabel,
+                $outcode
+            );
+        }
+
+        return sprintf(
+            'See sold house prices, property types, EPC ratings and local property data for %s, %s.',
+            $streetLabel,
+            $outcode
+        );
+    }
+
+    /**
+     * @param  array<string, int|string|null>  $summary
+     * @param  array<string, mixed>  $outcodeComparison
+     * @return array<int, array{question:string, answer:string}>
+     */
+    private function buildFaqItems(string $streetName, string $outcode, array $summary, array $outcodeComparison): array
+    {
+        $streetLabel = $this->titleCaseStreetName($streetName);
+        $faqItems = [];
+
+        if (($summary['average_sale_price'] ?? null) !== null) {
+            $faqItems[] = [
+                'question' => "What is the average house price on {$streetLabel}?",
+                'answer' => sprintf(
+                    'The average recorded sale price on %s, %s is %s based on %s sales.',
+                    $streetLabel,
+                    $outcode,
+                    $this->formatPrice($summary['average_sale_price']),
+                    number_format((int) ($summary['total_sales'] ?? 0))
+                ),
+            ];
+        }
+
+        $faqItems[] = [
+            'question' => "How many properties have sold on {$streetLabel}?",
+            'answer' => sprintf(
+                '%s recorded %s Category A sales in the current street dataset for %s.',
+                $streetLabel,
+                number_format((int) ($summary['total_sales'] ?? 0)),
+                $outcode
+            ),
+        ];
+
+        if (! empty($summary['most_common_property_type'])) {
+            $faqItems[] = [
+                'question' => "What types of properties sell on {$streetLabel}?",
+                'answer' => sprintf(
+                    'The most common recorded property type on %s, %s is %s.',
+                    $streetLabel,
+                    $outcode,
+                    $summary['most_common_property_type']
+                ),
+            ];
+        }
+
+        if (($summary['average_sale_price'] ?? null) !== null && ($outcodeComparison['outcode']['average_sale_price'] ?? null) !== null) {
+            $faqItems[] = [
+                'question' => "How does {$streetLabel} compare with {$outcode}?",
+                'answer' => sprintf(
+                    '%s has an average sale price of %s versus %s across %s overall.',
+                    $streetLabel,
+                    $this->formatPrice($summary['average_sale_price']),
+                    $this->formatPrice($outcodeComparison['outcode']['average_sale_price']),
+                    $outcode
+                ),
+            ];
+        }
+
+        return $faqItems;
+    }
+
+    private function titleCaseStreetName(string $streetName): string
+    {
+        return Str::title(Str::lower($streetName));
+    }
+
+    private function formatPrice(int|string|null $price): string
+    {
+        return is_numeric($price) ? '£'.number_format((int) $price) : 'N/A';
     }
 
     /**

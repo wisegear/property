@@ -1,56 +1,177 @@
 @extends('layouts.app')
 @include('partials.chartjs-head')
 
+@php
+    $displayStreetName = \Illuminate\Support\Str::title(\Illuminate\Support\Str::lower($streetName));
+    $breadcrumbSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => [
+            [
+                '@type' => 'ListItem',
+                'position' => 1,
+                'name' => 'Home',
+                'item' => url('/'),
+            ],
+            [
+                '@type' => 'ListItem',
+                'position' => 2,
+                'name' => 'Property',
+                'item' => route('property.home'),
+            ],
+            [
+                '@type' => 'ListItem',
+                'position' => 3,
+                'name' => 'Streets',
+                'item' => route('property.search'),
+            ],
+            [
+                '@type' => 'ListItem',
+                'position' => 4,
+                'name' => $outcode,
+            ],
+            [
+                '@type' => 'ListItem',
+                'position' => 5,
+                'name' => $displayStreetName,
+                'item' => $canonicalUrl,
+            ],
+        ],
+    ];
+    $faqSchema = $faqItems === [] ? null : [
+        '@context' => 'https://schema.org',
+        '@type' => 'FAQPage',
+        'mainEntity' => collect($faqItems)->map(fn (array $item): array => [
+            '@type' => 'Question',
+            'name' => $item['question'],
+            'acceptedAnswer' => [
+                '@type' => 'Answer',
+                'text' => $item['answer'],
+            ],
+        ])->all(),
+    ];
+    $webPageSchema = array_filter([
+        '@context' => 'https://schema.org',
+        '@type' => 'WebPage',
+        'name' => $metaTitle,
+        'description' => $metaDescription,
+        'url' => $canonicalUrl,
+        'dateModified' => $pageLastModified,
+    ]);
+    $comparisonRows = [
+        ['label' => 'Average sale price', 'street' => $outcodeComparison['street']['average_sale_price'] ?? null, 'outcode' => $outcodeComparison['outcode']['average_sale_price'] ?? null, 'currency' => true],
+        ['label' => 'Median sale price', 'street' => $outcodeComparison['street']['median_sale_price'] ?? null, 'outcode' => $outcodeComparison['outcode']['median_sale_price'] ?? null, 'currency' => true],
+        ['label' => 'Sales count', 'street' => $outcodeComparison['street']['sales_count'] ?? null, 'outcode' => $outcodeComparison['outcode']['sales_count'] ?? null, 'currency' => false],
+        ['label' => 'Most common property type', 'street' => $outcodeComparison['street']['most_common_property_type'] ?? null, 'outcode' => $outcodeComparison['outcode']['most_common_property_type'] ?? null, 'currency' => false],
+    ];
+@endphp
+
+@section('title', $metaTitle.' | PropertyResearch.uk')
+@section('description', $metaDescription)
+@section('meta')
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+    <meta name="robots" content="{{ $limitedData ? 'noindex, follow' : 'index, follow' }}">
+    <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    @if($faqSchema !== null)
+        <script type="application/ld+json">{!! json_encode($faqSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    @endif
+    <script type="application/ld+json">{!! json_encode($webPageSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+@endsection
+
 @section('content')
 <div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
+    <nav aria-label="Breadcrumb" class="mb-6">
+        <ol class="flex flex-wrap items-center gap-2 text-sm text-zinc-500">
+            <li><a href="{{ url('/') }}" class="hover:text-lime-700">Home</a></li>
+            <li>/</li>
+            <li><a href="{{ route('property.home') }}" class="hover:text-lime-700">Property</a></li>
+            <li>/</li>
+            <li><a href="{{ route('property.search') }}" class="hover:text-lime-700">Streets</a></li>
+            <li>/</li>
+            <li>{{ $outcode }}</li>
+            <li>/</li>
+            <li class="text-zinc-900">{{ $displayStreetName }}</li>
+        </ol>
+    </nav>
+
     <section class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div class="max-w-3xl">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Street Sales</p>
-                <h1 class="mt-2 text-2xl font-semibold text-zinc-900">{{ $streetName }}, {{ $outcode }} property sales</h1>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Street Property Data</p>
+                <h1 class="mt-2 text-2xl font-semibold text-zinc-900">{{ $displayStreetName }} {{ $outcode }} Sold Prices &amp; Property Data</h1>
                 <p class="mt-2 text-sm text-zinc-600">
-                    Category A Land Registry sales for this street and postcode district, cached for 45 days.
+                    View sold house prices, recent transactions, property mix, and local context for {{ $displayStreetName }}, {{ $outcode }}.
                 </p>
 
                 @if($limitedData)
                     <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                        Sales data for this street is limited, so figures may be less reliable.
+                        There is limited sales data for this street, so wider postcode district figures may give a better view of the local market.
                     </div>
                 @endif
             </div>
 
             <div class="shrink-0">
-                <img src="{{ asset('assets/images/site/street.png') }}" alt="Street property sales" class="w-90 h-auto">
+                <img src="{{ asset('assets/images/site/street.png') }}" alt="Street property sales" class="h-auto w-90">
             </div>
         </div>
     </section>
 
-    <section class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div class="text-xs uppercase tracking-[0.2em] text-zinc-500">Total sales</div>
-            <div class="mt-2 text-2xl font-semibold text-zinc-900">{{ number_format((int) ($summary['total_sales'] ?? 0)) }}</div>
+    <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-2">
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Street Snapshot</p>
+            <h2 class="text-xl font-semibold text-zinc-900">{{ $displayStreetName }} at a glance</h2>
+            <p class="text-sm text-zinc-600">Only metrics with enough underlying data are shown here.</p>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div class="text-xs uppercase tracking-[0.2em] text-zinc-500">Median sale price</div>
-            <div class="mt-2 text-2xl font-semibold text-zinc-900">
-                {{ $summary['median_sale_price'] !== null ? '£'.number_format((int) $summary['median_sale_price']) : 'N/A' }}
-            </div>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            @foreach($glanceMetrics as $metric)
+                <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-5">
+                    <div class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ $metric['label'] }}</div>
+                    <div class="mt-2 text-lg font-semibold text-zinc-900">{{ $metric['value'] }}</div>
+                </div>
+            @endforeach
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div class="text-xs uppercase tracking-[0.2em] text-zinc-500">Average sale price</div>
-            <div class="mt-2 text-2xl font-semibold text-zinc-900">
-                {{ $summary['average_sale_price'] !== null ? '£'.number_format((int) $summary['average_sale_price']) : 'N/A' }}
-            </div>
+    </section>
+
+    <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-2">
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Comparison</p>
+            <h2 class="text-xl font-semibold text-zinc-900">{{ $displayStreetName }} compared with {{ $outcode }}</h2>
+            <p class="text-sm text-zinc-600">Street-level figures are compared against the full postcode district using recorded Land Registry sales.</p>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div class="text-xs uppercase tracking-[0.2em] text-zinc-500">Latest sale date</div>
-            <div class="mt-2 text-2xl font-semibold text-zinc-900">{{ $summary['latest_sale_date'] ?? 'N/A' }}</div>
-        </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div class="text-xs uppercase tracking-[0.2em] text-zinc-500">Highest sale</div>
-            <div class="mt-2 text-2xl font-semibold text-zinc-900">
-                {{ $summary['highest_sale'] !== null ? '£'.number_format((int) $summary['highest_sale']) : 'N/A' }}
-            </div>
+
+        <div class="mt-6 overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-zinc-50 text-left text-zinc-600">
+                    <tr>
+                        <th class="px-3 py-2 font-medium">Metric</th>
+                        <th class="px-3 py-2 font-medium">{{ $displayStreetName }}</th>
+                        <th class="px-3 py-2 font-medium">{{ $outcode }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($comparisonRows as $row)
+                        @continue($row['street'] === null && $row['outcode'] === null)
+                        <tr class="border-t border-zinc-200">
+                            <td class="px-3 py-2 font-medium text-zinc-700">{{ $row['label'] }}</td>
+                            <td class="px-3 py-2 text-zinc-900">
+                                @if($row['currency'])
+                                    {{ $row['street'] !== null ? '£'.number_format((int) $row['street']) : 'N/A' }}
+                                @else
+                                    {{ $row['street'] !== null ? $row['street'] : 'N/A' }}
+                                @endif
+                            </td>
+                            <td class="px-3 py-2 text-zinc-900">
+                                @if($row['currency'])
+                                    {{ $row['outcode'] !== null ? '£'.number_format((int) $row['outcode']) : 'N/A' }}
+                                @else
+                                    {{ $row['outcode'] !== null ? $row['outcode'] : 'N/A' }}
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </section>
 
@@ -79,7 +200,7 @@
     @if(! empty($crimeTrend))
         <section class="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg">
             <div class="mb-2 flex items-center justify-between gap-3">
-                <h3 class="text-lg font-semibold text-zinc-600">Crime Trends near {{ $streetName }}, {{ $outcode }}</h3>
+                <h2 class="text-lg font-semibold text-zinc-600">Crime trends near {{ $displayStreetName }}, {{ $outcode }}</h2>
 
                 @if($crimeDirection === 'rising')
                     <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
@@ -96,52 +217,35 @@
                 @endif
             </div>
 
-            <p class="mb-2 text-base font-medium text-zinc-800">
-                {{ $crimeSummary }}
-            </p>
-
-            <p class="mb-2 text-sm text-zinc-500">
-                Compared to the previous 12 months, based on reported crimes within ~500m of this street centroid.
-            </p>
-
-            <p class="mb-1 text-xs text-zinc-500">
-                Monthly Crime Volume (last 24 months, hover over to see detail)
-            </p>
+            <p class="mb-2 text-base font-medium text-zinc-800">{{ $crimeSummary }}</p>
+            <p class="mb-2 text-sm text-zinc-500">Compared with the previous 12 months, based on reported crimes within roughly 500 metres of this street centroid.</p>
+            <p class="mb-1 text-xs text-zinc-500">Monthly crime volume over the last 24 months</p>
 
             <div class="mb-1 h-10">
                 <canvas id="crimeSparkline" class="h-10 w-full"></canvas>
             </div>
 
             <div class="mb-4 mt-1 flex items-center justify-between gap-3 text-xs text-zinc-500">
-                <span>Shows monthly crime levels over time. Peaks indicate higher crime periods.</span>
+                <span>Peaks indicate higher reported crime periods.</span>
                 <span>Latest: {{ collect($crimeTrendValues)->last() ?? 0 }} crimes</span>
             </div>
 
             <div class="grid grid-cols-1 gap-6 text-sm md:grid-cols-3">
                 <div>
-                    <div class="text-zinc-500">Overall Change</div>
+                    <div class="text-zinc-500">Overall change</div>
                     <div class="text-2xl font-bold {{ $totalChange > 0 ? 'text-red-600' : ($totalChange < 0 ? 'text-green-600' : 'text-zinc-700') }}">
                         {{ $totalChange > 0 ? '+' : '' }}{{ $totalChange }}%
-                    </div>
-                    <div class="mt-2 text-xs">
-                        @if($totalChange > 10)
-                            <span class="text-red-600">Increasing trend</span>
-                        @elseif($totalChange < -10)
-                            <span class="text-green-600">Decreasing trend</span>
-                        @else
-                            <span class="text-zinc-500">Stable trend</span>
-                        @endif
                     </div>
                 </div>
 
                 <div>
-                    <div class="text-zinc-500">Rising Most</div>
+                    <div class="text-zinc-500">Rising most</div>
                     <div class="font-semibold">{{ $topIncrease['crime_type'] ?? '-' }}</div>
                     <div class="text-sm text-zinc-600">{{ $topIncrease['pct_change_label'] ?? (($topIncrease['pct_change'] ?? 0).'%') }}</div>
                 </div>
 
                 <div>
-                    <div class="text-zinc-500">Falling Most</div>
+                    <div class="text-zinc-500">Falling most</div>
                     <div class="font-semibold">{{ $topDecrease['crime_type'] ?? '-' }}</div>
                     <div class="text-sm text-zinc-600">{{ $topDecrease['pct_change'] ?? 0 }}%</div>
                 </div>
@@ -151,17 +255,17 @@
                 <div class="mt-6">
                     <details class="rounded-xl border border-zinc-200 bg-white px-4 py-3">
                         <summary class="cursor-pointer text-sm font-semibold text-zinc-600 marker:text-zinc-500">
-                            Crime Profile for This Street Area (Last 12 months)
+                            Crime profile for this street area
                         </summary>
 
                         <div class="mt-4 overflow-x-auto">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b text-left">
-                                        <th class="py-2">Crime Type</th>
+                                        <th class="py-2">Crime type</th>
                                         <th class="py-2">Total</th>
                                         <th class="py-2">%</th>
-                                        <th class="py-2">12m Change</th>
+                                        <th class="py-2">12m change</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -203,7 +307,7 @@
             <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-lg">
                 <div class="grid gap-6 lg:grid-cols-[1.2fr,0.8fr]">
                     <div>
-                        <div class="text-lg font-bold text-zinc-600">Closest Deprivation Area for This Street</div>
+                        <div class="text-lg font-bold text-zinc-600">Closest deprivation area for this street</div>
                         <div class="font-medium">
                             {{ $depr['name'] }}
                             <span class="text-xs text-zinc-500">({{ $depr['lsoa21'] }})</span>
@@ -231,7 +335,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <p class="mt-4 text-xs text-zinc-500">Higher decile/rank values indicate less deprivation (better).</p>
                         </div>
 
                         <div class="mt-4 flex flex-wrap gap-3">
@@ -251,7 +354,7 @@
                         <div class="relative overflow-hidden rounded-xl border border-zinc-200">
                             <div id="street-deprivation-map" class="h-72 w-full bg-zinc-100"></div>
                             <div id="street-deprivation-map-loading" class="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/80 text-sm text-zinc-500">
-                                Loading map…
+                                Loading map...
                             </div>
                         </div>
                     </div>
@@ -267,9 +370,9 @@
     <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div class="flex items-start justify-between gap-4">
             <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Street Sales</p>
-                <h2 class="mt-2 text-lg font-semibold text-zinc-900">Property sales on this street</h2>
-                <p class="mt-2 text-sm text-zinc-600">Open any row to view the normal property detail page for that specific sale address.</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Recent Sales</p>
+                <h2 class="mt-2 text-lg font-semibold text-zinc-900">Recent property sales on {{ $displayStreetName }}</h2>
+                <p class="mt-2 text-sm text-zinc-600">This is crawlable HTML and links through to the matching property page where a slug is available.</p>
             </div>
         </div>
 
@@ -278,23 +381,27 @@
                 <thead class="bg-zinc-50 text-left text-zinc-600">
                     <tr>
                         <th class="px-3 py-2 font-medium">Date</th>
-                        <th class="px-3 py-2 font-medium">Address</th>
                         <th class="px-3 py-2 font-medium">Price</th>
-                        <th class="px-3 py-2 font-medium">Type</th>
+                        <th class="px-3 py-2 font-medium">Property type</th>
+                        <th class="px-3 py-2 font-medium">New build / resale</th>
+                        <th class="px-3 py-2 font-medium">Tenure</th>
+                        <th class="px-3 py-2 font-medium">Address</th>
                         <th class="px-3 py-2 font-medium">View</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($sales as $sale)
                         <tr class="border-t border-zinc-200">
-                            <td class="px-3 py-2 whitespace-nowrap text-zinc-700">{{ $sale['date_label'] ?? 'N/A' }}</td>
+                            <td class="whitespace-nowrap px-3 py-2 text-zinc-700">{{ $sale['date_label'] ?? 'N/A' }}</td>
+                            <td class="whitespace-nowrap px-3 py-2 text-zinc-900">{{ $sale['price_label'] ?? 'N/A' }}</td>
+                            <td class="px-3 py-2 text-zinc-700">{{ $sale['property_type'] }}</td>
+                            <td class="px-3 py-2 text-zinc-700">{{ $sale['build_status'] }}</td>
+                            <td class="px-3 py-2 text-zinc-700">{{ $sale['tenure'] }}</td>
                             <td class="px-3 py-2 text-zinc-900">
                                 <div>{{ $sale['address'] !== '' ? $sale['address'] : 'N/A' }}</div>
                                 <div class="text-xs text-zinc-500">{{ $streetName }}, {{ $sale['postcode'] }}</div>
                             </td>
-                            <td class="px-3 py-2 whitespace-nowrap text-zinc-900">{{ $sale['price_label'] ?? 'N/A' }}</td>
-                            <td class="px-3 py-2 text-zinc-700">{{ $sale['property_type'] }}</td>
-                            <td class="px-3 py-2 whitespace-nowrap text-center">
+                            <td class="whitespace-nowrap px-3 py-2 text-center">
                                 @if(! empty($sale['property_slug']))
                                     <a
                                         href="{{ route('property.show.slug', ['slug' => $sale['property_slug']]) }}"
@@ -323,6 +430,41 @@
         </div>
     </section>
 
+    @if($nearbyStreets !== [])
+        <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Internal Links</p>
+                <h2 class="text-lg font-semibold text-zinc-900">Nearby streets in {{ $outcode }}</h2>
+            </div>
+
+            <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach($nearbyStreets as $nearbyStreet)
+                    <a href="{{ $nearbyStreet['url'] }}" class="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700 transition hover:border-lime-300 hover:text-lime-700">
+                        <span class="block font-medium text-zinc-900">{{ $nearbyStreet['name'] }}</span>
+                        <span class="mt-1 block text-xs text-zinc-500">{{ number_format($nearbyStreet['sales_count']) }} recorded sales</span>
+                    </a>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    @if($faqItems !== [])
+        <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">FAQ</p>
+                <h2 class="text-lg font-semibold text-zinc-900">Questions about {{ $displayStreetName }}</h2>
+            </div>
+
+            <div class="mt-6 grid gap-4">
+                @foreach($faqItems as $item)
+                    <article class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                        <h3 class="text-sm font-semibold text-zinc-900">{{ $item['question'] }}</h3>
+                        <p class="mt-2 text-sm text-zinc-600">{{ $item['answer'] }}</p>
+                    </article>
+                @endforeach
+            </div>
+        </section>
+    @endif
 </div>
 
 @push('scripts')

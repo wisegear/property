@@ -64,9 +64,13 @@ Route::get('/dashboard', fn () => redirect('/'))->name('dashboard');
 
 Route::get('/property', [PropertyController::class, 'home'])->name('property.home');
 Route::get('/property/search', [PropertyController::class, 'search'])->name('property.search');
-Route::get('/property/street/{street}', [PropertyStreetController::class, 'show'])
+Route::get('/property/street/{outcode}/{street}', [PropertyStreetController::class, 'show'])
+    ->where('outcode', '[A-Za-z0-9]+')
     ->where('street', '[a-z0-9\-]+')
     ->name('property.street.show');
+Route::get('/property/street/{street}', [PropertyStreetController::class, 'legacy'])
+    ->where('street', '[a-z0-9\-]+')
+    ->name('property.street.legacy');
 Route::get('/property/heatmap', [PropertyController::class, 'heatmap'])->name('property.heatmap');
 Route::get('/property/points', [PropertyController::class, 'points'])->name('property.points');
 // Legacy property detail URL (query-string based) kept temporarily for backward compatibility.

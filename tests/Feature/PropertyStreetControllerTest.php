@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\PropertyStreetController;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,7 @@ class PropertyStreetControllerTest extends TestCase
         $this->ensureCrimeTable();
         $this->ensureImdTables();
 
-        Cache::forget('property:street:v3:cromwell-road:sw7');
+        Cache::forget(PropertyStreetController::cacheKey('cromwell-road', 'SW7'));
         DB::table('land_registry')->delete();
         DB::table('onspd_v2')->delete();
         DB::table('crime')->delete();
@@ -28,6 +29,11 @@ class PropertyStreetControllerTest extends TestCase
             $this->saleRow('tx-102', 'CROMWELL ROAD', 200000, '2023-06-10 00:00:00', 'SW7 5PH', '2', 'FLAT 2'),
             $this->saleRow('tx-103', 'CROMWELL ROAD', 300000, '2024-02-02 00:00:00', 'SW7 5AA', '3', null),
             $this->saleRow('tx-104', 'CROMWELL ROAD', 400000, '2024-06-10 00:00:00', 'SW7 4ZZ', '4', null),
+            $this->saleRow('tx-107', 'ELM ROAD', 500000, '2024-04-01 00:00:00', 'SW7 6AA', '1', null),
+            $this->saleRow('tx-108', 'ELM ROAD', 520000, '2024-04-02 00:00:00', 'SW7 6AB', '2', null),
+            $this->saleRow('tx-109', 'ELM ROAD', 540000, '2024-04-03 00:00:00', 'SW7 6AC', '3', null),
+            $this->saleRow('tx-110', 'ELM ROAD', 560000, '2024-04-04 00:00:00', 'SW7 6AD', '4', null),
+            $this->saleRow('tx-111', 'ELM ROAD', 580000, '2024-04-05 00:00:00', 'SW7 6AE', '5', null),
             $this->saleRow('tx-105', 'CROMWELL ROAD', 999999, '2024-07-01 00:00:00', 'SW5 0AA', '5', null),
             $this->saleRow('tx-106', 'CROMWELL ROAD', 150000, '2024-08-01 00:00:00', 'SW7 9AA', '6', null, 'B'),
         ]);
@@ -55,37 +61,49 @@ class PropertyStreetControllerTest extends TestCase
             $this->crimeRow('2025-05-01', 'burglary', 51.4971000, -0.1819000),
         ]);
 
-        $response = $this->get('/property/street/cromwell-road?outcode=SW7');
+        $legacyResponse = $this->get('/property/street/cromwell-road?outcode=SW7');
+        $legacyResponse->assertRedirect('/property/street/sw7/cromwell-road');
+
+        $response = $this->get('/property/street/sw7/cromwell-road');
 
         $response->assertOk();
-        $response->assertSee('CROMWELL ROAD, SW7 property sales');
-        $response->assertSee('Total sales');
+        $response->assertSee('Cromwell Road SW7 Sold Prices &amp; Property Data', false);
+        $response->assertSee('Cromwell Road at a glance');
+        $response->assertSee('Cromwell Road compared with SW7');
         $response->assertSee('4');
         $response->assertSee('£250,000');
         $response->assertSee('10 Jun 2024');
         $response->assertSee('£400,000');
-        $response->assertSee('Closest Deprivation Area for This Street');
+        $response->assertSee('Closest deprivation area for this street');
         $response->assertSee('Knightsbridge and Belgravia 001A');
         $response->assertSee('Nearest postcode anchor: SW7 5PH');
-        $response->assertSee('Crime Trends near CROMWELL ROAD, SW7');
-        $response->assertSee('Crime Profile for This Street Area');
-        $response->assertSee('Property sales on this street');
-        $response->assertSee('View property');
+        $response->assertSee('Crime trends near Cromwell Road, SW7');
+        $response->assertSee('Crime profile for this street area');
+        $response->assertSee('Recent property sales on Cromwell Road');
+        $response->assertSee('Nearby streets in SW7');
+        $response->assertSee('Elm Road');
+        $response->assertSee('Questions about Cromwell Road');
+        $response->assertSee('What is the average house price on Cromwell Road?');
         $response->assertSee(route('property.show.slug', ['slug' => 'sw7-5ph-1-cromwell-road-flat-1'], false), false);
-        $response->assertDontSee('Sales data for this street is limited, so figures may be less reliable.');
+        $response->assertSee('<link rel="canonical" href="http://localhost/property/street/sw7/cromwell-road">', false);
+        $response->assertSee('<meta name="robots" content="noindex, follow">', false);
+        $response->assertSee('"@type":"BreadcrumbList"', false);
+        $response->assertSee('"@type":"FAQPage"', false);
+        $response->assertSee('There is limited sales data for this street, so wider postcode district figures may give a better view of the local market.');
 
-        $cached = Cache::get('property:street:v3:cromwell-road:sw7');
+        $cached = Cache::get(PropertyStreetController::cacheKey('cromwell-road', 'SW7'));
 
         $this->assertIsArray($cached);
         $this->assertSame('CROMWELL ROAD', $cached['street_name']);
         $this->assertSame(4, $cached['summary']['total_sales']);
+        $this->assertSame('/property/street/sw7/cromwell-road', parse_url($cached['canonical_url'], PHP_URL_PATH));
     }
 
     public function test_street_page_shows_reliability_warning_for_limited_street_data(): void
     {
         $this->ensureLandRegistryTable();
 
-        Cache::forget('property:street:v3:union-street:se1');
+        Cache::forget(PropertyStreetController::cacheKey('union-street', 'SE1'));
         DB::table('land_registry')->delete();
 
         DB::table('land_registry')->insert([
@@ -93,11 +111,12 @@ class PropertyStreetControllerTest extends TestCase
             $this->saleRow('tx-202', 'UNION STREET', 180000, '2024-03-01 00:00:00', 'SE1 1AB', '2', null),
         ]);
 
-        $response = $this->get('/property/street/union-street?outcode=SE1');
+        $response = $this->get('/property/street/se1/union-street');
 
         $response->assertOk();
-        $response->assertSee('UNION STREET, SE1 property sales');
-        $response->assertSee('Sales data for this street is limited, so figures may be less reliable.');
+        $response->assertSee('Union Street SE1 Sold Prices &amp; Property Data', false);
+        $response->assertSee('There is limited sales data for this street, so wider postcode district figures may give a better view of the local market.');
+        $response->assertSee('<meta name="robots" content="noindex, follow">', false);
     }
 
     private function ensureLandRegistryTable(): void

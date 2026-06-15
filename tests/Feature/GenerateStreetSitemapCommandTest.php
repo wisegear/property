@@ -98,10 +98,10 @@ class GenerateStreetSitemapCommandTest extends TestCase
         $this->assertCount(2, $xml->url);
 
         $xmlString = (string) File::get($sitemapPath);
-        $this->assertStringContainsString('/property/street/high-road?outcode=B79', $xmlString);
-        $this->assertStringContainsString('/property/street/main-street?outcode=B79', $xmlString);
-        $this->assertStringNotContainsString('/property/street/main-street?outcode=B80', $xmlString);
-        $this->assertStringNotContainsString('/property/street/side-lane?outcode=B81', $xmlString);
+        $this->assertStringContainsString('/property/street/b79/high-road', $xmlString);
+        $this->assertStringContainsString('/property/street/b79/main-street', $xmlString);
+        $this->assertStringNotContainsString('/property/street/b80/main-street', $xmlString);
+        $this->assertStringNotContainsString('/property/street/b81/side-lane', $xmlString);
         $this->assertStringContainsString('2024-01-14', $xmlString);
 
         $indexXmlString = (string) File::get(public_path('sitemap-index.xml'));
