@@ -58,6 +58,38 @@
                 <circle cx="60" cy="60" r="2" fill="#ffffff" />
             </g>
         </svg>
+    @elseif ($gaugeVariant === 'dashboard-dual')
+        <svg class="{{ $svgClass ?? 'h-7 w-11' }}" viewBox="0 0 120 70" aria-hidden="true">
+            <path d="M 12 60 A 48 48 0 0 1 58 12"
+                  fill="none"
+                  stroke="{{ $negativeTrendColor }}"
+                  stroke-width="12"
+                  stroke-linecap="butt" />
+            <path d="M 62 12 A 48 48 0 0 1 108 60"
+                  fill="none"
+                  stroke="{{ $positiveTrendColor }}"
+                  stroke-width="12"
+                  stroke-linecap="butt" />
+
+            <path d="M 15 60 A 45 45 0 0 1 58 15"
+                  fill="none"
+                  stroke="{{ $invertTrendScale ? '#16a34a' : '#ea580c' }}"
+                  stroke-width="6"
+                  stroke-linecap="butt" />
+            <path d="M 62 15 A 45 45 0 0 1 105 60"
+                  fill="none"
+                  stroke="{{ $invertTrendScale ? '#dc2626' : '#5faa1f' }}"
+                  stroke-width="6"
+                  stroke-linecap="butt" />
+
+            <path d="M 60 12 L 60 21" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" />
+
+            <g transform="rotate({{ $trendNeedleRotation }}, 60, 60)">
+                <line x1="60" y1="60" x2="60" y2="24" stroke="#241c27" stroke-width="2.5" stroke-linecap="round" />
+                <circle cx="60" cy="60" r="4.5" fill="#241c27" />
+                <circle cx="60" cy="60" r="2" fill="#ffffff" />
+            </g>
+        </svg>
     @else
         <svg class="{{ $svgClass ?? 'h-7 w-11' }}" viewBox="0 0 120 70" aria-hidden="true">
             <path d="M 12 60 A 48 48 0 0 1 56 12.2"

@@ -39,6 +39,8 @@ class CrimeControllerTest extends TestCase
         $response->assertSee('↗', false);
         $response->assertSee('stroke="#22c55e"', false);
         $response->assertSee('stroke="#ef4444"', false);
+        $response->assertSee('stroke-linecap="butt"', false);
+        $response->assertSee('stroke="#241c27"', false);
         $response->assertViewHas('summary', function (array $summary): bool {
             return $summary['total_12m'] === 51
                 && $summary['prev_12m'] === 39

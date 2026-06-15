@@ -96,6 +96,7 @@
                     'value' => $summary['pct_change'],
                     'invert' => true,
                     'title' => $formatChange($summary['pct_change']),
+                    'variant' => 'dashboard-dual',
                     'wrapperClass' => 'ml-0 h-16 w-24 sm:h-20 sm:w-28 justify-end self-stretch',
                     'svgClass' => 'h-12 w-20 sm:h-16 sm:w-24',
                 ])

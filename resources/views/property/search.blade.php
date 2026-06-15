@@ -24,7 +24,32 @@
 
     {{-- Search tools --}}
     <section class="mb-10">
-        <div class="grid gap-6 md:grid-cols-2">
+        <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+
+            {{-- Search by street --}}
+            <div class="rounded border border-zinc-200 bg-white/80 p-6">
+                <h2 class="mb-2 text-base font-semibold"><svg class="inline-block h-[1em] w-[1em] text-lime-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.5 3a7.5 7.5 0 1 0 4.79 13.29l4.71 4.71a.75.75 0 1 0 1.06-1.06l-4.71-4.71A7.5 7.5 0 0 0 10.5 3Zm-6 7.5a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" clip-rule="evenodd"/><path d="M8.25 12.75a.75.75 0 0 1 .53-.22h.02a.75.75 0 0 1 .53.22l1.2 1.2 1.95-1.95a.75.75 0 0 1 1.06 1.06l-2.48 2.47a.75.75 0 0 1-1.06 0l-1.2-1.2-1.42 1.42a.75.75 0 0 1-1.06-1.06l1.93-1.94Z"/></svg> Search by street</h2>
+                <p class="mb-4 text-xs text-zinc-600">
+                    Start typing a street name to jump straight to the matching street and postcode district view, using the same indexed street search as the homepage.
+                </p>
+
+                <div class="relative">
+                    <input
+                        id="property-street-search"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="Search by street"
+                        class="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500"
+                    />
+                    <div
+                        id="property-street-suggestions"
+                        class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-y-auto rounded-md border border-zinc-200 bg-white text-sm shadow-lg">
+                    </div>
+                </div>
+                <p class="mt-2 text-xs text-zinc-500">
+                    Autocomplete matches unique street and postcode district combinations from Land Registry sales and only returns results where at least 3 sales exist.
+                </p>
+            </div>
 
             {{-- Search by postcode (specific properties) --}}
             <div class="rounded border border-zinc-200 bg-white/80 p-6">
@@ -496,6 +521,86 @@
 
         const input = document.getElementById('district-search');
         const suggestionsBox = document.getElementById('district-suggestions');
+        const streetInput = document.getElementById('property-street-search');
+        const streetSuggestionsBox = document.getElementById('property-street-suggestions');
+
+        if (streetInput && streetSuggestionsBox) {
+            let streets = [];
+
+            fetch('{{ asset('data/property_streets.json') }}')
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Street index unavailable');
+                    }
+
+                    return response.json();
+                })
+                .then(function (payload) {
+                    if (Array.isArray(payload)) {
+                        streets = payload;
+                    }
+                })
+                .catch(function () {
+                    streets = [];
+                });
+
+            const hideStreetSuggestions = function () {
+                streetSuggestionsBox.classList.add('hidden');
+                streetSuggestionsBox.innerHTML = '';
+            };
+
+            const renderStreetSuggestions = function (query) {
+                const normalizedQuery = query.trim().toLowerCase();
+
+                streetSuggestionsBox.innerHTML = '';
+
+                if (normalizedQuery.length < 2) {
+                    hideStreetSuggestions();
+
+                    return;
+                }
+
+                const matches = streets
+                    .filter(function (item) {
+                        const search = item && item.search ? String(item.search) : '';
+
+                        return search.includes(normalizedQuery);
+                    })
+                    .slice(0, 12);
+
+                if (matches.length === 0) {
+                    hideStreetSuggestions();
+
+                    return;
+                }
+
+                matches.forEach(function (item) {
+                    const option = document.createElement('button');
+                    option.type = 'button';
+                    option.className = 'block w-full px-4 py-2 text-left text-zinc-700 hover:bg-zinc-100';
+                    option.textContent = item.label || '';
+                    option.addEventListener('click', function () {
+                        if (item.path) {
+                            window.location.href = item.path;
+                        }
+                    });
+                    streetSuggestionsBox.appendChild(option);
+                });
+
+                streetSuggestionsBox.classList.remove('hidden');
+            };
+
+            streetInput.addEventListener('input', function () {
+                renderStreetSuggestions(this.value);
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!streetSuggestionsBox.contains(event.target) && event.target !== streetInput) {
+                    hideStreetSuggestions();
+                }
+            });
+        }
+
         if (!input || !suggestionsBox) return;
 
         const typeLabels = {

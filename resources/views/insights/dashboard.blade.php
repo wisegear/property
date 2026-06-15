@@ -123,6 +123,7 @@
                         @include('partials.trend-gauge', [
                             'value' => $card['badge'],
                             'title' => $card['gauge_title'] ?? $card['value'],
+                            'variant' => 'dashboard-dual',
                             'wrapperClass' => 'ml-0 h-16 w-24 sm:h-20 sm:w-28 lg:h-24 lg:w-32 justify-end self-stretch',
                             'svgClass' => 'h-12 w-20 sm:h-16 sm:w-24 lg:h-20 lg:w-28',
                         ])

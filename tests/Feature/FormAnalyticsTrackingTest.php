@@ -40,6 +40,19 @@ class FormAnalyticsTrackingTest extends TestCase
         $response->assertCookie('pr_avid');
     }
 
+    public function test_property_search_page_includes_street_search_panel(): void
+    {
+        $response = $this->get('/property/search');
+
+        $response->assertOk();
+        $response->assertSee('Search by street');
+        $response->assertSee('id="property-street-search"', false);
+        $response->assertSee('id="property-street-suggestions"', false);
+        $response->assertSee('property_streets.json', false);
+        $response->assertSee('Autocomplete matches unique street and postcode district combinations from Land Registry sales and only returns results where at least 3 sales exist.');
+        $response->assertSee('xl:grid-cols-3', false);
+    }
+
     public function test_two_submissions_with_same_cookie_share_anon_visit_id(): void
     {
         $anonVisitId = (string) Str::uuid();
