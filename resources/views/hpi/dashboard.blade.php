@@ -23,7 +23,7 @@
             </p>
         </div>
         <div class="relative z-10 mt-6 flex-shrink-0 md:mt-0 md:ml-8">
-            <img src="{{ asset('assets/images/site/hp_index.jpg') }}" alt="HPI Dashboard" class="w-64 h-auto">
+            <img src="{{ asset('assets/images/site/hp_index.jpg') }}" alt="HPI Dashboard" class="w-90 h-auto">
         </div>
     </section>
 

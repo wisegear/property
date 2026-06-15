@@ -42,7 +42,7 @@
         <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
             <img src="{{ asset('assets/images/site/boe_rates.jpg') }}" 
                  alt="Bank Rate" 
-                 class="w-64 h-auto">
+                 class="w-90 h-auto">
         </div>
     </section>
 

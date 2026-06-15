@@ -31,7 +31,7 @@
                 </div>
 
                 <div class="relative z-10 mt-2 flex justify-center lg:mt-0 lg:ml-8 lg:justify-end">
-                    <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="h-auto w-full max-w-[15rem] sm:max-w-xs lg:max-w-sm">
+                    <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="w-90 h-auto">
                 </div>
             </div>
         </section>

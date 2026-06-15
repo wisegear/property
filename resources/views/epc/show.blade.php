@@ -27,7 +27,7 @@
                 @endif
             </div>
             <div class="flex-shrink-0">
-                <img src="{{ asset('assets/images/site/epc.svg') }}" alt="EPC Report" class="w-64 h-auto md:w-72">
+                <img src="{{ asset('assets/images/site/epc.svg') }}" alt="EPC Report" class="w-90 h-auto">
             </div>
         </div>
     </section>

@@ -20,7 +20,7 @@
             </div>
 
             <div class="shrink-0">
-                <img src="{{ asset('assets/images/site/street.png') }}" alt="Street property sales" class="h-auto w-64 md:w-72">
+                <img src="{{ asset('assets/images/site/street.png') }}" alt="Street property sales" class="w-90 h-auto">
             </div>
         </div>
     </section>

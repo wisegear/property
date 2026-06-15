@@ -40,7 +40,7 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
         </div>
 
         <div class="relative z-10 mt-6 flex-shrink-0 lg:ml-8 lg:mt-0">
-            <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="h-auto w-82">
+            <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="w-90 h-auto">
         </div>
     </section>
 

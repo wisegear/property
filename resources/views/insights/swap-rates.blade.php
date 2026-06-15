@@ -116,11 +116,11 @@
                 </div>
             </div>
             <div class="relative z-10 mt-2 flex justify-center lg:mt-0 lg:justify-end">
-                <div class="w-full max-w-sm overflow-hidden rounded-2xl lg:max-w-md">
+                <div class="w-90 overflow-hidden rounded-2xl">
                     <img
                         src="{{ asset('assets/images/site/swap-rates.jpg') }}"
                         alt="UK swap rates illustration"
-                        class="block h-full w-full object-cover"
+                        class="w-full h-auto"
                     >
                 </div>
             </div>

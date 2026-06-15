@@ -57,7 +57,7 @@
         </div>
 
         <div class="mt-6 lg:mt-0 lg:ml-8 flex-shrink-0 relative z-10">
-            <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="w-82 h-auto">
+            <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="w-90 h-auto">
         </div>
     </section>
 

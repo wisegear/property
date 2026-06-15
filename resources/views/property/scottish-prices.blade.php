@@ -33,7 +33,7 @@
             </div>
 
             <div class="flex-shrink-0">
-                <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="Scottish property prices" class="h-auto w-72">
+                <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="Scottish property prices" class="h-auto w-90">
             </div>
         </div>
     </section>

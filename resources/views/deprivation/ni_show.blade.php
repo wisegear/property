@@ -77,7 +77,7 @@
       <img
         src="{{ asset('assets/images/site/deprivation.jpg') }}"
         alt="Deprivation illustration"
-        class="w-72 h-auto"
+        class="w-90 h-auto"
       >
     </div>
   </div>

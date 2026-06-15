@@ -50,7 +50,7 @@
         <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
             <img src="{{ asset('assets/images/site/inflation.jpg') }}" 
                  alt="Inflation" 
-                 class="w-72">
+                 class="w-90 h-auto">
         </div>
     </section>
 

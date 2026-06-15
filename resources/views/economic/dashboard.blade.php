@@ -20,7 +20,7 @@
             <div class="flex-shrink-0">
                 <img src="{{ asset('assets/images/site/stress.jpg') }}"
                      alt="Economic dashboard"
-                     class="w-72 max-w-full">
+                     class="w-90 max-w-full">
             </div>
         </div>
     </section>

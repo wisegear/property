@@ -120,7 +120,7 @@
             <p class="mt-1 text-xs leading-5 text-gray-600">Data provided for informational and research purposes. Based on recorded residential sales.</p>
         </div>
         <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('assets/images/site/propertysearch.jpg') }}" alt="Area" class="w-72 h-auto">
+            <img src="{{ asset('assets/images/site/propertysearch.jpg') }}" alt="Area" class="w-90 h-auto">
         </div>
     </section>
 

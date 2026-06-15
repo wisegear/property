@@ -50,7 +50,7 @@
             </p>
         </div>
         <div class="relative z-10 mt-6 flex-shrink-0 md:mt-0 md:ml-8">
-            <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="{{ $pageTitle }}" class="h-auto w-72">
+            <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="{{ $pageTitle }}" class="h-auto w-90">
         </div>
     </section>
 

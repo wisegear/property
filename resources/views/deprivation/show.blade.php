@@ -29,7 +29,7 @@
         <img
           src="{{ asset('assets/images/site/deprivation.jpg') }}"
           alt="Deprivation illustration"
-          class="h-24 md:h-40 w-auto opacity-90"
+          class="w-90 h-auto opacity-90"
         >
       </div>
     </div>

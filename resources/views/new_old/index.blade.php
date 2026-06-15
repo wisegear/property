@@ -18,7 +18,7 @@
       </p>
     </div>
     <div class="relative z-10 mt-6 flex-shrink-0 md:mt-0 md:ml-8">
-      <img src="{{ asset('assets/images/site/new_old.jpg') }}" alt="New vs Existing" class="w-64 h-auto">
+      <img src="{{ asset('assets/images/site/new_old.jpg') }}" alt="New vs Existing" class="w-90 h-auto">
     </div>
   </section>
 

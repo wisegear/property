@@ -96,7 +96,7 @@
         <div class="hidden md:flex md:w-2/5 justify-end">
             <img src="/assets/images/site/property_show.jpg"
                  alt="Property Illustration"
-                 class="w-82 h-auto">
+                 class="w-90 h-auto">
         </div>
 
     </div>
