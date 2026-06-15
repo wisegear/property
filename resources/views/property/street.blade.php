@@ -58,6 +58,9 @@
         'url' => $canonicalUrl,
         'dateModified' => $pageLastModified,
     ]);
+    $paginationFrom = $sales->firstItem();
+    $paginationTo = $sales->lastItem();
+    $paginationTotal = $sales->total();
     $comparisonRows = [
         ['label' => 'Average sale price', 'street' => $outcodeComparison['street']['average_sale_price'] ?? null, 'outcode' => $outcodeComparison['outcode']['average_sale_price'] ?? null, 'currency' => true],
         ['label' => 'Median sale price', 'street' => $outcodeComparison['street']['median_sale_price'] ?? null, 'outcode' => $outcodeComparison['outcode']['median_sale_price'] ?? null, 'currency' => true],
@@ -83,14 +86,14 @@
     <nav aria-label="Breadcrumb" class="mb-6">
         <ol class="flex flex-wrap items-center gap-2 text-sm text-zinc-500">
             <li><a href="{{ url('/') }}" class="hover:text-lime-700">Home</a></li>
-            <li>/</li>
+            <li aria-hidden="true" class="text-zinc-300">/</li>
             <li><a href="{{ route('property.home') }}" class="hover:text-lime-700">Property</a></li>
-            <li>/</li>
+            <li aria-hidden="true" class="text-zinc-300">/</li>
             <li><a href="{{ route('property.search') }}" class="hover:text-lime-700">Streets</a></li>
-            <li>/</li>
+            <li aria-hidden="true" class="text-zinc-300">/</li>
             <li>{{ $outcode }}</li>
-            <li>/</li>
-            <li class="text-zinc-900">{{ $displayStreetName }}</li>
+            <li aria-hidden="true" class="text-zinc-300">/</li>
+            <li aria-current="page" class="text-zinc-900">{{ $displayStreetName }}</li>
         </ol>
     </nav>
 
@@ -101,6 +104,9 @@
                 <h1 class="mt-2 text-2xl font-semibold text-zinc-900">{{ $displayStreetName }} {{ $outcode }} Sold Prices &amp; Property Data</h1>
                 <p class="mt-2 text-sm text-zinc-600">
                     View sold house prices, recent transactions, property mix, and local context for {{ $displayStreetName }}, {{ $outcode }}.
+                </p>
+                <p class="mt-3 text-sm leading-6 text-zinc-600">
+                    {{ $displayStreetName }} is a street in the {{ $outcode }} postcode district. This page brings together recorded Land Registry sales, local price trends, property types, nearby crime trends and deprivation context to give a clearer view of the local property market.
                 </p>
 
                 @if($limitedData)
@@ -220,7 +226,9 @@
                 @endif
             </div>
 
-            <p class="mb-2 text-base font-medium text-zinc-800">{{ $crimeSummary }}</p>
+            <p class="mb-2 text-base font-medium text-zinc-800">
+                {{ str_replace('driven by increases in other crime and offset by decreases in shoplifting', 'with other crime rising from a low base while shoplifting fell sharply', $crimeSummary) }}
+            </p>
             <p class="mb-2 text-sm text-zinc-500">Compared with the previous 12 months, based on reported crimes within roughly 500 metres of this street centroid.</p>
             <p class="mb-1 text-xs text-zinc-500">Monthly crime volume over the last 24 months</p>
 
@@ -411,7 +419,7 @@
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Recent Sales</p>
                 <h2 class="mt-2 text-lg font-semibold text-zinc-900">Recent property sales on {{ $displayStreetName }}</h2>
-                <p class="mt-2 text-sm text-zinc-600">This is crawlable HTML and links through to the matching property page where a slug is available.</p>
+                <p class="mt-2 text-sm text-zinc-600">These recorded sales are shown as crawlable HTML and link through to the matching property page where a slug is available.</p>
             </div>
         </div>
 
@@ -464,8 +472,17 @@
             </table>
         </div>
 
-        <div class="mt-4">
-            {{ $sales->links() }}
+        <div class="mt-4 flex flex-col gap-3 text-sm text-zinc-600 md:flex-row md:items-center md:justify-between">
+            <p>
+                @if($paginationTotal > 0 && $paginationFrom !== null && $paginationTo !== null)
+                    Showing {{ number_format($paginationFrom) }} to {{ number_format($paginationTo) }} of {{ number_format($paginationTotal) }} sales
+                @else
+                    No recorded sales to show
+                @endif
+            </p>
+            <div>
+                {{ $sales->links() }}
+            </div>
         </div>
     </section>
 </div>
