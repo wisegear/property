@@ -16,7 +16,11 @@ class WarmPropertyStreetPages extends Command
                             {--min-sales=5 : Minimum Category A sales required for a street+outcode target}
                             {--limit=0 : Limit the number of street+outcode pages to warm (0 = all)}
                             {--outcode= : Only warm a specific outcode}
-                            {--refresh : Forget an existing street cache before rebuilding it}';
+                            {--refresh : Forget an existing street cache before rebuilding it}
+                            {--skip-existing : Skip pages that already have a street cache entry}
+                            {--shards=1 : Split the warm into this many deterministic shards}
+                            {--shard=0 : Warm only this zero-based shard number}
+                            {--no-progress : Disable the progress bar for lower console overhead}';
 
     protected $description = 'Warm cached payloads for property street pages.';
 
@@ -33,9 +37,19 @@ class WarmPropertyStreetPages extends Command
         $minSales = max(1, (int) $this->option('min-sales'));
         $limit = max(0, (int) $this->option('limit'));
         $refresh = (bool) $this->option('refresh');
+        $skipExisting = (bool) $this->option('skip-existing');
+        $noProgress = (bool) $this->option('no-progress');
         $outcodeFilter = $this->normalizeOutcode((string) $this->option('outcode'));
+        $shards = max(1, (int) $this->option('shards'));
+        $shard = max(0, (int) $this->option('shard'));
 
-        $baseQuery = $this->qualifyingStreetQuery($minSales, $outcodeFilter);
+        if ($shard >= $shards) {
+            $this->error('The --shard option must be zero-based and less than --shards. Example: --shards=4 --shard=0,1,2,3');
+
+            return self::FAILURE;
+        }
+
+        $baseQuery = $this->qualifyingStreetQuery($minSales, $outcodeFilter, $shards, $shard);
         $total = (int) DB::query()->fromSub(
             $limit > 0 ? (clone $baseQuery)->limit($limit) : $baseQuery,
             'street_targets'
@@ -52,11 +66,20 @@ class WarmPropertyStreetPages extends Command
         if ($outcodeFilter !== null) {
             $this->line('Outcode filter: '.$outcodeFilter);
         }
+        if ($shards > 1) {
+            $this->line('Shard: '.($shard + 1).' of '.$shards.' (zero-based --shard='.$shard.')');
+        }
+        if ($skipExisting) {
+            $this->line('Skipping existing cache entries.');
+        }
 
-        $this->output->progressStart($total);
+        if (! $noProgress) {
+            $this->output->progressStart($total);
+        }
         $startedAt = microtime(true);
 
         $warmed = 0;
+        $skipped = 0;
         $failed = 0;
 
         $targetQuery = $limit > 0
@@ -69,8 +92,18 @@ class WarmPropertyStreetPages extends Command
             $streetSlug = Str::slug($street);
 
             try {
+                $cacheKey = PropertyStreetController::cacheKey($streetSlug, $outcode);
+
                 if ($refresh) {
-                    Cache::forget(PropertyStreetController::cacheKey($streetSlug, $outcode));
+                    Cache::forget($cacheKey);
+                } elseif ($skipExisting && Cache::has($cacheKey)) {
+                    $skipped++;
+
+                    if (! $noProgress) {
+                        $this->output->progressAdvance();
+                    }
+
+                    continue;
                 }
 
                 $controller->warmStreetCache($streetSlug, $outcode);
@@ -81,11 +114,15 @@ class WarmPropertyStreetPages extends Command
                 $this->error("Failed warming {$street}, {$outcode}: ".$throwable->getMessage());
             }
 
-            $this->output->progressAdvance();
+            if (! $noProgress) {
+                $this->output->progressAdvance();
+            }
         }
 
-        $this->output->progressFinish();
-        $this->newLine();
+        if (! $noProgress) {
+            $this->output->progressFinish();
+            $this->newLine();
+        }
 
         Cache::put(
             'property:street:last_warm:min'.$minSales.($outcodeFilter !== null ? ':'.$outcodeFilter : ''),
@@ -96,12 +133,13 @@ class WarmPropertyStreetPages extends Command
         $elapsed = round(microtime(true) - $startedAt, 2);
         $this->info("Street page warm complete in {$elapsed}s");
         $this->line('Warmed: '.number_format($warmed));
+        $this->line('Skipped: '.number_format($skipped));
         $this->line('Failed: '.number_format($failed));
 
         return $failed === 0 ? self::SUCCESS : self::FAILURE;
     }
 
-    private function qualifyingStreetQuery(int $minSales, ?string $outcodeFilter)
+    private function qualifyingStreetQuery(int $minSales, ?string $outcodeFilter, int $shards = 1, int $shard = 0)
     {
         $outcodeExpression = $this->outcodeExpression();
 
@@ -117,6 +155,9 @@ class WarmPropertyStreetPages extends Command
 
         if ($outcodeFilter !== null) {
             $query->whereRaw($outcodeExpression.' = ?', [$outcodeFilter]);
+        }
+        if ($shards > 1) {
+            $query->whereRaw($this->shardExpression($outcodeExpression).' = ?', [$shards, $shard]);
         }
 
         return $query
@@ -142,3 +183,12 @@ class WarmPropertyStreetPages extends Command
         return $normalized !== '' ? $normalized : null;
     }
 }
+
+    private function shardExpression(string $outcodeExpression): string
+    {
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            return 'MOD(ABS(HASHTEXT('.$outcodeExpression.' || \'|\' || TRIM("Street"))), ?)';
+        }
+
+        return 'MOD(CRC32(CONCAT('.$outcodeExpression.', \'|\', TRIM("Street"))), ?)';
+    }
