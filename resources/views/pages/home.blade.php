@@ -4,7 +4,9 @@
 <div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
 
     {{-- Hero --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-zinc-200 bg-white px-8 py-8 shadow-sm md:min-h-[320px] md:pr-0">
+    <section class="relative z-0 overflow-hidden rounded-lg border border-zinc-200 bg-white/85 px-8 py-8 shadow-sm md:min-h-[320px] md:pr-0">
+        @include('partials.hero-background')
+        <div class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(132,204,22,0.18),transparent_40%),radial-gradient(circle_at_82%_18%,rgba(163,230,53,0.10),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.92))]"></div>
         <div class="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:gap-2 lg:gap-3">
             <div class="md:max-w-4xl md:flex-[1.2] md:pr-4">
                 <div class="flex flex-wrap items-center gap-3">
@@ -38,13 +40,16 @@
             </div>
 
             <div class="mx-auto w-full max-w-[320px] md:mx-0 md:w-[31%] md:max-w-none md:min-w-[240px] lg:w-[33%]">
+                <div class="relative home-hero-illustration-shell">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-white/90 via-white/45 to-transparent md:w-24"></div>
                 <img
                     src="{{ asset('/assets/images/site/logo10.jpg') }}"
                     alt="Property Research"
                     width="768"
                     height="512"
-                    class="h-auto w-full object-contain md:translate-x-8"
+                    class="home-hero-illustration h-auto w-full object-contain opacity-90 md:translate-x-8"
                 >
+                </div>
             </div>
         </div>
     </section>

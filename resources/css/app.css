@@ -136,3 +136,18 @@
   @apply bg-zinc-200;
   text-align: left;
 }
+
+.home-hero-illustration-shell {
+  isolation: isolate;
+}
+
+.home-hero-illustration {
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, black 18%, black 86%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0%, black 18%, black 86%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+  mask-composite: intersect;
+}
