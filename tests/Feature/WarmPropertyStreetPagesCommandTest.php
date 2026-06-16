@@ -97,6 +97,27 @@ class WarmPropertyStreetPagesCommandTest extends TestCase
         $this->assertNull(Cache::get(PropertyStreetController::cacheKey('market-road', 'SW5')));
     }
 
+    public function test_command_uses_the_same_trimmed_street_lookup_as_the_public_page(): void
+    {
+        DB::table('land_registry')->insert([
+            $this->saleRow('tx-201', 'MAIN STREET', 'B79 7AA', '2024-04-01 00:00:00'),
+            $this->saleRow('tx-202', ' MAIN STREET ', 'B79 7AB', '2024-04-02 00:00:00'),
+            $this->saleRow('tx-203', 'MAIN STREET', 'B79 7AC', '2024-04-03 00:00:00'),
+            $this->saleRow('tx-204', 'MAIN STREET ', 'B79 7AD', '2024-04-04 00:00:00'),
+            $this->saleRow('tx-205', '  MAIN STREET', 'B79 7AE', '2024-04-05 00:00:00'),
+        ]);
+
+        $this->artisan('property:street-warm', [
+            '--min-sales' => 5,
+        ])->assertExitCode(0);
+
+        $mainStreet = Cache::get(PropertyStreetController::cacheKey('main-street', 'B79'));
+
+        $this->assertIsArray($mainStreet);
+        $this->assertSame('MAIN STREET', $mainStreet['street_name']);
+        $this->assertSame(5, $mainStreet['summary']['total_sales']);
+    }
+
     private function ensureLandRegistryTable(): void
     {
         if (Schema::hasTable('land_registry')) {

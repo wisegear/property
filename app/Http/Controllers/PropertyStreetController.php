@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -24,6 +25,20 @@ class PropertyStreetController extends Controller
     private const NEARBY_STREETS_LIMIT = 10;
 
     private const ONSPD_TABLE = 'onspd_v2';
+
+    /**
+     * @var array<string, array<string, string>>
+     */
+    private array $streetSlugMaps = [];
+
+    /**
+     * @var array<string, array<int, array{name:string,slug:string,outcode:string,sales_count:int,url:string}>>
+     */
+    private array $nearbyStreetCatalogs = [];
+
+    private ?bool $hasCrimeTable = null;
+
+    private ?bool $hasOnspdTable = null;
 
     public static function cacheKey(string $streetSlug, string $outcode): string
     {
@@ -162,8 +177,8 @@ class PropertyStreetController extends Controller
                 'Duration',
                 'NewBuild',
             ])
-            ->where('PPDCategoryType', 'A')
-            ->where('Street', $streetName)
+            ->whereRaw('"PPDCategoryType" = ?', ['A'])
+            ->whereRaw('TRIM("Street") = ?', [$streetName])
             ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
             ->orderByDesc('Date')
             ->orderByDesc('Price')
@@ -260,8 +275,9 @@ class PropertyStreetController extends Controller
             ->values()
             ->all();
 
-        $crimePayload = $this->buildCrimePayload($records, $streetName, $outcode);
-        $deprivationPayload = $this->buildDeprivationPayload($records);
+        $centroid = $this->hasOnspdTable() ? $this->streetCentroid($records) : null;
+        $crimePayload = $this->buildCrimePayload($streetName, $outcode, $centroid);
+        $deprivationPayload = $this->buildDeprivationPayload($centroid);
         $outcodeComparison = $this->buildOutcodeComparison($streetName, $outcode, $summary);
         $nearbyStreets = $this->buildNearbyStreets($streetName, $outcode);
         $glanceMetrics = $this->buildGlanceMetrics($summary, $crimePayload, $deprivationPayload);
@@ -301,10 +317,9 @@ class PropertyStreetController extends Controller
     }
 
     /**
-     * @param  array<int, array<string, mixed>>  $records
      * @return array{depr:?array<string, mixed>,deprMsg:?string,lsoaLink:?string}
      */
-    private function buildDeprivationPayload(array $records): array
+    private function buildDeprivationPayload(?array $centroid): array
     {
         $emptyPayload = [
             'depr' => null,
@@ -312,14 +327,12 @@ class PropertyStreetController extends Controller
             'lsoaLink' => null,
         ];
 
-        if (! Schema::hasTable(self::ONSPD_TABLE)) {
+        if (! $this->hasOnspdTable()) {
             return [
                 ...$emptyPayload,
                 'deprMsg' => 'Unable to resolve this street to ONSPD.',
             ];
         }
-
-        $centroid = $this->streetCentroid($records);
 
         if ($centroid === null) {
             return [
@@ -548,7 +561,6 @@ class PropertyStreetController extends Controller
     }
 
     /**
-     * @param  array<int, array<string, mixed>>  $records
      * @return array{
      *     crime_data:array<int, array<string, mixed>>,
      *     crime_trend:array<int, array<string, mixed>>,
@@ -561,7 +573,7 @@ class PropertyStreetController extends Controller
      *     crime_top_decrease:?array<string, mixed>
      * }
      */
-    private function buildCrimePayload(array $records, string $streetName, string $outcode): array
+    private function buildCrimePayload(string $streetName, string $outcode, ?array $coords): array
     {
         $emptyPayload = [
             'crime_data' => [],
@@ -575,17 +587,15 @@ class PropertyStreetController extends Controller
             'crime_top_decrease' => null,
         ];
 
-        if (! Schema::hasTable('crime') || ! Schema::hasTable(self::ONSPD_TABLE)) {
+        if (! $this->hasCrimeTable() || ! $this->hasOnspdTable()) {
             return $emptyPayload;
         }
-
-        $coords = $this->streetCentroid($records);
 
         if ($coords === null) {
             return $emptyPayload;
         }
 
-        $latestCrimeMonth = Crime::query()->max('month');
+        $latestCrimeMonth = $this->latestCrimeMonth();
 
         if ($latestCrimeMonth === null) {
             return $emptyPayload;
@@ -664,30 +674,11 @@ class PropertyStreetController extends Controller
         $crimeTrendByType = $crimeTrendCounts->keyBy('crime_type');
         $crimeTotal = (int) $crimeSummaryRows->sum('total');
 
-        $nationalCrimeTrendByType = Crime::query()
-            ->selectRaw(
-                'crime_type,
-                SUM(CASE WHEN month >= ? THEN 1 ELSE 0 END) as current_total,
-                SUM(CASE WHEN month >= ? AND month < ? THEN 1 ELSE 0 END) as previous_total',
-                [
-                    $crimeWindowStart->toDateString(),
-                    $previousWindowStart->toDateString(),
-                    $crimeWindowStart->toDateString(),
-                ]
-            )
-            ->whereDate('month', '>=', $previousWindowStart->toDateString())
-            ->whereDate('month', '<=', $currentWindowEnd->toDateString())
-            ->groupBy('crime_type')
-            ->get()
-            ->mapWithKeys(function ($crime) {
-                $currentTotal = (int) $crime->current_total;
-                $previousTotal = (int) $crime->previous_total;
-                $pctChange = $previousTotal > 0
-                    ? round((($currentTotal - $previousTotal) * 100) / $previousTotal, 1)
-                    : ($currentTotal > 0 ? 100.0 : 0.0);
-
-                return [(string) $crime->crime_type => $pctChange];
-            });
+        $nationalCrimeTrendByType = $this->nationalCrimeTrendByType(
+            $previousWindowStart->toDateString(),
+            $crimeWindowStart->toDateString(),
+            $currentWindowEnd->toDateString()
+        );
 
         $crimeData = $crimeSummaryRows
             ->map(function ($crime) use ($crimeTotal, $crimeTrendByType, $nationalCrimeTrendByType): array {
@@ -833,16 +824,9 @@ class PropertyStreetController extends Controller
 
     private function resolveStreetName(string $streetSlug, string $outcode): ?string
     {
-        return DB::table('land_registry')
-            ->select('Street')
-            ->where('PPDCategoryType', 'A')
-            ->whereNotNull('Street')
-            ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
-            ->distinct()
-            ->orderBy('Street')
-            ->pluck('Street')
-            ->map(fn ($street) => trim((string) $street))
-            ->first(fn (string $street): bool => Str::slug($street) === $streetSlug);
+        $slugMap = $this->streetSlugMapForOutcode($outcode);
+
+        return $slugMap[$streetSlug] ?? null;
     }
 
     /**
@@ -912,30 +896,39 @@ class PropertyStreetController extends Controller
         $cacheKey = sprintf('property:street:%s:outcode-comparison:%s', self::CACHE_VERSION, Str::lower($outcode));
 
         $outcodeSummary = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($outcode): array {
-            $records = DB::table('land_registry')
-                ->select(['Price', 'PropertyType'])
-                ->where('PPDCategoryType', 'A')
+            $aggregate = DB::table('land_registry')
+                ->selectRaw('COUNT(*) as sales_count')
+                ->selectRaw('AVG("Price") as average_sale_price')
+                ->whereRaw('"PPDCategoryType" = ?', ['A'])
                 ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
-                ->orderByDesc('Date')
-                ->get()
-                ->map(fn (object $row): array => [
-                    'price' => $row->Price !== null ? (int) $row->Price : null,
-                    'property_type' => $this->propertyTypeLabel($row->PropertyType !== null ? (string) $row->PropertyType : null),
-                ])
+                ->first();
+
+            $prices = DB::table('land_registry')
+                ->whereRaw('"PPDCategoryType" = ?', ['A'])
+                ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
+                ->whereNotNull('Price')
+                ->where('Price', '>', 0)
+                ->orderBy('Price')
+                ->pluck('Price')
+                ->map(fn ($price): int => (int) $price)
                 ->all();
 
-            $prices = collect($records)
-                ->pluck('price')
-                ->filter(fn ($price): bool => is_int($price) && $price > 0)
-                ->sort()
-                ->values()
-                ->all();
+            $propertyType = DB::table('land_registry')
+                ->select('PropertyType')
+                ->selectRaw('COUNT(*) as total')
+                ->whereRaw('"PPDCategoryType" = ?', ['A'])
+                ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
+                ->whereNotNull('PropertyType')
+                ->groupBy('PropertyType')
+                ->orderByDesc('total')
+                ->orderBy('PropertyType')
+                ->value('PropertyType');
 
             return [
-                'sales_count' => count($records),
-                'average_sale_price' => $prices !== [] ? (int) round(collect($prices)->avg()) : null,
+                'sales_count' => (int) ($aggregate->sales_count ?? 0),
+                'average_sale_price' => isset($aggregate->average_sale_price) ? (int) round((float) $aggregate->average_sale_price) : null,
                 'median_sale_price' => $this->medianValue($prices),
-                'most_common_property_type' => $this->mostCommonPropertyType($records),
+                'most_common_property_type' => $this->propertyTypeLabel($propertyType !== null ? (string) $propertyType : null),
             ];
         });
 
@@ -957,33 +950,146 @@ class PropertyStreetController extends Controller
      */
     private function buildNearbyStreets(string $streetName, string $outcode): array
     {
-        return DB::table('land_registry')
-            ->selectRaw('TRIM("Street") as street')
-            ->selectRaw('COUNT(*) as sales_count')
-            ->where('PPDCategoryType', 'A')
-            ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
-            ->whereNotNull('Street')
-            ->whereRaw('TRIM("Street") <> ?', [''])
-            ->whereRaw('TRIM("Street") <> ?', [$streetName])
-            ->groupByRaw('TRIM("Street")')
-            ->havingRaw('COUNT(*) >= ?', [self::MIN_RELIABLE_SALES])
-            ->orderByDesc('sales_count')
-            ->orderByRaw('TRIM("Street")')
-            ->limit(self::NEARBY_STREETS_LIMIT)
-            ->get()
-            ->map(function (object $row) use ($outcode): array {
-                $name = trim((string) $row->street);
-                $slug = Str::slug($name);
-
-                return [
-                    'name' => $this->titleCaseStreetName($name),
-                    'slug' => $slug,
-                    'outcode' => $outcode,
-                    'sales_count' => (int) $row->sales_count,
-                    'url' => self::streetPath($outcode, $slug),
-                ];
-            })
+        return collect($this->nearbyStreetCatalogForOutcode($outcode))
+            ->reject(fn (array $street): bool => $street['name'] === $this->titleCaseStreetName($streetName))
+            ->take(self::NEARBY_STREETS_LIMIT)
+            ->values()
             ->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function streetSlugMapForOutcode(string $outcode): array
+    {
+        if (array_key_exists($outcode, $this->streetSlugMaps)) {
+            return $this->streetSlugMaps[$outcode];
+        }
+
+        $cacheKey = sprintf('property:street:%s:street-slugs:%s', self::CACHE_VERSION, Str::lower($outcode));
+
+        /** @var array<string, string> $slugMap */
+        $slugMap = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($outcode): array {
+            return DB::table('land_registry')
+                ->selectRaw('TRIM("Street") as street')
+                ->whereRaw('"PPDCategoryType" = ?', ['A'])
+                ->whereRaw('"Street" IS NOT NULL')
+                ->whereRaw('TRIM("Street") <> ?', [''])
+                ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
+                ->distinct()
+                ->orderByRaw('TRIM("Street")')
+                ->pluck('street')
+                ->map(fn ($street): string => trim((string) $street))
+                ->reduce(function (array $carry, string $street): array {
+                    $carry[Str::slug($street)] ??= $street;
+
+                    return $carry;
+                }, []);
+        });
+
+        return $this->streetSlugMaps[$outcode] = $slugMap;
+    }
+
+    /**
+     * @return array<int, array{name:string,slug:string,outcode:string,sales_count:int,url:string}>
+     */
+    private function nearbyStreetCatalogForOutcode(string $outcode): array
+    {
+        if (array_key_exists($outcode, $this->nearbyStreetCatalogs)) {
+            return $this->nearbyStreetCatalogs[$outcode];
+        }
+
+        $cacheKey = sprintf('property:street:%s:nearby-streets:%s', self::CACHE_VERSION, Str::lower($outcode));
+
+        /** @var array<int, array{name:string,slug:string,outcode:string,sales_count:int,url:string}> $catalog */
+        $catalog = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($outcode): array {
+            return DB::table('land_registry')
+                ->selectRaw('TRIM("Street") as street')
+                ->selectRaw('COUNT(*) as sales_count')
+                ->whereRaw('"PPDCategoryType" = ?', ['A'])
+                ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
+                ->whereRaw('"Street" IS NOT NULL')
+                ->whereRaw('TRIM("Street") <> ?', [''])
+                ->groupByRaw('TRIM("Street")')
+                ->havingRaw('COUNT(*) >= ?', [self::MIN_RELIABLE_SALES])
+                ->orderByDesc('sales_count')
+                ->orderByRaw('TRIM("Street")')
+                ->get()
+                ->map(function (object $row) use ($outcode): array {
+                    $rawName = trim((string) $row->street);
+                    $slug = Str::slug($rawName);
+
+                    return [
+                        'name' => $this->titleCaseStreetName($rawName),
+                        'slug' => $slug,
+                        'outcode' => $outcode,
+                        'sales_count' => (int) $row->sales_count,
+                        'url' => self::streetPath($outcode, $slug),
+                    ];
+                })
+                ->all();
+        });
+
+        return $this->nearbyStreetCatalogs[$outcode] = $catalog;
+    }
+
+    private function latestCrimeMonth(): ?string
+    {
+        return Cache::remember(
+            sprintf('property:street:%s:crime-latest-month', self::CACHE_VERSION),
+            self::CACHE_TTL,
+            fn (): ?string => Crime::query()->max('month')
+        );
+    }
+
+    /**
+     * @return Collection<string, float>
+     */
+    private function nationalCrimeTrendByType(string $previousWindowStart, string $crimeWindowStart, string $currentWindowEnd)
+    {
+        $cacheKey = sprintf(
+            'property:street:%s:national-crime-trend:%s:%s',
+            self::CACHE_VERSION,
+            $previousWindowStart,
+            $currentWindowEnd
+        );
+
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($previousWindowStart, $crimeWindowStart, $currentWindowEnd) {
+            return Crime::query()
+                ->selectRaw(
+                    'crime_type,
+                    SUM(CASE WHEN month >= ? THEN 1 ELSE 0 END) as current_total,
+                    SUM(CASE WHEN month >= ? AND month < ? THEN 1 ELSE 0 END) as previous_total',
+                    [
+                        $crimeWindowStart,
+                        $previousWindowStart,
+                        $crimeWindowStart,
+                    ]
+                )
+                ->whereDate('month', '>=', $previousWindowStart)
+                ->whereDate('month', '<=', $currentWindowEnd)
+                ->groupBy('crime_type')
+                ->get()
+                ->mapWithKeys(function ($crime) {
+                    $currentTotal = (int) $crime->current_total;
+                    $previousTotal = (int) $crime->previous_total;
+                    $pctChange = $previousTotal > 0
+                        ? round((($currentTotal - $previousTotal) * 100) / $previousTotal, 1)
+                        : ($currentTotal > 0 ? 100.0 : 0.0);
+
+                    return [(string) $crime->crime_type => $pctChange];
+                });
+        });
+    }
+
+    private function hasCrimeTable(): bool
+    {
+        return $this->hasCrimeTable ??= Schema::hasTable('crime');
+    }
+
+    private function hasOnspdTable(): bool
+    {
+        return $this->hasOnspdTable ??= Schema::hasTable(self::ONSPD_TABLE);
     }
 
     /**
