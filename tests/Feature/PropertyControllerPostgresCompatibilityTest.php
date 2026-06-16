@@ -129,6 +129,29 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
             ->assertOk();
     }
 
+    public function test_property_search_can_return_json_results_for_a_postcode(): void
+    {
+        DB::table('land_registry')->insert([
+            $this->landRegistryRow(
+                transactionId: '23232323-2323-2323-2323-23232323232323',
+                price: 410000,
+                date: '2025-03-01 00:00:00',
+                postcode: 'AB1 2CD',
+                paon: '10',
+                street: 'MARKET ROAD'
+            ),
+        ]);
+
+        $this->getJson('/property/search?postcode=AB1+2CD')
+            ->assertOk()
+            ->assertJsonPath('postcode', 'AB1 2CD')
+            ->assertJsonPath('results.0.postcode', 'AB1 2CD')
+            ->assertJsonPath('results.0.paon', '10')
+            ->assertJsonPath('results.0.street', 'MARKET ROAD')
+            ->assertJsonPath('results.0.property_slug', 'ab1-2cd-10-market-road')
+            ->assertJsonPath('results.0.url', route('property.show.slug', ['slug' => 'ab1-2cd-10-market-road'], false));
+    }
+
     public function test_property_show_route_uses_median_price_series_for_charts(): void
     {
         Cache::forget('postcode:AB1 2CD:type:D:priceHistory:v4:catA');

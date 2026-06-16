@@ -195,6 +195,29 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
 <script>
 (function() {
+    async function fetchPropertiesByPostcode(postcode) {
+        const normalizedPostcode = String(postcode ?? '').trim();
+        if (!normalizedPostcode) {
+            return [];
+        }
+
+        const response = await fetch(`/property/search?postcode=${encodeURIComponent(normalizedPostcode)}`, {
+            headers: {
+                Accept: 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            return [];
+        }
+
+        const payload = await response.json();
+
+        return Array.isArray(payload.results) ? payload.results : [];
+    }
+
+    window.fetchPropertiesByPostcode = fetchPropertiesByPostcode;
+
     const labels = @json($year_labels);
     const chartGridColor = 'rgba(113, 113, 122, 0.12)';
     const chartBorderColor = 'rgba(113, 113, 122, 0.22)';

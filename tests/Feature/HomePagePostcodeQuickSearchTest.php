@@ -84,6 +84,9 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('id="home-street-suggestions"', false);
         $view->assertSee('Search by street', false);
         $view->assertSee('property_streets.json', false);
+        $view->assertSee('scoreStreetSuggestion', false);
+        $view->assertSee('label.startsWith(normalizedQuery)', false);
+        $view->assertSee('.slice(0, 12)', false);
         $view->assertSee('only returns results where at least 3 sales exist');
         $view->assertSee('mx-auto grid max-w-5xl gap-4 md:grid-cols-2', false);
         $view->assertSee('rounded-lg bg-zinc-900 px-5 py-2 text-sm text-white transition hover:bg-black', false);

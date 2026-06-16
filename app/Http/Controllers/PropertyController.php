@@ -8,9 +8,11 @@ use App\Services\EpcMatcher;
 use App\Services\FormAnalytics;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class PropertyController extends Controller
 {
@@ -59,7 +61,7 @@ class PropertyController extends Controller
                 if (! empty($keys)) {
                     sort($keys); // ascending
                     $lastDataKey = end($keys); // e.g., '2025-08-01'
-                    $seriesEnd = \Carbon\Carbon::createFromFormat('Y-m-d', $lastDataKey)->startOfMonth();
+                    $seriesEnd = Carbon::createFromFormat('Y-m-d', $lastDataKey)->startOfMonth();
                 } else {
                     // If nothing in window, use end of previous month
                     $seriesEnd = $seedEnd->copy()->subMonth();
@@ -247,6 +249,33 @@ class PropertyController extends Controller
 
                 return $row;
             });
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'postcode' => $postcode,
+                'results' => $results?->getCollection()->map(function (LandRegistry $row) {
+                    return [
+                        'transaction_id' => (string) $row->TransactionID,
+                        'price' => $row->Price !== null ? (int) $row->Price : null,
+                        'date' => $row->Date ? (string) $row->Date : null,
+                        'property_type' => (string) ($row->PropertyType ?? ''),
+                        'new_build' => (string) ($row->NewBuild ?? ''),
+                        'duration' => (string) ($row->Duration ?? ''),
+                        'paon' => (string) ($row->PAON ?? ''),
+                        'saon' => $row->SAON !== null ? (string) $row->SAON : null,
+                        'street' => (string) ($row->Street ?? ''),
+                        'locality' => (string) ($row->Locality ?? ''),
+                        'town_city' => (string) ($row->TownCity ?? ''),
+                        'district' => (string) ($row->District ?? ''),
+                        'county' => (string) ($row->County ?? ''),
+                        'postcode' => (string) ($row->Postcode ?? ''),
+                        'category' => (string) ($row->PPDCategoryType ?? ''),
+                        'property_slug' => (string) ($row->property_slug ?? ''),
+                        'url' => route('property.show.slug', ['slug' => $row->property_slug], false),
+                    ];
+                })->values() ?? [],
+            ]);
         }
 
         // =========================================================
@@ -1468,9 +1497,9 @@ class PropertyController extends Controller
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, Carbon>
+     * @return Collection<int, Carbon>
      */
-    private function rollingEndMonths(Carbon $latestMonth): \Illuminate\Support\Collection
+    private function rollingEndMonths(Carbon $latestMonth): Collection
     {
         $earliestDate = DB::table('land_registry')->min('Date');
 
@@ -1508,7 +1537,7 @@ class PropertyController extends Controller
         ];
     }
 
-    private function buildRollingSalesSeries(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingSalesSeries(Collection $endMonths): Collection
     {
         return $endMonths->map(function (Carbon $endMonth) {
             $range = $this->rollingRangeForEndMonth($endMonth);
@@ -1523,7 +1552,7 @@ class PropertyController extends Controller
         });
     }
 
-    private function buildRollingMedianSeries(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingMedianSeries(Collection $endMonths): Collection
     {
         $medianExpr = $this->medianPriceExpression();
 
@@ -1542,7 +1571,7 @@ class PropertyController extends Controller
         });
     }
 
-    private function buildRollingP90Series(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingP90Series(Collection $endMonths): Collection
     {
         return $endMonths->map(function (Carbon $endMonth) {
             $range = $this->rollingRangeForEndMonth($endMonth);
@@ -1564,7 +1593,7 @@ class PropertyController extends Controller
         });
     }
 
-    private function buildRollingTop5Series(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingTop5Series(Collection $endMonths): Collection
     {
         return $endMonths->map(function (Carbon $endMonth) {
             $range = $this->rollingRangeForEndMonth($endMonth);
@@ -1588,7 +1617,7 @@ class PropertyController extends Controller
         });
     }
 
-    private function buildRollingTopSaleSeries(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingTopSaleSeries(Collection $endMonths): Collection
     {
         return $endMonths->map(function (Carbon $endMonth) {
             $range = $this->rollingRangeForEndMonth($endMonth);
@@ -1605,7 +1634,7 @@ class PropertyController extends Controller
         });
     }
 
-    private function buildRollingTop3Series(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingTop3Series(Collection $endMonths): Collection
     {
         return $endMonths->flatMap(function (Carbon $endMonth) {
             $range = $this->rollingRangeForEndMonth($endMonth);
@@ -1897,7 +1926,7 @@ class PropertyController extends Controller
 
         return route('property.area.show', [
             'type' => $normalizedType,
-            'slug' => \Illuminate\Support\Str::slug($name),
+            'slug' => Str::slug($name),
         ], absolute: false);
     }
 }

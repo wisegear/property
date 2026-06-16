@@ -549,6 +549,58 @@
                 streetSuggestionsBox.innerHTML = '';
             };
 
+            const scoreStreetSuggestion = function (item, normalizedQuery) {
+                const label = item && item.label ? String(item.label).toLowerCase() : '';
+                const search = item && item.search ? String(item.search).toLowerCase() : '';
+
+                if (!search.includes(normalizedQuery)) {
+                    return null;
+                }
+
+                const queryTerms = normalizedQuery.split(/\s+/).filter(Boolean);
+                let score = 0;
+
+                if (label === normalizedQuery || search === normalizedQuery) {
+                    score += 1000;
+                }
+
+                if (label.startsWith(normalizedQuery)) {
+                    score += 800;
+                }
+
+                if (search.startsWith(normalizedQuery)) {
+                    score += 700;
+                }
+
+                if (label.includes(' ' + normalizedQuery)) {
+                    score += 450;
+                }
+
+                if (search.includes(' ' + normalizedQuery)) {
+                    score += 350;
+                }
+
+                score += queryTerms.reduce(function (carry, term) {
+                    if (label.startsWith(term)) {
+                        return carry + 45;
+                    }
+
+                    if (label.includes(' ' + term)) {
+                        return carry + 30;
+                    }
+
+                    if (search.includes(term)) {
+                        return carry + 15;
+                    }
+
+                    return carry;
+                }, 0);
+
+                score -= label.length * 0.01;
+
+                return score;
+            };
+
             const renderStreetSuggestions = function (query) {
                 const normalizedQuery = query.trim().toLowerCase();
 
@@ -561,10 +613,21 @@
                 }
 
                 const matches = streets
-                    .filter(function (item) {
-                        const search = item && item.search ? String(item.search) : '';
+                    .map(function (item) {
+                        return {
+                            item: item,
+                            score: scoreStreetSuggestion(item, normalizedQuery),
+                        };
+                    })
+                    .filter(function (match) {
+                        return match.score !== null;
+                    })
+                    .sort(function (left, right) {
+                        if (right.score !== left.score) {
+                            return right.score - left.score;
+                        }
 
-                        return search.includes(normalizedQuery);
+                        return String(left.item.label || '').localeCompare(String(right.item.label || ''));
                     })
                     .slice(0, 12);
 
@@ -574,7 +637,8 @@
                     return;
                 }
 
-                matches.forEach(function (item) {
+                matches.forEach(function (match) {
+                    const item = match.item;
                     const option = document.createElement('button');
                     option.type = 'button';
                     option.className = 'block w-full px-4 py-2 text-left text-zinc-700 hover:bg-zinc-100';
