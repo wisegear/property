@@ -61,6 +61,16 @@ class PropertyStreetController extends Controller
         return sprintf('property:street:%s:%s:%s', self::CACHE_VERSION, $streetSlug, Str::lower($outcode));
     }
 
+    public static function outcodeCrimeCacheKey(string $outcode): string
+    {
+        return sprintf('property:street:crime:outcode:%s', Str::lower($outcode));
+    }
+
+    public static function outcodeCrimePointCacheKey(string $outcode): string
+    {
+        return sprintf('property:street:crime:outcode-point:%s', Str::lower($outcode));
+    }
+
     public static function streetPath(string $outcode, string $streetSlug): string
     {
         return '/property/street/'.Str::lower($outcode).'/'.$streetSlug;
@@ -382,7 +392,7 @@ class PropertyStreetController extends Controller
         });
 
         $centroid = $this->hasOnspdTable() ? $this->streetCentroid($records) : null;
-        $crimePayload = $this->buildCrimePayload($streetName, $outcode, $centroid);
+        $crimePayload = $this->buildOutcodeCrimePayload($outcode, $centroid['lat'] ?? null, $centroid['lng'] ?? null);
         $deprivationPayload = $this->buildDeprivationPayload($centroid);
         $outcodeComparison = $this->buildOutcodeComparison($streetName, $outcode, $summary);
         $nearbyStreets = $this->buildNearbyStreets($streetName, $outcode);
@@ -708,7 +718,7 @@ class PropertyStreetController extends Controller
      *     crime_top_decrease:?array<string, mixed>
      * }
      */
-    private function buildCrimePayload(string $streetName, string $outcode, ?array $coords): array
+    private function buildOutcodeCrimePayload(string $outcode, ?float $latitude, ?float $longitude): array
     {
         $startedAt = microtime(true);
         $emptyPayload = [
@@ -727,9 +737,92 @@ class PropertyStreetController extends Controller
             return $emptyPayload;
         }
 
+        $coords = $this->profileSection('crime representative point', fn () => $this->outcodeCrimePoint($outcode, $latitude, $longitude));
+
         if ($coords === null) {
+            $this->logSectionTiming('crime payload', $startedAt);
+
             return $emptyPayload;
         }
+
+        $cacheKey = self::outcodeCrimeCacheKey($outcode);
+        $cacheLookupStartedAt = microtime(true);
+        $cachedPayload = Cache::get($cacheKey);
+        $cacheLookupElapsedMs = $this->elapsedMs($cacheLookupStartedAt);
+        if ($this->warmProfilingEnabled) {
+            $this->recordSectionTiming('crime cache lookup', $cacheLookupElapsedMs);
+            $this->logWarmProfile(sprintf(
+                'section="%s" outcode=%s elapsed_ms=%.2f',
+                'crime cache lookup',
+                $outcode,
+                $cacheLookupElapsedMs
+            ));
+        }
+
+        if (is_array($cachedPayload)) {
+            if ($this->warmProfilingEnabled) {
+                $this->recordSectionTiming('crime cache hit', $cacheLookupElapsedMs);
+                $this->logWarmProfile(sprintf(
+                    'section="%s" outcode=%s elapsed_ms=%.2f',
+                    'crime cache hit',
+                    $outcode,
+                    $cacheLookupElapsedMs
+                ));
+            }
+            $this->logSectionTiming('crime payload', $startedAt);
+
+            return $cachedPayload;
+        }
+
+        if ($this->warmProfilingEnabled) {
+            $this->logWarmProfile(sprintf('section="%s" outcode=%s', 'crime cache miss', $outcode));
+        }
+
+        $payload = $this->profileSection('crime cache miss build', fn (): array => $this->compileCrimePayload($coords['lat'], $coords['lng']));
+
+        $cacheWriteStartedAt = microtime(true);
+        Cache::put($cacheKey, $payload, self::CACHE_TTL);
+        $cacheWriteElapsedMs = $this->elapsedMs($cacheWriteStartedAt);
+        if ($this->warmProfilingEnabled) {
+            $this->recordSectionTiming('crime cache write', $cacheWriteElapsedMs);
+            $this->logWarmProfile(sprintf(
+                'section="%s" outcode=%s elapsed_ms=%.2f',
+                'crime cache write',
+                $outcode,
+                $cacheWriteElapsedMs
+            ));
+        }
+        $this->logSectionTiming('crime payload', $startedAt);
+
+        return $payload;
+    }
+
+    /**
+     * @return array{
+     *     crime_data:array<int, array<string, mixed>>,
+     *     crime_trend:array<int, array<string, mixed>>,
+     *     crime_summary:?string,
+     *     crime_direction:string,
+     *     crime_trend_labels:array<int, string>,
+     *     crime_trend_values:array<int, int>,
+     *     crime_total_change:float,
+     *     crime_top_increase:?array<string, mixed>,
+     *     crime_top_decrease:?array<string, mixed>
+     * }
+     */
+    private function compileCrimePayload(float $latitude, float $longitude): array
+    {
+        $emptyPayload = [
+            'crime_data' => [],
+            'crime_trend' => [],
+            'crime_summary' => null,
+            'crime_direction' => 'stable',
+            'crime_trend_labels' => [],
+            'crime_trend_values' => [],
+            'crime_total_change' => 0.0,
+            'crime_top_increase' => null,
+            'crime_top_decrease' => null,
+        ];
 
         $latestCrimeMonth = $this->profileSection('crime latest month lookup', fn () => $this->latestCrimeMonth());
 
@@ -746,8 +839,8 @@ class PropertyStreetController extends Controller
             Crime::query()
                 ->selectRaw('crime_type, COUNT(*) as total')
                 ->whereDate('month', '>=', $crimeWindowStart->toDateString())
-                ->whereBetween('latitude', [$coords['lat'] - 0.005, $coords['lat'] + 0.005])
-                ->whereBetween('longitude', [$coords['lng'] - 0.005, $coords['lng'] + 0.005])
+                ->whereBetween('latitude', [$latitude - 0.005, $latitude + 0.005])
+                ->whereBetween('longitude', [$longitude - 0.005, $longitude + 0.005])
                 ->whereNotNull('crime_type')
                 ->groupBy('crime_type')
                 ->orderByDesc('total')
@@ -770,8 +863,8 @@ class PropertyStreetController extends Controller
                 )
                 ->whereDate('month', '>=', $previousWindowStart->toDateString())
                 ->whereDate('month', '<=', $currentWindowEnd->toDateString())
-                ->whereBetween('latitude', [$coords['lat'] - 0.005, $coords['lat'] + 0.005])
-                ->whereBetween('longitude', [$coords['lng'] - 0.005, $coords['lng'] + 0.005])
+                ->whereBetween('latitude', [$latitude - 0.005, $latitude + 0.005])
+                ->whereBetween('longitude', [$longitude - 0.005, $longitude + 0.005])
                 ->whereNotNull('crime_type')
                 ->groupBy('crime_type'),
             fn (EloquentBuilder $query) => $query->get()
@@ -798,8 +891,8 @@ class PropertyStreetController extends Controller
                 ->selectRaw('month, COUNT(*) as total')
                 ->whereDate('month', '>=', $previousWindowStart->toDateString())
                 ->whereDate('month', '<=', $currentWindowEnd->toDateString())
-                ->whereBetween('latitude', [$coords['lat'] - 0.005, $coords['lat'] + 0.005])
-                ->whereBetween('longitude', [$coords['lng'] - 0.005, $coords['lng'] + 0.005])
+                ->whereBetween('latitude', [$latitude - 0.005, $latitude + 0.005])
+                ->whereBetween('longitude', [$longitude - 0.005, $longitude + 0.005])
                 ->groupBy('month')
                 ->orderBy('month'),
             fn (EloquentBuilder $query) => $query->pluck('total', 'month')
@@ -906,9 +999,62 @@ class PropertyStreetController extends Controller
             'crime_top_decrease' => $topDecrease,
         ];
 
-        $this->logSectionTiming('crime payload', $startedAt);
-
         return $payload;
+    }
+
+    /**
+     * @return array{lat:float,lng:float}|null
+     */
+    private function outcodeCrimePoint(string $outcode, ?float $fallbackLatitude, ?float $fallbackLongitude): ?array
+    {
+        $cacheKey = self::outcodeCrimePointCacheKey($outcode);
+        $cachedPoint = Cache::get($cacheKey);
+
+        if (is_array($cachedPoint) && isset($cachedPoint['lat'], $cachedPoint['lng'])) {
+            return [
+                'lat' => (float) $cachedPoint['lat'],
+                'lng' => (float) $cachedPoint['lng'],
+            ];
+        }
+
+        $point = $this->profileQuery(
+            'crime representative point query',
+            DB::table(self::ONSPD_TABLE)
+                ->select(['pcds', 'lat', 'long', 'dointr'])
+                ->whereNotNull('lat')
+                ->whereNotNull('long')
+                ->whereRaw($this->onspdOutcodeExpression().' = ?', [$outcode])
+                ->orderBy('pcds')
+                ->orderByDesc('dointr'),
+            function (QueryBuilder $query): ?array {
+                $row = $query->first();
+
+                if ($row === null || $row->lat === null || $row->long === null) {
+                    return null;
+                }
+
+                return [
+                    'lat' => (float) $row->lat,
+                    'lng' => (float) $row->long,
+                ];
+            },
+            ['outcode' => $outcode]
+        );
+
+        if ($point !== null) {
+            Cache::put($cacheKey, $point, self::CACHE_TTL);
+
+            return $point;
+        }
+
+        if ($fallbackLatitude === null || $fallbackLongitude === null) {
+            return null;
+        }
+
+        return [
+            'lat' => $fallbackLatitude,
+            'lng' => $fallbackLongitude,
+        ];
     }
 
     /**
@@ -1274,6 +1420,15 @@ class PropertyStreetController extends Controller
     private function hasOnspdTable(): bool
     {
         return $this->hasOnspdTable ??= Schema::hasTable(self::ONSPD_TABLE);
+    }
+
+    private function onspdOutcodeExpression(): string
+    {
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            return 'UPPER(SPLIT_PART(pcds, \' \', 1))';
+        }
+
+        return 'UPPER(TRIM(SUBSTR(pcds, 1, CASE WHEN INSTR(pcds, \' \') = 0 THEN LENGTH(pcds) ELSE INSTR(pcds, \' \') - 1 END)))';
     }
 
     /**

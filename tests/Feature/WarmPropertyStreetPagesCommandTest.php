@@ -23,6 +23,8 @@ class WarmPropertyStreetPagesCommandTest extends TestCase
         Cache::forget(PropertyStreetController::cacheKey('side-lane', 'B81'));
         Cache::forget(PropertyStreetController::cacheKey('market-road', 'SW7'));
         Cache::forget(PropertyStreetController::cacheKey('market-road', 'SW5'));
+        Cache::forget('property:street:crime:outcode:sw7');
+        Cache::forget('property:street:crime:outcode-point:sw7');
     }
 
     public function test_command_warms_only_qualifying_street_pages_for_the_requested_threshold(): void

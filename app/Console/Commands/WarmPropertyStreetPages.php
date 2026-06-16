@@ -94,6 +94,7 @@ class WarmPropertyStreetPages extends Command
 
         $processed = 0;
         $page = 1;
+        $refreshedCrimeOutcodes = [];
 
         while (true) {
             $remaining = $limit > 0 ? max(0, $limit - (($page - 1) * self::TARGET_BATCH_SIZE)) : null;
@@ -124,6 +125,11 @@ class WarmPropertyStreetPages extends Command
 
                     if ($refresh) {
                         Cache::forget($cacheKey);
+
+                        if (! isset($refreshedCrimeOutcodes[$outcode])) {
+                            Cache::forget(PropertyStreetController::outcodeCrimeCacheKey($outcode));
+                            $refreshedCrimeOutcodes[$outcode] = true;
+                        }
                     }
 
                     if ($skipExisting && Cache::has($cacheKey)) {

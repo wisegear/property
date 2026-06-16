@@ -19,6 +19,9 @@ class PropertyStreetControllerTest extends TestCase
         $this->ensureImdTables();
 
         Cache::forget(PropertyStreetController::cacheKey('cromwell-road', 'SW7'));
+        Cache::forget(PropertyStreetController::cacheKey('elm-road', 'SW7'));
+        Cache::forget('property:street:crime:outcode:sw7');
+        Cache::forget('property:street:crime:outcode-point:sw7');
         DB::table('land_registry')->delete();
         DB::table('onspd_v2')->delete();
         DB::table('crime')->delete();
@@ -97,6 +100,69 @@ class PropertyStreetControllerTest extends TestCase
         $this->assertSame('CROMWELL ROAD', $cached['street_name']);
         $this->assertSame(4, $cached['summary']['total_sales']);
         $this->assertSame('/property/street/sw7/cromwell-road', parse_url($cached['canonical_url'], PHP_URL_PATH));
+    }
+
+    public function test_street_pages_in_the_same_outcode_reuse_a_shared_crime_payload_cache(): void
+    {
+        $this->ensureLandRegistryTable();
+        $this->ensureOnspdTable();
+        $this->ensureCrimeTable();
+        $this->ensureImdTables();
+
+        Cache::forget(PropertyStreetController::cacheKey('cromwell-road', 'SW7'));
+        Cache::forget(PropertyStreetController::cacheKey('elm-road', 'SW7'));
+        Cache::forget('property:street:crime:outcode:sw7');
+        Cache::forget('property:street:crime:outcode-point:sw7');
+        DB::table('land_registry')->delete();
+        DB::table('onspd_v2')->delete();
+        DB::table('crime')->delete();
+        DB::table('imd2025')->delete();
+
+        DB::table('land_registry')->insert([
+            $this->saleRow('tx-201', 'CROMWELL ROAD', 100000, '2023-01-15 00:00:00', 'SW7 5PH', '1', 'FLAT 1'),
+            $this->saleRow('tx-202', 'CROMWELL ROAD', 200000, '2023-06-10 00:00:00', 'SW7 5AA', '2', 'FLAT 2'),
+            $this->saleRow('tx-203', 'CROMWELL ROAD', 300000, '2024-02-02 00:00:00', 'SW7 4ZZ', '3', null),
+            $this->saleRow('tx-204', 'CROMWELL ROAD', 400000, '2024-06-10 00:00:00', 'SW7 5PH', '4', null),
+            $this->saleRow('tx-205', 'CROMWELL ROAD', 500000, '2024-07-10 00:00:00', 'SW7 5AA', '5', null),
+            $this->saleRow('tx-206', 'ELM ROAD', 510000, '2024-04-01 00:00:00', 'SW7 6AA', '1', null),
+            $this->saleRow('tx-207', 'ELM ROAD', 520000, '2024-04-02 00:00:00', 'SW7 6AB', '2', null),
+            $this->saleRow('tx-208', 'ELM ROAD', 530000, '2024-04-03 00:00:00', 'SW7 6AC', '3', null),
+            $this->saleRow('tx-209', 'ELM ROAD', 540000, '2024-04-04 00:00:00', 'SW7 6AD', '4', null),
+            $this->saleRow('tx-210', 'ELM ROAD', 550000, '2024-04-05 00:00:00', 'SW7 6AE', '5', null),
+        ]);
+
+        DB::table('onspd_v2')->insert([
+            ['pcds' => 'SW7 5PH', 'lsoa21cd' => 'E01000001', 'lsoa11cd' => 'E01000001', 'lat' => 51.4970000, 'long' => -0.1820000, 'dointr' => '202501'],
+            ['pcds' => 'SW7 5AA', 'lsoa21cd' => 'E01000001', 'lsoa11cd' => 'E01000001', 'lat' => 51.4972000, 'long' => -0.1817000, 'dointr' => '202501'],
+            ['pcds' => 'SW7 4ZZ', 'lsoa21cd' => 'E01000001', 'lsoa11cd' => 'E01000001', 'lat' => 51.4968000, 'long' => -0.1823000, 'dointr' => '202501'],
+        ]);
+
+        DB::table('crime')->insert([
+            $this->crimeRow('2024-06-01', 'burglary', 51.4971000, -0.1819000),
+            $this->crimeRow('2024-08-01', 'burglary', 51.4971000, -0.1819000),
+            $this->crimeRow('2024-10-01', 'criminal damage and arson', 51.4971000, -0.1819000),
+            $this->crimeRow('2024-12-01', 'criminal damage and arson', 51.4971000, -0.1819000),
+            $this->crimeRow('2025-02-01', 'criminal damage and arson', 51.4971000, -0.1819000),
+            $this->crimeRow('2025-04-01', 'possession of weapons', 51.4971000, -0.1819000),
+            $this->crimeRow('2025-05-01', 'burglary', 51.4971000, -0.1819000),
+        ]);
+
+        $this->get('/property/street/sw7/cromwell-road')->assertOk();
+        $this->get('/property/street/sw7/elm-road')
+            ->assertOk()
+            ->assertSee('Crime trends near Elm Road, SW7');
+
+        $sharedCrimePayload = Cache::get('property:street:crime:outcode:sw7');
+        $cromwellPayload = Cache::get(PropertyStreetController::cacheKey('cromwell-road', 'SW7'));
+        $elmPayload = Cache::get(PropertyStreetController::cacheKey('elm-road', 'SW7'));
+
+        $this->assertIsArray($sharedCrimePayload);
+        $this->assertIsArray($cromwellPayload);
+        $this->assertIsArray($elmPayload);
+        $this->assertSame($sharedCrimePayload['crime_summary'], $cromwellPayload['crime_summary']);
+        $this->assertSame($sharedCrimePayload['crime_summary'], $elmPayload['crime_summary']);
+        $this->assertSame($sharedCrimePayload['crime_data'], $cromwellPayload['crime_data']);
+        $this->assertSame($sharedCrimePayload['crime_data'], $elmPayload['crime_data']);
     }
 
     public function test_street_page_shows_reliability_warning_for_limited_street_data(): void
