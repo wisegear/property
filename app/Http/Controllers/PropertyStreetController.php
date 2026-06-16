@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Crime;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -39,6 +41,20 @@ class PropertyStreetController extends Controller
     private ?bool $hasCrimeTable = null;
 
     private ?bool $hasOnspdTable = null;
+
+    private bool $warmProfilingEnabled = false;
+
+    private const PROFILE_SLOW_MS = 100.0;
+
+    /**
+     * @var null|callable(string):void
+     */
+    private $warmProfilingLogger = null;
+
+    /**
+     * @var array<string, array{count:int,total_ms:float,max_ms:float}>
+     */
+    private array $warmProfilingStats = [];
 
     public static function cacheKey(string $streetSlug, string $outcode): string
     {
@@ -118,11 +134,80 @@ class PropertyStreetController extends Controller
             abort(404);
         }
 
-        return Cache::remember(
-            self::cacheKey($streetSlug, $normalizedOutcode),
+        $cacheKey = self::cacheKey($streetSlug, $normalizedOutcode);
+
+        if (! $this->warmProfilingEnabled) {
+            return Cache::remember(
+                $cacheKey,
+                self::CACHE_TTL,
+                fn (): array => $this->buildPayload($streetSlug, $normalizedOutcode)
+            );
+        }
+
+        $rememberStartedAt = microtime(true);
+        $buildElapsedMs = null;
+        $payload = Cache::remember(
+            $cacheKey,
             self::CACHE_TTL,
-            fn (): array => $this->buildPayload($streetSlug, $normalizedOutcode)
+            function () use ($streetSlug, $normalizedOutcode, &$buildElapsedMs): array {
+                $buildStartedAt = microtime(true);
+                $payload = $this->buildPayload($streetSlug, $normalizedOutcode);
+                $buildElapsedMs = $this->elapsedMs($buildStartedAt);
+
+                return $payload;
+            }
         );
+
+        $rememberElapsedMs = $this->elapsedMs($rememberStartedAt);
+        $this->recordSectionTiming('cache remember total', $rememberElapsedMs);
+        $this->logWarmProfile(sprintf(
+            'street=%s outcode=%s section="%s" elapsed_ms=%.2f',
+            $streetSlug,
+            $normalizedOutcode,
+            'cache remember total',
+            $rememberElapsedMs
+        ));
+
+        if ($buildElapsedMs !== null) {
+            $cacheWriteElapsedMs = max(0.0, $rememberElapsedMs - $buildElapsedMs);
+            $this->recordSectionTiming('cache write', $cacheWriteElapsedMs);
+            $this->logWarmProfile(sprintf(
+                'street=%s outcode=%s section="%s" elapsed_ms=%.2f',
+                $streetSlug,
+                $normalizedOutcode,
+                'cache write',
+                $cacheWriteElapsedMs
+            ));
+        }
+
+        return $payload;
+    }
+
+    public function enableWarmProfiling(?callable $logger = null): void
+    {
+        $this->warmProfilingEnabled = true;
+        $this->warmProfilingLogger = $logger;
+        $this->warmProfilingStats = [];
+    }
+
+    /**
+     * @return array<int, array{section:string,count:int,total_ms:float,max_ms:float,avg_ms:float}>
+     */
+    public function warmProfilingSummary(): array
+    {
+        return collect($this->warmProfilingStats)
+            ->map(function (array $stats, string $section): array {
+                return [
+                    'section' => $section,
+                    'count' => $stats['count'],
+                    'total_ms' => round($stats['total_ms'], 2),
+                    'max_ms' => round($stats['max_ms'], 2),
+                    'avg_ms' => round($stats['total_ms'] / max(1, $stats['count']), 2),
+                ];
+            })
+            ->sortByDesc('total_ms')
+            ->values()
+            ->all();
     }
 
     /**
@@ -159,13 +244,15 @@ class PropertyStreetController extends Controller
      */
     private function buildPayload(string $streetSlug, string $outcode): array
     {
+        $payloadStartedAt = microtime(true);
+
         $streetName = $this->resolveStreetName($streetSlug, $outcode);
 
         if ($streetName === null) {
             abort(404);
         }
 
-        $records = DB::table('land_registry')
+        $recordsQuery = DB::table('land_registry')
             ->select([
                 'Date',
                 'Price',
@@ -181,110 +268,129 @@ class PropertyStreetController extends Controller
             ->whereRaw('TRIM("Street") = ?', [$streetName])
             ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
             ->orderByDesc('Date')
-            ->orderByDesc('Price')
-            ->get()
-            ->map(function (object $row): array {
-                $date = $row->Date !== null ? Carbon::parse((string) $row->Date) : null;
-                $price = $row->Price !== null ? (int) $row->Price : null;
-                $paon = trim((string) ($row->PAON ?? ''));
-                $saon = trim((string) ($row->SAON ?? ''));
+            ->orderByDesc('Price');
 
-                return [
-                    'date' => $date?->toDateString(),
-                    'date_label' => $date?->format('d M Y'),
-                    'price' => $price,
-                    'price_label' => $price !== null ? '£'.number_format($price) : null,
-                    'paon' => $paon,
-                    'saon' => $saon,
-                    'street' => trim((string) ($row->Street ?? '')),
-                    'postcode' => trim((string) ($row->Postcode ?? '')),
-                    'property_type' => $this->propertyTypeLabel($row->PropertyType !== null ? (string) $row->PropertyType : null),
-                    'tenure' => $this->tenureLabel($row->Duration !== null ? (string) $row->Duration : null),
-                    'build_status' => $this->buildStatusLabel($row->NewBuild !== null ? (string) $row->NewBuild : null),
-                    'address' => $this->formatAddress($paon, $saon),
-                    'property_slug' => $this->buildPropertySlug(
-                        trim((string) ($row->Postcode ?? '')),
-                        $paon,
-                        trim((string) ($row->Street ?? '')),
-                        $saon !== '' ? $saon : null
-                    ),
-                ];
-            })
-            ->values()
-            ->all();
+        $records = $this->profileQuery(
+            'street sales records query',
+            $recordsQuery,
+            fn (QueryBuilder $query): array => $query->get()
+                ->map(function (object $row): array {
+                    $date = $row->Date !== null ? Carbon::parse((string) $row->Date) : null;
+                    $price = $row->Price !== null ? (int) $row->Price : null;
+                    $paon = trim((string) ($row->PAON ?? ''));
+                    $saon = trim((string) ($row->SAON ?? ''));
+
+                    return [
+                        'date' => $date?->toDateString(),
+                        'date_label' => $date?->format('d M Y'),
+                        'price' => $price,
+                        'price_label' => $price !== null ? '£'.number_format($price) : null,
+                        'paon' => $paon,
+                        'saon' => $saon,
+                        'street' => trim((string) ($row->Street ?? '')),
+                        'postcode' => trim((string) ($row->Postcode ?? '')),
+                        'property_type' => $this->propertyTypeLabel($row->PropertyType !== null ? (string) $row->PropertyType : null),
+                        'tenure' => $this->tenureLabel($row->Duration !== null ? (string) $row->Duration : null),
+                        'build_status' => $this->buildStatusLabel($row->NewBuild !== null ? (string) $row->NewBuild : null),
+                        'address' => $this->formatAddress($paon, $saon),
+                        'property_slug' => $this->buildPropertySlug(
+                            trim((string) ($row->Postcode ?? '')),
+                            $paon,
+                            trim((string) ($row->Street ?? '')),
+                            $saon !== '' ? $saon : null
+                        ),
+                    ];
+                })
+                ->values()
+                ->all(),
+            [
+                'street' => $streetSlug,
+                'outcode' => $outcode,
+            ]
+        );
 
         if ($records === []) {
             abort(404);
         }
 
-        $prices = collect($records)
-            ->pluck('price')
-            ->filter(fn ($price): bool => is_int($price) && $price > 0)
-            ->sort()
-            ->values();
+        $prices = $this->profileSection('price extraction', function () use ($records) {
+            return collect($records)
+                ->pluck('price')
+                ->filter(fn ($price): bool => is_int($price) && $price > 0)
+                ->sort()
+                ->values();
+        });
 
-        $latestSaleDate = collect($records)
-            ->pluck('date')
-            ->filter()
-            ->first();
+        $summary = $this->profileSection('summary', function () use ($records, $prices): array {
+            $latestSaleDate = collect($records)
+                ->pluck('date')
+                ->filter()
+                ->first();
 
-        $summary = [
-            'total_sales' => count($records),
-            'median_sale_price' => $this->medianValue($prices->all()),
-            'average_sale_price' => $prices->isNotEmpty() ? (int) round($prices->avg()) : null,
-            'latest_sale_date' => $latestSaleDate !== null ? Carbon::parse($latestSaleDate)->format('d M Y') : null,
-            'latest_sale_date_iso' => $latestSaleDate,
-            'highest_sale' => $prices->isNotEmpty() ? (int) $prices->last() : null,
-            'most_common_property_type' => $this->mostCommonPropertyType($records),
-        ];
+            return [
+                'total_sales' => count($records),
+                'median_sale_price' => $this->medianValue($prices->all()),
+                'average_sale_price' => $prices->isNotEmpty() ? (int) round($prices->avg()) : null,
+                'latest_sale_date' => $latestSaleDate !== null ? Carbon::parse($latestSaleDate)->format('d M Y') : null,
+                'latest_sale_date_iso' => $latestSaleDate,
+                'highest_sale' => $prices->isNotEmpty() ? (int) $prices->last() : null,
+                'most_common_property_type' => $this->profileSection('property type distribution', fn () => $this->mostCommonPropertyType($records)),
+            ];
+        });
 
-        $yearly = collect($records)
-            ->filter(fn (array $record): bool => $record['date'] !== null)
-            ->groupBy(fn (array $record): int => Carbon::parse((string) $record['date'])->year)
-            ->sortKeys();
+        [$yearlyMedianPrice, $yearlySalesCount] = $this->profileSection('yearly chart aggregation', function () use ($records): array {
+            $yearly = collect($records)
+                ->filter(fn (array $record): bool => $record['date'] !== null)
+                ->groupBy(fn (array $record): int => Carbon::parse((string) $record['date'])->year)
+                ->sortKeys();
 
-        $yearlyMedianPrice = $yearly
-            ->map(function ($items, int $year): array {
-                $prices = collect($items)
-                    ->pluck('price')
-                    ->filter(fn ($price): bool => is_int($price) && $price > 0)
-                    ->sort()
-                    ->values()
-                    ->all();
+            $yearlyMedianPrice = $yearly
+                ->map(function ($items, int $year): array {
+                    $prices = collect($items)
+                        ->pluck('price')
+                        ->filter(fn ($price): bool => is_int($price) && $price > 0)
+                        ->sort()
+                        ->values()
+                        ->all();
 
-                return [
+                    return [
+                        'year' => $year,
+                        'value' => $this->medianValue($prices) ?? 0,
+                    ];
+                })
+                ->values()
+                ->all();
+
+            $yearlySalesCount = $yearly
+                ->map(fn ($items, int $year): array => [
                     'year' => $year,
-                    'value' => $this->medianValue($prices) ?? 0,
-                ];
-            })
-            ->values()
-            ->all();
+                    'value' => count($items),
+                ])
+                ->values()
+                ->all();
 
-        $yearlySalesCount = $yearly
-            ->map(fn ($items, int $year): array => [
-                'year' => $year,
-                'value' => count($items),
-            ])
-            ->values()
-            ->all();
+            return [$yearlyMedianPrice, $yearlySalesCount];
+        });
 
-        $topSales = collect($records)
-            ->filter(fn (array $record): bool => $record['price'] !== null)
-            ->sortByDesc('price')
-            ->take(10)
-            ->values()
-            ->all();
+        $topSales = $this->profileSection('top sales aggregation', function () use ($records): array {
+            return collect($records)
+                ->filter(fn (array $record): bool => $record['price'] !== null)
+                ->sortByDesc('price')
+                ->take(10)
+                ->values()
+                ->all();
+        });
 
         $centroid = $this->hasOnspdTable() ? $this->streetCentroid($records) : null;
         $crimePayload = $this->buildCrimePayload($streetName, $outcode, $centroid);
         $deprivationPayload = $this->buildDeprivationPayload($centroid);
         $outcodeComparison = $this->buildOutcodeComparison($streetName, $outcode, $summary);
         $nearbyStreets = $this->buildNearbyStreets($streetName, $outcode);
-        $glanceMetrics = $this->buildGlanceMetrics($summary, $crimePayload, $deprivationPayload);
-        $metaDescription = $this->buildMetaDescription($streetName, $outcode, $summary);
-        $faqItems = $this->buildFaqItems($streetName, $outcode, $summary, $outcodeComparison);
+        $glanceMetrics = $this->profileSection('glance metrics', fn () => $this->buildGlanceMetrics($summary, $crimePayload, $deprivationPayload));
+        $metaDescription = $this->profileSection('meta description', fn () => $this->buildMetaDescription($streetName, $outcode, $summary));
+        $faqItems = $this->profileSection('faq items', fn () => $this->buildFaqItems($streetName, $outcode, $summary, $outcodeComparison));
 
-        return [
+        $payload = [
             'street_name' => $streetName,
             'outcode' => $outcode,
             'summary' => $summary,
@@ -314,6 +420,18 @@ class PropertyStreetController extends Controller
             'deprivation_message' => $deprivationPayload['deprMsg'],
             'deprivation_link' => $deprivationPayload['lsoaLink'],
         ];
+
+        $payloadElapsedMs = $this->elapsedMs($payloadStartedAt);
+        $this->recordSectionTiming('total payload build', $payloadElapsedMs);
+        $this->logWarmProfile(sprintf(
+            'street=%s outcode=%s section="%s" elapsed_ms=%.2f',
+            $streetSlug,
+            $outcode,
+            'total payload build',
+            $payloadElapsedMs
+        ));
+
+        return $payload;
     }
 
     /**
@@ -321,6 +439,7 @@ class PropertyStreetController extends Controller
      */
     private function buildDeprivationPayload(?array $centroid): array
     {
+        $startedAt = microtime(true);
         $emptyPayload = [
             'depr' => null,
             'deprMsg' => null,
@@ -499,7 +618,7 @@ class PropertyStreetController extends Controller
             return null;
         };
 
-        $nearestOnspdRow = DB::table(self::ONSPD_TABLE)
+        $nearestOnspdQuery = DB::table(self::ONSPD_TABLE)
             ->select([
                 'pcds',
                 'lsoa21cd as lsoa21',
@@ -508,9 +627,19 @@ class PropertyStreetController extends Controller
                 'long',
             ])
             ->whereNotNull('lat')
-            ->whereNotNull('long')
-            ->orderByRaw('POWER(lat - ?, 2) + POWER("long" - ?, 2)', [$centroid['lat'], $centroid['lng']])
-            ->first();
+            ->whereNotNull('long');
+
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            $nearestOnspdQuery->orderByRaw('point("long", lat) <-> point(?, ?)', [$centroid['lng'], $centroid['lat']]);
+        } else {
+            $nearestOnspdQuery->orderByRaw('POWER(lat - ?, 2) + POWER("long" - ?, 2)', [$centroid['lat'], $centroid['lng']]);
+        }
+
+        $nearestOnspdRow = $this->profileQuery(
+            'deprivation postcode lookup',
+            $nearestOnspdQuery,
+            fn (QueryBuilder $query) => $query->first()
+        );
 
         if ($nearestOnspdRow === null) {
             return [
@@ -530,8 +659,10 @@ class PropertyStreetController extends Controller
             ];
         }
 
-        $imd = Cache::remember('depr:lsoa:street:'.$lsoa, now()->addDays(90), function () use ($resolveImdForLsoa, $lsoa) {
-            return $resolveImdForLsoa($lsoa);
+        $imd = $this->profileSection('deprivation lsoa lookup', function () use ($resolveImdForLsoa, $lsoa) {
+            return Cache::remember('depr:lsoa:street:'.$lsoa, now()->addDays(90), function () use ($resolveImdForLsoa, $lsoa) {
+                return $resolveImdForLsoa($lsoa);
+            });
         });
 
         if ($imd === null) {
@@ -541,7 +672,7 @@ class PropertyStreetController extends Controller
             ];
         }
 
-        return [
+        $payload = [
             'depr' => [
                 'lsoa21' => $lsoa,
                 'name' => $imd['name'] ?? null,
@@ -558,6 +689,10 @@ class PropertyStreetController extends Controller
                 ? route('deprivation.show', ['lsoa21cd' => $lsoa])
                 : route('deprivation.wales.show', ['lsoa' => $lsoa]),
         ];
+
+        $this->logSectionTiming('deprivation payload', $startedAt);
+
+        return $payload;
     }
 
     /**
@@ -575,6 +710,7 @@ class PropertyStreetController extends Controller
      */
     private function buildCrimePayload(string $streetName, string $outcode, ?array $coords): array
     {
+        $startedAt = microtime(true);
         $emptyPayload = [
             'crime_data' => [],
             'crime_trend' => [],
@@ -595,7 +731,7 @@ class PropertyStreetController extends Controller
             return $emptyPayload;
         }
 
-        $latestCrimeMonth = $this->latestCrimeMonth();
+        $latestCrimeMonth = $this->profileSection('crime latest month lookup', fn () => $this->latestCrimeMonth());
 
         if ($latestCrimeMonth === null) {
             return $emptyPayload;
@@ -605,60 +741,69 @@ class PropertyStreetController extends Controller
         $crimeWindowStart = $currentWindowEnd->copy()->subMonths(11);
         $previousWindowStart = $crimeWindowStart->copy()->subMonths(12);
 
-        $crimeSummaryRows = Crime::query()
-            ->selectRaw('crime_type, COUNT(*) as total')
-            ->whereDate('month', '>=', $crimeWindowStart->toDateString())
-            ->whereBetween('latitude', [$coords['lat'] - 0.005, $coords['lat'] + 0.005])
-            ->whereBetween('longitude', [$coords['lng'] - 0.005, $coords['lng'] + 0.005])
-            ->whereNotNull('crime_type')
-            ->groupBy('crime_type')
-            ->orderByDesc('total')
-            ->limit(10)
-            ->get();
+        $crimeSummaryRows = $this->profileQuery(
+            'crime summary query',
+            Crime::query()
+                ->selectRaw('crime_type, COUNT(*) as total')
+                ->whereDate('month', '>=', $crimeWindowStart->toDateString())
+                ->whereBetween('latitude', [$coords['lat'] - 0.005, $coords['lat'] + 0.005])
+                ->whereBetween('longitude', [$coords['lng'] - 0.005, $coords['lng'] + 0.005])
+                ->whereNotNull('crime_type')
+                ->groupBy('crime_type')
+                ->orderByDesc('total')
+                ->limit(10),
+            fn (EloquentBuilder $query) => $query->get()
+        );
 
-        $crimeTrendCounts = Crime::query()
-            ->selectRaw(
-                'crime_type,
+        $crimeTrendCounts = $this->profileQuery(
+            'crime trend query',
+            Crime::query()
+                ->selectRaw(
+                    'crime_type,
                 SUM(CASE WHEN month >= ? THEN 1 ELSE 0 END) as current_total,
                 SUM(CASE WHEN month >= ? AND month < ? THEN 1 ELSE 0 END) as previous_total',
-                [
-                    $crimeWindowStart->toDateString(),
-                    $previousWindowStart->toDateString(),
-                    $crimeWindowStart->toDateString(),
-                ]
-            )
-            ->whereDate('month', '>=', $previousWindowStart->toDateString())
-            ->whereDate('month', '<=', $currentWindowEnd->toDateString())
-            ->whereBetween('latitude', [$coords['lat'] - 0.005, $coords['lat'] + 0.005])
-            ->whereBetween('longitude', [$coords['lng'] - 0.005, $coords['lng'] + 0.005])
-            ->whereNotNull('crime_type')
-            ->groupBy('crime_type')
-            ->get()
-            ->map(function ($crime) {
-                $currentTotal = (int) $crime->current_total;
-                $previousTotal = (int) $crime->previous_total;
-                $pctChange = $previousTotal > 0
-                    ? round((($currentTotal - $previousTotal) * 100) / $previousTotal, 1)
-                    : ($currentTotal > 0 ? 100.0 : 0.0);
+                    [
+                        $crimeWindowStart->toDateString(),
+                        $previousWindowStart->toDateString(),
+                        $crimeWindowStart->toDateString(),
+                    ]
+                )
+                ->whereDate('month', '>=', $previousWindowStart->toDateString())
+                ->whereDate('month', '<=', $currentWindowEnd->toDateString())
+                ->whereBetween('latitude', [$coords['lat'] - 0.005, $coords['lat'] + 0.005])
+                ->whereBetween('longitude', [$coords['lng'] - 0.005, $coords['lng'] + 0.005])
+                ->whereNotNull('crime_type')
+                ->groupBy('crime_type'),
+            fn (EloquentBuilder $query) => $query->get()
+                ->map(function ($crime) {
+                    $currentTotal = (int) $crime->current_total;
+                    $previousTotal = (int) $crime->previous_total;
+                    $pctChange = $previousTotal > 0
+                        ? round((($currentTotal - $previousTotal) * 100) / $previousTotal, 1)
+                        : ($currentTotal > 0 ? 100.0 : 0.0);
 
-                return [
-                    'crime_type' => (string) $crime->crime_type,
-                    'current_total' => $currentTotal,
-                    'previous_total' => $previousTotal,
-                    'pct_change' => $pctChange,
-                ];
-            })
-            ->values();
+                    return [
+                        'crime_type' => (string) $crime->crime_type,
+                        'current_total' => $currentTotal,
+                        'previous_total' => $previousTotal,
+                        'pct_change' => $pctChange,
+                    ];
+                })
+                ->values()
+        );
 
-        $crimeTrendSeriesRows = Crime::query()
-            ->selectRaw('month, COUNT(*) as total')
-            ->whereDate('month', '>=', $previousWindowStart->toDateString())
-            ->whereDate('month', '<=', $currentWindowEnd->toDateString())
-            ->whereBetween('latitude', [$coords['lat'] - 0.005, $coords['lat'] + 0.005])
-            ->whereBetween('longitude', [$coords['lng'] - 0.005, $coords['lng'] + 0.005])
-            ->groupBy('month')
-            ->orderBy('month')
-            ->pluck('total', 'month');
+        $crimeTrendSeriesRows = $this->profileQuery(
+            'crime series query',
+            Crime::query()
+                ->selectRaw('month, COUNT(*) as total')
+                ->whereDate('month', '>=', $previousWindowStart->toDateString())
+                ->whereDate('month', '<=', $currentWindowEnd->toDateString())
+                ->whereBetween('latitude', [$coords['lat'] - 0.005, $coords['lat'] + 0.005])
+                ->whereBetween('longitude', [$coords['lng'] - 0.005, $coords['lng'] + 0.005])
+                ->groupBy('month')
+                ->orderBy('month'),
+            fn (EloquentBuilder $query) => $query->pluck('total', 'month')
+        );
 
         $crimeTrendLabels = [];
         $crimeTrendValues = [];
@@ -674,11 +819,11 @@ class PropertyStreetController extends Controller
         $crimeTrendByType = $crimeTrendCounts->keyBy('crime_type');
         $crimeTotal = (int) $crimeSummaryRows->sum('total');
 
-        $nationalCrimeTrendByType = $this->nationalCrimeTrendByType(
+        $nationalCrimeTrendByType = $this->profileSection('national crime trend lookup', fn () => $this->nationalCrimeTrendByType(
             $previousWindowStart->toDateString(),
             $crimeWindowStart->toDateString(),
             $currentWindowEnd->toDateString()
-        );
+        ));
 
         $crimeData = $crimeSummaryRows
             ->map(function ($crime) use ($crimeTotal, $crimeTrendByType, $nationalCrimeTrendByType): array {
@@ -749,7 +894,7 @@ class PropertyStreetController extends Controller
             $crimeSummary .= '.';
         }
 
-        return [
+        $payload = [
             'crime_data' => $crimeData->all(),
             'crime_trend' => $crimeTrend->all(),
             'crime_summary' => $crimeSummary,
@@ -760,6 +905,10 @@ class PropertyStreetController extends Controller
             'crime_top_increase' => $topIncrease,
             'crime_top_decrease' => $topDecrease,
         ];
+
+        $this->logSectionTiming('crime payload', $startedAt);
+
+        return $payload;
     }
 
     /**
@@ -768,6 +917,7 @@ class PropertyStreetController extends Controller
      */
     private function streetCentroid(array $records): ?array
     {
+        $startedAt = microtime(true);
         $postcodes = collect($records)
             ->pluck('postcode')
             ->filter(fn ($postcode): bool => is_string($postcode) && trim($postcode) !== '')
@@ -779,12 +929,15 @@ class PropertyStreetController extends Controller
             return null;
         }
 
-        $rows = DB::table(self::ONSPD_TABLE)
-            ->select(['pcds', 'lat', 'long', 'dointr'])
-            ->whereIn('pcds', $postcodes)
-            ->orderBy('pcds')
-            ->orderByDesc('dointr')
-            ->get();
+        $rows = $this->profileQuery(
+            'centroid postcode lookup',
+            DB::table(self::ONSPD_TABLE)
+                ->select(['pcds', 'lat', 'long', 'dointr'])
+                ->whereIn('pcds', $postcodes)
+                ->orderBy('pcds')
+                ->orderByDesc('dointr'),
+            fn (QueryBuilder $query) => $query->get()
+        );
 
         $coordsByPostcode = [];
 
@@ -816,15 +969,21 @@ class PropertyStreetController extends Controller
             return null;
         }
 
-        return [
+        $coords = [
             'lat' => (float) $latAverage,
             'lng' => (float) $lngAverage,
         ];
+
+        $this->logSectionTiming('centroid calculation', $startedAt);
+
+        return $coords;
     }
 
     private function resolveStreetName(string $streetSlug, string $outcode): ?string
     {
+        $startedAt = microtime(true);
         $slugMap = $this->streetSlugMapForOutcode($outcode);
+        $this->logSectionTiming('resolveStreetName', $startedAt);
 
         return $slugMap[$streetSlug] ?? null;
     }
@@ -893,36 +1052,46 @@ class PropertyStreetController extends Controller
      */
     private function buildOutcodeComparison(string $streetName, string $outcode, array $summary): array
     {
+        $startedAt = microtime(true);
         $cacheKey = sprintf('property:street:%s:outcode-comparison:%s', self::CACHE_VERSION, Str::lower($outcode));
 
         $outcodeSummary = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($outcode): array {
-            $aggregate = DB::table('land_registry')
-                ->selectRaw('COUNT(*) as sales_count')
-                ->selectRaw('AVG("Price") as average_sale_price')
-                ->whereRaw('"PPDCategoryType" = ?', ['A'])
-                ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
-                ->first();
+            $aggregate = $this->profileQuery(
+                'outcode comparison aggregate query',
+                DB::table('land_registry')
+                    ->selectRaw('COUNT(*) as sales_count')
+                    ->selectRaw('AVG("Price") as average_sale_price')
+                    ->whereRaw('"PPDCategoryType" = ?', ['A'])
+                    ->whereRaw($this->outcodeExpression().' = ?', [$outcode]),
+                fn (QueryBuilder $query) => $query->first()
+            );
 
-            $prices = DB::table('land_registry')
-                ->whereRaw('"PPDCategoryType" = ?', ['A'])
-                ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
-                ->whereNotNull('Price')
-                ->where('Price', '>', 0)
-                ->orderBy('Price')
-                ->pluck('Price')
-                ->map(fn ($price): int => (int) $price)
-                ->all();
+            $prices = $this->profileQuery(
+                'outcode comparison prices query',
+                DB::table('land_registry')
+                    ->whereRaw('"PPDCategoryType" = ?', ['A'])
+                    ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
+                    ->whereNotNull('Price')
+                    ->where('Price', '>', 0)
+                    ->orderBy('Price'),
+                fn (QueryBuilder $query) => $query->pluck('Price')
+                    ->map(fn ($price): int => (int) $price)
+                    ->all()
+            );
 
-            $propertyType = DB::table('land_registry')
-                ->select('PropertyType')
-                ->selectRaw('COUNT(*) as total')
-                ->whereRaw('"PPDCategoryType" = ?', ['A'])
-                ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
-                ->whereNotNull('PropertyType')
-                ->groupBy('PropertyType')
-                ->orderByDesc('total')
-                ->orderBy('PropertyType')
-                ->value('PropertyType');
+            $propertyType = $this->profileQuery(
+                'outcode comparison property type query',
+                DB::table('land_registry')
+                    ->select('PropertyType')
+                    ->selectRaw('COUNT(*) as total')
+                    ->whereRaw('"PPDCategoryType" = ?', ['A'])
+                    ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
+                    ->whereNotNull('PropertyType')
+                    ->groupBy('PropertyType')
+                    ->orderByDesc('total')
+                    ->orderBy('PropertyType'),
+                fn (QueryBuilder $query) => $query->value('PropertyType')
+            );
 
             return [
                 'sales_count' => (int) ($aggregate->sales_count ?? 0),
@@ -932,7 +1101,7 @@ class PropertyStreetController extends Controller
             ];
         });
 
-        return [
+        $payload = [
             'street_label' => $this->titleCaseStreetName($streetName),
             'outcode_label' => $outcode,
             'street' => [
@@ -943,6 +1112,10 @@ class PropertyStreetController extends Controller
             ],
             'outcode' => $outcodeSummary,
         ];
+
+        $this->logSectionTiming('outcode comparison', $startedAt);
+
+        return $payload;
     }
 
     /**
@@ -950,11 +1123,16 @@ class PropertyStreetController extends Controller
      */
     private function buildNearbyStreets(string $streetName, string $outcode): array
     {
-        return collect($this->nearbyStreetCatalogForOutcode($outcode))
+        $startedAt = microtime(true);
+        $nearbyStreets = collect($this->nearbyStreetCatalogForOutcode($outcode))
             ->reject(fn (array $street): bool => $street['name'] === $this->titleCaseStreetName($streetName))
             ->take(self::NEARBY_STREETS_LIMIT)
             ->values()
             ->all();
+
+        $this->logSectionTiming('nearby streets', $startedAt);
+
+        return $nearbyStreets;
     }
 
     /**
@@ -970,21 +1148,24 @@ class PropertyStreetController extends Controller
 
         /** @var array<string, string> $slugMap */
         $slugMap = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($outcode): array {
-            return DB::table('land_registry')
-                ->selectRaw('TRIM("Street") as street')
-                ->whereRaw('"PPDCategoryType" = ?', ['A'])
-                ->whereRaw('"Street" IS NOT NULL')
-                ->whereRaw('TRIM("Street") <> ?', [''])
-                ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
-                ->distinct()
-                ->orderByRaw('TRIM("Street")')
-                ->pluck('street')
-                ->map(fn ($street): string => trim((string) $street))
-                ->reduce(function (array $carry, string $street): array {
-                    $carry[Str::slug($street)] ??= $street;
+            return $this->profileQuery(
+                'street slug map query',
+                DB::table('land_registry')
+                    ->selectRaw('TRIM("Street") as street')
+                    ->whereRaw('"PPDCategoryType" = ?', ['A'])
+                    ->whereRaw('"Street" IS NOT NULL')
+                    ->whereRaw('TRIM("Street") <> ?', [''])
+                    ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
+                    ->distinct()
+                    ->orderByRaw('TRIM("Street")'),
+                fn (QueryBuilder $query) => $query->pluck('street')
+                    ->map(fn ($street): string => trim((string) $street))
+                    ->reduce(function (array $carry, string $street): array {
+                        $carry[Str::slug($street)] ??= $street;
 
-                    return $carry;
-                }, []);
+                        return $carry;
+                    }, [])
+            );
         });
 
         return $this->streetSlugMaps[$outcode] = $slugMap;
@@ -1003,31 +1184,34 @@ class PropertyStreetController extends Controller
 
         /** @var array<int, array{name:string,slug:string,outcode:string,sales_count:int,url:string}> $catalog */
         $catalog = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($outcode): array {
-            return DB::table('land_registry')
-                ->selectRaw('TRIM("Street") as street')
-                ->selectRaw('COUNT(*) as sales_count')
-                ->whereRaw('"PPDCategoryType" = ?', ['A'])
-                ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
-                ->whereRaw('"Street" IS NOT NULL')
-                ->whereRaw('TRIM("Street") <> ?', [''])
-                ->groupByRaw('TRIM("Street")')
-                ->havingRaw('COUNT(*) >= ?', [self::MIN_RELIABLE_SALES])
-                ->orderByDesc('sales_count')
-                ->orderByRaw('TRIM("Street")')
-                ->get()
-                ->map(function (object $row) use ($outcode): array {
-                    $rawName = trim((string) $row->street);
-                    $slug = Str::slug($rawName);
+            return $this->profileQuery(
+                'nearby streets query',
+                DB::table('land_registry')
+                    ->selectRaw('TRIM("Street") as street')
+                    ->selectRaw('COUNT(*) as sales_count')
+                    ->whereRaw('"PPDCategoryType" = ?', ['A'])
+                    ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
+                    ->whereRaw('"Street" IS NOT NULL')
+                    ->whereRaw('TRIM("Street") <> ?', [''])
+                    ->groupByRaw('TRIM("Street")')
+                    ->havingRaw('COUNT(*) >= ?', [self::MIN_RELIABLE_SALES])
+                    ->orderByDesc('sales_count')
+                    ->orderByRaw('TRIM("Street")'),
+                fn (QueryBuilder $query) => $query->get()
+                    ->map(function (object $row) use ($outcode): array {
+                        $rawName = trim((string) $row->street);
+                        $slug = Str::slug($rawName);
 
-                    return [
-                        'name' => $this->titleCaseStreetName($rawName),
-                        'slug' => $slug,
-                        'outcode' => $outcode,
-                        'sales_count' => (int) $row->sales_count,
-                        'url' => self::streetPath($outcode, $slug),
-                    ];
-                })
-                ->all();
+                        return [
+                            'name' => $this->titleCaseStreetName($rawName),
+                            'slug' => $slug,
+                            'outcode' => $outcode,
+                            'sales_count' => (int) $row->sales_count,
+                            'url' => self::streetPath($outcode, $slug),
+                        ];
+                    })
+                    ->all()
+            );
         });
 
         return $this->nearbyStreetCatalogs[$outcode] = $catalog;
@@ -1090,6 +1274,204 @@ class PropertyStreetController extends Controller
     private function hasOnspdTable(): bool
     {
         return $this->hasOnspdTable ??= Schema::hasTable(self::ONSPD_TABLE);
+    }
+
+    /**
+     * @template TReturn
+     *
+     * @param  callable():TReturn  $callback
+     * @return TReturn
+     */
+    private function profileSection(string $section, callable $callback)
+    {
+        if (! $this->warmProfilingEnabled) {
+            return $callback();
+        }
+
+        $startedAt = microtime(true);
+        $result = $callback();
+        $elapsedMs = $this->elapsedMs($startedAt);
+        $this->recordSectionTiming($section, $elapsedMs);
+        $this->logWarmProfile(sprintf('section="%s" elapsed_ms=%.2f', $section, $elapsedMs));
+
+        return $result;
+    }
+
+    /**
+     * @template TBuilder of QueryBuilder|EloquentBuilder
+     * @template TResult
+     *
+     * @param  TBuilder  $query
+     * @param  callable(TBuilder):TResult  $runner
+     * @param  array<string, string>  $context
+     * @return TResult
+     */
+    private function profileQuery(string $section, $query, callable $runner, array $context = [])
+    {
+        if (! $this->warmProfilingEnabled) {
+            return $runner($query);
+        }
+
+        [$sql, $bindings] = $this->querySqlAndBindings($query);
+        $startedAt = microtime(true);
+        $result = $runner($query);
+        $elapsedMs = $this->elapsedMs($startedAt);
+        $this->recordSectionTiming($section, $elapsedMs);
+
+        $contextPrefix = collect($context)
+            ->map(fn (string $value, string $key): string => $key.'='.$value)
+            ->implode(' ');
+
+        $this->logWarmProfile(trim(sprintf(
+            '%s section="%s" elapsed_ms=%.2f',
+            $contextPrefix,
+            $section,
+            $elapsedMs
+        )));
+
+        if ($elapsedMs >= self::PROFILE_SLOW_MS) {
+            $planSummary = $this->explainQueryPlan($sql, $bindings);
+            $this->logWarmProfile(sprintf(
+                'slow-query section="%s" elapsed_ms=%.2f uses_idx_land_registry_street_page_sales=%s plan=%s sql=%s bindings=%s',
+                $section,
+                $elapsedMs,
+                $planSummary['uses_target_index'] ? 'yes' : 'no',
+                $planSummary['summary'],
+                preg_replace('/\s+/', ' ', trim($sql)) ?? $sql,
+                json_encode($bindings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            ));
+        }
+
+        return $result;
+    }
+
+    private function logSectionTiming(string $section, float $startedAt): void
+    {
+        if (! $this->warmProfilingEnabled) {
+            return;
+        }
+
+        $elapsedMs = $this->elapsedMs($startedAt);
+        $this->recordSectionTiming($section, $elapsedMs);
+        $this->logWarmProfile(sprintf('section="%s" elapsed_ms=%.2f', $section, $elapsedMs));
+    }
+
+    private function elapsedMs(float $startedAt): float
+    {
+        return (microtime(true) - $startedAt) * 1000;
+    }
+
+    private function recordSectionTiming(string $section, float $elapsedMs): void
+    {
+        if (! isset($this->warmProfilingStats[$section])) {
+            $this->warmProfilingStats[$section] = [
+                'count' => 0,
+                'total_ms' => 0.0,
+                'max_ms' => 0.0,
+            ];
+        }
+
+        $this->warmProfilingStats[$section]['count']++;
+        $this->warmProfilingStats[$section]['total_ms'] += $elapsedMs;
+        $this->warmProfilingStats[$section]['max_ms'] = max($this->warmProfilingStats[$section]['max_ms'], $elapsedMs);
+    }
+
+    private function logWarmProfile(string $message): void
+    {
+        if (! $this->warmProfilingEnabled) {
+            return;
+        }
+
+        $logger = $this->warmProfilingLogger;
+
+        if ($logger !== null) {
+            $logger('[street-profile] '.$message);
+        }
+    }
+
+    /**
+     * @param  QueryBuilder|EloquentBuilder  $query
+     * @return array{0:string,1:array<int, mixed>}
+     */
+    private function querySqlAndBindings($query): array
+    {
+        if ($query instanceof EloquentBuilder) {
+            return [$query->toBase()->toSql(), $query->getQuery()->getBindings()];
+        }
+
+        return [$query->toSql(), $query->getBindings()];
+    }
+
+    /**
+     * @param  array<int, mixed>  $bindings
+     * @return array{uses_target_index:bool,summary:string}
+     */
+    private function explainQueryPlan(string $sql, array $bindings): array
+    {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return [
+                'uses_target_index' => false,
+                'summary' => 'not-pgsql',
+            ];
+        }
+
+        $rows = DB::select('EXPLAIN (FORMAT JSON) '.$sql, $bindings);
+        $planJson = $rows[0]->{'QUERY PLAN'} ?? null;
+
+        if (! is_string($planJson)) {
+            return [
+                'uses_target_index' => false,
+                'summary' => 'no-plan',
+            ];
+        }
+
+        $decoded = json_decode($planJson, true);
+        $rootPlan = $decoded[0]['Plan'] ?? null;
+
+        if (! is_array($rootPlan)) {
+            return [
+                'uses_target_index' => false,
+                'summary' => 'invalid-plan',
+            ];
+        }
+
+        $nodes = [];
+        $usesTargetIndex = false;
+        $stack = [$rootPlan];
+
+        while ($stack !== []) {
+            $node = array_pop($stack);
+
+            if (! is_array($node)) {
+                continue;
+            }
+
+            $nodeType = (string) ($node['Node Type'] ?? 'Unknown');
+            $indexName = (string) ($node['Index Name'] ?? '');
+            $relationName = (string) ($node['Relation Name'] ?? '');
+
+            $summary = $nodeType;
+            if ($relationName !== '') {
+                $summary .= '@'.$relationName;
+            }
+            if ($indexName !== '') {
+                $summary .= '['.$indexName.']';
+            }
+            $nodes[] = $summary;
+
+            if ($indexName === 'idx_land_registry_street_page_sales') {
+                $usesTargetIndex = true;
+            }
+
+            foreach (($node['Plans'] ?? []) as $childPlan) {
+                $stack[] = $childPlan;
+            }
+        }
+
+        return [
+            'uses_target_index' => $usesTargetIndex,
+            'summary' => implode(' -> ', array_slice($nodes, 0, 6)),
+        ];
     }
 
     /**

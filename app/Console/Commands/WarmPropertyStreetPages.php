@@ -37,6 +37,7 @@ class WarmPropertyStreetPages extends Command
         }
 
         DB::connection()->disableQueryLog();
+        $controller->enableWarmProfiling(fn (string $message) => $this->line($message));
 
         $minSales = max(1, (int) $this->option('min-sales'));
         $limit = max(0, (int) $this->option('limit'));
@@ -166,6 +167,17 @@ class WarmPropertyStreetPages extends Command
         $this->line('Warmed: '.number_format($warmed));
         $this->line('Skipped: '.number_format($skipped));
         $this->line('Failed: '.number_format($failed));
+        $this->line('Slowest sections:');
+        foreach (array_slice($controller->warmProfilingSummary(), 0, 10) as $summary) {
+            $this->line(sprintf(
+                '%s total_ms=%.2f avg_ms=%.2f max_ms=%.2f count=%d',
+                $summary['section'],
+                $summary['total_ms'],
+                $summary['avg_ms'],
+                $summary['max_ms'],
+                $summary['count']
+            ));
+        }
 
         return $failed === 0 ? self::SUCCESS : self::FAILURE;
     }
