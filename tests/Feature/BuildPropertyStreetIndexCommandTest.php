@@ -68,26 +68,61 @@ class BuildPropertyStreetIndexCommandTest extends TestCase
         $this->assertSame([
             [
                 'street' => 'BAKER STREET',
+                'slug' => 'baker-street',
                 'outcode' => 'W1',
-                'label' => 'BAKER STREET, W1',
-                'path' => '/property/street/w1/baker-street',
-                'search' => 'baker street w1',
+                'place' => 'London',
+                'sales_count' => 3,
+                'url' => '/property/street/w1/baker-street',
             ],
             [
                 'street' => 'CROMWELL ROAD',
+                'slug' => 'cromwell-road',
                 'outcode' => 'SW5',
-                'label' => 'CROMWELL ROAD, SW5',
-                'path' => '/property/street/sw5/cromwell-road',
-                'search' => 'cromwell road sw5',
+                'place' => 'London',
+                'sales_count' => 3,
+                'url' => '/property/street/sw5/cromwell-road',
             ],
             [
                 'street' => 'CROMWELL ROAD',
+                'slug' => 'cromwell-road',
                 'outcode' => 'SW7',
-                'label' => 'CROMWELL ROAD, SW7',
-                'path' => '/property/street/sw7/cromwell-road',
-                'search' => 'cromwell road sw7',
+                'place' => 'London',
+                'sales_count' => 3,
+                'url' => '/property/street/sw7/cromwell-road',
             ],
         ], $payload);
+    }
+
+    public function test_command_prefers_town_then_locality_then_outcode_for_representative_place(): void
+    {
+        $this->ensureLandRegistryTable();
+
+        File::ensureDirectoryExists(public_path('data'));
+        File::delete(public_path('data/property_streets.json'));
+
+        DB::table('land_registry')->delete();
+
+        DB::table('land_registry')->insert([
+            $this->saleRow('tx-101', 'HIGH STREET', 'M4 1AA', 100000, '2024-01-10 00:00:00', 'A', 'Manchester', null),
+            $this->saleRow('tx-102', 'HIGH STREET', 'M4 1AA', 110000, '2024-02-10 00:00:00', 'A', 'Manchester', null),
+            $this->saleRow('tx-103', 'HIGH STREET', 'M4 1AB', 120000, '2024-03-10 00:00:00', 'A', 'Manchester', null),
+            $this->saleRow('tx-104', 'HIGH STREET', 'AL2 1AA', 130000, '2024-04-10 00:00:00', 'A', null, 'Park Street'),
+            $this->saleRow('tx-105', 'HIGH STREET', 'AL2 1AB', 140000, '2024-05-10 00:00:00', 'A', null, 'Park Street'),
+            $this->saleRow('tx-106', 'HIGH STREET', 'AL2 1AC', 150000, '2024-06-10 00:00:00', 'A', null, 'Park Street'),
+            $this->saleRow('tx-107', 'HIGH STREET', 'N8 1AA', 160000, '2024-07-10 00:00:00', 'A', null, null),
+            $this->saleRow('tx-108', 'HIGH STREET', 'N8 1AB', 170000, '2024-08-10 00:00:00', 'A', null, null),
+            $this->saleRow('tx-109', 'HIGH STREET', 'N8 1AC', 180000, '2024-09-10 00:00:00', 'A', null, null),
+        ]);
+
+        $this->artisan('property:build-street-index')->assertExitCode(0);
+
+        $payload = collect(json_decode((string) file_get_contents(public_path('data/property_streets.json')), true, 512, JSON_THROW_ON_ERROR))
+            ->keyBy('outcode');
+
+        $this->assertSame('Manchester', $payload['M4']['place']);
+        $this->assertSame(3, $payload['M4']['sales_count']);
+        $this->assertSame('Park Street', $payload['AL2']['place']);
+        $this->assertSame('N8', $payload['N8']['place']);
     }
 
     private function ensureLandRegistryTable(): void
@@ -119,8 +154,16 @@ class BuildPropertyStreetIndexCommandTest extends TestCase
     /**
      * @return array<string, int|string|null>
      */
-    private function saleRow(string $transactionId, string $street, string $postcode, int $price, string $date, string $category = 'A'): array
-    {
+    private function saleRow(
+        string $transactionId,
+        string $street,
+        string $postcode,
+        int $price,
+        string $date,
+        string $category = 'A',
+        ?string $townCity = 'London',
+        ?string $locality = null
+    ): array {
         return [
             'TransactionID' => $transactionId,
             'Price' => $price,
@@ -132,8 +175,8 @@ class BuildPropertyStreetIndexCommandTest extends TestCase
             'PAON' => '1',
             'SAON' => null,
             'Street' => $street,
-            'Locality' => null,
-            'TownCity' => 'London',
+            'Locality' => $locality,
+            'TownCity' => $townCity,
             'District' => 'Kensington',
             'County' => 'Greater London',
             'PPDCategoryType' => $category,

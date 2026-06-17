@@ -47,7 +47,7 @@
                     </div>
                 </div>
                 <p class="mt-2 text-xs text-zinc-500">
-                    Autocomplete matches unique street and postcode district combinations from Land Registry sales and only returns results where at least 3 sales exist.
+                    Autocomplete matches unique street and postcode district combinations from Land Registry sales and only returns results where at least 3 sales exist. For very common street names, you may need to add the place name or the first part of the postcode to narrow the results.
                 </p>
             </div>
 
@@ -549,56 +549,31 @@
                 streetSuggestionsBox.innerHTML = '';
             };
 
-            const scoreStreetSuggestion = function (item, normalizedQuery) {
-                const label = item && item.label ? String(item.label).toLowerCase() : '';
-                const search = item && item.search ? String(item.search).toLowerCase() : '';
-
-                if (!search.includes(normalizedQuery)) {
-                    return null;
+            const streetMatchRank = function (street, normalizedQuery) {
+                if (street === normalizedQuery) {
+                    return 0;
                 }
 
-                const queryTerms = normalizedQuery.split(/\s+/).filter(Boolean);
-                let score = 0;
-
-                if (label === normalizedQuery || search === normalizedQuery) {
-                    score += 1000;
+                if (street.startsWith(normalizedQuery)) {
+                    return 1;
                 }
 
-                if (label.startsWith(normalizedQuery)) {
-                    score += 800;
+                if (street.includes(normalizedQuery)) {
+                    return 2;
                 }
 
-                if (search.startsWith(normalizedQuery)) {
-                    score += 700;
-                }
+                return 3;
+            };
 
-                if (label.includes(' ' + normalizedQuery)) {
-                    score += 450;
-                }
+            const formatStreetSuggestionLabel = function (item) {
+                const place = item && item.place ? String(item.place).trim() : '';
+                const outcode = item && item.outcode ? String(item.outcode).trim() : '';
+                const salesCount = Number(item && item.sales_count ? item.sales_count : 0);
+                const locationLabel = place !== '' && place.toLowerCase() !== outcode.toLowerCase()
+                    ? place + ', ' + outcode
+                    : outcode;
 
-                if (search.includes(' ' + normalizedQuery)) {
-                    score += 350;
-                }
-
-                score += queryTerms.reduce(function (carry, term) {
-                    if (label.startsWith(term)) {
-                        return carry + 45;
-                    }
-
-                    if (label.includes(' ' + term)) {
-                        return carry + 30;
-                    }
-
-                    if (search.includes(term)) {
-                        return carry + 15;
-                    }
-
-                    return carry;
-                }, 0);
-
-                score -= label.length * 0.01;
-
-                return score;
+                return String(item.street || '') + ', ' + locationLabel + ' \u2014 ' + salesCount.toLocaleString('en-GB') + ' sales';
             };
 
             const renderStreetSuggestions = function (query) {
@@ -613,21 +588,36 @@
                 }
 
                 const matches = streets
-                    .map(function (item) {
-                        return {
-                            item: item,
-                            score: scoreStreetSuggestion(item, normalizedQuery),
-                        };
-                    })
-                    .filter(function (match) {
-                        return match.score !== null;
+                    .filter(function (item) {
+                        const street = item && item.street ? String(item.street).toLowerCase() : '';
+                        const place = item && item.place ? String(item.place).toLowerCase() : '';
+                        const outcode = item && item.outcode ? String(item.outcode).toLowerCase() : '';
+                        const haystack = [street, place, outcode].filter(Boolean).join(' ');
+
+                        return haystack.includes(normalizedQuery);
                     })
                     .sort(function (left, right) {
-                        if (right.score !== left.score) {
-                            return right.score - left.score;
+                        const leftStreet = String(left.street || '').toLowerCase();
+                        const rightStreet = String(right.street || '').toLowerCase();
+                        const rankDiff = streetMatchRank(leftStreet, normalizedQuery) - streetMatchRank(rightStreet, normalizedQuery);
+
+                        if (rankDiff !== 0) {
+                            return rankDiff;
                         }
 
-                        return String(left.item.label || '').localeCompare(String(right.item.label || ''));
+                        const salesDiff = Number(right.sales_count || 0) - Number(left.sales_count || 0);
+
+                        if (salesDiff !== 0) {
+                            return salesDiff;
+                        }
+
+                        const placeDiff = String(left.place || '').localeCompare(String(right.place || ''));
+
+                        if (placeDiff !== 0) {
+                            return placeDiff;
+                        }
+
+                        return String(left.outcode || '').localeCompare(String(right.outcode || ''));
                     })
                     .slice(0, 12);
 
@@ -637,15 +627,14 @@
                     return;
                 }
 
-                matches.forEach(function (match) {
-                    const item = match.item;
+                matches.forEach(function (item) {
                     const option = document.createElement('button');
                     option.type = 'button';
                     option.className = 'block w-full px-4 py-2 text-left text-zinc-700 hover:bg-zinc-100';
-                    option.textContent = item.label || '';
+                    option.textContent = formatStreetSuggestionLabel(item);
                     option.addEventListener('click', function () {
-                        if (item.path) {
-                            window.location.href = item.path;
+                        if (item.url) {
+                            window.location.href = item.url;
                         }
                     });
                     streetSuggestionsBox.appendChild(option);

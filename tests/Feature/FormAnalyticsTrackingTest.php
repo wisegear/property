@@ -49,9 +49,11 @@ class FormAnalyticsTrackingTest extends TestCase
         $response->assertSee('id="property-street-search"', false);
         $response->assertSee('id="property-street-suggestions"', false);
         $response->assertSee('property_streets.json', false);
-        $response->assertSee('scoreStreetSuggestion', false);
-        $response->assertSee('label.startsWith(normalizedQuery)', false);
+        $response->assertSee('streetMatchRank', false);
+        $response->assertSee('formatStreetSuggestionLabel', false);
+        $response->assertSee('Number(right.sales_count || 0) - Number(left.sales_count || 0)', false);
         $response->assertSee('.slice(0, 12)', false);
+        $response->assertSee('window.location.href = item.url', false);
         $response->assertSee('Autocomplete matches unique street and postcode district combinations from Land Registry sales and only returns results where at least 3 sales exist.');
         $response->assertSee('xl:grid-cols-3', false);
     }
