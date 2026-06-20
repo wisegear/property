@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
 
 class AnalyticsService
 {
-    public function recordVisit(Request $request, string $anonVisitId, bool $isBot): void
+    public function recordVisit(Request $request, string $anonVisitId, array $botMatch): void
     {
         if (! config('analytics.enabled')) {
             return;
@@ -27,6 +27,8 @@ class AnalyticsService
         $userAgent = $this->truncate($request->userAgent(), 2000);
         $landingPage = $this->currentUrl($request);
         $referrer = $this->truncate($request->headers->get('referer'), 2000);
+        $isBot = (bool) ($botMatch['is_bot'] ?? false);
+        $botName = $this->truncate($botMatch['bot_name'] ?? null, 100);
 
         $visit = AnalyticsVisit::query()->firstOrNew([
             'anon_visit_id' => $anonVisitId,
@@ -42,6 +44,7 @@ class AnalyticsService
                 'referrer' => $referrer,
                 'landing_page' => $landingPage,
                 'is_bot' => $isBot,
+                'bot_name' => $botName,
                 'first_seen_at' => $now,
                 'last_seen_at' => $now,
             ])->save();
@@ -58,6 +61,7 @@ class AnalyticsService
             'referrer' => $visit->referrer ?: $referrer,
             'landing_page' => $visit->landing_page ?: $landingPage,
             'is_bot' => $visit->is_bot || $isBot,
+            'bot_name' => $visit->bot_name ?: $botName,
             'last_seen_at' => $now,
         ])->save();
     }
@@ -112,6 +116,8 @@ class AnalyticsService
                         'page_views' => AnalyticsPageView::query()->where('viewed_at', '>=', $since)->count(),
                         'events' => AnalyticsEvent::query()->where('created_at', '>=', $since)->count(),
                         'bot_visits' => AnalyticsVisit::query()->where('last_seen_at', '>=', $since)->where('is_bot', true)->count(),
+                        'human_percentage' => $this->calculateTrafficPercentage($period, false),
+                        'bot_percentage' => $this->calculateTrafficPercentage($period, true),
                     ]];
                 })->all(),
                 'page_views_per_day' => $this->groupCountsByDay('analytics_page_views', 'viewed_at', $days),
@@ -168,6 +174,30 @@ class AnalyticsService
                     ->where('last_seen_at', '>=', now()->subDays($days))
                     ->where('is_bot', true)
                     ->count(),
+                'human_traffic_count' => AnalyticsVisit::query()
+                    ->where('last_seen_at', '>=', now()->subDays($days))
+                    ->where('is_bot', false)
+                    ->count(),
+                'top_bot_names' => AnalyticsVisit::query()
+                    ->select('bot_name')
+                    ->selectRaw('COUNT(*) as total')
+                    ->where('last_seen_at', '>=', now()->subDays($days))
+                    ->where('is_bot', true)
+                    ->whereNotNull('bot_name')
+                    ->groupBy('bot_name')
+                    ->orderByDesc('total')
+                    ->limit(12)
+                    ->get(),
+                'top_bot_ips' => AnalyticsVisit::query()
+                    ->select('ip_address')
+                    ->selectRaw('COUNT(*) as total_visits')
+                    ->where('last_seen_at', '>=', now()->subDays($days))
+                    ->where('is_bot', true)
+                    ->whereNotNull('ip_address')
+                    ->groupBy('ip_address')
+                    ->orderByDesc('total_visits')
+                    ->limit(12)
+                    ->get(),
                 'recent_visits' => AnalyticsVisit::query()
                     ->orderByDesc('last_seen_at')
                     ->limit(20)
@@ -179,6 +209,7 @@ class AnalyticsService
                         'browser',
                         'landing_page',
                         'is_bot',
+                        'bot_name',
                         'first_seen_at',
                         'last_seen_at',
                     ]),
@@ -194,6 +225,7 @@ class AnalyticsService
                     ->orderByDesc('page_view_count')
                     ->limit(15)
                     ->get(),
+                'traffic_split' => $this->trafficSplit(now()->subDays($days)),
             ];
         });
     }
@@ -263,6 +295,16 @@ class AnalyticsService
                     ->orderByDesc('total')
                     ->limit(10)
                     ->get(),
+                'top_countries' => AnalyticsVisit::query()
+                    ->select('country_code')
+                    ->selectRaw('COUNT(*) as total')
+                    ->where('is_bot', false)
+                    ->where('last_seen_at', '>=', $since)
+                    ->whereNotNull('country_code')
+                    ->groupBy('country_code')
+                    ->orderByDesc('total')
+                    ->limit(10)
+                    ->get(),
                 'event_totals' => [
                     'postcode_property_searches' => $this->countEvents((clone $baseEvents), 'search', ['property_search', 'property_area_search']),
                     'street_searches' => $this->countEvents((clone $baseEvents), 'search', ['street_search']),
@@ -278,17 +320,20 @@ class AnalyticsService
 
     public function isBot(?string $userAgent): bool
     {
-        if (! is_string($userAgent) || trim($userAgent) === '') {
-            return false;
-        }
+        return $this->classifyBot($userAgent, null)['is_bot'];
+    }
 
-        foreach (config('analytics.bot_user_agent_patterns', []) as $pattern) {
-            if (stripos($userAgent, (string) $pattern) !== false) {
-                return true;
-            }
-        }
+    /**
+     * @return array{is_bot: bool, bot_name: string|null}
+     */
+    public function classifyBot(?string $userAgent, ?string $ipAddress): array
+    {
+        $botName = $this->matchBotByUserAgent($userAgent) ?? $this->matchBotByIpAddress($ipAddress);
 
-        return false;
+        return [
+            'is_bot' => $botName !== null,
+            'bot_name' => $botName,
+        ];
     }
 
     public function shouldTrackRequest(Request $request): bool
@@ -376,6 +421,38 @@ class AnalyticsService
             ->count();
     }
 
+    private function calculateTrafficPercentage(int $days, bool $isBot): float
+    {
+        $split = $this->trafficSplit(now()->subDays($days));
+
+        return $isBot ? $split['bot_percentage'] : $split['human_percentage'];
+    }
+
+    /**
+     * @return array{total: int, human: int, bots: int, human_percentage: float, bot_percentage: float}
+     */
+    private function trafficSplit(\DateTimeInterface $since): array
+    {
+        $total = AnalyticsVisit::query()
+            ->where('last_seen_at', '>=', $since)
+            ->count();
+
+        $bots = AnalyticsVisit::query()
+            ->where('last_seen_at', '>=', $since)
+            ->where('is_bot', true)
+            ->count();
+
+        $human = max($total - $bots, 0);
+
+        return [
+            'total' => $total,
+            'human' => $human,
+            'bots' => $bots,
+            'human_percentage' => $total > 0 ? round(($human / $total) * 100, 1) : 0.0,
+            'bot_percentage' => $total > 0 ? round(($bots / $total) * 100, 1) : 0.0,
+        ];
+    }
+
     private function groupCountsByDay(string $table, string $column, int $days): Collection
     {
         return DB::table($table)
@@ -441,6 +518,79 @@ class AnalyticsService
             preg_match('/msie|trident/i', $userAgent) === 1 => 'Internet Explorer',
             default => 'Other',
         };
+    }
+
+    private function matchBotByUserAgent(?string $userAgent): ?string
+    {
+        if (! is_string($userAgent) || trim($userAgent) === '') {
+            return null;
+        }
+
+        foreach (config('analytics.bot_user_agents', []) as $detector) {
+            $pattern = (string) data_get($detector, 'pattern', '');
+
+            if ($pattern !== '' && stripos($userAgent, $pattern) !== false) {
+                return $this->truncate((string) data_get($detector, 'name'), 100);
+            }
+        }
+
+        return null;
+    }
+
+    private function matchBotByIpAddress(?string $ipAddress): ?string
+    {
+        if (! is_string($ipAddress) || trim($ipAddress) === '') {
+            return null;
+        }
+
+        foreach (config('analytics.bot_ip_ranges', []) as $range) {
+            $cidr = (string) data_get($range, 'cidr', '');
+
+            if ($cidr !== '' && $this->ipMatchesCidr($ipAddress, $cidr)) {
+                return $this->truncate((string) data_get($range, 'name'), 100);
+            }
+        }
+
+        return null;
+    }
+
+    private function ipMatchesCidr(string $ipAddress, string $cidr): bool
+    {
+        $parts = explode('/', $cidr, 2);
+
+        if (count($parts) !== 2) {
+            return false;
+        }
+
+        [$network, $prefixLength] = $parts;
+        $networkBinary = @inet_pton($network);
+        $ipBinary = @inet_pton($ipAddress);
+
+        if ($networkBinary === false || $ipBinary === false || strlen($networkBinary) !== strlen($ipBinary)) {
+            return false;
+        }
+
+        $prefix = (int) $prefixLength;
+        $totalBits = strlen($networkBinary) * 8;
+
+        if ($prefix < 0 || $prefix > $totalBits) {
+            return false;
+        }
+
+        $fullBytes = intdiv($prefix, 8);
+        $remainingBits = $prefix % 8;
+
+        if ($fullBytes > 0 && substr($ipBinary, 0, $fullBytes) !== substr($networkBinary, 0, $fullBytes)) {
+            return false;
+        }
+
+        if ($remainingBits === 0) {
+            return true;
+        }
+
+        $mask = (0xFF << (8 - $remainingBits)) & 0xFF;
+
+        return (ord($ipBinary[$fullBytes]) & $mask) === (ord($networkBinary[$fullBytes]) & $mask);
     }
 
     private function sanitizePayload(array $payload): ?array

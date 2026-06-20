@@ -26,6 +26,7 @@ class AdminAnalyticsDashboardTest extends TestCase
                 'browser' => 'Chrome',
                 'landing_page' => 'https://prop.test/property/search',
                 'is_bot' => false,
+                'bot_name' => null,
                 'first_seen_at' => now()->subDays(2),
                 'last_seen_at' => now()->subDay(),
                 'created_at' => now(),
@@ -40,6 +41,7 @@ class AdminAnalyticsDashboardTest extends TestCase
                 'browser' => 'Chrome',
                 'landing_page' => 'https://prop.test/epc/search',
                 'is_bot' => false,
+                'bot_name' => null,
                 'first_seen_at' => now()->subDays(6),
                 'last_seen_at' => now()->subDays(2),
                 'created_at' => now(),
@@ -54,6 +56,7 @@ class AdminAnalyticsDashboardTest extends TestCase
                 'browser' => 'Other',
                 'landing_page' => 'https://prop.test/property/search',
                 'is_bot' => true,
+                'bot_name' => 'Googlebot',
                 'first_seen_at' => now()->subDay(),
                 'last_seen_at' => now()->subDay(),
                 'created_at' => now(),
@@ -113,9 +116,13 @@ class AdminAnalyticsDashboardTest extends TestCase
         $response->assertSee('Internal Analytics');
         $response->assertSee('198.51.100.10');
         $response->assertSee('property_search');
+        $response->assertSee('Top Bot Names');
+        $response->assertSee('Googlebot');
         $response->assertViewHas('admin_analytics', function (array $stats): bool {
             return $stats['periods'][7]['visitors'] === 3
                 && $stats['periods'][7]['bot_visits'] === 1
+                && $stats['periods'][7]['human_visitors'] === 2
+                && $stats['top_bot_names']->pluck('bot_name')->all() === ['Googlebot']
                 && count($stats['top_ip_addresses']) >= 1;
         });
     }

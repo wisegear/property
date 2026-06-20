@@ -26,6 +26,7 @@ class SponsorAnalyticsDashboardTest extends TestCase
                 'browser' => 'Chrome',
                 'landing_page' => 'https://prop.test/property/search',
                 'is_bot' => false,
+                'bot_name' => null,
                 'first_seen_at' => now()->subDays(5),
                 'last_seen_at' => now()->subDays(1),
                 'created_at' => now(),
@@ -40,6 +41,7 @@ class SponsorAnalyticsDashboardTest extends TestCase
                 'browser' => 'Safari',
                 'landing_page' => 'https://prop.test/epc/search',
                 'is_bot' => false,
+                'bot_name' => null,
                 'first_seen_at' => now()->subDays(3),
                 'last_seen_at' => now()->subDays(2),
                 'created_at' => now(),
@@ -54,6 +56,7 @@ class SponsorAnalyticsDashboardTest extends TestCase
                 'browser' => 'Other',
                 'landing_page' => 'https://prop.test/property/search',
                 'is_bot' => true,
+                'bot_name' => 'Googlebot',
                 'first_seen_at' => now()->subDays(2),
                 'last_seen_at' => now()->subDay(),
                 'created_at' => now(),
@@ -129,12 +132,18 @@ class SponsorAnalyticsDashboardTest extends TestCase
         $response->assertSee('Audience Summary');
         $response->assertSee('2');
         $response->assertSee('50.0%');
+        $response->assertSee('Top Countries');
+        $response->assertSee('GB');
         $response->assertSee('Mortgage calculator uses');
         $response->assertDontSee('198.51.100.10');
         $response->assertDontSee('203.0.113.20');
         $response->assertViewHas('stats', function (array $stats): bool {
+            $topCountries = $stats['top_countries']->pluck('country_code')->all();
+
             return $stats['windows'][30]['unique_visitors'] === 2
                 && $stats['windows'][30]['page_views'] === 2
+                && in_array('GB', $topCountries, true)
+                && in_array('US', $topCountries, true)
                 && $stats['event_totals']['postcode_property_searches'] === 1
                 && $stats['event_totals']['mortgage_calculator_uses'] === 1;
         });

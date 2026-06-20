@@ -29,10 +29,14 @@ class TrackAnalytics
 
         $request->attributes->set('analytics_anon_visit_id', $anonVisitId);
 
-        $isBot = $this->analyticsService->isBot($request->userAgent());
-        $this->analyticsService->recordVisit($request, $anonVisitId, $isBot);
+        $botMatch = $this->analyticsService->classifyBot(
+            $request->userAgent(),
+            $request->ip()
+        );
 
-        if ($request->isMethod('get') && ! $isBot) {
+        $this->analyticsService->recordVisit($request, $anonVisitId, $botMatch);
+
+        if ($request->isMethod('get') && ! $botMatch['is_bot']) {
             $this->analyticsService->recordPageView($request, $anonVisitId);
         }
 

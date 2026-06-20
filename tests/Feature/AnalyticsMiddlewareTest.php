@@ -40,6 +40,24 @@ class AnalyticsMiddlewareTest extends TestCase
 
         $this->assertNotNull($visit);
         $this->assertTrue($visit->is_bot);
+        $this->assertSame('Googlebot', $visit->bot_name);
+        $this->assertSame(0, AnalyticsPageView::query()->count());
+    }
+
+    public function test_bot_ip_ranges_are_marked_even_when_user_agent_looks_human(): void
+    {
+        $response = $this->withServerVariables([
+            'REMOTE_ADDR' => '66.249.64.10',
+        ])->withHeader('User-Agent', 'Mozilla/5.0')
+            ->get('/property/search');
+
+        $response->assertOk();
+
+        $visit = AnalyticsVisit::query()->first();
+
+        $this->assertNotNull($visit);
+        $this->assertTrue($visit->is_bot);
+        $this->assertSame('Google', $visit->bot_name);
         $this->assertSame(0, AnalyticsPageView::query()->count());
     }
 

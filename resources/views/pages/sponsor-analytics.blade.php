@@ -54,6 +54,20 @@
         </div>
 
         <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-zinc-900">Top Countries</h2>
+            <div class="mt-4 space-y-2 text-sm text-zinc-700">
+                @forelse($stats['top_countries'] as $row)
+                    <div class="flex items-center justify-between rounded-md bg-zinc-50 px-3 py-2">
+                        <span>{{ $row->country_code }}</span>
+                        <span class="font-medium">{{ number_format((int) $row->total) }}</span>
+                    </div>
+                @empty
+                    <p class="text-zinc-500">No country data yet.</p>
+                @endforelse
+            </div>
+        </div>
+
+        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-semibold text-zinc-900">Top Landing Pages</h2>
             <div class="mt-4 space-y-2 text-sm text-zinc-700">
                 @forelse($stats['top_landing_pages'] as $row)

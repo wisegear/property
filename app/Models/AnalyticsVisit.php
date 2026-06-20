@@ -16,6 +16,7 @@ class AnalyticsVisit extends Model
         'referrer',
         'landing_page',
         'is_bot',
+        'bot_name',
         'first_seen_at',
         'last_seen_at',
     ];

@@ -28,6 +28,14 @@
                             <p class="text-zinc-500">Bots</p>
                             <p class="mt-1 text-lg font-semibold text-zinc-900">{{ number_format($admin_analytics['periods'][$period]['bot_visits']) }}</p>
                         </div>
+                        <div>
+                            <p class="text-zinc-500">Humans</p>
+                            <p class="mt-1 text-lg font-semibold text-zinc-900">{{ number_format($admin_analytics['periods'][$period]['human_visitors']) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-zinc-500">Human vs bot</p>
+                            <p class="mt-1 text-sm font-semibold text-zinc-900">{{ number_format($admin_analytics['periods'][$period]['human_percentage'], 1) }}% / {{ number_format($admin_analytics['periods'][$period]['bot_percentage'], 1) }}%</p>
+                        </div>
                     </div>
                 </div>
             @endforeach
@@ -143,6 +151,28 @@
 
             <div class="rounded-lg border border-zinc-200 p-4">
                 <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-zinc-900">Bot Classification</h3>
+                    <span class="rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">{{ number_format((float) $admin_analytics['traffic_split']['bot_percentage'], 1) }}% bots</span>
+                </div>
+                <div class="mt-4 grid gap-4 md:grid-cols-2">
+                    <div class="rounded-md bg-zinc-50 px-3 py-3">
+                        <p class="text-xs uppercase tracking-[0.18em] text-zinc-500">Human Visits</p>
+                        <p class="mt-2 text-2xl font-semibold text-zinc-900">{{ number_format((int) $admin_analytics['human_traffic_count']) }}</p>
+                    </div>
+                    <div class="rounded-md bg-zinc-50 px-3 py-3">
+                        <p class="text-xs uppercase tracking-[0.18em] text-zinc-500">Bot Visits</p>
+                        <p class="mt-2 text-2xl font-semibold text-zinc-900">{{ number_format((int) $admin_analytics['bot_traffic_count']) }}</p>
+                    </div>
+                </div>
+                <p class="mt-3 text-xs text-zinc-500">
+                    {{ number_format((int) $admin_analytics['traffic_split']['human']) }} humans / {{ number_format((int) $admin_analytics['traffic_split']['bots']) }} bots in the selected window.
+                </p>
+            </div>
+        </div>
+
+        <div class="grid gap-6 xl:grid-cols-2">
+            <div class="rounded-lg border border-zinc-200 p-4">
+                <div class="flex items-center justify-between">
                     <h3 class="text-sm font-semibold text-zinc-900">Bot Traffic</h3>
                     <span class="rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">{{ number_format((int) $admin_analytics['bot_traffic_count']) }} bot visits</span>
                 </div>
@@ -162,6 +192,36 @@
                     @endforelse
                 </div>
             </div>
+
+            <div class="rounded-lg border border-zinc-200 p-4">
+                <h3 class="text-sm font-semibold text-zinc-900">Top Bot Names</h3>
+                <div class="mt-4 space-y-2 text-sm text-zinc-700">
+                    @forelse($admin_analytics['top_bot_names'] as $row)
+                        <div class="flex items-center justify-between rounded-md bg-zinc-50 px-3 py-2">
+                            <span>{{ $row->bot_name }}</span>
+                            <span class="font-medium">{{ number_format((int) $row->total) }}</span>
+                        </div>
+                    @empty
+                        <p class="text-zinc-500">No bot names recorded yet.</p>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
+        <div class="grid gap-6 xl:grid-cols-2">
+            <div class="rounded-lg border border-zinc-200 p-4">
+                <h3 class="text-sm font-semibold text-zinc-900">Top Bot IPs</h3>
+                <div class="mt-4 space-y-2 text-sm text-zinc-700">
+                    @forelse($admin_analytics['top_bot_ips'] as $row)
+                        <div class="flex items-center justify-between rounded-md bg-zinc-50 px-3 py-2">
+                            <span>{{ $row->ip_address }}</span>
+                            <span class="font-medium">{{ number_format((int) $row->total_visits) }}</span>
+                        </div>
+                    @empty
+                        <p class="text-zinc-500">No bot IP data yet.</p>
+                    @endforelse
+                </div>
+            </div>
         </div>
 
         <div class="rounded-lg border border-zinc-200 p-4">
@@ -176,6 +236,7 @@
                             <th class="py-2 pr-4 font-medium">Browser</th>
                             <th class="py-2 pr-4 font-medium">Landing page</th>
                             <th class="py-2 pr-4 font-medium">Bot</th>
+                            <th class="py-2 pr-4 font-medium">Bot name</th>
                             <th class="py-2 pr-4 font-medium">Last seen</th>
                         </tr>
                     </thead>
@@ -188,11 +249,12 @@
                                 <td class="py-3 pr-4">{{ $visit->browser ?? 'n/a' }}</td>
                                 <td class="py-3 pr-4">{{ $visit->landing_page ?? 'n/a' }}</td>
                                 <td class="py-3 pr-4">{{ $visit->is_bot ? 'Yes' : 'No' }}</td>
+                                <td class="py-3 pr-4">{{ $visit->bot_name ?? 'n/a' }}</td>
                                 <td class="py-3 pr-4">{{ optional($visit->last_seen_at)->format('d M Y H:i') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="py-4 text-zinc-500">No recent visits recorded yet.</td>
+                                <td colspan="8" class="py-4 text-zinc-500">No recent visits recorded yet.</td>
                             </tr>
                         @endforelse
                     </tbody>
