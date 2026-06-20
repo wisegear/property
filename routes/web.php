@@ -163,7 +163,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile/{name_slug}', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/comments', [CommentsController::class, 'store'])->name('comments.store');
     Route::resource('support', SupportController::class);
-    Route::get('/sponsor/analytics', [SponsorAnalyticsController::class, 'index'])->name('sponsor.analytics');
+    Route::get('/sponsor/analytics', [SponsorAnalyticsController::class, 'index'])
+        ->middleware('can:Admin')
+        ->name('sponsor.analytics');
 
     // Protect the Dashboard routes behind both Auth and Can
     Route::prefix('admin')

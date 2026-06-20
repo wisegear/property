@@ -14,7 +14,7 @@ class SponsorAnalyticsDashboardTest extends TestCase
 
     public function test_sponsor_dashboard_shows_aggregated_bot_filtered_stats_without_ips(): void
     {
-        $user = User::factory()->create();
+        $user = $this->createAdminUser();
 
         DB::table('analytics_visits')->insert([
             [
@@ -147,5 +147,34 @@ class SponsorAnalyticsDashboardTest extends TestCase
                 && $stats['event_totals']['postcode_property_searches'] === 1
                 && $stats['event_totals']['mortgage_calculator_uses'] === 1;
         });
+    }
+
+    public function test_sponsor_dashboard_is_only_accessible_to_admins(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('sponsor.analytics', absolute: false));
+
+        $response->assertForbidden();
+    }
+
+    private function createAdminUser(): User
+    {
+        $admin = User::factory()->create();
+
+        $roleId = DB::table('user_roles')->insertGetId([
+            'name' => 'Admin',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('user_roles_pivot')->insert([
+            'role_id' => $roleId,
+            'user_id' => $admin->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return $admin;
     }
 }
