@@ -105,7 +105,7 @@ class AnalyticsService
         $days = max(7, $days);
         $ttl = max(60, (int) config('analytics.admin_dashboard_cache_ttl', 900));
 
-        return Cache::remember("analytics:admin:stats:{$days}", now()->addSeconds($ttl), function () use ($days): array {
+        return Cache::remember("analytics:admin:stats:v3:{$days}", now()->addSeconds($ttl), function () use ($days): array {
             return [
                 'periods' => collect([7, 30, 90])->mapWithKeys(function (int $period): array {
                     $since = now()->subDays($period);
@@ -235,7 +235,7 @@ class AnalyticsService
         $days = max(30, $days);
         $ttl = max(300, (int) config('analytics.sponsor_dashboard_cache_ttl', 3600));
 
-        return Cache::remember("analytics:sponsor:stats:{$days}", now()->addSeconds($ttl), function () use ($days): array {
+        return Cache::remember("analytics:sponsor:stats:v3:{$days}", now()->addSeconds($ttl), function () use ($days): array {
             $windows = collect([30, 90])->mapWithKeys(function (int $period): array {
                 $since = now()->subDays($period);
                 $visits = AnalyticsVisit::query()
