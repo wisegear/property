@@ -169,6 +169,8 @@
                                 <div>
                                     <a href="/profile/{{ Auth::user()->name_slug }}" 
                                        class="block px-4 py-2 hover:bg-zinc-100">Profile</a>
+                                    <a href="{{ route('sponsor.analytics') }}" 
+                                       class="block px-4 py-2 hover:bg-zinc-100">Sponsor Analytics</a>
                                     <a href="/support" 
                                        class="block px-4 py-2 hover:bg-zinc-100">Support</a>
                                     <form method="POST" action="{{ route('logout') }}">
@@ -826,6 +828,10 @@
                     <a href="/profile/{{ Auth::user()->name_slug }}" 
                        class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
                         Profile
+                    </a>
+                    <a href="{{ route('sponsor.analytics') }}" 
+                       class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                        Sponsor Analytics
                     </a>
                     <a href="/support" 
                        class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">

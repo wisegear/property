@@ -42,6 +42,7 @@ use App\Http\Controllers\RentalController;
 
 use App\Http\Controllers\RepossessionsController;
 use App\Http\Controllers\ScottishPricesController;
+use App\Http\Controllers\SponsorAnalyticsController;
 use App\Http\Controllers\StampDutyController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\SwapRateController;
@@ -162,6 +163,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile/{name_slug}', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/comments', [CommentsController::class, 'store'])->name('comments.store');
     Route::resource('support', SupportController::class);
+    Route::get('/sponsor/analytics', [SponsorAnalyticsController::class, 'index'])->name('sponsor.analytics');
 
     // Protect the Dashboard routes behind both Auth and Can
     Route::prefix('admin')

@@ -74,6 +74,16 @@
         </ul>
     </section>
 
+    <section class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 class="text-xl font-semibold text-gray-900">Privacy and analytics</h2>
+        <p class="mt-3 text-sm leading-6 text-gray-800">
+            This site may collect IP addresses for analytics, abuse prevention, spam prevention and general site security. Those logs are used internally for admin and security work, including bot filtering, suspicious traffic review and keeping the service usable.
+        </p>
+        <p class="mt-3 text-sm leading-6 text-gray-800">
+            Any sponsor or partner reporting uses aggregated statistics only. That reporting excludes raw IP addresses, excludes individual visitor journeys and is designed to show clean, bot-filtered summary activity rather than person-level browsing history.
+        </p>
+    </section>
+
     {{-- Caveats --}}
     <section class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <h2 class="text-xl font-semibold text-gray-900">Caveats &amp; common sense</h2>

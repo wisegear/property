@@ -58,6 +58,8 @@
         @endif
     </section>
 
+    @include('admin.partials.analytics-dashboard')
+
     {{-- Stats --}}
     <section class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         {{-- Users Card --}}

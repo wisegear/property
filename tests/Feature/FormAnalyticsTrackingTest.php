@@ -19,8 +19,10 @@ class FormAnalyticsTrackingTest extends TestCase
 
         $response->assertOk();
         $event = DB::table('form_events')->where('form_key', 'property_search')->first();
+        $analyticsEvent = DB::table('analytics_events')->where('event_key', 'property_search')->first();
 
         $this->assertNotNull($event);
+        $this->assertNotNull($analyticsEvent);
         $this->assertSame('WR5 3EU', $this->decodePayload($event->payload)['postcode'] ?? null);
     }
 
@@ -147,6 +149,10 @@ class FormAnalyticsTrackingTest extends TestCase
         $event = DB::table('form_events')->where('form_key', 'stamp_duty')->first();
 
         $this->assertNotNull($event);
+        $this->assertDatabaseHas('analytics_events', [
+            'event_type' => 'calculator',
+            'event_key' => 'stamp_duty',
+        ]);
         $payload = $this->decodePayload($event->payload);
         $this->assertEquals(375000, $payload['price'] ?? null);
         $this->assertSame('main', $payload['buyer_type'] ?? null);

@@ -19,6 +19,8 @@ class FormAnalytics
                 'payload' => $safePayload === [] ? null : $safePayload,
                 'created_at' => now(),
             ]);
+
+            self::recordAnalyticsEvent($formKey, $safePayload);
         } catch (Throwable) {
         }
     }
@@ -65,11 +67,37 @@ class FormAnalytics
             return null;
         }
 
-        $anonVisitId = app('request')->cookie('pr_avid');
+        $request = app('request');
+        $cookieName = (string) config('analytics.cookie_name', 'pr_avid');
+        $anonVisitId = $request->attributes->get('analytics_anon_visit_id', $request->cookie($cookieName));
         if (! is_string($anonVisitId) || trim($anonVisitId) === '') {
             return null;
         }
 
         return mb_substr(trim($anonVisitId), 0, 36);
+    }
+
+    private static function recordAnalyticsEvent(string $formKey, array $payload): void
+    {
+        $mapping = [
+            'property_area_search' => ['search', 'property_area_search'],
+            'property_search' => ['search', 'property_search'],
+            'street_search' => ['search', 'street_search'],
+            'epc_england_wales' => ['lookup', 'epc_postcode'],
+            'epc_scotland' => ['lookup', 'epc_scotland_postcode'],
+            '/epc/postcode/' => ['lookup', 'epc_postcode'],
+            '/epc/scotland/postcode/' => ['lookup', 'epc_scotland_postcode'],
+            'deprivation_lookup' => ['lookup', 'deprivation_lookup'],
+            'mortgage_calculator' => ['calculator', 'mortgage_calculator'],
+            'stamp_duty' => ['calculator', 'stamp_duty'],
+        ];
+
+        if (! array_key_exists($formKey, $mapping)) {
+            return;
+        }
+
+        [$eventType, $eventKey] = $mapping[$formKey];
+
+        app(AnalyticsService::class)->recordEvent($eventType, $eventKey, $payload);
     }
 }
