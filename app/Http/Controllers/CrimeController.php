@@ -3,15 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Crime;
+use App\Services\CrimeSummaryService;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class CrimeController extends Controller
 {
     private const CACHE_TTL = 60 * 60 * 24 * 45;
+
+    public function __construct(
+        private CrimeSummaryService $crimeSummaryService,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -458,41 +465,12 @@ class CrimeController extends Controller
      */
     private function crimeTypeBreakdown(?string $area, Carbon $currentStart, Carbon $currentEnd, Carbon $previousStart): array
     {
-        return $this->crimeQueryForArea($area)
-            ->whereDate('month', '>=', $previousStart->toDateString())
-            ->whereDate('month', '<=', $currentEnd->toDateString())
-            ->whereNotNull('crime_type')
-            ->where('crime_type', '!=', '')
-            ->select('crime_type')
-            ->selectRaw(
-                'SUM(CASE WHEN month >= ? AND month <= ? THEN 1 ELSE 0 END) as current_total',
-                [$currentStart->toDateString(), $currentEnd->toDateString()]
-            )
-            ->selectRaw(
-                'SUM(CASE WHEN month >= ? AND month < ? THEN 1 ELSE 0 END) as previous_total',
-                [$previousStart->toDateString(), $currentStart->toDateString()]
-            )
-            ->groupBy('crime_type')
-            ->get()
-            ->map(function (Crime $crime): array {
-                $currentTotal = (int) $crime->current_total;
-                $previousTotal = (int) $crime->previous_total;
-
-                return [
-                    'crime_type' => (string) $crime->crime_type,
-                    'total_12m' => $currentTotal,
-                    'prev_12m' => $previousTotal,
-                    'pct_change' => $this->percentageChange($previousTotal, $currentTotal),
-                ];
-            })
-            ->filter(fn (array $row): bool => $row['total_12m'] > 0 || $row['prev_12m'] > 0)
-            ->sortBy([
-                ['pct_change', 'desc'],
-                ['total_12m', 'desc'],
-                ['crime_type', 'asc'],
-            ])
-            ->values()
-            ->all();
+        return $this->crimeSummaryService->areaCrimeTypeBreakdown(
+            $area,
+            $currentStart,
+            $currentEnd,
+            $previousStart
+        );
     }
 
     /**
@@ -580,7 +558,7 @@ class CrimeController extends Controller
 
     /**
      * @param  array<int,array{crime_type:string,total_12m:int,prev_12m:int,pct_change:float}>  $areaBreakdown
-     * @param  \Illuminate\Support\Collection<string,array{type:string,total_12m:int,total_prev_12m:int,yoy_change:float,share_pct:float,trend:string}>  $nationalByType
+     * @param  Collection<string,array{type:string,total_12m:int,total_prev_12m:int,yoy_change:float,share_pct:float,trend:string}>  $nationalByType
      * @return array<int,array{type:string,total_12m:int,total_prev_12m:int,yoy_change:float,share_pct:float,impact:int,trend:string,national_yoy:?float,is_largest:bool}>
      */
     private function areaCrimeBreakdown(array $areaBreakdown, int $totalCrime, $nationalByType): array
@@ -738,7 +716,7 @@ class CrimeController extends Controller
         return 'flat';
     }
 
-    private function crimeQueryForArea(?string $area): \Illuminate\Database\Eloquent\Builder
+    private function crimeQueryForArea(?string $area): Builder
     {
         return Crime::query()
             ->whereNotNull('month')

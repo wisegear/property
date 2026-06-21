@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Services\CrimeSummaryService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -511,6 +513,19 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
                     && (int) $publicOrder->previous_total === 1
                     && (float) $publicOrder->pct_change === -100.0;
             });
+
+        $latestCrimeMonth = Carbon::parse('2026-03-01')->startOfMonth();
+        $currentWindowEnd = $latestCrimeMonth->copy();
+        $crimeWindowStart = $currentWindowEnd->copy()->subMonths(11);
+        $previousWindowStart = $crimeWindowStart->copy()->subMonths(12);
+        $cacheKey = CrimeSummaryService::pointCacheKey(52.123456, -1.123456, $previousWindowStart, $currentWindowEnd);
+        $cachedCrimeSummary = Cache::get($cacheKey);
+
+        $this->assertIsArray($cachedCrimeSummary);
+        $this->assertSame(
+            'Crime is up 25% over the past year, driven by increases in robbery and offset by decreases in public order.',
+            $cachedCrimeSummary['crime_summary']
+        );
     }
 
     private function landRegistryRow(

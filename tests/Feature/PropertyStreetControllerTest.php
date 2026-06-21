@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\PropertyStreetController;
+use App\Services\CrimeSummaryService;
+use Carbon\Carbon;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +13,13 @@ use Tests\TestCase;
 
 class PropertyStreetControllerTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('analytics.enabled', false);
+    }
+
     public function test_street_page_renders_summary_table_charts_and_top_sales_for_a_street_and_outcode(): void
     {
         $this->ensureLandRegistryTable();
@@ -163,6 +172,23 @@ class PropertyStreetControllerTest extends TestCase
         $this->assertSame($sharedCrimePayload['crime_summary'], $elmPayload['crime_summary']);
         $this->assertSame($sharedCrimePayload['crime_data'], $cromwellPayload['crime_data']);
         $this->assertSame($sharedCrimePayload['crime_data'], $elmPayload['crime_data']);
+
+        $sharedPoint = Cache::get(PropertyStreetController::outcodeCrimePointCacheKey('SW7'));
+
+        $this->assertIsArray($sharedPoint);
+
+        $latestCrimeMonth = Carbon::parse('2025-05-01')->startOfMonth();
+        $currentWindowEnd = $latestCrimeMonth->copy();
+        $crimeWindowStart = $currentWindowEnd->copy()->subMonths(11);
+        $previousWindowStart = $crimeWindowStart->copy()->subMonths(12);
+        $cacheKey = CrimeSummaryService::pointCacheKey(
+            (float) $sharedPoint['lat'],
+            (float) $sharedPoint['lng'],
+            $previousWindowStart,
+            $currentWindowEnd
+        );
+
+        $this->assertIsArray(Cache::get($cacheKey));
     }
 
     public function test_street_page_shows_reliability_warning_for_limited_street_data(): void

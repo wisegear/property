@@ -34,6 +34,9 @@ class CrimeMigrationTest extends TestCase
         $this->assertIndexExists('crime_month_index', ['month']);
         $this->assertIndexExists('crime_latitude_longitude_index', ['latitude', 'longitude']);
         $this->assertIndexExists('crime_crime_type_index', ['crime_type']);
+        $this->assertIndexExists('crime_month_crime_type_index', ['month', 'crime_type']);
+        $this->assertIndexExists('crime_month_latitude_longitude_index', ['month', 'latitude', 'longitude']);
+        $this->assertExpressionIndexExists('crime_area_month_crime_type_index');
     }
 
     protected function assertIndexExists(string $indexName, array $expectedColumns): void
@@ -66,5 +69,30 @@ class CrimeMigrationTest extends TestCase
             '('.implode(', ', $expectedColumns).')',
             $indexes[$indexName]->indexdef
         );
+    }
+
+    protected function assertExpressionIndexExists(string $indexName): void
+    {
+        $driver = Schema::getConnection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            $indexes = collect(DB::select("PRAGMA index_list('crime')"))->keyBy('name');
+
+            $this->assertArrayHasKey($indexName, $indexes->all());
+
+            return;
+        }
+
+        $indexes = collect(DB::select("
+            SELECT indexname, indexdef
+            FROM pg_indexes
+            WHERE schemaname = current_schema()
+              AND tablename = 'crime'
+        "))->keyBy('indexname');
+
+        $this->assertArrayHasKey($indexName, $indexes->all());
+        $this->assertStringContainsString('COALESCE', $indexes[$indexName]->indexdef);
+        $this->assertStringContainsString('month', $indexes[$indexName]->indexdef);
+        $this->assertStringContainsString('crime_type', $indexes[$indexName]->indexdef);
     }
 }
