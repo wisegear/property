@@ -34,7 +34,10 @@ class SwapRateImporter
         $extractPath = $this->extractZip($zipPath, 'latest');
 
         try {
-            $workbookPath = $this->findWorkbook($extractPath, 'OIS daily data current month.xlsx');
+            $workbookPath = $this->findWorkbook($extractPath, [
+                'ois daily data current month.xlsx',
+                'ois daily data',
+            ]);
 
             if ($workbookPath === null) {
                 throw new RuntimeException('Could not find the OIS workbook inside the latest ZIP file.');
@@ -407,14 +410,80 @@ class SwapRateImporter
         $zip->extractTo($extractPath);
         $zip->close();
 
+        $this->extractNestedZipFiles($extractPath);
+
         return $extractPath;
     }
 
-    private function findWorkbook(string $extractPath, string $fileName): ?string
+    /**
+     * @param  array<int, string>  $matchers
+     */
+    private function findWorkbook(string $extractPath, array $matchers): ?string
     {
-        $path = $extractPath.DIRECTORY_SEPARATOR.$fileName;
+        $files = collect(File::allFiles($extractPath))
+            ->filter(fn (\SplFileInfo $file): bool => strtolower($file->getExtension()) === 'xlsx')
+            ->values();
 
-        return is_file($path) ? $path : null;
+        foreach ($matchers as $matcher) {
+            $normalizedMatcher = strtolower($matcher);
+
+            $exactMatch = $files->first(function (\SplFileInfo $file) use ($normalizedMatcher): bool {
+                return strtolower($file->getFilename()) === $normalizedMatcher;
+            });
+
+            if ($exactMatch !== null) {
+                return $exactMatch->getPathname();
+            }
+        }
+
+        foreach ($matchers as $matcher) {
+            $normalizedMatcher = strtolower($matcher);
+
+            $partialMatch = $files->first(function (\SplFileInfo $file) use ($normalizedMatcher): bool {
+                return str_contains(strtolower($file->getFilename()), $normalizedMatcher);
+            });
+
+            if ($partialMatch !== null) {
+                return $partialMatch->getPathname();
+            }
+        }
+
+        return null;
+    }
+
+    private function extractNestedZipFiles(string $extractPath): void
+    {
+        $pendingZipPaths = collect(File::allFiles($extractPath))
+            ->filter(fn (\SplFileInfo $file): bool => strtolower($file->getExtension()) === 'zip')
+            ->map(fn (\SplFileInfo $file): string => $file->getPathname())
+            ->values();
+
+        while ($pendingZipPaths->isNotEmpty()) {
+            $nestedZipPath = $pendingZipPaths->shift();
+
+            if ($nestedZipPath === null || ! is_file($nestedZipPath)) {
+                continue;
+            }
+
+            $destination = $nestedZipPath.'-contents';
+            File::ensureDirectoryExists($destination);
+
+            $zip = new ZipArchive;
+
+            if ($zip->open($nestedZipPath) !== true) {
+                continue;
+            }
+
+            $zip->extractTo($destination);
+            $zip->close();
+
+            collect(File::allFiles($destination))
+                ->filter(fn (\SplFileInfo $file): bool => strtolower($file->getExtension()) === 'zip')
+                ->map(fn (\SplFileInfo $file): string => $file->getPathname())
+                ->each(function (string $path) use ($pendingZipPaths): void {
+                    $pendingZipPaths->push($path);
+                });
+        }
     }
 
     private function cleanupTemporaryArtifacts(string $zipPath, string $extractPath): void

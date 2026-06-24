@@ -94,16 +94,172 @@ class ImportBoeSwapRatesCommandTest extends TestCase
         $this->assertSame(0, DB::table('swap_rates')->where('term_years', 10)->count());
     }
 
+    public function test_command_imports_latest_swap_rates_from_nested_latest_zip(): void
+    {
+        config()->set('services.boe.yield_curve_latest_zip_url', 'https://example.test/latest-nested.zip');
+
+        $zipPath = $this->createLatestZip(
+            [
+                ['2025-12-09', 4.0000, 4.2000, 4.4000],
+                ['2025-12-10', 4.1000, 4.3000, 4.4500],
+            ],
+            nested: true
+        );
+
+        Http::fake([
+            'https://example.test/latest-nested.zip' => Http::response(
+                file_get_contents($zipPath),
+                200,
+                ['Content-Type' => 'application/zip']
+            ),
+        ]);
+
+        try {
+            $this->artisan('swaps:import-boe')
+                ->expectsOutput('Starting Bank of England swap rate import...')
+                ->expectsOutput('Downloading latest Bank of England OIS ZIP...')
+                ->expectsOutput('Latest import complete. Inserted: 6, updated: 0, parsed rows: 6.')
+                ->expectsOutput('Swap import finished. Inserted 6 row(s), updated 0 row(s), parsed 6 row(s).')
+                ->assertExitCode(0);
+        } finally {
+            @unlink($zipPath);
+        }
+
+        $this->assertSame(6, DB::table('swap_rates')->count());
+    }
+
+    public function test_backfill_command_imports_archive_and_nested_latest_zip(): void
+    {
+        config()->set('services.boe.yield_curve_ois_archive_zip_url', 'https://example.test/archive.zip');
+        config()->set('services.boe.yield_curve_latest_zip_url', 'https://example.test/latest-nested.zip');
+
+        $archiveZipPath = $this->createArchiveZip([
+            'OIS daily data_2025 to present.xlsx' => [
+                ['2025-12-08', 3.9000, 4.1000, 4.3000],
+            ],
+        ]);
+        $latestZipPath = $this->createLatestZip(
+            [
+                ['2025-12-09', 4.0000, 4.2000, 4.4000],
+                ['2025-12-10', 4.1000, 4.3000, 4.4500],
+            ],
+            nested: true
+        );
+
+        Http::fake([
+            'https://example.test/archive.zip' => Http::response(
+                file_get_contents($archiveZipPath),
+                200,
+                ['Content-Type' => 'application/zip']
+            ),
+            'https://example.test/latest-nested.zip' => Http::response(
+                file_get_contents($latestZipPath),
+                200,
+                ['Content-Type' => 'application/zip']
+            ),
+        ]);
+
+        try {
+            $this->artisan('swaps:backfill-boe')
+                ->expectsOutput('Starting Bank of England swap backfill...')
+                ->expectsOutput('Downloading Bank of England OIS archive ZIP...')
+                ->expectsOutput('Imported OIS daily data_2025 to present.xlsx. Inserted: 3, updated: 0, parsed rows: 3.')
+                ->expectsOutput('Downloading latest Bank of England OIS ZIP...')
+                ->expectsOutput('Latest import complete. Inserted: 6, updated: 0, parsed rows: 6.')
+                ->expectsOutput('Backfill complete. Inserted: 9, updated: 0, parsed rows: 9.')
+                ->expectsOutput('Swap backfill finished. Inserted 9 row(s), updated 0 row(s), parsed 9 row(s).')
+                ->assertExitCode(0);
+        } finally {
+            @unlink($archiveZipPath);
+            @unlink($latestZipPath);
+        }
+
+        $this->assertSame(9, DB::table('swap_rates')->count());
+    }
+
     /**
      * @param  array<int, array{0:string, 1:float, 2:float, 3:?float}>  $rows
      */
-    private function createLatestZip(array $rows): string
+    private function createLatestZip(array $rows, bool $nested = false): string
     {
-        $workbookPath = tempnam(sys_get_temp_dir(), 'boe-swap-workbook-');
         $zipPath = tempnam(sys_get_temp_dir(), 'boe-swap-zip-');
 
-        if ($workbookPath === false || $zipPath === false) {
-            $this->fail('Could not allocate temporary files for the swap rate ZIP test.');
+        if ($zipPath === false) {
+            $this->fail('Could not allocate a temporary latest ZIP for the swap rate test.');
+        }
+
+        $workbookPath = $this->createWorkbook($rows);
+
+        $zip = new ZipArchive;
+        $zip->open($zipPath, ZipArchive::OVERWRITE);
+
+        if ($nested) {
+            $innerZipPath = tempnam(sys_get_temp_dir(), 'boe-swap-inner-');
+
+            if ($innerZipPath === false) {
+                $this->fail('Could not allocate a temporary inner ZIP for the swap rate ZIP test.');
+            }
+
+            $innerZip = new ZipArchive;
+            $innerZip->open($innerZipPath, ZipArchive::OVERWRITE);
+            $innerZip->addFile($workbookPath, 'OIS daily data current month.xlsx');
+            $innerZip->close();
+
+            $zip->addFile($innerZipPath, 'Latest Yield Curve data (current month).zip');
+        } else {
+            $zip->addFile($workbookPath, 'OIS daily data current month.xlsx');
+        }
+
+        $zip->close();
+
+        @unlink($workbookPath);
+        if (isset($innerZipPath)) {
+            @unlink($innerZipPath);
+        }
+
+        return $zipPath;
+    }
+
+    /**
+     * @param  array<string, array<int, array{0:string, 1:float, 2:float, 3:?float}>>  $workbooks
+     */
+    private function createArchiveZip(array $workbooks): string
+    {
+        $zipPath = tempnam(sys_get_temp_dir(), 'boe-swap-archive-');
+
+        if ($zipPath === false) {
+            $this->fail('Could not allocate a temporary archive ZIP for the swap rate test.');
+        }
+
+        $zip = new ZipArchive;
+        $zip->open($zipPath, ZipArchive::OVERWRITE);
+
+        $temporaryWorkbookPaths = [];
+
+        foreach ($workbooks as $fileName => $rows) {
+            $workbookPath = $this->createWorkbook($rows);
+            $zip->addFile($workbookPath, $fileName);
+            $temporaryWorkbookPaths[] = $workbookPath;
+        }
+
+        $zip->close();
+
+        foreach ($temporaryWorkbookPaths as $temporaryWorkbookPath) {
+            @unlink($temporaryWorkbookPath);
+        }
+
+        return $zipPath;
+    }
+
+    /**
+     * @param  array<int, array{0:string, 1:float, 2:float, 3:?float}>  $rows
+     */
+    private function createWorkbook(array $rows): string
+    {
+        $workbookPath = tempnam(sys_get_temp_dir(), 'boe-swap-workbook-');
+
+        if ($workbookPath === false) {
+            $this->fail('Could not allocate a temporary workbook for the swap rate test.');
         }
 
         $spreadsheet = new Spreadsheet;
@@ -148,13 +304,6 @@ class ImportBoeSwapRatesCommandTest extends TestCase
         $spreadsheet->disconnectWorksheets();
         unset($spreadsheet);
 
-        $zip = new ZipArchive;
-        $zip->open($zipPath, ZipArchive::OVERWRITE);
-        $zip->addFile($workbookPath, 'OIS daily data current month.xlsx');
-        $zip->close();
-
-        @unlink($workbookPath);
-
-        return $zipPath;
+        return $workbookPath;
     }
 }
