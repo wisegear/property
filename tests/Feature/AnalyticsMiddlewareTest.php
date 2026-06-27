@@ -6,6 +6,7 @@ use App\Models\AnalyticsEvent;
 use App\Models\AnalyticsPageView;
 use App\Models\AnalyticsVisit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class AnalyticsMiddlewareTest extends TestCase
@@ -85,5 +86,16 @@ class AnalyticsMiddlewareTest extends TestCase
         $this->assertNotNull($event);
         $this->assertSame('calculator', $event->event_type);
         $this->assertSame('mortgage_calculator', $event->event_key);
+    }
+
+    public function test_requests_skip_analytics_when_tables_do_not_exist(): void
+    {
+        Schema::drop('analytics_page_views');
+        Schema::drop('analytics_visits');
+
+        $response = $this->get('/property/search');
+
+        $response->assertOk();
+        $response->assertCookieMissing('pr_avid');
     }
 }

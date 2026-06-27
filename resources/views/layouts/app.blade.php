@@ -174,8 +174,6 @@
                                     @can('Admin')
                                         <a href="/admin" 
                                            class="block px-4 py-2 hover:bg-zinc-100 text-orange-800 font-bold">Admin</a>
-                                        <a href="{{ route('sponsor.analytics') }}" 
-                                           class="block px-4 py-2 hover:bg-zinc-100">Analytics</a>
                                     @endcan
                                     <form method="POST" action="{{ route('logout') }}">
                                         @csrf
@@ -836,10 +834,6 @@
                         <a href="/admin" 
                            class="block px-3 py-2 rounded text-orange-800 font-bold hover:bg-zinc-100">
                             Admin
-                        </a>
-                        <a href="{{ route('sponsor.analytics') }}" 
-                           class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Analytics
                         </a>
                     @endcan
                     <form method="POST" action="{{ route('logout') }}">

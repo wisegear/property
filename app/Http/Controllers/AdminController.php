@@ -8,16 +8,11 @@ use App\Models\FormEvent;
 use App\Models\Support;
 use App\Models\User;
 use App\Models\UserRolesPivot;
-use App\Services\AnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class AdminController extends Controller
 {
-    public function __construct(
-        private AnalyticsService $analyticsService
-    ) {}
-
     public function index(): View
     {
         $twentyFourHoursAgo = now()->subDay();
@@ -74,10 +69,7 @@ class AdminController extends Controller
             ->orderBy('form_key')
             ->get();
 
-        $adminAnalytics = $this->analyticsService->getAdminAnalyticsStats(30);
-
         $data = [
-
             'users' => $users,
             'users_pending' => $users_pending,
             'users_active' => $users_active,
@@ -92,7 +84,6 @@ class AdminController extends Controller
             'tickets_awaiting' => $tickets_awaiting,
             'tickets_closed' => $tickets_closed,
             'form_event_metrics' => $form_event_metrics,
-            'admin_analytics' => $adminAnalytics,
         ];
 
         return view('admin.index')->with($data);

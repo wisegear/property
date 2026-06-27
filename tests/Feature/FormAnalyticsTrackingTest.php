@@ -214,6 +214,22 @@ class FormAnalyticsTrackingTest extends TestCase
         $this->assertSame(0, DB::table('form_events')->count());
     }
 
+    public function test_form_analytics_event_is_skipped_when_analytics_table_does_not_exist(): void
+    {
+        Schema::drop('analytics_events');
+
+        $response = $this->post('/mortgage-calculator', [
+            'amount' => '250,000',
+            'term' => 30,
+            'rate' => '4.5',
+        ]);
+
+        $response->assertOk();
+        $event = DB::table('form_events')->where('form_key', 'mortgage_calculator')->first();
+
+        $this->assertNotNull($event);
+    }
+
     public function test_property_area_selection_records_form_event(): void
     {
         $areas = json_decode(file_get_contents(public_path('data/property_districts.json')), true) ?? [];

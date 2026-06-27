@@ -6,18 +6,15 @@ use App\Models\AnalyticsEvent;
 use App\Models\AnalyticsPageView;
 use App\Models\AnalyticsVisit;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Throwable;
 
 class AnalyticsService
 {
     public function recordVisit(Request $request, string $anonVisitId, array $botMatch): void
     {
-        if (! config('analytics.enabled')) {
+        if (! $this->canRecordVisits()) {
             return;
         }
 
@@ -68,7 +65,7 @@ class AnalyticsService
 
     public function recordPageView(Request $request, string $anonVisitId): void
     {
-        if (! config('analytics.enabled')) {
+        if (! $this->canRecordPageViews()) {
             return;
         }
 
@@ -84,7 +81,7 @@ class AnalyticsService
 
     public function recordEvent(string $eventType, string $eventKey, array $payload = []): void
     {
-        if (! config('analytics.enabled')) {
+        if (! $this->canRecordEvents()) {
             return;
         }
 
@@ -98,224 +95,6 @@ class AnalyticsService
             'payload' => $this->sanitizePayload($payload),
             'created_at' => now(),
         ]);
-    }
-
-    public function getAdminAnalyticsStats(int $days = 30): array
-    {
-        $days = max(7, $days);
-        $ttl = max(60, (int) config('analytics.admin_dashboard_cache_ttl', 900));
-
-        return Cache::remember("analytics:admin:stats:v3:{$days}", now()->addSeconds($ttl), function () use ($days): array {
-            return [
-                'periods' => collect([7, 30, 90])->mapWithKeys(function (int $period): array {
-                    $since = now()->subDays($period);
-
-                    return [$period => [
-                        'visitors' => AnalyticsVisit::query()->where('last_seen_at', '>=', $since)->count(),
-                        'human_visitors' => AnalyticsVisit::query()->where('last_seen_at', '>=', $since)->where('is_bot', false)->count(),
-                        'page_views' => AnalyticsPageView::query()->where('viewed_at', '>=', $since)->count(),
-                        'events' => AnalyticsEvent::query()->where('created_at', '>=', $since)->count(),
-                        'bot_visits' => AnalyticsVisit::query()->where('last_seen_at', '>=', $since)->where('is_bot', true)->count(),
-                        'human_percentage' => $this->calculateTrafficPercentage($period, false),
-                        'bot_percentage' => $this->calculateTrafficPercentage($period, true),
-                    ]];
-                })->all(),
-                'page_views_per_day' => $this->groupCountsByDay('analytics_page_views', 'viewed_at', $days),
-                'events_per_day' => $this->groupCountsByDay('analytics_events', 'created_at', $days),
-                'top_page_types' => AnalyticsPageView::query()
-                    ->select('page_type')
-                    ->selectRaw('COUNT(*) as total')
-                    ->where('viewed_at', '>=', now()->subDays($days))
-                    ->whereNotNull('page_type')
-                    ->groupBy('page_type')
-                    ->orderByDesc('total')
-                    ->limit(10)
-                    ->get(),
-                'top_landing_pages' => AnalyticsVisit::query()
-                    ->select('landing_page')
-                    ->selectRaw('COUNT(*) as total')
-                    ->where('first_seen_at', '>=', now()->subDays($days))
-                    ->whereNotNull('landing_page')
-                    ->groupBy('landing_page')
-                    ->orderByDesc('total')
-                    ->limit(10)
-                    ->get(),
-                'top_events' => AnalyticsEvent::query()
-                    ->select('event_type', 'event_key')
-                    ->selectRaw('COUNT(*) as total')
-                    ->where('created_at', '>=', now()->subDays($days))
-                    ->groupBy('event_type', 'event_key')
-                    ->orderByDesc('total')
-                    ->limit(12)
-                    ->get(),
-                'top_ip_addresses' => AnalyticsVisit::query()
-                    ->select('ip_address')
-                    ->selectRaw('COUNT(*) as total_visits')
-                    ->where('last_seen_at', '>=', now()->subDays($days))
-                    ->whereNotNull('ip_address')
-                    ->groupBy('ip_address')
-                    ->orderByDesc('total_visits')
-                    ->limit(12)
-                    ->get(),
-                'repeat_visitors_by_ip' => AnalyticsVisit::query()
-                    ->select('ip_address')
-                    ->selectRaw('COUNT(DISTINCT anon_visit_id) as unique_visitors')
-                    ->selectRaw('COUNT(*) as total_visits')
-                    ->where('last_seen_at', '>=', now()->subDays(90))
-                    ->where('is_bot', false)
-                    ->whereNotNull('ip_address')
-                    ->groupBy('ip_address')
-                    ->havingRaw('COUNT(DISTINCT anon_visit_id) > 1')
-                    ->orderByDesc('unique_visitors')
-                    ->orderByDesc('total_visits')
-                    ->limit(12)
-                    ->get(),
-                'bot_traffic_count' => AnalyticsVisit::query()
-                    ->where('last_seen_at', '>=', now()->subDays($days))
-                    ->where('is_bot', true)
-                    ->count(),
-                'human_traffic_count' => AnalyticsVisit::query()
-                    ->where('last_seen_at', '>=', now()->subDays($days))
-                    ->where('is_bot', false)
-                    ->count(),
-                'top_bot_names' => AnalyticsVisit::query()
-                    ->select('bot_name')
-                    ->selectRaw('COUNT(*) as total')
-                    ->where('last_seen_at', '>=', now()->subDays($days))
-                    ->where('is_bot', true)
-                    ->whereNotNull('bot_name')
-                    ->groupBy('bot_name')
-                    ->orderByDesc('total')
-                    ->limit(12)
-                    ->get(),
-                'top_bot_ips' => AnalyticsVisit::query()
-                    ->select('ip_address')
-                    ->selectRaw('COUNT(*) as total_visits')
-                    ->where('last_seen_at', '>=', now()->subDays($days))
-                    ->where('is_bot', true)
-                    ->whereNotNull('ip_address')
-                    ->groupBy('ip_address')
-                    ->orderByDesc('total_visits')
-                    ->limit(12)
-                    ->get(),
-                'recent_visits' => AnalyticsVisit::query()
-                    ->orderByDesc('last_seen_at')
-                    ->limit(20)
-                    ->get([
-                        'anon_visit_id',
-                        'ip_address',
-                        'country_code',
-                        'device_type',
-                        'browser',
-                        'landing_page',
-                        'is_bot',
-                        'bot_name',
-                        'first_seen_at',
-                        'last_seen_at',
-                    ]),
-                'suspicious_high_frequency_ips' => AnalyticsPageView::query()
-                    ->select('ip_address')
-                    ->selectRaw('COUNT(*) as page_view_count')
-                    ->selectRaw('COUNT(DISTINCT anon_visit_id) as unique_visitors')
-                    ->selectRaw('MAX(viewed_at) as last_seen_at')
-                    ->where('viewed_at', '>=', now()->subDays(1))
-                    ->whereNotNull('ip_address')
-                    ->groupBy('ip_address')
-                    ->havingRaw('COUNT(*) >= 25')
-                    ->orderByDesc('page_view_count')
-                    ->limit(15)
-                    ->get(),
-                'traffic_split' => $this->trafficSplit(now()->subDays($days)),
-            ];
-        });
-    }
-
-    public function getSponsorDashboardStats(int $days = 30): array
-    {
-        $days = max(30, $days);
-        $ttl = max(300, (int) config('analytics.sponsor_dashboard_cache_ttl', 3600));
-
-        return Cache::remember("analytics:sponsor:stats:v3:{$days}", now()->addSeconds($ttl), function () use ($days): array {
-            $windows = collect([30, 90])->mapWithKeys(function (int $period): array {
-                $since = now()->subDays($period);
-                $visits = AnalyticsVisit::query()
-                    ->where('is_bot', false)
-                    ->where('last_seen_at', '>=', $since);
-
-                return [$period => [
-                    'unique_visitors' => (clone $visits)->count(),
-                    'page_views' => AnalyticsPageView::query()
-                        ->join('analytics_visits', 'analytics_visits.anon_visit_id', '=', 'analytics_page_views.anon_visit_id')
-                        ->where('analytics_visits.is_bot', false)
-                        ->where('analytics_page_views.viewed_at', '>=', $since)
-                        ->count(),
-                ]];
-            })->all();
-
-            $since = now()->subDays($days);
-            $basePageViews = AnalyticsPageView::query()
-                ->join('analytics_visits', 'analytics_visits.anon_visit_id', '=', 'analytics_page_views.anon_visit_id')
-                ->where('analytics_visits.is_bot', false)
-                ->where('analytics_page_views.viewed_at', '>=', $since);
-
-            $baseEvents = AnalyticsEvent::query()
-                ->join('analytics_visits', 'analytics_visits.anon_visit_id', '=', 'analytics_events.anon_visit_id')
-                ->where('analytics_visits.is_bot', false)
-                ->where('analytics_events.created_at', '>=', $since);
-
-            $ukVisitors = AnalyticsVisit::query()
-                ->where('is_bot', false)
-                ->where('last_seen_at', '>=', $since)
-                ->count();
-
-            $gbVisitors = AnalyticsVisit::query()
-                ->where('is_bot', false)
-                ->where('last_seen_at', '>=', $since)
-                ->where('country_code', 'GB')
-                ->count();
-
-            return [
-                'windows' => $windows,
-                'uk_visitor_percentage' => $ukVisitors > 0 ? round(($gbVisitors / $ukVisitors) * 100, 1) : 0.0,
-                'top_content_categories' => (clone $basePageViews)
-                    ->select('analytics_page_views.page_type')
-                    ->selectRaw('COUNT(*) as total')
-                    ->whereNotNull('analytics_page_views.page_type')
-                    ->groupBy('analytics_page_views.page_type')
-                    ->orderByDesc('total')
-                    ->limit(10)
-                    ->get(),
-                'top_landing_pages' => AnalyticsVisit::query()
-                    ->select('landing_page')
-                    ->selectRaw('COUNT(*) as total')
-                    ->where('is_bot', false)
-                    ->where('first_seen_at', '>=', $since)
-                    ->whereNotNull('landing_page')
-                    ->groupBy('landing_page')
-                    ->orderByDesc('total')
-                    ->limit(10)
-                    ->get(),
-                'top_countries' => AnalyticsVisit::query()
-                    ->select('country_code')
-                    ->selectRaw('COUNT(*) as total')
-                    ->where('is_bot', false)
-                    ->where('last_seen_at', '>=', $since)
-                    ->whereNotNull('country_code')
-                    ->groupBy('country_code')
-                    ->orderByDesc('total')
-                    ->limit(10)
-                    ->get(),
-                'event_totals' => [
-                    'postcode_property_searches' => $this->countEvents((clone $baseEvents), 'search', ['property_search', 'property_area_search']),
-                    'street_searches' => $this->countEvents((clone $baseEvents), 'search', ['street_search']),
-                    'epc_lookups' => $this->countEvents((clone $baseEvents), 'lookup', ['epc_postcode', 'epc_scotland_postcode']),
-                    'deprivation_lookups' => $this->countEvents((clone $baseEvents), 'lookup', ['deprivation_lookup']),
-                    'mortgage_calculator_uses' => $this->countEvents((clone $baseEvents), 'calculator', ['mortgage_calculator']),
-                    'stamp_duty_calculator_uses' => $this->countEvents((clone $baseEvents), 'calculator', ['stamp_duty']),
-                ],
-                'dataset_scale_cards' => $this->datasetScaleCards(),
-            ];
-        });
     }
 
     public function isBot(?string $userAgent): bool
@@ -338,7 +117,7 @@ class AnalyticsService
 
     public function shouldTrackRequest(Request $request): bool
     {
-        if (! config('analytics.enabled')) {
+        if (! config('analytics.enabled') || ! $this->canRecordVisits()) {
             return false;
         }
 
@@ -413,60 +192,33 @@ class AnalyticsService
         };
     }
 
-    private function countEvents($query, string $eventType, array $eventKeys): int
-    {
-        return (int) $query
-            ->where('analytics_events.event_type', $eventType)
-            ->whereIn('analytics_events.event_key', $eventKeys)
-            ->count();
-    }
-
-    private function calculateTrafficPercentage(int $days, bool $isBot): float
-    {
-        $split = $this->trafficSplit(now()->subDays($days));
-
-        return $isBot ? $split['bot_percentage'] : $split['human_percentage'];
-    }
-
-    /**
-     * @return array{total: int, human: int, bots: int, human_percentage: float, bot_percentage: float}
-     */
-    private function trafficSplit(\DateTimeInterface $since): array
-    {
-        $total = AnalyticsVisit::query()
-            ->where('last_seen_at', '>=', $since)
-            ->count();
-
-        $bots = AnalyticsVisit::query()
-            ->where('last_seen_at', '>=', $since)
-            ->where('is_bot', true)
-            ->count();
-
-        $human = max($total - $bots, 0);
-
-        return [
-            'total' => $total,
-            'human' => $human,
-            'bots' => $bots,
-            'human_percentage' => $total > 0 ? round(($human / $total) * 100, 1) : 0.0,
-            'bot_percentage' => $total > 0 ? round(($bots / $total) * 100, 1) : 0.0,
-        ];
-    }
-
-    private function groupCountsByDay(string $table, string $column, int $days): Collection
-    {
-        return DB::table($table)
-            ->selectRaw("DATE({$column}) as day")
-            ->selectRaw('COUNT(*) as total')
-            ->where($column, '>=', now()->subDays($days))
-            ->groupBy('day')
-            ->orderBy('day')
-            ->get();
-    }
-
     private function currentUrl(Request $request): string
     {
         return $this->truncate($request->url(), 2000) ?? '/';
+    }
+
+    private function canRecordVisits(): bool
+    {
+        return $this->hasTable('analytics_visits');
+    }
+
+    private function canRecordPageViews(): bool
+    {
+        return $this->canRecordVisits() && $this->hasTable('analytics_page_views');
+    }
+
+    private function canRecordEvents(): bool
+    {
+        return $this->hasTable('analytics_events');
+    }
+
+    private function hasTable(string $table): bool
+    {
+        try {
+            return Schema::hasTable($table);
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     private function resolveIpAddress(Request $request): ?string
@@ -623,46 +375,6 @@ class AnalyticsService
         }
 
         return $safePayload === [] ? null : $safePayload;
-    }
-
-    private function datasetScaleCards(): array
-    {
-        return [
-            [
-                'label' => 'Property transactions',
-                'value' => Schema::hasTable('land_registry') ? (int) DB::table('land_registry')->count() : 0,
-            ],
-            [
-                'label' => 'EPC records',
-                'value' => (Schema::hasTable('epc_certificates') ? (int) DB::table('epc_certificates')->count() : 0)
-                    + (Schema::hasTable('epc_certificates_scotland') ? (int) DB::table('epc_certificates_scotland')->count() : 0),
-            ],
-            [
-                'label' => 'Street pages',
-                'value' => $this->countJsonItems(public_path('data/property_streets.json')),
-            ],
-            [
-                'label' => 'Postcode pages',
-                'value' => $this->countJsonItems(public_path('data/epc-postcodes.json'), 'postcodes.england_wales')
-                    + $this->countJsonItems(public_path('data/epc-postcodes.json'), 'postcodes.scotland'),
-            ],
-        ];
-    }
-
-    private function countJsonItems(string $path, ?string $dataPath = null): int
-    {
-        if (! File::exists($path)) {
-            return 0;
-        }
-
-        $decoded = json_decode((string) File::get($path), true);
-        if (! is_array($decoded)) {
-            return 0;
-        }
-
-        $target = $dataPath === null ? $decoded : data_get($decoded, $dataPath, []);
-
-        return is_array($target) ? count($target) : 0;
     }
 
     private function truncate(?string $value, int $length): ?string
