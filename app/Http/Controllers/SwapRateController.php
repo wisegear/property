@@ -63,7 +63,6 @@ class SwapRateController extends Controller
 
         $latestMovementSummary = $this->buildLatestMovementSummary($latestRates, $terms);
         $mortgageMarketSummary = $this->buildMortgageMarketSummary($termSnapshots);
-        $latestMovementDetails = $this->buildLatestMovementDetails($termSnapshots, $latestAvailableDate);
         $currentRatesTable = $this->buildCurrentRatesTable($termSnapshots, $terms);
         $bankRateComparisonChart = $this->buildBankRateComparisonChart($dates, $labels);
 
@@ -74,7 +73,6 @@ class SwapRateController extends Controller
             'latestAvailableDate' => $latestAvailableDate === null ? null : Carbon::parse($latestAvailableDate),
             'mortgageMarketSummary' => $mortgageMarketSummary,
             'latestMovementSummary' => $latestMovementSummary,
-            'latestMovementDetails' => $latestMovementDetails,
             'currentRatesTable' => $currentRatesTable,
             'rateChart' => [
                 'labels' => $labels,
@@ -92,7 +90,6 @@ class SwapRateController extends Controller
      *     latestAvailableDate: ?Carbon,
      *     mortgageMarketSummary: ?array<string, mixed>,
      *     latestMovementSummary: ?array{text: string, direction: string},
-     *     latestMovementDetails: ?array<string, mixed>,
      *     currentRatesTable: array<int, array<string, mixed>>,
      *     rateChart: array{labels: array<int, string>, datasets: array<int, array<string, mixed>>},
      *     bankRateComparisonChart: ?array<string, mixed>
@@ -107,7 +104,6 @@ class SwapRateController extends Controller
             'latestAvailableDate' => null,
             'mortgageMarketSummary' => null,
             'latestMovementSummary' => null,
-            'latestMovementDetails' => null,
             'currentRatesTable' => [],
             'rateChart' => ['labels' => [], 'datasets' => []],
             'bankRateComparisonChart' => null,
@@ -288,77 +284,6 @@ class SwapRateController extends Controller
             'signal' => 'Neutral',
             'signal_direction' => 'neutral',
             'explanation' => 'Swap movements are fairly balanced. Fixed mortgage pricing pressure looks broadly steady for now, although lenders may still react to funding costs, competition and risk appetite.',
-        ];
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $termSnapshots
-     * @return array{
-     *     title: string,
-     *     label: string,
-     *     lines: array<int, string>,
-     *     biggest_mover: string,
-     *     interpretation: string
-     * }|null
-     */
-    private function buildLatestMovementDetails(array $termSnapshots, ?string $latestAvailableDate): ?array
-    {
-        $availableSnapshots = collect($termSnapshots)
-            ->filter(fn (array $snapshot): bool => $snapshot['latest_movement'] !== null)
-            ->values();
-
-        if ($availableSnapshots->isEmpty()) {
-            return null;
-        }
-
-        $lines = $availableSnapshots
-            ->map(function (array $snapshot): string {
-                $movement = (float) $snapshot['latest_movement'];
-                $magnitude = number_format(abs($movement), 2);
-
-                if (abs($movement) < 0.005) {
-                    return sprintf('%d-year swaps were broadly unchanged.', $snapshot['term_years']);
-                }
-
-                return sprintf(
-                    '%d-year swaps moved %s by %s percentage points.',
-                    $snapshot['term_years'],
-                    $movement > 0 ? 'up' : 'down',
-                    $magnitude
-                );
-            })
-            ->all();
-
-        $biggestMover = $availableSnapshots
-            ->sortByDesc(fn (array $snapshot): float => abs((float) $snapshot['latest_movement']))
-            ->first();
-
-        $positiveCount = $availableSnapshots->filter(fn (array $snapshot): bool => (float) $snapshot['latest_movement'] > 0)->count();
-        $negativeCount = $availableSnapshots->filter(fn (array $snapshot): bool => (float) $snapshot['latest_movement'] < 0)->count();
-
-        $interpretation = match (true) {
-            $negativeCount > $positiveCount => 'This points to slightly lower wholesale funding pressure, which may support fixed mortgage pricing if the move continues.',
-            $positiveCount > $negativeCount => 'This points to slightly firmer wholesale funding pressure, which could make mortgage price cuts less likely if the move continues.',
-            default => 'This suggests wholesale funding expectations were mixed on the latest update, so mortgage pricing pressure does not look one-way.',
-        };
-
-        return [
-            'title' => $latestAvailableDate !== null && Carbon::parse($latestAvailableDate)->isToday()
-                ? 'What changed today?'
-                : 'Latest available movement',
-            'label' => $latestAvailableDate !== null && Carbon::parse($latestAvailableDate)->isToday()
-                ? 'Today'
-                : 'Latest available data',
-            'lines' => $lines,
-            'biggest_mover' => $biggestMover === null
-                ? 'No clear biggest mover'
-                : sprintf(
-                    '%d-year swap (%s%s pts)',
-                    $biggestMover['term_years'],
-                    (float) $biggestMover['latest_movement'] > 0 ? '+' : '',
-                    number_format((float) $biggestMover['latest_movement'], 2)
-                ),
-            'interpretation' => $interpretation,
         ];
     }
 

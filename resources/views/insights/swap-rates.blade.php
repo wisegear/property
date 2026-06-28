@@ -162,25 +162,20 @@
 
     <section class="mt-8">
         <article class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div class="max-w-3xl">
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Mortgage Market Summary</p>
-                    <div class="mt-3 flex flex-wrap items-center gap-3">
-                        <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $signalClass($mortgageMarketSummary) }}">
-                            Overall signal:
-                            {{ $mortgageMarketSummary['signal'] ?? 'Unavailable' }}
-                        </span>
-                        @if ($latestMovementSummary)
-                            <span class="text-sm text-zinc-500">{{ $latestMovementSummary['text'] }}</span>
-                        @endif
-                    </div>
-                    <p class="mt-4 text-sm leading-7 text-zinc-600">
-                        {{ $mortgageMarketSummary['explanation'] ?? 'Latest swap-rate summary is not available yet.' }}
-                    </p>
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Mortgage Market Summary</p>
+                <div class="mt-3 flex flex-wrap items-center gap-3">
+                    <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $signalClass($mortgageMarketSummary) }}">
+                        Overall signal:
+                        {{ $mortgageMarketSummary['signal'] ?? 'Unavailable' }}
+                    </span>
+                    @if ($latestMovementSummary)
+                        <span class="text-sm text-zinc-500">{{ $latestMovementSummary['text'] }}</span>
+                    @endif
                 </div>
-                <div class="text-sm text-zinc-500">
-                    {{ $latestAvailableDate instanceof \Carbon\CarbonInterface ? 'Latest available data: '.$latestAvailableDate->format('d M Y') : 'Latest available data pending' }}
-                </div>
+                <p class="mt-4 text-sm leading-7 text-zinc-600">
+                    {{ $mortgageMarketSummary['explanation'] ?? 'Latest swap-rate summary is not available yet.' }}
+                </p>
             </div>
 
             <div class="mt-6 grid gap-5 md:grid-cols-3">
@@ -239,34 +234,6 @@
             </div>
         </article>
     </section>
-
-    @if ($latestMovementDetails)
-        <section class="mt-6">
-            <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">{{ $latestMovementDetails['label'] }}</p>
-                        <h2 class="mt-2 text-xl font-semibold text-zinc-900">{{ $latestMovementDetails['title'] }}</h2>
-                    </div>
-                    <p class="text-sm text-zinc-500">
-                        {{ $latestAvailableDate instanceof \Carbon\CarbonInterface ? $latestAvailableDate->format('d M Y') : 'No data available' }}
-                    </p>
-                </div>
-                <div class="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-                    <div class="space-y-3 text-sm leading-7 text-zinc-600">
-                        @foreach ($latestMovementDetails['lines'] as $line)
-                            <p>{{ $line }}</p>
-                        @endforeach
-                        <p class="font-medium text-zinc-800">{{ $latestMovementDetails['interpretation'] }}</p>
-                    </div>
-                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Biggest mover</p>
-                        <p class="mt-2 text-lg font-semibold text-zinc-900">{{ $latestMovementDetails['biggest_mover'] }}</p>
-                    </div>
-                </div>
-            </article>
-        </section>
-    @endif
 
     <section class="mt-6 grid gap-6 lg:grid-cols-2">
         <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">

@@ -206,12 +206,6 @@ class SwapRateControllerTest extends TestCase
         $response->assertSee('Overall signal:');
         $response->assertSee('Worsening');
         $response->assertSee('On the latest trading day, 2Y, 5Y and 10Y swap rates all moved higher.');
-        $response->assertSee('Latest available movement');
-        $response->assertSee('2-year swaps moved up by 0.10 percentage points.');
-        $response->assertSee('5-year swaps moved up by 0.10 percentage points.');
-        $response->assertSee('10-year swaps moved up by 0.05 percentage points.');
-        $response->assertSee('Biggest mover');
-        $response->assertSee('2-year swap (+0.10 pts)');
         $response->assertSee('Falling over 5 days');
         $response->assertSee('Stable over 5 days');
         $response->assertSee('What this means for mortgages');
@@ -269,11 +263,6 @@ class SwapRateControllerTest extends TestCase
                 && $summary['text'] === 'On the latest trading day, 2Y, 5Y and 10Y swap rates all moved higher.'
                 && $summary['direction'] === 'higher';
         });
-        $response->assertViewHas('latestMovementDetails', function (?array $details): bool {
-            return $details !== null
-                && $details['title'] === 'Latest available movement'
-                && $details['biggest_mover'] === '2-year swap (+0.10 pts)';
-        });
         $response->assertViewHas('bankRateComparisonChart', function (?array $chart): bool {
             return $chart !== null
                 && $chart['datasets'][0]['label'] === 'Bank Rate'
@@ -320,7 +309,6 @@ class SwapRateControllerTest extends TestCase
         $response->assertSee('4.10% - 4.10%');
         $response->assertSee('4.30% - 4.30%');
         $response->assertSee('On the latest trading day, 2Y and 5Y swap rates all moved lower.');
-        $response->assertSee('Latest available movement');
         $response->assertDontSee('Rising over 5 days');
         $response->assertViewHas('latestRates', function (array $latestRates): bool {
             return isset($latestRates[2], $latestRates[5]) && ! isset($latestRates[10]);
