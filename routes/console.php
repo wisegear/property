@@ -16,15 +16,9 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Sitemap
-Schedule::command('sitemap:generate')->dailyAt('01:10');
-Schedule::command('sitemap:generate-epc-postcodes')->dailyAt('01:15');
-Schedule::command('sitemap:generate-streets')->dailyAt('01:20');
-Schedule::command('property:street-warm --min-sales=5')->monthlyOn(1, '01:30');
-Schedule::command('swaps:import-boe')->weekdays()->at('13:00');
+// BoE import command
+Schedule::command('swaps:import-boe')
+    ->cron('0 */4 * * *')
+    ->withoutOverlapping()
+    ->runInBackground();
 
-// Spatie Backups
-
-Schedule::command('backup:clean')->dailyAt('04:00');
-Schedule::command('backup:run')->dailyAt('04:10')->withoutOverlapping();
-Schedule::command('backup:monitor')->dailyAt('04:20');
