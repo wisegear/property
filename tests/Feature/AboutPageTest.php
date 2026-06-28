@@ -12,17 +12,20 @@ class AboutPageTest extends TestCase
 
         $response->assertOk();
         $response->assertSeeText('Independent UK Property Research');
-        $response->assertSeeText('Why Trust PropertyResearch.uk?');
-        $response->assertSeeText('Our Mission');
-        $response->assertSeeText('Methodology');
-        $response->assertSeeText('Independent by Design');
-        $response->assertSeeText('About Lee');
-        $response->assertSeeText('PropertyResearch.uk continues to evolve as new official datasets become available and new ideas emerge.');
+        $response->assertSeeText('Why the platform exists');
+        $response->assertSeeText('Why trust PropertyResearch.uk?');
+        $response->assertSeeText('What the platform covers');
+        $response->assertSeeText('How the data is handled');
+        $response->assertSeeText('About the creator');
+        $response->assertSeeText('PropertyResearch.uk continues to evolve as new datasets become available and new ideas emerge.');
+        $response->assertSeeText('PropertyResearch.uk helps people understand the UK property market through official data, clear analysis and practical tools.');
+        $response->assertSeeText('PropertyResearch.uk was created and is maintained by Lee Wisener');
 
         $response->assertDontSeeText('repeat offender');
         $response->assertDontSeeText('tidy corner');
         $response->assertDontSeeText('personal project');
-        $response->assertDontSeeText('No fees, no catch');
-        $response->assertDontSeeText('heckling welcome');
+        $response->assertDontSeeText('01');
+        $response->assertDontSeeText('Closing Statement');
+        $response->assertDontSeeText('creator of PropertyResearch.uk.');
     }
 }
