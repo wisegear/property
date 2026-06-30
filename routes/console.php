@@ -18,7 +18,7 @@ Artisan::command('inspire', function () {
 
 // BoE import command
 Schedule::command('swaps:import-boe')
-    ->cron('0 */4 * * *')
+    ->everyMinute()
     ->withoutOverlapping()
-    ->runInBackground();
+    ->appendOutputTo(storage_path('logs/boe-swap-scheduler.log'));
 
