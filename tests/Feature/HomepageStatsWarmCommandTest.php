@@ -193,7 +193,7 @@ class HomepageStatsWarmCommandTest extends TestCase
         $this->assertSame('↑ 2 this year', $panels['homepageStatMovements']['epc_count']['change']);
         $this->assertSame('↑ 4.2% YoY', $panels['homepageStatMovements']['uk_avg_price']['change']);
         $this->assertSame('↑ 3.1% YoY', $panels['homepageStatMovements']['uk_avg_rent']['change']);
-        $this->assertSame('↓ 1.50pp from peak', $panels['homepageStatMovements']['bank_rate']['change']);
+        $this->assertSame('↓ 1.50% over 12 months', $panels['homepageStatMovements']['bank_rate']['change']);
         $this->assertSame(9.1, $panels['homepageMarketMovements']['transaction_change_percent']);
         $this->assertSame(2.5, $panels['homepageMarketMovements']['median_price_change_percent']);
         $this->assertSame(2, $panels['homepageMarketMovements']['rising_price_counties']);

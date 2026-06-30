@@ -52,7 +52,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
                 'epc_count' => ['change' => '↑ 412k this year', 'tone' => 'positive'],
                 'uk_avg_price' => ['change' => '↑ 4.2% YoY', 'tone' => 'positive'],
                 'uk_avg_rent' => ['change' => '↑ 3.1% YoY', 'tone' => 'positive'],
-                'bank_rate' => ['change' => '↓ 1.50pp from peak', 'tone' => 'positive'],
+                'bank_rate' => ['change' => '↓ 1.50% over 12 months', 'tone' => 'positive'],
             ],
             'homepageMarketMovements' => [
                 'transaction_change_percent' => -34.1,
@@ -114,7 +114,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('↑ 412k this year');
         $view->assertSee('↑ 4.2% YoY');
         $view->assertSee('↑ 3.1% YoY');
-        $view->assertSee('↓ 1.50pp from peak');
+        $view->assertSee('↓ 1.50% over 12 months');
         $view->assertSee('hover:-translate-y-0.5 hover:shadow-md', false);
         $view->assertSee('aria-hidden="true"', false);
         $view->assertSee('min-h-[132px] rounded-xl border border-slate-200 bg-white p-5 shadow-sm', false);

@@ -150,7 +150,7 @@
                 'label' => 'Bank Rate',
                 'value' => number_format((float) ($stats['bank_rate'] ?? 0), 2).'%',
                 'icon' => 'percent',
-                'change' => $homepageStatMovements['bank_rate']['change'] ?? '0.00pp from peak',
+                'change' => $homepageStatMovements['bank_rate']['change'] ?? '0.00% over 12 months',
                 'tone' => $homepageStatMovements['bank_rate']['tone'] ?? 'neutral',
             ],
         ];

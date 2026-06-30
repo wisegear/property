@@ -645,7 +645,7 @@ class HomepageDataService
     private function bankRateFromPeakMovement(): array
     {
         if (! Schema::hasTable('interest_rates')) {
-            return ['change' => '0.00pp from peak', 'tone' => 'neutral'];
+            return ['change' => '0.00% over 12 months', 'tone' => 'neutral'];
         }
 
         $latestRate = DB::table('interest_rates')
@@ -653,7 +653,7 @@ class HomepageDataService
             ->first();
 
         if ($latestRate === null) {
-            return ['change' => '0.00pp from peak', 'tone' => 'neutral'];
+            return ['change' => '0.00% over 12 months', 'tone' => 'neutral'];
         }
 
         $peakWindowStart = Carbon::parse((string) $latestRate->effective_date)
@@ -666,7 +666,7 @@ class HomepageDataService
         $change = round((float) $peakRate - (float) ($latestRate->rate ?? 0), 2);
 
         return [
-            'change' => ($change > 0 ? '↓ ' : '').number_format(abs($change), 2).'pp from peak',
+            'change' => ($change > 0 ? '↓ ' : '').number_format(abs($change), 2).'% over 12 months',
             'tone' => $change > 0 ? 'positive' : 'neutral',
         ];
     }
