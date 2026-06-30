@@ -122,40 +122,39 @@
                 'value' => $formatCompactCount((int) ($stats['property_records'] ?? 0)),
                 'label' => 'Property sales',
                 'icon' => 'database',
-                'change' => '↑ 184k this year',
-                'tone' => 'positive',
+                'change' => $homepageStatMovements['property_records']['change'] ?? '0 this year',
+                'tone' => $homepageStatMovements['property_records']['tone'] ?? 'neutral',
             ],
             [
                 'value' => $formatCompactCount((int) ($stats['epc_count'] ?? 0)),
                 'label' => 'EPC certificates',
                 'icon' => 'file-search',
-                'change' => '↑ 412k this year',
-                'tone' => 'positive',
+                'change' => $homepageStatMovements['epc_count']['change'] ?? '0 this year',
+                'tone' => $homepageStatMovements['epc_count']['tone'] ?? 'neutral',
             ],
             [
                 'value' => '&pound;'.number_format((int) ($stats['uk_avg_price'] ?? 0)),
                 'label' => 'Average House Price',
                 'icon' => 'home',
-                'change' => '↑ 4.2% YoY',
-                'tone' => 'positive',
+                'change' => $homepageStatMovements['uk_avg_price']['change'] ?? '0.0% YoY',
+                'tone' => $homepageStatMovements['uk_avg_price']['tone'] ?? 'neutral',
             ],
             [
                 'label' => 'Average UK rent',
                 'value' => '&pound;'.number_format((int) ($stats['uk_avg_rent'] ?? 0)),
                 'icon' => 'key',
-                'change' => '↑ 3.1% YoY',
-                'tone' => 'positive',
+                'change' => $homepageStatMovements['uk_avg_rent']['change'] ?? '0.0% YoY',
+                'tone' => $homepageStatMovements['uk_avg_rent']['tone'] ?? 'neutral',
             ],
             [
                 'label' => 'Bank Rate',
                 'value' => number_format((float) ($stats['bank_rate'] ?? 0), 2).'%',
                 'icon' => 'percent',
-                'change' => '↓ 1.50pp from peak',
-                'tone' => 'positive',
+                'change' => $homepageStatMovements['bank_rate']['change'] ?? '0.00pp from peak',
+                'tone' => $homepageStatMovements['bank_rate']['tone'] ?? 'neutral',
             ],
         ];
     @endphp
-    {{-- TODO: Replace homepage stat card change text with real cached/calculated movement data. --}}
 
     {{-- Live Stats Section --}}
     <section class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">

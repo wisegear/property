@@ -91,6 +91,13 @@ class HomepageDataService
      *     liveSignalsCount:int,
      *     signalTypesCount:int,
      *     topSignal:array{type:string,postcode:string,change:float,direction:string,color:string}|null,
+     *     homepageStatMovements:array{
+     *         property_records:array{change:string,tone:string},
+     *         epc_count:array{change:string,tone:string},
+     *         uk_avg_price:array{change:string,tone:string},
+     *         uk_avg_rent:array{change:string,tone:string},
+     *         bank_rate:array{change:string,tone:string}
+     *     },
      *     homepageMarketMovements:array{
      *         transaction_change_percent:float,
      *         median_price_change_percent:float,
@@ -110,8 +117,29 @@ class HomepageDataService
     {
         return [
             ...$this->marketInsightsSummary(),
+            'homepageStatMovements' => $this->homepageStatMovements(),
             'homepageMarketMovements' => $this->homepageMarketMovements(),
             'homepageSwapRates' => $this->homepageSwapRates(),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     property_records:array{change:string,tone:string},
+     *     epc_count:array{change:string,tone:string},
+     *     uk_avg_price:array{change:string,tone:string},
+     *     uk_avg_rent:array{change:string,tone:string},
+     *     bank_rate:array{change:string,tone:string}
+     * }
+     */
+    public function homepageStatMovements(): array
+    {
+        return [
+            'property_records' => $this->countThisYearMovement('land_registry', 'Date'),
+            'epc_count' => $this->epcCertificatesThisYearMovement(),
+            'uk_avg_price' => $this->latestHpiYearOnYearMovement(),
+            'uk_avg_rent' => $this->latestRentYearOnYearMovement(),
+            'bank_rate' => $this->bankRateFromPeakMovement(),
         ];
     }
 
@@ -512,6 +540,153 @@ class HomepageDataService
         }
 
         return $count > 0 ? $sum / $count : 0;
+    }
+
+    /**
+     * @return array{change:string,tone:string}
+     */
+    private function countThisYearMovement(string $table, string $dateColumn): array
+    {
+        if (! Schema::hasTable($table)) {
+            return ['change' => '0 this year', 'tone' => 'neutral'];
+        }
+
+        $count = DB::table($table)
+            ->whereBetween($dateColumn, [
+                Carbon::now()->startOfYear(),
+                Carbon::now()->endOfYear(),
+            ])
+            ->count();
+
+        return [
+            'change' => '↑ '.$this->compactStatMovement($count).' this year',
+            'tone' => $count > 0 ? 'positive' : 'neutral',
+        ];
+    }
+
+    /**
+     * @return array{change:string,tone:string}
+     */
+    private function epcCertificatesThisYearMovement(): array
+    {
+        $count = 0;
+        $start = Carbon::now()->startOfYear()->toDateString();
+        $end = Carbon::now()->endOfYear()->toDateString();
+
+        foreach (['epc_certificates', 'epc_certificates_scotland'] as $table) {
+            if (! Schema::hasTable($table) || ! Schema::hasColumn($table, 'LODGEMENT_DATE')) {
+                continue;
+            }
+
+            $count += DB::table($table)
+                ->whereBetween('LODGEMENT_DATE', [$start, $end])
+                ->count();
+        }
+
+        return [
+            'change' => '↑ '.$this->compactStatMovement($count).' this year',
+            'tone' => $count > 0 ? 'positive' : 'neutral',
+        ];
+    }
+
+    /**
+     * @return array{change:string,tone:string}
+     */
+    private function latestHpiYearOnYearMovement(): array
+    {
+        if (! Schema::hasTable('hpi_monthly')) {
+            return ['change' => '0.0% YoY', 'tone' => 'neutral'];
+        }
+
+        $latestHpi = DB::table('hpi_monthly')
+            ->where('AreaCode', 'K02000001')
+            ->orderBy('Date', 'desc')
+            ->first();
+
+        $change = (float) ($latestHpi?->{'12m%Change'} ?? 0);
+
+        return [
+            'change' => $this->signedPercentLabel($change).' YoY',
+            'tone' => $change >= 0 ? 'positive' : 'negative',
+        ];
+    }
+
+    /**
+     * @return array{change:string,tone:string}
+     */
+    private function latestRentYearOnYearMovement(): array
+    {
+        if (! Schema::hasTable('rental_costs')) {
+            return ['change' => '0.0% YoY', 'tone' => 'neutral'];
+        }
+
+        $latestRent = DB::table('rental_costs')
+            ->where('area_name', 'United Kingdom')
+            ->whereNotNull('annual_change')
+            ->get(['time_period', 'annual_change'])
+            ->sortByDesc(function (object $row): int {
+                $date = $this->parseTimePeriod($row->time_period);
+
+                return $date?->getTimestamp() ?? 0;
+            })
+            ->first();
+
+        $change = (float) ($latestRent->annual_change ?? 0);
+
+        return [
+            'change' => $this->signedPercentLabel($change).' YoY',
+            'tone' => $change >= 0 ? 'positive' : 'negative',
+        ];
+    }
+
+    /**
+     * @return array{change:string,tone:string}
+     */
+    private function bankRateFromPeakMovement(): array
+    {
+        if (! Schema::hasTable('interest_rates')) {
+            return ['change' => '0.00pp from peak', 'tone' => 'neutral'];
+        }
+
+        $latestRate = DB::table('interest_rates')
+            ->orderBy('effective_date', 'desc')
+            ->first();
+
+        if ($latestRate === null) {
+            return ['change' => '0.00pp from peak', 'tone' => 'neutral'];
+        }
+
+        $peakWindowStart = Carbon::parse((string) $latestRate->effective_date)
+            ->subYear()
+            ->toDateString();
+        $peakRate = DB::table('interest_rates')
+            ->where('effective_date', '>=', $peakWindowStart)
+            ->where('effective_date', '<=', $latestRate->effective_date)
+            ->max('rate');
+        $change = round((float) $peakRate - (float) ($latestRate->rate ?? 0), 2);
+
+        return [
+            'change' => ($change > 0 ? '↓ ' : '').number_format(abs($change), 2).'pp from peak',
+            'tone' => $change > 0 ? 'positive' : 'neutral',
+        ];
+    }
+
+    private function compactStatMovement(int $value): string
+    {
+        if ($value >= 1000000) {
+            return rtrim(rtrim(number_format($value / 1000000, 1), '0'), '.').'m';
+        }
+
+        if ($value >= 1000) {
+            return rtrim(rtrim(number_format($value / 1000, 1), '0'), '.').'k';
+        }
+
+        return number_format($value);
+    }
+
+    private function signedPercentLabel(float $change): string
+    {
+        return ($change > 0 ? '↑ ' : ($change < 0 ? '↓ ' : '')).number_format(abs($change), 1).'%';
     }
 
     private function percentageChange(int|float|null $benchmarkValue, int|float|null $comparisonValue): float

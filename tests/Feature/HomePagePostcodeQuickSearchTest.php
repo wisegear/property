@@ -47,6 +47,13 @@ class HomePagePostcodeQuickSearchTest extends TestCase
                 'direction' => 'down',
                 'color' => 'text-red-600',
             ],
+            'homepageStatMovements' => [
+                'property_records' => ['change' => '↑ 184k this year', 'tone' => 'positive'],
+                'epc_count' => ['change' => '↑ 412k this year', 'tone' => 'positive'],
+                'uk_avg_price' => ['change' => '↑ 4.2% YoY', 'tone' => 'positive'],
+                'uk_avg_rent' => ['change' => '↑ 3.1% YoY', 'tone' => 'positive'],
+                'bank_rate' => ['change' => '↓ 1.50pp from peak', 'tone' => 'positive'],
+            ],
             'homepageMarketMovements' => [
                 'transaction_change_percent' => -34.1,
                 'median_price_change_percent' => -0.2,

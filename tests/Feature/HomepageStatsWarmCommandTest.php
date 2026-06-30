@@ -17,6 +17,14 @@ class HomepageStatsWarmCommandTest extends TestCase
         parent::setUp();
 
         config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+        Carbon::setTestNow(Carbon::create(2026, 6, 30, 12));
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
     }
 
     public function test_homepage_stats_warm_command_caches_stats_and_homepage_panels(): void
@@ -26,22 +34,40 @@ class HomepageStatsWarmCommandTest extends TestCase
             'Date' => '2026-01-01',
             'RegionName' => 'United Kingdom',
             'AveragePrice' => 275500,
+            '12m%Change' => 4.2,
         ]);
 
         DB::table('rental_costs')->insert([
             'time_period' => '2026-01',
             'area_name' => 'United Kingdom',
             'rental_price' => 1450,
+            'annual_change' => 3.1,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         DB::table('interest_rates')->insert([
-            'effective_date' => '2026-02-01',
-            'rate' => 4.25,
-            'source' => 'BoE Bank Rate',
-            'created_at' => now(),
-            'updated_at' => now(),
+            [
+                'effective_date' => '2024-12-01',
+                'rate' => 6.25,
+                'source' => 'BoE Bank Rate',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'effective_date' => '2025-08-01',
+                'rate' => 5.75,
+                'source' => 'BoE Bank Rate',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'effective_date' => '2026-02-01',
+                'rate' => 4.25,
+                'source' => 'BoE Bank Rate',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
 
         DB::table('inflation_cpih_monthly')->insert([
@@ -103,6 +129,15 @@ class HomepageStatsWarmCommandTest extends TestCase
             ...$this->countySalesRows('ROYD', 4200000, '2026-03-12 00:00:00', 30, 'Park Row', 'West Yorkshire'),
         ]);
 
+        DB::table('epc_certificates')->insert([
+            'LMK_KEY' => 'ew-2026-homepage-stat',
+            'LODGEMENT_DATE' => '2026-01-15',
+        ]);
+
+        DB::table('epc_certificates_scotland')->insert([
+            'LODGEMENT_DATE' => '2026-02-15',
+        ]);
+
         DB::table('market_insights')->insert([
             [
                 'area_type' => 'postcode_sector',
@@ -147,12 +182,18 @@ class HomepageStatsWarmCommandTest extends TestCase
         $this->assertSame(1450, $stats['uk_avg_rent']);
         $this->assertSame(4.25, (float) $stats['bank_rate']);
         $this->assertSame(3.4, (float) $stats['inflation_rate']);
+        $this->assertSame(2, $stats['epc_count']);
 
         $this->assertSame(2, $panels['marketInsightsCount']);
         $this->assertSame(2, $panels['liveSignalsCount']);
         $this->assertSame('Demand Collapse', $panels['topSignal']['type']);
         $this->assertSame('M1', $panels['topSignal']['postcode']);
         $this->assertSame(-33.3, $panels['topSignal']['change']);
+        $this->assertSame('↑ 60 this year', $panels['homepageStatMovements']['property_records']['change']);
+        $this->assertSame('↑ 2 this year', $panels['homepageStatMovements']['epc_count']['change']);
+        $this->assertSame('↑ 4.2% YoY', $panels['homepageStatMovements']['uk_avg_price']['change']);
+        $this->assertSame('↑ 3.1% YoY', $panels['homepageStatMovements']['uk_avg_rent']['change']);
+        $this->assertSame('↓ 1.50pp from peak', $panels['homepageStatMovements']['bank_rate']['change']);
         $this->assertSame(9.1, $panels['homepageMarketMovements']['transaction_change_percent']);
         $this->assertSame(2.5, $panels['homepageMarketMovements']['median_price_change_percent']);
         $this->assertSame(2, $panels['homepageMarketMovements']['rising_price_counties']);
