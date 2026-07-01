@@ -70,6 +70,41 @@ class AdminUnemploymentImportTest extends TestCase
         $this->assertSame(9.9, $juneRow->three_month);
     }
 
+    public function test_admin_can_import_official_unemployment_csv_export(): void
+    {
+        $admin = $this->createAdminUser();
+        $file = UploadedFile::fake()->createWithContent(
+            'unemployment.csv',
+            "UK 16-64 Unemployment Rates (SA),,,,\n"
+                .",,,,\n"
+                .",,Single month,Single,Three month\n"
+                .",,Level (000s),Month Rate,Rate*\n"
+                .",,,,\n"
+                ."Jun-92,,\"2,935\",10.1,9.9\n"
+                ."Apr-26,,\"1,613\",4.7,5.0\n"
+                .",,,,\n"
+        );
+
+        $response = $this->actingAs($admin)->post(route('admin.unemployment.import', absolute: false), [
+            'csv_file' => $file,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Unemployment CSV imported successfully.');
+
+        $juneRow = UnemploymentMonthly::query()->whereDate('date', '1992-06-01')->first();
+        $aprilRow = UnemploymentMonthly::query()->whereDate('date', '2026-04-01')->first();
+
+        $this->assertNotNull($juneRow);
+        $this->assertSame(2935, $juneRow->single_month);
+        $this->assertSame(10.1, $juneRow->single);
+        $this->assertSame(9.9, $juneRow->three_month);
+        $this->assertNotNull($aprilRow);
+        $this->assertSame(1613, $aprilRow->single_month);
+        $this->assertSame(4.7, $aprilRow->single);
+        $this->assertSame(5.0, $aprilRow->three_month);
+    }
+
     private function createAdminUser(): User
     {
         $admin = User::factory()->create();

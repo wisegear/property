@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UnemploymentImportRequest;
 use App\Models\UnemploymentMonthly;
-use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -130,6 +129,7 @@ class AdminUnemploymentController extends Controller
 
         $rows = collect();
         $lineNumber = 0;
+        $hasSeenImportableRow = false;
 
         while (($row = fgetcsv($handle)) !== false) {
             $lineNumber++;
@@ -142,12 +142,22 @@ class AdminUnemploymentController extends Controller
                 continue;
             }
 
+            $columns = $this->importColumnsForRow($row);
+            if ($columns === null) {
+                if ($hasSeenImportableRow) {
+                    throw new RuntimeException("Unable to parse unemployment row on line {$lineNumber}.");
+                }
+
+                continue;
+            }
+
             $rows->push([
-                'date' => $this->normalizeImportDate((string) ($row[0] ?? ''), $lineNumber),
-                'single_month' => $this->normalizeImportInteger((string) ($row[1] ?? ''), $lineNumber, 'single_month'),
-                'single' => $this->normalizeImportDecimal((string) ($row[2] ?? ''), $lineNumber, 'single'),
-                'three_month' => $this->normalizeImportDecimal((string) ($row[3] ?? ''), $lineNumber, 'three_month'),
+                'date' => $this->normalizeImportDate($columns['date'], $lineNumber),
+                'single_month' => $this->normalizeImportInteger($columns['single_month'], $lineNumber, 'single_month'),
+                'single' => $this->normalizeImportDecimal($columns['single'], $lineNumber, 'single'),
+                'three_month' => $this->normalizeImportDecimal($columns['three_month'], $lineNumber, 'three_month'),
             ]);
+            $hasSeenImportableRow = true;
         }
 
         fclose($handle);
@@ -168,23 +178,73 @@ class AdminUnemploymentController extends Controller
 
         return $cells->contains('single_month')
             || $cells->contains('single')
+            || $cells->contains('single month')
             || $cells->contains('three_month');
+    }
+
+    /**
+     * @return array{date:string,single_month:string,single:string,three_month:string}|null
+     */
+    private function importColumnsForRow(array $row): ?array
+    {
+        $date = (string) ($row[0] ?? '');
+
+        if (trim($date) === '' || ! $this->canParseImportDate($date)) {
+            return null;
+        }
+
+        if (trim((string) ($row[1] ?? '')) !== '') {
+            return [
+                'date' => $date,
+                'single_month' => (string) ($row[1] ?? ''),
+                'single' => (string) ($row[2] ?? ''),
+                'three_month' => (string) ($row[3] ?? ''),
+            ];
+        }
+
+        if (trim((string) ($row[2] ?? '')) !== '') {
+            return [
+                'date' => $date,
+                'single_month' => (string) ($row[2] ?? ''),
+                'single' => (string) ($row[3] ?? ''),
+                'three_month' => (string) ($row[4] ?? ''),
+            ];
+        }
+
+        return null;
     }
 
     private function normalizeImportDate(string $value, int $lineNumber): string
     {
-        $normalized = trim($value);
+        $normalized = $this->normalizeImportDateValue($value);
         $formats = ['M-y', 'M Y', 'Y-m-d', 'Y/m/d', 'd/m/Y', 'd-m-Y'];
 
         foreach ($formats as $format) {
-            $date = CarbonImmutable::createFromFormat('!'.$format, $normalized);
+            $date = \DateTimeImmutable::createFromFormat('!'.$format, $normalized, new \DateTimeZone('UTC'));
+            $errors = \DateTimeImmutable::getLastErrors();
 
-            if ($date !== false) {
-                return $date->startOfMonth()->toDateString();
+            if ($date instanceof \DateTimeImmutable && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))) {
+                return $date->modify('first day of this month')->format('Y-m-d');
             }
         }
 
         throw new RuntimeException("Unable to parse unemployment date [{$value}] on line {$lineNumber}.");
+    }
+
+    private function canParseImportDate(string $value): bool
+    {
+        try {
+            $this->normalizeImportDate($value, 0);
+        } catch (RuntimeException) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function normalizeImportDateValue(string $value): string
+    {
+        return trim(preg_replace('/^\xEF\xBB\xBF/', '', $value) ?? $value);
     }
 
     private function normalizeImportInteger(string $value, int $lineNumber, string $column): int
