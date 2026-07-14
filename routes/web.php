@@ -41,6 +41,7 @@ use App\Http\Controllers\RentalController;
 // 3rd Party packages
 
 use App\Http\Controllers\RepossessionsController;
+use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\ScottishPricesController;
 use App\Http\Controllers\StampDutyController;
 use App\Http\Controllers\SupportController;
@@ -80,6 +81,10 @@ Route::get('/property/prime-central-london', [PrimeLondonController::class, 'hom
 Route::get('/property/outer-prime-london', [OuterPrimeLondonController::class, 'home'])->name('property.outer');
 Route::get('/property/ultra-prime-central-london', [UltraLondonController::class, 'home'])->name('property.upcl');
 Route::get('/property/scottish-prices', [ScottishPricesController::class, 'index'])->name('property.scottish-prices');
+Route::get('/schools', [SchoolController::class, 'index'])->name('schools.index');
+Route::get('/school/{slug}', [SchoolController::class, 'show'])
+    ->where('slug', '[a-z0-9\-]+')
+    ->name('schools.show');
 Route::get('/epc', [EpcController::class, 'home'])->name('epc.home');
 Route::get('/epc/search', [EpcController::class, 'search'])->name('epc.search');
 Route::get('/epc/points', [EpcController::class, 'points'])->name('epc.points');

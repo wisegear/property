@@ -6,6 +6,9 @@ use App\Models\LandRegistry;
 use App\Services\CrimeSummaryService;
 use App\Services\EpcMatcher;
 use App\Services\FormAnalytics;
+use App\Services\PropertyResearch\NearbySchoolsService;
+use App\Support\PropertyResearch\OfstedRating;
+use App\Support\PropertyResearch\SchoolSlug;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -22,6 +25,7 @@ class PropertyController extends Controller
 
     public function __construct(
         private CrimeSummaryService $crimeSummaryService,
+        private NearbySchoolsService $nearbySchoolsService,
     ) {}
 
     public function home(Request $request)
@@ -475,19 +479,38 @@ class PropertyController extends Controller
         $pcds = $toPcds($postcode);
         $mapLat = null;
         $mapLong = null;
+        $nearbySchools = $this->emptyNearbySchools();
 
         if ($pcds) {
-            $coordCacheKey = 'onspd:coords:pcds:'.$pcds;
-            $coords = Cache::remember($coordCacheKey, now()->addDays(90), function () use ($pcds) {
-                return DB::table(self::ONSPD_TABLE)
+            $coordCacheKey = 'onspd:coords:pcds:'.$pcds.':v3';
+            $coordinatePayload = Cache::remember($coordCacheKey, now()->addDays(90), function () use ($pcds) {
+                $coords = DB::table(self::ONSPD_TABLE)
                     ->select(['lat', 'long'])
                     ->where('pcds', $pcds)
                     ->first();
+
+                $latitude = $coords?->lat !== null ? (float) $coords->lat : null;
+                $longitude = $coords?->long !== null ? (float) $coords->long : null;
+                $schools = $this->emptyNearbySchools();
+
+                if ($this->hasValidCoordinates($latitude, $longitude)) {
+                    $schools = $this->nearbySchoolsService->forPoint($this->propertyPointWkt($latitude, $longitude));
+                }
+
+                return [
+                    'lat' => $latitude,
+                    'long' => $longitude,
+                    'nearbySchools' => $schools,
+                ];
             });
 
-            if ($coords) {
-                $mapLat = $coords->lat !== null ? (float) $coords->lat : null;
-                $mapLong = $coords->long !== null ? (float) $coords->long : null;
+            $candidateMapLat = $coordinatePayload['lat'] ?? null;
+            $candidateMapLong = $coordinatePayload['long'] ?? null;
+
+            if ($this->hasValidCoordinates($candidateMapLat, $candidateMapLong)) {
+                $mapLat = $candidateMapLat;
+                $mapLong = $candidateMapLong;
+                $nearbySchools = $this->presentNearbySchools($coordinatePayload['nearbySchools'] ?? $this->emptyNearbySchools());
             }
         }
 
@@ -1270,12 +1293,81 @@ class PropertyController extends Controller
             'depr' => $depr,
             'deprMsg' => $deprMsg,
             'lsoaLink' => $lsoaLink,
+            'nearbySchools' => $nearbySchools,
             'localityAreaLink' => $localityAreaLink,
             'townAreaLink' => $townAreaLink,
             'districtAreaLink' => $districtAreaLink,
             'countyAreaLink' => $countyAreaLink,
         ]);
 
+    }
+
+    /**
+     * @return array{primary: Collection<int, object>, secondary: Collection<int, object>}
+     */
+    private function emptyNearbySchools(): array
+    {
+        return [
+            'primary' => collect(),
+            'secondary' => collect(),
+        ];
+    }
+
+    private function hasValidCoordinates(?float $latitude, ?float $longitude): bool
+    {
+        return $latitude !== null
+            && $longitude !== null
+            && $latitude >= -90
+            && $latitude <= 90
+            && $longitude >= -180
+            && $longitude <= 180;
+    }
+
+    private function propertyPointWkt(float $latitude, float $longitude): string
+    {
+        return 'POINT('.$longitude.' '.$latitude.')';
+    }
+
+    /**
+     * @param  array{primary?: Collection<int, object>, secondary?: Collection<int, object>}  $nearbySchools
+     * @return array{primary: Collection<int, object>, secondary: Collection<int, object>}
+     */
+    private function presentNearbySchools(array $nearbySchools): array
+    {
+        return [
+            'primary' => $this->presentSchoolCollection($nearbySchools['primary'] ?? collect()),
+            'secondary' => $this->presentSchoolCollection($nearbySchools['secondary'] ?? collect()),
+        ];
+    }
+
+    /**
+     * @param  Collection<int, object>  $schools
+     * @return Collection<int, object>
+     */
+    private function presentSchoolCollection(Collection $schools): Collection
+    {
+        return $schools->map(function (object $school): object {
+            $school->ofstedRating = OfstedRating::from($school->latest_ofsted_overall_effectiveness ?? null);
+            $school->latestInspectionDateLabel = $this->formatNullableDate($school->latest_inspection_date ?? null);
+            $school->url = route('schools.show', [
+                'slug' => SchoolSlug::for((string) ($school->establishment_name ?? ''), $school->urn ?? null),
+            ]);
+
+            return $school;
+        })->values();
+    }
+
+    private function formatNullableDate(mixed $value): ?string
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value)->format('j M Y');
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function showBySlug(string $slug)

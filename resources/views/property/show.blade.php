@@ -104,7 +104,7 @@
 
     {{-- Map coordinates from postcode via ONSPD (postcode centroid) are now set in the controller as $mapLat and $mapLong --}}
 
-    @if($mapLat && $mapLong)
+    @if($mapLat !== null && $mapLong !== null)
         <div class="mb-6">
             <div id="property-map" class="w-full h-100 rounded-md border border-zinc-200 relative overflow-hidden">
                 <div id="property-map-loading" class="absolute inset-0 flex items-center justify-center text-xs text-zinc-400 bg-zinc-50">
@@ -145,7 +145,7 @@
         }
     @endphp
     @php
-        $streetViewUrl = ($mapLat && $mapLong)
+        $streetViewUrl = ($mapLat !== null && $mapLong !== null)
             ? 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' . $mapLat . ',' . $mapLong
             : 'https://www.google.com/maps/@?api=1&map_action=pano&query=' . urlencode($displayAddress);
     @endphp
@@ -465,6 +465,133 @@
         @endif
     </section>
     </div>
+
+    @if($mapLat !== null && $mapLong !== null)
+        @php
+            $orderedNearbySchools = collect(['primary', 'secondary'])
+                ->mapWithKeys(function ($schoolGroupKey) use ($nearbySchools) {
+                    return [
+                        $schoolGroupKey => ($nearbySchools[$schoolGroupKey] ?? collect())
+                            ->take(5)
+                            ->sortBy(fn ($school) => sprintf(
+                                '%02d:%010.4f',
+                                $school->ofstedRating->sortOrder ?? 50,
+                                (float) ($school->distance_miles ?? 0),
+                            ))
+                            ->values(),
+                    ];
+                });
+
+            $displayedNearbySchools = collect(['primary', 'secondary'])
+                ->flatMap(fn ($schoolGroupKey) => $orderedNearbySchools[$schoolGroupKey] ?? collect());
+
+            $ratingCounts = $displayedNearbySchools->countBy(fn ($school) => $school->ofstedRating->label ?? 'No current Ofsted rating');
+            $ratingSummary = collect([
+                'Outstanding' => 'Outstanding',
+                'Good' => 'Good',
+                'Requires improvement' => 'Requires improvement',
+                'Inadequate' => 'Inadequate',
+                'No current Ofsted rating' => 'without a current rating',
+            ])
+                ->map(function (string $label, string $rating) use ($ratingCounts): ?string {
+                    $count = (int) ($ratingCounts[$rating] ?? 0);
+
+                    return $count > 0 ? $count.' '.$label : null;
+                })
+                ->filter()
+                ->values();
+        @endphp
+
+        <details class="group mb-6 rounded border border-zinc-200 bg-white p-4 shadow-lg">
+            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 [&::-webkit-details-marker]:hidden">
+                <div class="min-w-0">
+                    <h2 class="text-lg font-bold text-zinc-600">Nearby schools</h2>
+                    <p class="mt-1 text-sm text-zinc-600">
+                        Nearest open primary and secondary schools based on straight-line distance from this property.
+                    </p>
+                    @if($ratingSummary->isNotEmpty())
+                        <p class="mt-2 text-sm font-medium text-zinc-500">
+                            {{ $ratingSummary->join(' · ') }}
+                        </p>
+                    @endif
+                </div>
+                <span class="mt-0.5 inline-flex shrink-0 items-center rounded border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600 group-open:hidden">
+                    Show
+                </span>
+                <span class="mt-0.5 hidden shrink-0 items-center rounded border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600 group-open:inline-flex">
+                    Hide
+                </span>
+            </summary>
+
+            <div class="mt-5 grid grid-cols-1 gap-6 md:grid-cols-2">
+                @foreach([
+                    'primary' => [
+                        'heading' => 'Primary schools',
+                        'empty' => 'No nearby primary schools were found within 10 miles.',
+                    ],
+                    'secondary' => [
+                        'heading' => 'Secondary schools',
+                        'empty' => 'No nearby secondary schools were found within 10 miles.',
+                    ],
+                ] as $schoolGroupKey => $schoolGroup)
+                    <section class="min-w-0">
+                        <div class="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <h3 class="text-base font-semibold text-zinc-700">{{ $schoolGroup['heading'] }}</h3>
+                            <span class="text-xs text-zinc-500">(Tap each school to view)</span>
+                        </div>
+
+                        @if(($orderedNearbySchools[$schoolGroupKey] ?? collect())->isEmpty())
+                            <p class="rounded border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm text-zinc-600">
+                                {{ $schoolGroup['empty'] }}
+                            </p>
+                        @else
+                            <div class="space-y-3">
+                                @foreach($orderedNearbySchools[$schoolGroupKey] as $school)
+                                    @php
+                                        $ageRange = trim((string) ($school->age_range ?? ''));
+                                        $ageRangeLabel = $ageRange !== ''
+                                            ? 'Ages '.preg_replace('/\s*-\s*/', '–', $ageRange)
+                                            : 'Ages N/A';
+                                    @endphp
+                                    <article class="min-w-0">
+                                        <a
+                                            href="{{ $school->url }}"
+                                            class="block rounded border border-zinc-200 bg-zinc-50 px-3 py-2.5 transition hover:border-lime-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-lime-500/30"
+                                        >
+                                            <div class="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                                                <h4 class="min-w-0 break-words text-sm font-semibold leading-snug text-zinc-900">
+                                                    {{ $school->establishment_name }}
+                                                </h4>
+                                                <span class="inline-flex shrink-0 items-center self-start rounded-full border px-2 py-0.5 text-xs font-medium {{ $school->ofstedRating->badgeClass }}">
+                                                    {{ $school->ofstedRating->label }}
+                                                </span>
+                                            </div>
+
+                                            <div class="mt-1.5 space-y-0.5 text-sm leading-5">
+                                                <p class="font-medium text-zinc-800">
+                                                    {{ number_format((float) $school->distance_miles, 2) }} miles
+                                                    <span class="font-normal text-zinc-400">·</span>
+                                                    {{ $ageRangeLabel }}
+                                                </p>
+                                                <p class="break-words text-zinc-600">{{ $school->establishment_type ?: 'N/A' }}</p>
+                                                @if($school->latestInspectionDateLabel)
+                                                    <p class="text-zinc-500">Inspected {{ $school->latestInspectionDateLabel }}</p>
+                                                @endif
+                                            </div>
+                                        </a>
+                                    </article>
+                                @endforeach
+                            </div>
+                        @endif
+                    </section>
+                @endforeach
+            </div>
+
+            <p class="mt-5 text-xs text-zinc-500">
+                Distances are straight-line estimates and do not indicate school catchment eligibility or admission availability. School details are sourced from the Department for Education and inspection outcomes from Ofsted.
+            </p>
+        </details>
+    @endif
 
     @if(isset($crimeTrend) && count($crimeTrend))
         <div class="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg">
