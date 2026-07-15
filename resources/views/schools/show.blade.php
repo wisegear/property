@@ -227,7 +227,54 @@
         </section>
     @endif
 
+    @if($school->postcode)
+        <section class="rounded border border-zinc-200 bg-white p-4 shadow-lg md:p-6">
+            <div class="mb-4">
+                <h2 class="text-lg font-bold text-zinc-600">Nearby streets and sold property prices</h2>
+                <p class="mt-1 text-sm text-zinc-500">A shared local-market snapshot, loaded separately so it does not slow the school page.</p>
+            </div>
+            <div id="school-local-market" data-url="{{ route('schools.local-market', ['urn' => $school->urn]) }}">
+                <div class="grid grid-cols-1 gap-6 lg:grid-cols-2" aria-live="polite">
+                    @foreach(range(1, 2) as $column)
+                        <div class="animate-pulse">
+                            <div class="h-5 w-36 rounded bg-zinc-200"></div>
+                            <div class="mt-3 space-y-2 rounded border border-zinc-200 p-3">
+                                @foreach(range(1, 3) as $row)
+                                    <div class="h-10 rounded bg-zinc-100"></div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
 </div>
+
+@if($school->postcode)
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            const panel = document.getElementById('school-local-market');
+
+            if (!panel) {
+                return;
+            }
+
+            try {
+                const response = await fetch(panel.dataset.url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+
+                if (!response.ok) {
+                    throw new Error('Local market request failed');
+                }
+
+                panel.innerHTML = await response.text();
+            } catch (error) {
+                panel.innerHTML = '<p class="rounded border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">Local sold-price information is temporarily unavailable.</p>';
+            }
+        });
+    </script>
+@endif
 
 @if($coordinates)
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />

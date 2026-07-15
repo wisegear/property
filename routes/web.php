@@ -42,6 +42,7 @@ use App\Http\Controllers\RentalController;
 
 use App\Http\Controllers\RepossessionsController;
 use App\Http\Controllers\SchoolController;
+use App\Http\Controllers\SchoolLocalMarketController;
 use App\Http\Controllers\ScottishPricesController;
 use App\Http\Controllers\StampDutyController;
 use App\Http\Controllers\SupportController;
@@ -85,6 +86,9 @@ Route::get('/schools', [SchoolController::class, 'index'])->name('schools.index'
 Route::get('/school/{slug}', [SchoolController::class, 'show'])
     ->where('slug', '[a-z0-9\-]+')
     ->name('schools.show');
+Route::get('/school-local-market/{urn}', SchoolLocalMarketController::class)
+    ->whereNumber('urn')
+    ->name('schools.local-market');
 Route::get('/epc', [EpcController::class, 'home'])->name('epc.home');
 Route::get('/epc/search', [EpcController::class, 'search'])->name('epc.search');
 Route::get('/epc/points', [EpcController::class, 'points'])->name('epc.points');
