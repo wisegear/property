@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 
 class SchoolLocalMarketService
 {
-    private const CACHE_VERSION = 'v1';
+    private const CACHE_VERSION = 'v3';
 
     private const FRESH_SECONDS = 60 * 60 * 24 * 30;
 
@@ -101,7 +101,7 @@ class SchoolLocalMarketService
             ->whereNotNull('Street')
             ->whereRaw('TRIM("Street") <> ?', [''])
             ->whereNotNull('Price')
-            ->where('Date', '>=', now()->subYears(5)->startOfDay())
+            ->where('Date', '>=', now()->subYear()->startOfDay())
             ->groupByRaw('TRIM("Street")')
             ->havingRaw('COUNT(*) >= ?', [3])
             ->orderByDesc('latest_sale_date')
@@ -132,6 +132,10 @@ class SchoolLocalMarketService
             ->map(function (object $row): array {
                 $price = (int) $row->Price;
                 $date = $row->Date !== null ? Carbon::parse((string) $row->Date) : null;
+                $postcode = strtoupper(trim((string) $row->Postcode));
+                $paon = trim((string) $row->PAON);
+                $saon = trim((string) $row->SAON);
+                $street = trim((string) $row->Street);
                 $address = collect([$row->SAON, $row->PAON, $row->Street])
                     ->map(fn ($part): string => trim((string) $part))
                     ->filter()
@@ -139,11 +143,14 @@ class SchoolLocalMarketService
 
                 return [
                     'address' => Str::title(Str::lower($address)),
-                    'postcode' => strtoupper(trim((string) $row->Postcode)),
+                    'postcode' => $postcode,
                     'price' => $price,
                     'price_label' => '£'.number_format($price),
                     'date_label' => $date?->format('j M Y'),
                     'property_type' => $this->propertyTypeLabel($row->PropertyType),
+                    'url' => route('property.show.slug', [
+                        'slug' => $this->buildPropertySlug($postcode, $paon, $street, $saon !== '' ? $saon : null),
+                    ], false),
                 ];
             })
             ->all();
@@ -167,6 +174,33 @@ class SchoolLocalMarketService
             'F' => 'Flat or maisonette',
             default => 'Other property',
         };
+    }
+
+    private function buildPropertySlug(string $postcode, string $paon, string $street, ?string $saon = null): string
+    {
+        $parts = [
+            $this->normalizeSlugPart($postcode),
+            $this->normalizeSlugPart($paon),
+            $this->normalizeSlugPart($street),
+        ];
+
+        if ($saon !== null && trim($saon) !== '') {
+            $parts[] = $this->normalizeSlugPart($saon);
+        }
+
+        $parts = array_values(array_filter($parts, fn (string $part): bool => $part !== ''));
+
+        return preg_replace('/-+/', '-', implode('-', $parts)) ?? '';
+    }
+
+    private function normalizeSlugPart(string $value): string
+    {
+        $normalized = strtolower(trim($value));
+        $normalized = str_replace(',', '', $normalized);
+        $normalized = preg_replace('/\s+/', '-', $normalized) ?? '';
+        $normalized = preg_replace('/-+/', '-', $normalized) ?? '';
+
+        return trim($normalized, '-');
     }
 
     /**

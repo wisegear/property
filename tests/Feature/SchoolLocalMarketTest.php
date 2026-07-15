@@ -40,6 +40,9 @@ class SchoolLocalMarketTest extends TestCase
             $this->sale('TX-3', 600000, '2026-03-10', 'SW6 3CD', '14', 'SEAGRAVE ROAD', 'S'),
             $this->sale('TX-4', 700000, '2026-02-10', 'SW6 4EF', '1', 'BISHOPS ROAD', 'F'),
             $this->sale('TX-5', 800000, '2026-01-10', 'SW7 1AA', '1', 'EXCLUDED ROAD', 'D'),
+            $this->sale('TX-6', 300000, '2024-05-10', 'SW6 1RX', '1', 'OLD ROAD', 'T'),
+            $this->sale('TX-7', 310000, '2024-04-10', 'SW6 1RX', '2', 'OLD ROAD', 'T'),
+            $this->sale('TX-8', 320000, '2024-03-10', 'SW6 1RX', '3', 'OLD ROAD', 'T'),
         ]);
     }
 
@@ -49,9 +52,16 @@ class SchoolLocalMarketTest extends TestCase
             ->assertOk()
             ->assertSee('Nearby streets')
             ->assertSee('Seagrave Road')
-            ->assertSee('£550,000 avg.')
+            ->assertSee('Average sold price over the past 12 months.')
+            ->assertSee('£550,000')
+            ->assertDontSee('£550,000 avg.')
+            ->assertSee('View street')
             ->assertSee('Latest sold prices')
+            ->assertSee('The most recent sales recorded on nearby streets.')
             ->assertSee('£500,000')
+            ->assertSee('View property')
+            ->assertSee('/property/sw6-1rx-10-seagrave-road', false)
+            ->assertDontSee('/property/street/sw6/old-road', false)
             ->assertDontSee('Excluded Road');
 
         $this->assertTrue(Cache::has(SchoolLocalMarketService::cacheKey('SW6 1RX')));
@@ -66,6 +76,24 @@ class SchoolLocalMarketTest extends TestCase
             ->assertDontSee('Seagrave Road');
 
         $this->assertFalse(Cache::has(SchoolLocalMarketService::cacheKey('SW6 1RX')));
+    }
+
+    public function test_nearby_streets_section_is_hidden_without_three_sales_in_twelve_months(): void
+    {
+        DB::table('property_school_establishments')->insert([
+            'urn' => '100493',
+            'establishment_name' => 'Quiet Area School',
+            'postcode' => 'CF1 1AA',
+        ]);
+        DB::table('land_registry')->insert(
+            $this->sale('TX-QUIET', 250000, '2026-06-10', 'CF1 1AA', '1', 'QUIET ROAD', 'T')
+        );
+
+        $this->get('/school-local-market/100493')
+            ->assertOk()
+            ->assertDontSee('Nearby streets')
+            ->assertSee('Latest sold prices')
+            ->assertSee('Quiet Road');
     }
 
     public function test_separate_warmer_populates_one_snapshot_per_outcode(): void
