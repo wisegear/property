@@ -195,48 +195,82 @@ class SchoolController extends Controller
     private function resolveSchoolForSlug(string $slug): ?array
     {
         $normalizedSlug = SchoolSlug::base($slug);
-        $urnFromSlug = null;
 
         if (preg_match('/^(.*)-(\d+)$/', $normalizedSlug, $matches)) {
-            $urnFromSlug = $matches[2];
+            $candidate = PropertySchoolEstablishment::query()
+                ->select(['urn', 'establishment_name'])
+                ->where('urn', $matches[2])
+                ->whereNotNull('establishment_name')
+                ->first();
+
+            return $this->resolvedSchoolCandidate($candidate, $normalizedSlug);
         }
 
-        $candidates = PropertySchoolEstablishment::query()
-            ->select(['urn', 'establishment_name'])
-            ->when($urnFromSlug !== null, fn ($query) => $query->where('urn', $urnFromSlug))
-            ->whereNotNull('establishment_name')
-            ->get();
+        $checkedUrns = [];
 
-        foreach ($candidates as $candidate) {
-            $canonicalSlug = SchoolSlug::for((string) $candidate->establishment_name, $candidate->urn);
+        foreach ($this->slugSearchTokens($normalizedSlug) as $token) {
+            $candidates = PropertySchoolEstablishment::query()
+                ->select(['urn', 'establishment_name'])
+                ->whereNotNull('establishment_name')
+                ->whereRaw('LOWER(establishment_name) LIKE ?', ['%'.strtolower($token).'%'])
+                ->get();
 
-            if ($canonicalSlug === $normalizedSlug) {
-                return [
-                    'urn' => (string) $candidate->urn,
-                    'canonical_slug' => $canonicalSlug,
-                ];
+            foreach ($candidates as $candidate) {
+                if (isset($checkedUrns[(string) $candidate->urn])) {
+                    continue;
+                }
+
+                $checkedUrns[(string) $candidate->urn] = true;
+                $resolved = $this->resolvedSchoolCandidate($candidate, $normalizedSlug);
+
+                if ($resolved !== null) {
+                    return $resolved;
+                }
             }
         }
 
-        if ($urnFromSlug !== null) {
+        return null;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function slugSearchTokens(string $slug): array
+    {
+        $tokens = array_values(array_unique(array_filter(
+            explode('-', $slug),
+            fn (string $token): bool => strlen($token) >= 3,
+        )));
+
+        usort($tokens, fn (string $first, string $second): int => strlen($second) <=> strlen($first));
+
+        return $tokens;
+    }
+
+    /**
+     * @return array{urn:string, canonical_slug:string}|null
+     */
+    private function resolvedSchoolCandidate(?PropertySchoolEstablishment $school, string $slug): ?array
+    {
+        if ($school === null) {
             return null;
         }
 
-        $school = PropertySchoolEstablishment::query()
-            ->select(['urn', 'establishment_name'])
-            ->whereNotNull('establishment_name')
-            ->get()
-            ->first(function (PropertySchoolEstablishment $school) use ($normalizedSlug): bool {
-                return SchoolSlug::for((string) $school->establishment_name, $school->urn) === $normalizedSlug;
-            });
+        $baseSlug = SchoolSlug::base((string) $school->establishment_name);
 
-        if ($school === null) {
+        if ($baseSlug !== $slug && ! preg_match('/^'.preg_quote($baseSlug, '/').'-\d+$/', $slug)) {
+            return null;
+        }
+
+        $canonicalSlug = SchoolSlug::for((string) $school->establishment_name, $school->urn);
+
+        if ($canonicalSlug !== $slug) {
             return null;
         }
 
         return [
             'urn' => (string) $school->urn,
-            'canonical_slug' => SchoolSlug::for((string) $school->establishment_name, $school->urn),
+            'canonical_slug' => $canonicalSlug,
         ];
     }
 

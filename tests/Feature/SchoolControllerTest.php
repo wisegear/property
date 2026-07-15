@@ -67,6 +67,26 @@ class SchoolControllerTest extends TestCase
         $this->get('/school/not-a-real-school')->assertNotFound();
     }
 
+    public function test_name_only_school_slug_resolution_uses_a_bounded_number_of_queries(): void
+    {
+        foreach (range(1, 12) as $index) {
+            $this->insertSchool(urn: (string) (200000 + $index), name: 'Unrelated Academy '.$index);
+        }
+
+        $this->insertSchool(urn: '100491', name: 'Oratory Roman Catholic Primary School');
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $this->get('/school/oratory-roman-catholic-primary-school')
+            ->assertOk()
+            ->assertSee('Oratory Roman Catholic Primary School');
+
+        $schoolQueries = collect(DB::getQueryLog())
+            ->filter(fn (array $query): bool => str_contains($query['query'], 'property_school_establishments'));
+
+        $this->assertLessThan(10, $schoolQueries->count());
+    }
+
     public function test_ofsted_button_is_only_shown_when_available(): void
     {
         $this->insertSchool(urn: '111111', name: 'Report School');
