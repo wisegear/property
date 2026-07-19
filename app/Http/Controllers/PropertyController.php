@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\LandRegistry;
+use App\Services\CouncilTaxEstimateService;
 use App\Services\CrimeSummaryService;
 use App\Services\EpcMatcher;
 use App\Services\FormAnalytics;
@@ -25,6 +26,7 @@ class PropertyController extends Controller
 
     public function __construct(
         private CrimeSummaryService $crimeSummaryService,
+        private CouncilTaxEstimateService $councilTaxEstimateService,
         private NearbySchoolsService $nearbySchoolsService,
     ) {}
 
@@ -1255,6 +1257,11 @@ class PropertyController extends Controller
         $townAreaLink = $showTownCharts ? $this->resolvePropertyAreaLink('town', $town) : null;
         $districtAreaLink = $showDistrictCharts ? $this->resolvePropertyAreaLink('district', $districtName) : null;
         $countyAreaLink = ! empty($countyName) ? $this->resolvePropertyAreaLink('county', $countyName) : null;
+        $councilTaxEstimate = Cache::remember(
+            $propertyCacheKeyBase.':council-tax-estimate:v2',
+            now()->addDays(90),
+            fn (): ?array => $this->councilTaxEstimateService->forProperty($records, $postcode),
+        );
 
         return view('property.show', [
             'results' => $records,
@@ -1298,6 +1305,7 @@ class PropertyController extends Controller
             'townAreaLink' => $townAreaLink,
             'districtAreaLink' => $districtAreaLink,
             'countyAreaLink' => $countyAreaLink,
+            'councilTaxEstimate' => $councilTaxEstimate,
         ]);
 
     }

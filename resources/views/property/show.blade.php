@@ -309,7 +309,7 @@
         @endif
     @endif
 
-    <div class="my-8 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+    <div class="my-8 flex flex-col gap-6">
     <!-- EPC Matches -->
     @php
         $filteredEpcMatches = array_values(array_filter($epcMatches ?? [], function ($m) {
@@ -404,6 +404,9 @@
         </div>
     </section>
 
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
+    @include('property.partials.council-tax-estimate')
+
     {{-- Deprivation data is now fully resolved in the controller --}}
     {{-- Expected variables: $depr (array|null), $deprMsg (string|null), $lsoaLink (string|null) --}}
     @php
@@ -464,6 +467,7 @@
             </div>
         @endif
     </section>
+    </div>
     </div>
 
     @if($mapLat !== null && $mapLong !== null)
