@@ -26,7 +26,8 @@
 @endphp
 
 <div @class([
-    'ml-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-full',
+    'flex shrink-0 items-center justify-center rounded-full',
+    'ml-3 h-11 w-11' => empty($wrapperClass),
     $wrapperClass ?? null,
 ]) title="{{ $title ?? '' }}">
     @if ($gaugeVariant === 'market-status')
