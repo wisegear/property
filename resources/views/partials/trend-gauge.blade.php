@@ -29,7 +29,32 @@
     'ml-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-full',
     $wrapperClass ?? null,
 ]) title="{{ $title ?? '' }}">
-    @if ($gaugeVariant === 'stress')
+    @if ($gaugeVariant === 'market-status')
+        <svg class="{{ $svgClass ?? 'h-7 w-11' }}" viewBox="0 0 120 70" aria-hidden="true">
+            <path d="M 12 60 A 48 48 0 0 1 36 18"
+                  fill="none"
+                  stroke="{{ $invertTrendScale ? '#22c55e' : '#ef4444' }}"
+                  stroke-width="12"
+                  stroke-linecap="butt" />
+            <path d="M 40 16 A 48 48 0 0 1 80 16"
+                  fill="none"
+                  stroke="#facc15"
+                  stroke-width="12"
+                  stroke-linecap="butt" />
+            <path d="M 84 18 A 48 48 0 0 1 108 60"
+                  fill="none"
+                  stroke="{{ $invertTrendScale ? '#ef4444' : '#22c55e' }}"
+                  stroke-width="12"
+                  stroke-linecap="butt" />
+            <path d="M 38 17 L 42 25" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" />
+            <path d="M 82 17 L 78 25" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" />
+            <g transform="rotate({{ $trendNeedleRotation }}, 60, 60)">
+                <line x1="60" y1="60" x2="60" y2="24" stroke="#241c27" stroke-width="2.5" stroke-linecap="round" />
+                <circle cx="60" cy="60" r="4.5" fill="#241c27" />
+                <circle cx="60" cy="60" r="2" fill="#ffffff" />
+            </g>
+        </svg>
+    @elseif ($gaugeVariant === 'stress')
         <svg class="{{ $svgClass ?? 'h-7 w-11' }}" viewBox="0 0 120 70" aria-hidden="true">
             <path d="M 12 60 A 48 48 0 0 1 58 12"
                   fill="none"

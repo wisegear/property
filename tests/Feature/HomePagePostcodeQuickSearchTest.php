@@ -145,7 +145,11 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('Price growth stalling');
         $view->assertSee('16% market breadth');
         $view->assertSee('100% liquidity falling');
-        $view->assertSee('bg-yellow-50 text-yellow-700 ring-1 ring-yellow-300', false);
+        $view->assertSee('stroke="#ef4444"', false);
+        $view->assertSee('stroke="#facc15"', false);
+        $view->assertSee('stroke="#22c55e"', false);
+        $view->assertSee('text-base font-bold tracking-tight text-red-700', false);
+        $view->assertSee('pt-1 text-sm font-semibold leading-5 text-slate-700', false);
         $view->assertSee('18 / 112');
         $view->assertSee('112 / 112');
         $view->assertSee('rounded-xl border border-slate-200 bg-white p-5 shadow-sm', false);

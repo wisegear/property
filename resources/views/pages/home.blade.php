@@ -232,6 +232,9 @@
                             'detail' => $labels['transactions'],
                             'tone' => $transactionColor === 'red' ? 'negative' : 'neutral',
                             'icon' => 'trend-down',
+                            'gauge_value' => $transactionChange,
+                            'gauge_variant' => 'dashboard-dual',
+                            'invert_gauge' => false,
                         ],
                         [
                             'value' => number_format($priceChange, 1).'%',
@@ -239,6 +242,9 @@
                             'detail' => $labels['price'],
                             'tone' => $priceColor === 'red' ? 'negative' : 'neutral',
                             'icon' => 'home',
+                            'gauge_value' => $priceChange,
+                            'gauge_variant' => 'dashboard-dual',
+                            'invert_gauge' => false,
                         ],
                         [
                             'value' => number_format($risingPriceCounties).' / '.number_format($totalCounties),
@@ -246,6 +252,9 @@
                             'detail' => $totalCounties > 0 ? number_format($risingPriceTrend, 0).'% market breadth' : 'No counties available',
                             'tone' => $risingBreadthTone,
                             'icon' => 'trend-up',
+                            'gauge_value' => ($risingPriceTrend * 2) - 100,
+                            'gauge_variant' => 'market-status',
+                            'invert_gauge' => false,
                         ],
                         [
                             'value' => number_format($decliningCounties).' / '.number_format($totalCounties),
@@ -253,6 +262,9 @@
                             'detail' => $totalCounties > 0 ? number_format($fallingSalesPercent, 0).'% liquidity falling' : 'No counties available',
                             'tone' => $fallingColor === 'red' ? 'negative' : 'neutral',
                             'icon' => 'alert',
+                            'gauge_value' => ($fallingSalesPercent * 2) - 100,
+                            'gauge_variant' => 'market-status',
+                            'invert_gauge' => true,
                         ],
                     ];
                     @endphp
@@ -270,6 +282,9 @@
                             :detail="$card['detail']"
                             :tone="$card['tone']"
                             :icon="$card['icon']"
+                            :gauge-value="$card['gauge_value']"
+                            :gauge-variant="$card['gauge_variant']"
+                            :invert-gauge="$card['invert_gauge']"
                         />
                     @endforeach
                 </div>

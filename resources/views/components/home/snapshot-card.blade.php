@@ -4,6 +4,9 @@
     'detail',
     'tone' => 'neutral',
     'icon' => 'circle',
+    'gaugeValue' => null,
+    'gaugeVariant' => 'dashboard-dual',
+    'invertGauge' => false,
 ])
 
 @php
@@ -32,9 +35,23 @@
 @endphp
 
 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
-    <div class="flex items-center justify-between gap-3">
-        <div class="text-3xl font-bold tracking-tight {{ $toneClasses['value'] }}">{{ $value }}</div>
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $toneClasses['icon'] }}">
+    <div class="flex items-start justify-between gap-3">
+        <div class="pt-1 text-sm font-semibold leading-5 text-slate-700">{{ $label }}</div>
+        @if (! is_null($gaugeValue))
+            <div class="flex shrink-0 flex-col items-center">
+                @include('partials.trend-gauge', [
+                    'value' => $gaugeValue,
+                    'variant' => $gaugeVariant,
+                    'invert' => $invertGauge,
+                    'title' => $value,
+                    'wrapperClass' => 'ml-0 h-11 w-20',
+                    'svgClass' => 'h-10 w-20',
+                ])
+                <div class="text-base font-bold tracking-tight {{ $toneClasses['value'] }}">{{ $value }}</div>
+            </div>
+        @else
+            <div class="flex shrink-0 flex-col items-center gap-1">
+                <div class="flex h-9 w-9 items-center justify-center rounded-full {{ $toneClasses['icon'] }}">
             @switch($icon)
                 @case('trend-down')
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
@@ -67,9 +84,11 @@
                         <circle cx="12" cy="12" r="8"></circle>
                     </svg>
             @endswitch
-        </div>
+                </div>
+                <div class="text-base font-bold tracking-tight {{ $toneClasses['value'] }}">{{ $value }}</div>
+            </div>
+        @endif
     </div>
 
-    <div class="mt-2 text-sm font-medium text-slate-600">{{ $label }}</div>
-    <div class="mt-4 text-sm font-semibold {{ $toneClasses['detail'] }}">{{ $detail }}</div>
+    <div class="mt-3 text-sm font-semibold {{ $toneClasses['detail'] }}">{{ $detail }}</div>
 </div>
