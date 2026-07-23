@@ -24,7 +24,7 @@ class PropertySearchRequest extends FormRequest
     {
         return [
             'postcode' => [
-                $this->expectsJson() ? 'required' : 'nullable',
+                $this->expectsJson() || $this->routeIs('api.*') ? 'required' : 'nullable',
                 'string',
                 'max:8',
                 'regex:/^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i',

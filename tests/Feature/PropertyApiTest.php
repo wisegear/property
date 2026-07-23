@@ -33,6 +33,16 @@ class PropertyApiTest extends TestCase
             ->assertJsonPath('meta.total', 1);
     }
 
+    public function test_api_route_returns_json_without_an_accept_header(): void
+    {
+        DB::table('land_registry')->insert($this->landRegistryRow());
+
+        $this->get('/api/v1/properties?postcode=AB1%202CD')
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/json')
+            ->assertJsonPath('postcode', 'AB1 2CD');
+    }
+
     public function test_postcode_search_returns_json_validation_errors(): void
     {
         $this->getJson('/api/v1/properties?postcode=invalid')

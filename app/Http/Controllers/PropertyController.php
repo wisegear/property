@@ -257,7 +257,7 @@ class PropertyController extends Controller
             });
         }
 
-        if ($request->expectsJson()) {
+        if ($request->expectsJson() || $request->routeIs('api.*')) {
             return response()->json([
                 'postcode' => $postcode,
                 'results' => $results?->getCollection()->map(function (LandRegistry $row) use ($request) {
@@ -1402,7 +1402,7 @@ class PropertyController extends Controller
             'street' => $resolved['street'],
             'saon' => $resolved['saon'],
             '_from_slug' => 1,
-            '_api' => $request->expectsJson(),
+            '_api' => $request->expectsJson() || $request->routeIs('api.*'),
         ]);
 
         return $this->show($request);
