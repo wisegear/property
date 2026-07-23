@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\PropertySearchRequest;
+use App\Http\Resources\PropertyResearchResource;
 use App\Models\LandRegistry;
 use App\Services\CouncilTaxEstimateService;
 use App\Services\CrimeSummaryService;
@@ -112,13 +114,13 @@ class PropertyController extends Controller
         ));
     }
 
-    public function search(Request $request)
+    public function search(PropertySearchRequest $request)
     {
         // =========================================================
         // 1) INPUT: read and normalise the postcode from the querystring
         //    e.g. "WR53EU" or "WR5 3EU" → store as upper-case string
         // =========================================================
-        $postcode = strtoupper(trim((string) $request->query('postcode', '')));
+        $postcode = strtoupper(trim((string) $request->input('postcode', '')));
 
         // Helper: normalise a postcode to the standard spaced form used by ONSPD `pcds`.
         // Input may be "WR53EU" or "WR5 3EU" → output "WR5 3EU".
@@ -143,12 +145,6 @@ class PropertyController extends Controller
             // This accepts with/without space; detailed edge-cases
             // are out of scope for speed/robustness here.
             // -----------------------------------------------------
-            $request->validate([
-                'postcode' => [
-                    'required',
-                    'regex:/^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i',
-                ],
-            ]);
             FormAnalytics::record('property_search', [
                 'postcode' => $postcode,
             ]);
@@ -264,7 +260,7 @@ class PropertyController extends Controller
         if ($request->expectsJson()) {
             return response()->json([
                 'postcode' => $postcode,
-                'results' => $results?->getCollection()->map(function (LandRegistry $row) {
+                'results' => $results?->getCollection()->map(function (LandRegistry $row) use ($request) {
                     return [
                         'transaction_id' => (string) $row->TransactionID,
                         'price' => $row->Price !== null ? (int) $row->Price : null,
@@ -282,9 +278,17 @@ class PropertyController extends Controller
                         'postcode' => (string) ($row->Postcode ?? ''),
                         'category' => (string) ($row->PPDCategoryType ?? ''),
                         'property_slug' => (string) ($row->property_slug ?? ''),
-                        'url' => route('property.show.slug', ['slug' => $row->property_slug], false),
+                        'url' => $request->routeIs('api.*')
+                            ? route('api.v1.properties.show', ['slug' => $row->property_slug])
+                            : route('property.show.slug', ['slug' => $row->property_slug], false),
                     ];
                 })->values() ?? [],
+                'meta' => $results === null ? null : [
+                    'current_page' => $results->currentPage(),
+                    'last_page' => $results->lastPage(),
+                    'per_page' => $results->perPage(),
+                    'total' => $results->total(),
+                ],
             ]);
         }
 
@@ -1263,7 +1267,7 @@ class PropertyController extends Controller
             fn (): ?array => $this->councilTaxEstimateService->forProperty($records, $postcode),
         );
 
-        return view('property.show', [
+        $viewData = [
             'results' => $records,
             'slug' => $slug,
             'address' => $address,
@@ -1306,7 +1310,13 @@ class PropertyController extends Controller
             'districtAreaLink' => $districtAreaLink,
             'countyAreaLink' => $countyAreaLink,
             'councilTaxEstimate' => $councilTaxEstimate,
-        ]);
+        ];
+
+        if ($request->boolean('_api')) {
+            return new PropertyResearchResource($viewData);
+        }
+
+        return view('property.show', $viewData);
 
     }
 
@@ -1378,7 +1388,7 @@ class PropertyController extends Controller
         }
     }
 
-    public function showBySlug(string $slug)
+    public function showBySlug(Request $request, string $slug)
     {
         $resolved = $this->resolveAddressFromSlug($slug);
 
@@ -1392,6 +1402,7 @@ class PropertyController extends Controller
             'street' => $resolved['street'],
             'saon' => $resolved['saon'],
             '_from_slug' => 1,
+            '_api' => $request->expectsJson(),
         ]);
 
         return $this->show($request);
