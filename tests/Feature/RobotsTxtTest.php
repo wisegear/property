@@ -13,7 +13,7 @@ class RobotsTxtTest extends TestCase
         $this->assertFileExists($robotsPath);
 
         $robotsContent = (string) File::get($robotsPath);
-        $this->assertStringContainsString('Sitemap: https://prop.test/sitemap.xml', $robotsContent);
-        $this->assertStringContainsString('Sitemap: https://prop.test/sitemap-index.xml', $robotsContent);
+        $this->assertStringContainsString('Sitemap: https://propertyresearch.uk/sitemap.xml', $robotsContent);
+        $this->assertStringContainsString('Sitemap: https://propertyresearch.uk/sitemap-index.xml', $robotsContent);
     }
 }
