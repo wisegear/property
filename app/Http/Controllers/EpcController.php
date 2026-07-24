@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\EpcCertificateFinder;
 use App\Services\FormAnalytics;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -717,7 +718,7 @@ class EpcController extends Controller
      * We attempt Scotland first, then fall back to E&W. We pass the full row
      * (all columns) through to the view so we can decide later what to surface.
      */
-    public function show(Request $request, string $lmk)
+    public function show(Request $request, string $lmk, EpcCertificateFinder $finder)
     {
         $encoded = $request->query('r');
         $incomingReturn = $request->query('return');
@@ -761,18 +762,7 @@ class EpcController extends Controller
         }
 
         // --- Fall back to England & Wales
-        $ewTable = 'epc_certificates';
-        $ewLmkColumn = $this->resolveColumn($ewTable, ['LMK_KEY', 'lmk_key']);
-        $ewBuildingColumn = $this->resolveColumn($ewTable, ['BUILDING_REFERENCE_NUMBER', 'building_reference_number']);
-        $ew = DB::table($ewTable)
-            ->where($ewLmkColumn, $lmk)
-            ->first();
-
-        if (! $ew && $ewBuildingColumn !== null) {
-            $ew = DB::table($ewTable)
-                ->where($ewBuildingColumn, $lmk)
-                ->first();
-        }
+        $ew = $finder->findEnglandWales($lmk);
 
         if ($ew) {
             $record = (array) $ew;

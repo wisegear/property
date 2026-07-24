@@ -57,6 +57,8 @@ class PropertyResearchResource extends JsonResource
                             : null,
                         'local_authority' => $certificate->local_authority_label ?? null,
                         'match_score' => round((float) $match['score'], 1),
+                        'api_url' => route('api.v1.epc.show', ['reference' => $certificate->lmk_key]),
+                        'website_url' => route('epc.show', ['lmk' => $certificate->lmk_key]),
                     ];
                 })
                 ->values(),
