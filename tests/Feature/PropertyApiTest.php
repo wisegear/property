@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -77,6 +78,54 @@ class PropertyApiTest extends TestCase
                     'market' => ['property_price_history', 'postcode', 'locality', 'town', 'district', 'county'],
                 ],
             ]);
+    }
+
+    public function test_property_research_school_summaries_contain_api_and_website_urls(): void
+    {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            Schema::table('property_school_establishments', function (Blueprint $table): void {
+                $table->decimal('location_latitude', 10, 7)->nullable();
+                $table->decimal('location_longitude', 10, 7)->nullable();
+            });
+        }
+
+        DB::table('land_registry')->insert($this->landRegistryRow());
+        DB::table('onspd_v2')->insert([
+            'pcds' => 'AB1 2CD',
+            'lat' => 52.123456,
+            'long' => -1.123456,
+        ]);
+
+        $school = [
+            'urn' => '100001',
+            'establishment_name' => 'Bousfield Primary School',
+            'postcode' => 'AB1 2CD',
+            'establishment_status_code' => '1',
+            'phase_of_education_code' => '2',
+            'phase_of_education_name' => 'Primary',
+            'type_of_establishment_name' => 'Community school',
+            'statutory_low_age' => 4,
+            'statutory_high_age' => 11,
+        ];
+
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            $school['location'] = DB::raw('ST_SetSRID(ST_MakePoint(-1.123456, 52.123456), 4326)');
+        } else {
+            $school['location_longitude'] = -1.123456;
+            $school['location_latitude'] = 52.123456;
+        }
+
+        DB::table('property_school_establishments')->insert($school);
+
+        $this->getJson('/api/v1/properties/ab1-2cd-10-market-road')
+            ->assertOk()
+            ->assertJsonPath('data.nearby_schools.primary.0.slug', 'bousfield-primary-school')
+            ->assertJsonPath('data.nearby_schools.primary.0.api_url', route('api.v1.schools.show', [
+                'slug' => 'bousfield-primary-school',
+            ]))
+            ->assertJsonPath('data.nearby_schools.primary.0.website_url', route('schools.show', [
+                'slug' => 'bousfield-primary-school',
+            ]));
     }
 
     /**

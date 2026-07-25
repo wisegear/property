@@ -71,6 +71,23 @@ class SchoolController extends Controller
         ]);
     }
 
+    /**
+     * @return array{payload:array<string, mixed>, canonical_slug:string}|null
+     */
+    public function schoolPayloadForSlug(string $slug): ?array
+    {
+        $resolved = $this->resolveSchoolForSlug($slug);
+
+        if ($resolved === null) {
+            return null;
+        }
+
+        return [
+            'payload' => $this->warmSchoolCache($resolved['urn']),
+            'canonical_slug' => $resolved['canonical_slug'],
+        ];
+    }
+
     public function warmSchoolCache(string $urn): array
     {
         return Cache::remember(self::showCacheKey($urn), self::CACHE_TTL, function () use ($urn): array {
@@ -264,7 +281,7 @@ class SchoolController extends Controller
 
         $canonicalSlug = SchoolSlug::for((string) $school->establishment_name, $school->urn);
 
-        if ($canonicalSlug !== $slug) {
+        if ($slug === $baseSlug && $canonicalSlug !== $baseSlug) {
             return null;
         }
 

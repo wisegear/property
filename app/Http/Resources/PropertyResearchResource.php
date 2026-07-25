@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\PropertyResearch\SchoolSlug;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
@@ -114,18 +115,28 @@ class PropertyResearchResource extends JsonResource
 
     private function schools(Collection $schools): Collection
     {
-        return $schools->map(fn (object $school): array => [
-            'urn' => $school->urn ?? null,
-            'name' => $school->establishment_name ?? null,
-            'postcode' => $school->postcode ?? null,
-            'phase' => $school->school_phase ?? null,
-            'type' => $school->establishment_type ?? null,
-            'age_range' => $school->age_range ?? null,
-            'distance_miles' => isset($school->distance_miles) ? (float) $school->distance_miles : null,
-            'latest_ofsted_rating' => $school->latest_ofsted_overall_effectiveness ?? null,
-            'latest_inspection_date' => $school->latest_inspection_date ?? null,
-            'url' => $school->url ?? null,
-        ])->values();
+        return $schools->map(function (object $school): array {
+            $slug = SchoolSlug::for(
+                (string) ($school->establishment_name ?? ''),
+                $school->urn ?? null,
+            );
+
+            return [
+                'urn' => $school->urn ?? null,
+                'name' => $school->establishment_name ?? null,
+                'postcode' => $school->postcode ?? null,
+                'phase' => $school->school_phase ?? null,
+                'type' => $school->establishment_type ?? null,
+                'age_range' => $school->age_range ?? null,
+                'distance_miles' => isset($school->distance_miles) ? (float) $school->distance_miles : null,
+                'latest_ofsted_rating' => $school->latest_ofsted_overall_effectiveness ?? null,
+                'latest_inspection_date' => $school->latest_inspection_date ?? null,
+                'slug' => $slug,
+                'api_url' => route('api.v1.schools.show', ['slug' => $slug]),
+                'website_url' => route('schools.show', ['slug' => $slug]),
+                'url' => $school->url ?? null,
+            ];
+        })->values();
     }
 
     private function series(Collection $series): Collection
