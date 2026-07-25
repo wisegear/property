@@ -25,6 +25,13 @@ class EpcCertificateFinder
             ->first();
     }
 
+    public function findScotland(string $reference): ?object
+    {
+        $column = $this->resolveColumnForTable('epc_certificates_scotland', ['REPORT_REFERENCE_NUMBER', 'report_reference_number']);
+
+        return DB::table('epc_certificates_scotland')->where($column, $reference)->first();
+    }
+
     private function resolveColumn(array $candidates): ?string
     {
         foreach ($candidates as $candidate) {
@@ -34,5 +41,16 @@ class EpcCertificateFinder
         }
 
         return null;
+    }
+
+    private function resolveColumnForTable(string $table, array $candidates): string
+    {
+        foreach ($candidates as $candidate) {
+            if (Schema::hasColumn($table, $candidate)) {
+                return $candidate;
+            }
+        }
+
+        return $candidates[0];
     }
 }

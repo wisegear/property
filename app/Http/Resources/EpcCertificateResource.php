@@ -14,11 +14,16 @@ class EpcCertificateResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $reference = $this->value('LMK_KEY', 'lmk_key')
-            ?? $this->value('BUILDING_REFERENCE_NUMBER', 'building_reference_number');
+        $scotland = $this->value('_epc_nation') === 'scotland';
+        $reference = $scotland
+            ? $this->value('REPORT_REFERENCE_NUMBER', 'report_reference_number')
+            : ($this->value('LMK_KEY', 'lmk_key')
+                ?? $this->value('BUILDING_REFERENCE_NUMBER', 'building_reference_number'));
 
         return [
+            'reference' => $reference,
             'lmk_key' => $this->value('LMK_KEY', 'lmk_key'),
+            'report_reference_number' => $this->value('REPORT_REFERENCE_NUMBER', 'report_reference_number'),
             'building_reference_number' => $this->value('BUILDING_REFERENCE_NUMBER', 'building_reference_number'),
             'uprn' => $this->value('UPRN', 'uprn'),
             'address' => [
@@ -77,7 +82,7 @@ class EpcCertificateResource extends JsonResource
                 'hot_water' => $this->currentPotential('HOT_WATER_COST'),
             ],
             'construction' => [
-                'walls' => $this->component('WALLS'),
+                'walls' => $scotland ? $this->component('WALL') : $this->component('WALLS'),
                 'roof' => $this->component('ROOF'),
                 'floor' => $this->component('FLOOR'),
                 'windows' => $this->component('WINDOWS'),
@@ -106,7 +111,9 @@ class EpcCertificateResource extends JsonResource
                 'wind_turbines' => $this->integer('WIND_TURBINE_COUNT', 'wind_turbine_count'),
             ],
             'recommendations' => [],
-            'website_url' => route('epc.show', ['lmk' => $reference]),
+            'website_url' => $scotland
+                ? route('epc.scotland.show', ['rrn' => $reference])
+                : route('epc.show', ['lmk' => $reference]),
         ];
     }
 
