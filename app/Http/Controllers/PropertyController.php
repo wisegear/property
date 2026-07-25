@@ -9,6 +9,7 @@ use App\Services\CouncilTaxEstimateService;
 use App\Services\CrimeSummaryService;
 use App\Services\EpcMatcher;
 use App\Services\FormAnalytics;
+use App\Services\Property\NationalPropertyDashboard;
 use App\Services\PropertyResearch\NearbySchoolsService;
 use App\Support\PropertyResearch\OfstedRating;
 use App\Support\PropertyResearch\SchoolSlug;
@@ -30,88 +31,12 @@ class PropertyController extends Controller
         private CrimeSummaryService $crimeSummaryService,
         private CouncilTaxEstimateService $councilTaxEstimateService,
         private NearbySchoolsService $nearbySchoolsService,
+        private NationalPropertyDashboard $nationalPropertyDashboard,
     ) {}
 
     public function home(Request $request)
     {
-        $window = $this->rollingWindow();
-        $cachePrefix = $this->rollingCachePrefix($window['latest_month']);
-        $latestMonth = $window['latest_month'];
-        $rollingStart = $window['rolling_start'];
-        $rollingEnd = $window['rolling_end'];
-        $endMonths = $this->rollingEndMonths($window['latest_month']);
-
-        $rollingMeta = Cache::remember("{$cachePrefix}:meta", self::CACHE_TTL, fn () => $this->serializeRollingWindow($window));
-
-        $salesPayload = Cache::remember("{$cachePrefix}:sales", self::CACHE_TTL, fn () => $this->rollingPayload($window, $this->buildRollingSalesSeries($endMonths)));
-        $salesByYear = $salesPayload['data'];
-
-        $avgPricePayload = Cache::remember("{$cachePrefix}:avgPrice", self::CACHE_TTL, fn () => $this->rollingPayload($window, $this->buildRollingMedianSeries($endMonths)));
-        $avgPriceByYear = $avgPricePayload['data'];
-
-        // Monthly sales — last 24 months (England & Wales, Cat A)
-        [$sales24Labels, $sales24Data] = Cache::remember(
-            'dashboard:sales_last_24m:EW:catA:v2',
-            self::CACHE_TTL,
-            function () {
-                // Seed a wider window so we can trim to the true last available month
-                $seedMonths = 36;
-                $seedStart = now()->startOfMonth()->subMonths($seedMonths - 1);
-                $seedEnd = now()->startOfMonth();
-
-                $raw = DB::table('land_registry')
-                    ->selectRaw($this->monthStartExpression().' as month_start, COUNT(*) as sales')
-                    ->where('PPDCategoryType', 'A')
-                    ->whereDate('Date', '>=', $seedStart)
-                    ->groupBy('month_start')
-                    ->orderBy('month_start')
-                    ->pluck('sales', 'month_start')
-                    ->toArray();
-
-                // Determine last month with data
-                $keys = array_keys($raw);
-                if (! empty($keys)) {
-                    sort($keys); // ascending
-                    $lastDataKey = end($keys); // e.g., '2025-08-01'
-                    $seriesEnd = Carbon::createFromFormat('Y-m-d', $lastDataKey)->startOfMonth();
-                } else {
-                    // If nothing in window, use end of previous month
-                    $seriesEnd = $seedEnd->copy()->subMonth();
-                }
-
-                // Build exactly 24 months ending at last available month
-                $start = $seriesEnd->copy()->subMonths(23)->startOfMonth();
-
-                $labels = [];
-                $data = [];
-                $cursor = $start->copy();
-                while ($cursor->lte($seriesEnd)) {
-                    $key = $cursor->format('Y-m-01');
-                    $labels[] = $cursor->format('M Y');  // will be formatted to MM/YY in the tick callback
-                    $data[] = (int) ($raw[$key] ?? 0);
-                    $cursor->addMonth();
-                }
-
-                return [$labels, $data];
-            }
-        );
-
-        $ewP90Payload = Cache::remember("{$cachePrefix}:p90", self::CACHE_TTL, fn () => $this->rollingPayload($window, $this->buildRollingP90Series($endMonths)));
-        $ewP90 = $ewP90Payload['data'];
-
-        $ewTop5Payload = Cache::remember("{$cachePrefix}:top5", self::CACHE_TTL, fn () => $this->rollingPayload($window, $this->buildRollingTop5Series($endMonths)));
-        $ewTop5 = $ewTop5Payload['data'];
-
-        $ewTopSalePayload = Cache::remember("{$cachePrefix}:topSale", self::CACHE_TTL, fn () => $this->rollingPayload($window, $this->buildRollingTopSaleSeries($endMonths)));
-        $ewTopSalePerYear = $ewTopSalePayload['data'];
-
-        $ewTop3Payload = Cache::remember("{$cachePrefix}:top3", self::CACHE_TTL, fn () => $this->rollingPayload($window, $this->buildRollingTop3Series($endMonths)));
-        $ewTop3PerYear = $ewTop3Payload['data'];
-
-        return view('property.home', compact(
-            'salesByYear', 'avgPriceByYear', 'ewP90', 'ewTop5', 'ewTopSalePerYear', 'ewTop3PerYear',
-            'sales24Labels', 'sales24Data', 'latestMonth', 'rollingStart', 'rollingEnd', 'rollingMeta'
-        ));
+        return view('property.home', $this->nationalPropertyDashboard->webData());
     }
 
     public function search(PropertySearchRequest $request)
