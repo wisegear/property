@@ -870,11 +870,12 @@
         <!-- ============================================ -->
         <!-- FOOTER -->
         <!-- ============================================ -->
-        <footer class="bg-white border-t border-zinc-200 p-4 text-center text-sm text-zinc-500">
+        <footer class="border-t border-zinc-200 bg-white px-4 py-5 text-center text-sm text-zinc-500">
             <p>
                 &copy; Lee Wisener - PropertyResearch.uk. 
-                Built with&nbsp;<a href="https://laravel.com" class="text-rose-700 hover:text-rose-900">Laravel</a>. 
-                Hosted with&nbsp;<a href="https://ovh.com" class="text-rose-700 hover:text-rose-900">OVH</a>
+                Built with&nbsp;<a href="https://laravel.com" target="_blank" rel="noopener noreferrer" class="text-rose-700 hover:text-rose-900">Laravel <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>.
+                Hosted with&nbsp;<a href="https://ovh.com" target="_blank" rel="noopener noreferrer" class="text-rose-700 hover:text-rose-900">OVH <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>.
+                Visit the <a href="{{ route('legal.index') }}" class="text-rose-700 hover:text-rose-900 hover:underline">Legal &amp; Support <span aria-hidden="true">↗</span></a> Pages
             </p>
         </footer>
     </div>

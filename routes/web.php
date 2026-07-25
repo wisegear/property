@@ -63,6 +63,13 @@ use Illuminate\Support\Facades\Session;
 Route::get('/', [PagesController::class, 'home'])->name('home');
 Route::get('/about', [PagesController::class, 'about'])->name('about');
 Route::get('/dashboard', fn () => redirect('/'))->name('dashboard');
+Route::view('/privacy/app', 'legal.privacy')->name('legal.privacy');
+Route::view('/data-sources', 'legal.data-sources')->name('legal.data-sources');
+Route::view('/terms', 'legal.terms')->name('legal.terms');
+Route::get('/support', fn () => Auth::check()
+    ? app(SupportController::class)->index()
+    : view('legal.support'))->name('legal.support');
+Route::view('/legal', 'legal.index')->name('legal.index');
 
 Route::get('/property', [PropertyController::class, 'home'])->name('property.home');
 Route::get('/property/search', [PropertyController::class, 'search'])->name('property.search');
@@ -170,7 +177,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/{name_slug}/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile/{name_slug}', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/comments', [CommentsController::class, 'store'])->name('comments.store');
-    Route::resource('support', SupportController::class);
+    Route::resource('support', SupportController::class)->except(['index']);
     // Protect the Dashboard routes behind both Auth and Can
     Route::prefix('admin')
         ->name('admin.')
