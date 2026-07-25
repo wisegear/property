@@ -109,6 +109,14 @@ class CrimeController extends Controller
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public function nationalPayloadForApi(): array
+    {
+        return $this->nationalPayload();
+    }
+
+    /**
      * @return array{
      *     area:string,
      *     area_slug:string,
@@ -156,6 +164,14 @@ class CrimeController extends Controller
     public function warmAreaCache(string $area): ?array
     {
         return $this->areaPayload($area, true);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function areaPayloadForApi(string $area): ?array
+    {
+        return $this->areaPayload($area);
     }
 
     /**

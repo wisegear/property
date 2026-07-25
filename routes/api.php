@@ -1,11 +1,17 @@
 <?php
 
+use App\Http\Controllers\Api\CrimeController;
 use App\Http\Controllers\Api\EpcCertificateController;
 use App\Http\Controllers\Api\SchoolController;
 use App\Http\Controllers\PropertyController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
+    Route::get('/insights/crime', [CrimeController::class, 'index'])
+        ->name('insights.crime.index');
+    Route::get('/insights/crime/{area_slug}', [CrimeController::class, 'show'])
+        ->where('area_slug', '[a-z0-9-]+')
+        ->name('insights.crime.show');
     Route::get('/epc/{reference}', EpcCertificateController::class)
         ->where('reference', '[A-Za-z0-9-]+')
         ->name('epc.show');
