@@ -67,7 +67,7 @@ class StressInsightsApiTest extends TestCase
             ->assertJsonCount(8, 'data.indicators')
             ->assertJsonPath('data.last_updated', '2026-06-01')
             ->assertJsonPath('data.score.maximum', 100)
-            ->assertJsonPath('data.score.raw_maximum', 24)
+            ->assertJsonPath('data.score.raw_maximum', 31)
             ->assertJsonPath('data.website_url', route('economic.dashboard'));
 
         $this->assertContains($response->json('data.score.status'), ['low', 'amber', 'red', 'dark_red']);

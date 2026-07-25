@@ -12,7 +12,7 @@ class StressInsightsController extends Controller
     {
         $dashboard = $dashboardController->dashboardData();
         $rawScore = (int) $dashboard['totalStress'];
-        $maximumRawScore = 24;
+        $maximumRawScore = 31;
         $score = (int) round(($rawScore / $maximumRawScore) * 100);
 
         $keys = [
