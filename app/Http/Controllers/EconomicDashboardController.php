@@ -12,6 +12,16 @@ class EconomicDashboardController extends Controller
 {
     public function index(): View
     {
+        return view('economic.dashboard', $this->dashboardData());
+    }
+
+    /**
+     * Build the shared dashboard payload used by the website and native API.
+     *
+     * @return array<string, mixed>
+     */
+    public function dashboardData(): array
+    {
         $ttl = now()->addHours(6);
         $approvalsSeriesCode = 'LPMVTVX';
 
@@ -147,8 +157,19 @@ class EconomicDashboardController extends Controller
         Cache::put('eco:total_stress', $totalStress, $ttl);
         Cache::forever('eco:total_stress_persist', $totalStress);
 
-        return view('economic.dashboard', [
+        return [
             'cards' => $cards,
+            'snapshots' => [
+                'approvals' => $approvalsSnapshot,
+                'hpi' => $hpiSnapshot,
+                'interest' => $interestSnapshot,
+                'inflation' => $inflationSnapshot,
+                'wages' => $wagesSnapshot,
+                'real_wages' => $realWagesSnapshot,
+                'unemployment' => $unemploymentSnapshot,
+                'arrears' => $arrearsSnapshot,
+                'repossessions' => $repossessionsSnapshot,
+            ],
             'sparklines' => $sparklines,
             'summary' => $summary,
             'statusCounts' => [
@@ -165,7 +186,10 @@ class EconomicDashboardController extends Controller
             ] : null,
             'repossDirection' => $cards[7]['status']['weight'],
             'hpiDateLabel' => $hpiSnapshot['current_period_label'],
-        ]);
+            'lastUpdated' => collect($sparklines)
+                ->flatMap(fn (array $series): array => $series['points'])
+                ->max(fn (array $point): string => $point['date']->toDateString()),
+        ];
     }
 
     private function buildMonthlySeries(Collection $rows, callable $dateResolver, callable $valueResolver, bool $carryForwardMissingMonths = false): array
