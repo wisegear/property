@@ -14,10 +14,18 @@ class SwapRateController extends Controller
 {
     public function index(): View
     {
+        return view('insights.swap-rates', $this->dashboardData());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function dashboardData(): array
+    {
         $terms = [2, 5, 10];
 
         if (! Schema::hasTable('swap_rates')) {
-            return view('insights.swap-rates', $this->emptyViewData());
+            return $this->emptyViewData();
         }
 
         $rates = SwapRate::query()
@@ -66,7 +74,7 @@ class SwapRateController extends Controller
         $currentRatesTable = $this->buildCurrentRatesTable($termSnapshots, $terms);
         $bankRateComparisonChart = $this->buildBankRateComparisonChart($dates, $labels);
 
-        return view('insights.swap-rates', [
+        return [
             'latestRates' => $latestRates,
             'termSnapshots' => $termSnapshots,
             'rateRanges' => $rateRanges,
@@ -79,7 +87,7 @@ class SwapRateController extends Controller
                 'datasets' => $rateDatasets,
             ],
             'bankRateComparisonChart' => $bankRateComparisonChart,
-        ]);
+        ];
     }
 
     /**

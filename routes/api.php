@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\SchoolController;
 use App\Http\Controllers\Api\SchoolPostcodeSearchController;
 use App\Http\Controllers\Api\ScottishEpcCertificateController;
 use App\Http\Controllers\Api\StressInsightsController;
+use App\Http\Controllers\Api\SwapRatesController;
 use App\Http\Controllers\PropertyController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +21,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         ->name('insights.crime.show');
     Route::get('/insights/stress', StressInsightsController::class)
         ->name('insights.stress');
+    Route::get('/insights/swap-rates', SwapRatesController::class)
+        ->middleware('cache.headers:public;max_age=3600;s_maxage=86400;stale_while_revalidate=604800;etag')
+        ->name('insights.swap-rates');
     Route::get('/epc/dashboard', EpcDashboardController::class)
         ->name('epc.dashboard');
     Route::get('/epc/search', EpcSearchController::class)
