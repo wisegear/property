@@ -10,6 +10,14 @@ class HpiDashboardController extends Controller
 {
     public function index(): View
     {
+        return view('hpi.dashboard', $this->dashboardData());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function dashboardData(): array
+    {
         // Latest global date (useful for UK rollup)
         $latestGlobal = HpiMonthly::latestDate();
 
@@ -71,7 +79,7 @@ class HpiDashboardController extends Controller
             ->limit(30)
             ->get();
 
-        return view('hpi.dashboard', [
+        return [
             'latestGlobal' => $latestGlobal,
             'ukSeries' => $ukSeries,
             'nations' => $nations,
@@ -79,7 +87,7 @@ class HpiDashboardController extends Controller
             'seriesByArea' => $seriesByArea,
             'losers' => $losers,
             'typePriceSeries' => $typePriceSeries,
-        ]);
+        ];
     }
 
     public function overview(): View

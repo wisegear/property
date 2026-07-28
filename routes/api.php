@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\CrimeController;
 use App\Http\Controllers\Api\EpcCertificateController;
 use App\Http\Controllers\Api\EpcDashboardController;
 use App\Http\Controllers\Api\EpcSearchController;
+use App\Http\Controllers\Api\HpiDashboardController;
 use App\Http\Controllers\Api\PropertyDashboardController;
 use App\Http\Controllers\Api\SchoolController;
 use App\Http\Controllers\Api\SchoolPostcodeSearchController;
@@ -24,6 +25,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::get('/insights/swap-rates', SwapRatesController::class)
         ->middleware('cache.headers:public;max_age=3600;s_maxage=86400;stale_while_revalidate=604800;etag')
         ->name('insights.swap-rates');
+    Route::get('/hpi/dashboard', HpiDashboardController::class)
+        ->middleware('cache.headers:public;max_age=3600;s_maxage=86400;stale_while_revalidate=604800;etag')
+        ->name('hpi.dashboard');
     Route::get('/epc/dashboard', EpcDashboardController::class)
         ->name('epc.dashboard');
     Route::get('/epc/search', EpcSearchController::class)
