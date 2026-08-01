@@ -126,15 +126,15 @@ class EconomicDashboardController extends Controller
             'arrears' => $arrearsSeries,
         ];
 
-        $interestSnapshot = $this->buildLatestValueSnapshot($interestSeries);
-        $inflationSnapshot = $this->buildRollingThreeMonthSnapshot($inflationSeries, 'avg');
-        $wagesSnapshot = $this->buildRollingThreeMonthSnapshot($wagesSeries, 'avg');
-        $realWagesSnapshot = $this->buildRollingThreeMonthSnapshot($realWagesSeries, 'avg');
-        $unemploymentSnapshot = $this->buildRollingThreeMonthSnapshot($unemploymentSeries, 'avg');
-        $approvalsSnapshot = $this->buildRollingThreeMonthSnapshot($approvalsSeries, 'sum');
-        $hpiSnapshot = $this->buildRollingThreeMonthSnapshot($hpiSeries, 'avg');
-        $repossessionsSnapshot = $this->buildQuarterSnapshot($repossessionsSeries);
-        $arrearsSnapshot = $this->buildQuarterSnapshot($arrearsSeries);
+        $interestSnapshot = $this->buildBankRateSnapshot($interestSeries);
+        $inflationSnapshot = $this->buildLatestPublishedSnapshot($inflationSeries);
+        $wagesSnapshot = $this->buildLatestPublishedSnapshot($wagesSeries);
+        $realWagesSnapshot = $this->buildLatestPublishedSnapshot($realWagesSeries);
+        $unemploymentSnapshot = $this->buildLatestPublishedSnapshot($unemploymentSeries);
+        $approvalsSnapshot = $this->buildLatestPublishedSnapshot($approvalsSeries);
+        $hpiSnapshot = $this->buildLatestPublishedSnapshot($hpiSeries);
+        $repossessionsSnapshot = $this->buildLatestPublishedSnapshot($repossessionsSeries);
+        $arrearsSnapshot = $this->buildLatestPublishedSnapshot($arrearsSeries);
 
         $cards = [
             $this->buildApprovalsCard($approvalsSnapshot),
@@ -173,12 +173,12 @@ class EconomicDashboardController extends Controller
             'sparklines' => $sparklines,
             'summary' => $summary,
             'statusCounts' => [
-                'Supportive' => $statusCounts->get('Supportive', 0),
+                'Positive' => $statusCounts->get('Positive', 0),
                 'Neutral' => $statusCounts->get('Neutral', 0),
                 'Warning' => $statusCounts->get('Warning', 0),
                 'Stress' => $statusCounts->get('Stress', 0),
             ],
-            'heroComparisonText' => 'Each panel compares the latest available 3-month or quarterly period with the previous period, so the signals stay current while avoiding monthly noise.',
+            'heroComparisonText' => 'Each panel shows the latest published figure. Its status reflects whether conditions improved, stayed level, or worsened across recent releases.',
             'totalStress' => $totalStress,
             'approvals' => $approvalsSnapshot['current_value'] !== null ? (object) [
                 'period' => $approvalsSnapshot['current_period_label'],
@@ -365,182 +365,115 @@ class EconomicDashboardController extends Controller
         ];
     }
 
-    private function buildRollingThreeMonthSnapshot(array $series, string $mode): array
+    private function buildLatestPublishedSnapshot(array $series): array
     {
         $points = $series['points'] ?? [];
         $count = count($points);
 
         if ($count < 1) {
-            return $this->emptySnapshot('Current 3-month period', 'Previous 3-month period');
-        }
-
-        $currentPoints = array_slice($points, -min(3, $count));
-        $previousPoints = $count >= 6 ? array_slice($points, -6, 3) : [];
-
-        return [
-            'current_value' => $this->aggregatePoints($currentPoints, $mode),
-            'previous_value' => count($previousPoints) === 3 ? $this->aggregatePoints($previousPoints, $mode) : null,
-            'current_label_heading' => 'Current 3-month period',
-            'previous_label_heading' => 'Previous 3-month period',
-            'current_period_label' => $this->formatMonthRangeLabel($currentPoints),
-            'previous_period_label' => count($previousPoints) === 3 ? $this->formatMonthRangeLabel($previousPoints) : 'Not available',
-            'change_heading' => '3-month change',
-            'debug' => [
-                'latest_data_date' => $currentPoints[count($currentPoints) - 1]['date']->format('M Y'),
-                'current_start' => $currentPoints[0]['date']->format('M Y'),
-                'current_end' => $currentPoints[count($currentPoints) - 1]['date']->format('M Y'),
-                'previous_start' => count($previousPoints) === 3 ? $previousPoints[0]['date']->format('M Y') : 'n/a',
-                'previous_end' => count($previousPoints) === 3 ? $previousPoints[count($previousPoints) - 1]['date']->format('M Y') : 'n/a',
-                'frequency' => 'monthly',
-            ],
-        ];
-    }
-
-    private function buildQuarterSnapshot(array $series): array
-    {
-        $points = $series['points'] ?? [];
-        $count = count($points);
-
-        if ($count < 1) {
-            return $this->emptySnapshot('Current quarter', 'Previous quarter');
+            return $this->emptySnapshot($series['type'] ?? 'monthly');
         }
 
         $currentPoint = $points[$count - 1];
         $previousPoint = $count >= 2 ? $points[$count - 2] : null;
+        $frequency = $series['type'] ?? 'monthly';
 
         return [
             'current_value' => $currentPoint['value'],
             'previous_value' => $previousPoint['value'] ?? null,
-            'current_label_heading' => 'Current quarter',
-            'previous_label_heading' => 'Previous quarter',
-            'current_period_label' => $this->formatQuarterDisplayLabel($currentPoint['key']),
-            'previous_period_label' => $previousPoint ? $this->formatQuarterDisplayLabel($previousPoint['key']) : 'Not available',
-            'change_heading' => 'Quarterly change',
-            'debug' => [
-                'latest_data_date' => $this->formatQuarterDisplayLabel($currentPoint['key']),
-                'current_start' => $this->formatQuarterDisplayLabel($currentPoint['key']),
-                'current_end' => $this->formatQuarterDisplayLabel($currentPoint['key']),
-                'previous_start' => $previousPoint ? $this->formatQuarterDisplayLabel($previousPoint['key']) : 'n/a',
-                'previous_end' => $previousPoint ? $this->formatQuarterDisplayLabel($previousPoint['key']) : 'n/a',
-                'frequency' => 'quarterly',
-            ],
-        ];
-    }
-
-    private function buildLatestValueSnapshot(array $series): array
-    {
-        $points = $series['points'] ?? [];
-        $count = count($points);
-
-        if ($count < 1) {
-            return [
-                'current_value' => null,
-                'previous_value' => null,
-                'current_label_heading' => 'Current',
-                'previous_label_heading' => 'Previous',
-                'current_period_label' => 'Not available',
-                'previous_period_label' => 'Not available',
-                'change_heading' => 'Change',
-                'debug' => [
-                    'latest_data_date' => 'n/a',
-                    'current_start' => 'n/a',
-                    'current_end' => 'n/a',
-                    'previous_start' => 'n/a',
-                    'previous_end' => 'n/a',
-                    'frequency' => 'event-based',
-                ],
-            ];
-        }
-
-        $currentPoint = $points[$count - 1];
-        $previousPoint = null;
-
-        for ($index = $count - 2; $index >= 0; $index--) {
-            if ($points[$index]['value'] !== $currentPoint['value']) {
-                $previousPoint = $points[$index];
-                break;
-            }
-        }
-
-        if (is_null($previousPoint) && $count >= 2) {
-            $previousPoint = $points[$count - 2];
-        }
-
-        return [
-            'current_value' => $currentPoint['value'],
-            'previous_value' => $previousPoint['value'] ?? null,
-            'current_label_heading' => 'Current',
-            'previous_label_heading' => 'Previous',
+            'current_label_heading' => 'Latest published figure',
+            'previous_label_heading' => 'Previous release',
             'current_period_label' => $currentPoint['label'],
             'previous_period_label' => $previousPoint['label'] ?? 'Not available',
-            'change_heading' => 'Change',
+            'change_heading' => 'Latest movement',
+            'trend_values' => array_values(array_map(
+                fn (array $point): float => $point['value'],
+                array_slice($points, -4)
+            )),
             'debug' => [
                 'latest_data_date' => $currentPoint['label'],
                 'current_start' => $currentPoint['label'],
                 'current_end' => $currentPoint['label'],
                 'previous_start' => $previousPoint['label'] ?? 'n/a',
                 'previous_end' => $previousPoint['label'] ?? 'n/a',
-                'frequency' => 'event-based',
+                'frequency' => $frequency,
             ],
         ];
     }
 
-    private function emptySnapshot(string $currentHeading, string $previousHeading): array
+    private function buildBankRateSnapshot(array $series): array
+    {
+        $points = $series['points'] ?? [];
+
+        if (empty($points)) {
+            return $this->emptySnapshot('monthly');
+        }
+
+        $latestPoint = $points[count($points) - 1];
+        $currentMonth = now()->startOfMonth();
+        $monthlyValues = [];
+
+        for ($monthsAgo = 3; $monthsAgo >= 0; $monthsAgo--) {
+            $monthEnd = $currentMonth->copy()->subMonths($monthsAgo)->endOfMonth();
+            $rateAtMonthEnd = collect($points)
+                ->filter(fn (array $point): bool => $point['date']->lessThanOrEqualTo($monthEnd))
+                ->last();
+
+            if ($rateAtMonthEnd) {
+                $monthlyValues[] = $rateAtMonthEnd['value'];
+            }
+        }
+
+        $previousMonth = $currentMonth->copy()->subMonth();
+        $previousValue = count($monthlyValues) >= 2 ? $monthlyValues[count($monthlyValues) - 2] : null;
+
+        return [
+            'current_value' => $latestPoint['value'],
+            'previous_value' => $previousValue,
+            'current_label_heading' => 'Current rate',
+            'previous_label_heading' => 'Last month',
+            'current_period_label' => 'Effective since '.$latestPoint['label'],
+            'previous_period_label' => $previousMonth->format('M Y'),
+            'change_heading' => 'Monthly movement',
+            'trend_values' => $monthlyValues,
+            'debug' => [
+                'latest_data_date' => $latestPoint['label'],
+                'current_start' => $latestPoint['label'],
+                'current_end' => $latestPoint['label'],
+                'previous_start' => $previousMonth->format('M Y'),
+                'previous_end' => $previousMonth->format('M Y'),
+                'frequency' => 'monthly',
+            ],
+        ];
+    }
+
+    private function emptySnapshot(string $frequency): array
     {
         return [
             'current_value' => null,
             'previous_value' => null,
-            'current_label_heading' => $currentHeading,
-            'previous_label_heading' => $previousHeading,
+            'current_label_heading' => 'Latest published figure',
+            'previous_label_heading' => 'Previous release',
             'current_period_label' => 'Not available',
             'previous_period_label' => 'Not available',
-            'change_heading' => $currentHeading === 'Current quarter' ? 'Quarterly change' : '3-month change',
+            'change_heading' => 'Latest movement',
+            'trend_values' => [],
             'debug' => [
                 'latest_data_date' => 'n/a',
                 'current_start' => 'n/a',
                 'current_end' => 'n/a',
                 'previous_start' => 'n/a',
                 'previous_end' => 'n/a',
-                'frequency' => $currentHeading === 'Current quarter' ? 'quarterly' : 'monthly',
+                'frequency' => $frequency,
             ],
         ];
-    }
-
-    private function aggregatePoints(array $points, string $mode): float
-    {
-        $values = array_column($points, 'value');
-
-        return round(match ($mode) {
-            'sum' => array_sum($values),
-            'last' => end($values),
-            default => array_sum($values) / count($values),
-        }, 3);
-    }
-
-    private function formatMonthRangeLabel(array $points): string
-    {
-        $start = $points[0]['date'];
-        $end = $points[count($points) - 1]['date'];
-
-        return $start->format('M Y').' - '.$end->format('M Y');
     }
 
     private function buildApprovalsCard(array $snapshot): array
     {
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
-        $changePercent = is_null($current) || is_null($previous) || $previous == 0.0
-            ? null
-            : (($current - $previous) / $previous) * 100;
-
-        $status = match (true) {
-            is_null($current) => $this->statusMeta('amber'),
-            is_null($previous) => $this->statusMeta('amber'),
-            ! is_null($changePercent) && $changePercent >= 3 => $this->statusMeta('green'),
-            ! is_null($changePercent) && $changePercent > -3 => $this->statusMeta('amber'),
-            ! is_null($changePercent) && $changePercent > -8 => $this->statusMeta('red'),
-            default => $this->statusMeta('deep'),
-        };
+        $status = $this->trendStatus($snapshot, badWhen: 'down', decimals: 0);
 
         return $this->baseCard(
             title: 'Mortgage approvals',
@@ -551,10 +484,10 @@ class EconomicDashboardController extends Controller
             change: $this->formatPercentChange($current, $previous, $snapshot['previous_period_label']),
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
-                'Supportive' => 'Buyer demand is improving.',
+                'Positive' => 'Buyer demand improved in the latest release.',
                 'Neutral' => 'Buyer demand looks broadly steady.',
-                'Warning' => 'Buyer demand is softening.',
-                default => 'Buyer demand is under clear pressure.',
+                'Warning' => 'Buyer demand is weakening.',
+                default => 'Buyer demand has weakened for three consecutive releases.',
             },
             meaning: 'More approvals usually mean more buyers are active. That can support prices if the number of homes for sale stays tight.',
             sparkId: 'spark-approvals',
@@ -566,16 +499,7 @@ class EconomicDashboardController extends Controller
     {
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
-        $delta = is_null($current) || is_null($previous) ? null : $current - $previous;
-
-        $status = match (true) {
-            is_null($current) => $this->statusMeta('amber'),
-            is_null($delta) => $this->statusMeta('amber'),
-            $delta >= 2000 => $this->statusMeta('green'),
-            $delta > -2000 => $this->statusMeta('amber'),
-            $delta > -6000 => $this->statusMeta('red'),
-            default => $this->statusMeta('deep'),
-        };
+        $status = $this->trendStatus($snapshot, badWhen: 'down', decimals: 0);
 
         return $this->baseCard(
             title: 'House prices (UK average)',
@@ -586,10 +510,10 @@ class EconomicDashboardController extends Controller
             change: $this->formatCurrencyChange($current, $previous, $snapshot['previous_period_label']),
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
-                'Supportive' => 'Prices are holding up well.',
-                'Neutral' => 'Prices look broadly stable.',
-                'Warning' => 'Price growth is losing momentum.',
-                default => 'Prices are under more noticeable pressure.',
+                'Positive' => 'House prices increased in the latest release.',
+                'Neutral' => 'House prices were unchanged in the latest release.',
+                'Warning' => 'House prices are falling.',
+                default => 'House prices have fallen for three consecutive releases.',
             },
             meaning: 'Stable or gently rising prices usually point to a healthier market backdrop. Falling prices can mean buyers are becoming more cautious or affordability is stretched.',
             sparkId: 'spark-hpi',
@@ -601,17 +525,7 @@ class EconomicDashboardController extends Controller
     {
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
-        $delta = is_null($current) || is_null($previous) ? null : $current - $previous;
-
-        $status = match (true) {
-            is_null($current) => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta <= -0.10 => $this->statusMeta('green'),
-            ! is_null($delta) && abs($delta) < 0.10 => $current >= 5.0 ? $this->statusMeta('red') : $this->statusMeta('amber'),
-            ! is_null($delta) && $delta <= 0.50 => $current >= 5.5 ? $this->statusMeta('deep') : $this->statusMeta('red'),
-            ! is_null($delta) => $this->statusMeta('deep'),
-            $current >= 5.5 => $this->statusMeta('red'),
-            default => $this->statusMeta('amber'),
-        };
+        $status = $this->trendStatus($snapshot, badWhen: 'up', decimals: 2);
 
         return $this->baseCard(
             title: 'Bank rate',
@@ -622,10 +536,10 @@ class EconomicDashboardController extends Controller
             change: $this->formatPercentagePointChange($current, $previous, $snapshot['previous_period_label'], 2),
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
-                'Supportive' => 'Borrowing costs are easing.',
-                'Neutral' => 'Borrowing costs are broadly stable.',
-                'Warning' => 'Borrowing costs remain elevated.',
-                default => 'Borrowing costs are rising or remain very high.',
+                'Positive' => 'Bank rate is lower than it was last month.',
+                'Neutral' => 'Bank rate is unchanged from last month.',
+                'Warning' => 'Bank rate is rising.',
+                default => 'Bank rate has risen for three consecutive months.',
             },
             meaning: 'The Bank rate influences mortgage pricing. Higher rates usually make it harder for buyers and remortgaging households to keep monthly payments comfortable.',
             sparkId: 'spark-interest',
@@ -637,17 +551,7 @@ class EconomicDashboardController extends Controller
     {
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
-        $delta = is_null($current) || is_null($previous) ? null : $current - $previous;
-
-        $status = match (true) {
-            is_null($current) => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta <= -0.2 => $this->statusMeta('green'),
-            ! is_null($delta) && abs($delta) < 0.2 => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta <= 0.6 => $current >= 5.0 ? $this->statusMeta('deep') : $this->statusMeta('red'),
-            ! is_null($delta) => $this->statusMeta('deep'),
-            $current >= 5.0 => $this->statusMeta('red'),
-            default => $this->statusMeta('deep'),
-        };
+        $status = $this->trendStatus($snapshot, badWhen: 'up', decimals: 1);
 
         return $this->baseCard(
             title: 'Inflation',
@@ -658,10 +562,10 @@ class EconomicDashboardController extends Controller
             change: $this->formatPointChange($current, $previous, $snapshot['previous_period_label'], 1),
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
-                'Supportive' => 'Inflation is easing.',
-                'Neutral' => 'Inflation is broadly stable.',
-                'Warning' => 'Inflation pressure is building.',
-                default => 'Inflation is rising sharply.',
+                'Positive' => 'Inflation fell in the latest release.',
+                'Neutral' => 'Inflation was unchanged in the latest release.',
+                'Warning' => 'Inflation is rising.',
+                default => 'Inflation has risen for three consecutive releases.',
             },
             meaning: 'Lower inflation usually eases pressure on household budgets and can support the outlook for interest rates. Higher inflation can keep pressure on borrowing costs and living costs.',
             sparkId: 'spark-inflation',
@@ -674,20 +578,7 @@ class EconomicDashboardController extends Controller
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
         $realCurrent = $realSnapshot['current_value'];
-        $delta = is_null($current) || is_null($previous) ? null : $current - $previous;
-
-        $status = match (true) {
-            is_null($current) => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta >= 0.2 => $this->statusMeta('green'),
-            ! is_null($delta) && abs($delta) < 0.2 => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta > -0.6 => $this->statusMeta('red'),
-            ! is_null($delta) => $this->statusMeta('deep'),
-            is_null($realCurrent) => $this->statusMeta('amber'),
-            $realCurrent >= 0.0 => $this->statusMeta('green'),
-            $realCurrent >= -0.5 => $this->statusMeta('amber'),
-            $realCurrent >= -1.0 => $this->statusMeta('red'),
-            default => $this->statusMeta('deep'),
-        };
+        $status = $this->trendStatus($snapshot, badWhen: 'down', decimals: 2);
 
         return $this->baseCard(
             title: 'Wage growth',
@@ -698,10 +589,10 @@ class EconomicDashboardController extends Controller
             change: $this->formatPointChange($current, $previous, $snapshot['previous_period_label'], 2),
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
-                'Supportive' => 'Pay growth is improving.',
-                'Neutral' => 'Pay growth is broadly steady.',
-                'Warning' => 'Pay growth is softening.',
-                default => 'Pay growth is weakening more clearly.',
+                'Positive' => 'Wage growth increased in the latest release.',
+                'Neutral' => 'Wage growth was unchanged in the latest release.',
+                'Warning' => 'Wage growth is falling.',
+                default => 'Wage growth has fallen for three consecutive releases.',
             },
             meaning: 'If wages are rising faster than inflation, buyers may find it easier to save or borrow. If not, affordability can stay tight even when rates stop rising.',
             sparkId: 'spark-wages',
@@ -714,17 +605,7 @@ class EconomicDashboardController extends Controller
     {
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
-        $delta = is_null($current) || is_null($previous) ? null : $current - $previous;
-
-        $status = match (true) {
-            is_null($current) => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta <= -0.2 => $this->statusMeta('green'),
-            ! is_null($delta) && abs($delta) < 0.2 => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta <= 0.6 => $current >= 6.0 ? $this->statusMeta('deep') : $this->statusMeta('red'),
-            ! is_null($delta) => $this->statusMeta('deep'),
-            $current >= 6.0 => $this->statusMeta('red'),
-            default => $this->statusMeta('deep'),
-        };
+        $status = $this->trendStatus($snapshot, badWhen: 'up', decimals: 1);
 
         return $this->baseCard(
             title: 'Unemployment',
@@ -735,10 +616,10 @@ class EconomicDashboardController extends Controller
             change: $this->formatPointChange($current, $previous, $snapshot['previous_period_label'], 1),
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
-                'Supportive' => 'The jobs market is improving.',
-                'Neutral' => 'The jobs market looks broadly steady.',
-                'Warning' => 'The jobs market is weakening.',
-                default => 'The jobs market is weakening more sharply.',
+                'Positive' => 'Unemployment fell in the latest release.',
+                'Neutral' => 'Unemployment was unchanged in the latest release.',
+                'Warning' => 'Unemployment is rising.',
+                default => 'Unemployment has risen for three consecutive releases.',
             },
             meaning: 'Low unemployment usually supports confidence and mortgage repayments. Rising unemployment can reduce demand and increase financial strain for some households.',
             sparkId: 'spark-unemployment',
@@ -750,17 +631,7 @@ class EconomicDashboardController extends Controller
     {
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
-        $delta = is_null($current) || is_null($previous) ? null : $current - $previous;
-
-        $status = match (true) {
-            is_null($current) => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta <= -0.03 => $this->statusMeta('green'),
-            ! is_null($delta) && abs($delta) < 0.03 => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta <= 0.12 => $current >= 1.8 ? $this->statusMeta('deep') : $this->statusMeta('red'),
-            ! is_null($delta) => $this->statusMeta('deep'),
-            $current >= 1.8 => $this->statusMeta('red'),
-            default => $this->statusMeta('deep'),
-        };
+        $status = $this->trendStatus($snapshot, badWhen: 'up', decimals: 3);
 
         return $this->baseCard(
             title: 'Mortgage arrears',
@@ -771,10 +642,10 @@ class EconomicDashboardController extends Controller
             change: $this->formatPointChange($current, $previous, $snapshot['previous_period_label'], 3),
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
-                'Supportive' => 'Repayment pressure is easing.',
-                'Neutral' => 'Repayment pressure looks broadly steady.',
-                'Warning' => 'Repayment pressure is building.',
-                default => 'Repayment pressure is rising more sharply.',
+                'Positive' => 'Mortgage arrears fell in the latest release.',
+                'Neutral' => 'Mortgage arrears were unchanged in the latest release.',
+                'Warning' => 'Mortgage arrears are rising.',
+                default => 'Mortgage arrears have risen for three consecutive releases.',
             },
             meaning: 'Arrears can be an early sign of financial stress. A rising trend can matter even before repossessions move higher.',
             sparkId: 'spark-arrears',
@@ -786,17 +657,7 @@ class EconomicDashboardController extends Controller
     {
         $current = $snapshot['current_value'];
         $previous = $snapshot['previous_value'];
-        $delta = is_null($current) || is_null($previous) ? null : $current - $previous;
-
-        $status = match (true) {
-            is_null($current) => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta <= -0.005 => $this->statusMeta('green'),
-            ! is_null($delta) && abs($delta) < 0.005 => $this->statusMeta('amber'),
-            ! is_null($delta) && $delta <= 0.030 => $current >= 0.15 ? $this->statusMeta('deep') : $this->statusMeta('red'),
-            ! is_null($delta) => $this->statusMeta('deep'),
-            $current >= 0.15 => $this->statusMeta('red'),
-            default => $this->statusMeta('deep'),
-        };
+        $status = $this->trendStatus($snapshot, badWhen: 'up', decimals: 3);
 
         return $this->baseCard(
             title: 'Repossessions',
@@ -807,10 +668,10 @@ class EconomicDashboardController extends Controller
             change: $this->formatPointChange($current, $previous, $snapshot['previous_period_label'], 3),
             changeArrow: $this->changeArrow($current, $previous),
             signal: match ($status['label']) {
-                'Supportive' => 'Forced-sale pressure remains low.',
-                'Neutral' => 'Forced-sale pressure looks broadly contained.',
-                'Warning' => 'Repossessions are rising, but from a low base.',
-                default => 'Repossessions are rising and becoming more noticeable.',
+                'Positive' => 'Repossessions fell in the latest release.',
+                'Neutral' => 'Repossessions were unchanged in the latest release.',
+                'Warning' => 'Repossessions are rising.',
+                default => 'Repossessions have risen for three consecutive releases.',
             },
             meaning: 'Repossessions are still a very small share of mortgages, but the direction matters. A rising trend can point to pressure building after arrears have already increased.',
             sparkId: 'spark-repossessions',
@@ -855,22 +716,23 @@ class EconomicDashboardController extends Controller
 
     private function buildSummary(array $cards): array
     {
-        $supportive = collect($cards)->where('status.label', 'Supportive')->count();
+        $positive = collect($cards)->where('status.label', 'Positive')->count();
         $neutral = collect($cards)->where('status.label', 'Neutral')->count();
         $warning = collect($cards)->where('status.label', 'Warning')->count();
         $stress = collect($cards)->where('status.label', 'Stress')->count();
         $pressureCount = $warning + $stress;
-        $supportWeight = $supportive + ($neutral * 0.5);
-        $pressureWeight = $warning + ($stress * 2);
+        $positiveWeight = $positive + ($neutral * 0.5);
+        $pressureWeight = $warning + ($stress * 3);
 
         $tone = match (true) {
-            $stress >= 2 || ($stress >= 1 && $warning >= 2) || ($pressureWeight >= 5 && $pressureCount >= 3) => 'showing significant pressure',
-            $stress >= 1 || $pressureWeight >= 4 || $pressureCount >= 4 => 'under pressure',
-            $supportWeight >= $pressureWeight + 1.5 && $supportive >= $pressureCount + 1 => 'broadly supportive',
+            $stress >= 2 || ($stress >= 1 && $warning >= 2) => 'showing significant pressure',
+            $stress >= 1 || $pressureWeight >= 5 => 'under pressure',
+            $positiveWeight >= $pressureWeight + 1.5 && $positive >= $pressureCount + 1 => 'broadly positive',
             default => 'mixed but broadly balanced',
         };
 
         $mainPressureSource = collect($cards)
+            ->filter(fn (array $card): bool => in_array($card['status']['label'], ['Warning', 'Stress'], true))
             ->sortByDesc(fn (array $card) => $card['status']['weight'])
             ->map(fn (array $card) => strtolower($card['title']))
             ->first();
@@ -885,7 +747,7 @@ class EconomicDashboardController extends Controller
     {
         return match ($level) {
             'green' => [
-                'label' => 'Supportive',
+                'label' => 'Positive',
                 'weight' => 0,
                 'card' => 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white',
                 'badge' => 'border border-emerald-200 bg-emerald-100 text-emerald-800',
@@ -916,6 +778,50 @@ class EconomicDashboardController extends Controller
                 'accent' => 'bg-rose-700',
                 'change' => 'text-rose-800',
             ],
+        };
+    }
+
+    private function trendStatus(array $snapshot, string $badWhen, int $decimals): array
+    {
+        $values = array_map(
+            fn (float $value): float => round($value, $decimals),
+            $snapshot['trend_values'] ?? []
+        );
+
+        if (count($values) < 2) {
+            return $this->statusMeta('amber');
+        }
+
+        $latest = $values[count($values) - 1];
+        $previous = $values[count($values) - 2];
+
+        if ($latest === $previous) {
+            return $this->statusMeta('amber');
+        }
+
+        $latestIsWorse = $badWhen === 'up' ? $latest > $previous : $latest < $previous;
+
+        if (! $latestIsWorse) {
+            return $this->statusMeta('green');
+        }
+
+        $consecutiveWorseningReleases = 1;
+
+        for ($index = count($values) - 2; $index > 0; $index--) {
+            $current = $values[$index];
+            $prior = $values[$index - 1];
+            $isWorse = $badWhen === 'up' ? $current > $prior : $current < $prior;
+
+            if (! $isWorse) {
+                break;
+            }
+
+            $consecutiveWorseningReleases++;
+        }
+
+        return match (true) {
+            $consecutiveWorseningReleases >= 3 => $this->statusMeta('stress'),
+            default => $this->statusMeta('red'),
         };
     }
 

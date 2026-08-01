@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\MortgageApproval;
+use Carbon\Carbon;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -169,11 +170,11 @@ class EconomicDashboardTest extends TestCase
         $approvals = $response->viewData('approvals');
 
         $this->assertSame([100.0, 110.0, 120.0], $sparklines['approvals']['values']);
-        $this->assertSame(330.0, (float) $approvals->value);
-        $this->assertSame('Jan 2025 - Mar 2025', $approvals->period);
+        $this->assertSame(120.0, (float) $approvals->value);
+        $this->assertSame('Mar 2025', $approvals->period);
     }
 
-    public function test_hpi_panel_uses_normalized_rolling_period_label_for_legacy_y_d_m_date_format(): void
+    public function test_hpi_panel_uses_latest_normalized_label_for_legacy_y_d_m_date_format(): void
     {
         DB::table('hpi_monthly')->insert([
             [
@@ -195,11 +196,11 @@ class EconomicDashboardTest extends TestCase
         $response = $this->get(route('economic.dashboard', absolute: false));
 
         $response->assertOk();
-        $response->assertSee('Nov 2025 - Dec 2025');
-        $this->assertSame('Nov 2025 - Dec 2025', $response->viewData('hpiDateLabel'));
+        $response->assertSee('Dec 2025');
+        $this->assertSame('Dec 2025', $response->viewData('hpiDateLabel'));
     }
 
-    public function test_repossessions_stays_red_when_rises_are_separated_by_flat_quarters(): void
+    public function test_repossessions_only_warns_when_rises_are_separated_by_flat_quarters(): void
     {
         DB::table('mlar_arrears')->insert([
             [
@@ -248,11 +249,11 @@ class EconomicDashboardTest extends TestCase
 
         $response->assertOk();
         $this->assertSame(2, $response->viewData('repossDirection'));
-        $response->assertSee('Repossessions are rising, but from a low base.');
+        $response->assertSee('Repossessions are rising.');
         $response->assertSee('Repossessions are still a very small share of mortgages, but the direction matters.');
     }
 
-    public function test_dashboard_uses_balanced_summary_when_most_signals_are_supportive_or_neutral(): void
+    public function test_dashboard_uses_positive_summary_when_most_signals_are_positive_or_neutral(): void
     {
         DB::table('interest_rates')->insert([
             ['effective_date' => '2025-10-01', 'rate' => 3.20, 'created_at' => now(), 'updated_at' => now()],
@@ -359,23 +360,22 @@ class EconomicDashboardTest extends TestCase
         $response->assertOk();
         $response->assertSee('Market signals summary');
         $response->assertSee('Mortgage approvals');
-        $response->assertSee('Buyer demand is improving.');
+        $response->assertSee('Buyer demand improved in the latest release.');
         $response->assertSee('What this means');
         $response->assertSee('The wider housing market currently looks');
-        $response->assertSee('broadly supportive');
+        $response->assertSee('broadly positive');
         $response->assertDontSee('under pressure');
-        $response->assertSee('Current 3-month period');
-        $response->assertSee('Previous 3-month period');
-        $response->assertSee('Current quarter');
-        $response->assertSee('Previous quarter');
+        $response->assertSee('Latest published figure');
         $response->assertSee('Q1 2026');
         $response->assertSee('Q4 2025');
-        $response->assertSee('Jan 2026 - Mar 2026');
-        $response->assertSee('Oct 2025 - Dec 2025');
+        $response->assertSee('Mar 2026');
+        $response->assertSee('Feb 2026');
     }
 
-    public function test_bank_rate_uses_latest_rate_and_previous_distinct_rate_instead_of_rolling_periods(): void
+    public function test_bank_rate_uses_latest_and_previous_published_rates(): void
     {
+        $this->travelTo(Carbon::create(2026, 3, 15));
+
         DB::table('interest_rates')->insert([
             ['effective_date' => '2025-08-07', 'rate' => 4.00, 'created_at' => now(), 'updated_at' => now()],
             ['effective_date' => '2025-09-01', 'rate' => 4.00, 'created_at' => now(), 'updated_at' => now()],
@@ -392,19 +392,23 @@ class EconomicDashboardTest extends TestCase
             ->firstWhere('title', 'Bank rate');
 
         $this->assertNotNull($bankRateCard);
-        $this->assertSame('Current', $bankRateCard['current_heading']);
-        $this->assertSame('Previous', $bankRateCard['previous_heading']);
-        $this->assertSame('Change', $bankRateCard['change_heading']);
-        $this->assertSame('18 Dec 2025', $bankRateCard['current_label']);
-        $this->assertSame('1 Nov 2025', $bankRateCard['previous_label']);
+        $this->assertSame('Current rate', $bankRateCard['current_heading']);
+        $this->assertSame('Last month', $bankRateCard['previous_heading']);
+        $this->assertSame('Monthly movement', $bankRateCard['change_heading']);
+        $this->assertSame('Effective since 18 Dec 2025', $bankRateCard['current_label']);
+        $this->assertSame('Feb 2026', $bankRateCard['previous_label']);
         $this->assertSame('3.75%', $bankRateCard['current_value']);
-        $this->assertSame('4.00%', $bankRateCard['previous_value']);
-        $this->assertSame('-0.25 percentage points vs 1 Nov 2025', $bankRateCard['change']);
-        $this->assertSame('event-based', $bankRateCard['debug']['frequency']);
+        $this->assertSame('3.75%', $bankRateCard['previous_value']);
+        $this->assertSame('Unchanged vs Feb 2026', $bankRateCard['change']);
+        $this->assertSame('Neutral', $bankRateCard['status']['label']);
+        $this->assertSame('Bank rate is unchanged from last month.', $bankRateCard['signal']);
+        $this->assertSame('monthly', $bankRateCard['debug']['frequency']);
         $this->assertSame([4.0, 4.0, 4.0, 4.0, 3.75], $response->viewData('sparklines')['interest']['values']);
+
+        $this->travelBack();
     }
 
-    public function test_falling_inflation_is_treated_as_supportive_for_consumers(): void
+    public function test_falling_inflation_is_treated_as_positive_for_consumers(): void
     {
         DB::table('inflation_cpih_monthly')->insert([
             ['date' => '2025-10-01', 'value' => 3.6, 'created_at' => now(), 'updated_at' => now()],
@@ -412,7 +416,7 @@ class EconomicDashboardTest extends TestCase
             ['date' => '2025-12-01', 'value' => 3.6, 'created_at' => now(), 'updated_at' => now()],
             ['date' => '2026-01-01', 'value' => 3.2, 'created_at' => now(), 'updated_at' => now()],
             ['date' => '2026-02-01', 'value' => 3.2, 'created_at' => now(), 'updated_at' => now()],
-            ['date' => '2026-03-01', 'value' => 3.2, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-03-01', 'value' => 3.0, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         $response = $this->get(route('economic.dashboard', absolute: false));
@@ -423,8 +427,44 @@ class EconomicDashboardTest extends TestCase
             ->firstWhere('title', 'Inflation');
 
         $this->assertNotNull($inflationCard);
-        $this->assertSame('Supportive', $inflationCard['status']['label']);
-        $this->assertSame('Inflation is easing.', $inflationCard['signal']);
-        $this->assertSame('-0.4 pts vs Oct 2025 - Dec 2025', $inflationCard['change']);
+        $this->assertSame('Positive', $inflationCard['status']['label']);
+        $this->assertSame('Inflation fell in the latest release.', $inflationCard['signal']);
+        $this->assertSame('-0.2 pts vs Feb 2026', $inflationCard['change']);
+    }
+
+    public function test_three_consecutive_adverse_movements_create_stress_in_each_direction(): void
+    {
+        DB::table('inflation_cpih_monthly')->insert([
+            ['date' => '2025-12-01', 'value' => 2.5, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-01-01', 'value' => 2.6, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-02-01', 'value' => 2.7, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-03-01', 'value' => 2.8, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        foreach ([67000, 66000, 65000, 64000] as $index => $value) {
+            MortgageApproval::query()->create([
+                'series_code' => 'LPMVTVX',
+                'period' => Carbon::create(2025, 12, 1)->addMonths($index),
+                'value' => $value,
+                'unit' => 'count',
+                'source' => 'BoE',
+            ]);
+        }
+
+        DB::table('unemployment_monthly')->insert([
+            ['date' => '2026-01-01', 'single_month' => 0, 'single' => 4.8, 'three_month' => 4.8, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-02-01', 'single_month' => 0, 'single' => 4.9, 'three_month' => 4.9, 'created_at' => now(), 'updated_at' => now()],
+            ['date' => '2026-03-01', 'single_month' => 0, 'single' => 5.0, 'three_month' => 5.0, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $response = $this->get(route('economic.dashboard', absolute: false));
+
+        $response->assertOk();
+
+        $cards = collect($response->viewData('cards'));
+
+        $this->assertSame('Stress', $cards->firstWhere('title', 'Inflation')['status']['label']);
+        $this->assertSame('Stress', $cards->firstWhere('title', 'Mortgage approvals')['status']['label']);
+        $this->assertSame('Warning', $cards->firstWhere('title', 'Unemployment')['status']['label']);
     }
 }

@@ -67,7 +67,7 @@ class StressInsightsApiTest extends TestCase
             ->assertJsonCount(8, 'data.indicators')
             ->assertJsonPath('data.last_updated', '2026-06-01')
             ->assertJsonPath('data.score.maximum', 100)
-            ->assertJsonPath('data.score.raw_maximum', 31)
+            ->assertJsonPath('data.score.raw_maximum', 24)
             ->assertJsonPath('data.website_url', route('economic.dashboard'));
 
         $this->assertContains($response->json('data.score.status'), ['low', 'amber', 'red', 'dark_red']);
@@ -133,7 +133,7 @@ class StressInsightsApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.indicators.0.value', null)
             ->assertJsonPath('data.indicators.2.value', 4.25)
-            ->assertJsonPath('data.indicators.2.period', '1 Jun 2026')
+            ->assertJsonPath('data.indicators.2.period', 'Effective since 1 Jun 2026')
             ->assertJsonPath('data.indicators.6.value', null);
     }
 

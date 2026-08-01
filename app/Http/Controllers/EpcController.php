@@ -471,11 +471,7 @@ class EpcController extends Controller
     }
 
     /**
-     * Show a single EPC report by LMK/Building Reference.
-     *
-     * Scotland uses BUILDING_REFERENCE_NUMBER, while England & Wales use lmk_key.
-     * We attempt Scotland first, then fall back to E&W. We pass the full row
-     * (all columns) through to the view so we can decide later what to surface.
+     * Show a single England & Wales EPC report by LMK/building reference.
      */
     public function show(Request $request, string $lmk, EpcCertificateFinder $finder)
     {
@@ -489,38 +485,8 @@ class EpcController extends Controller
 
         // Prefer decoded `r`, then plain `return` param
         $backUrlParam = $decoded ?: $incomingReturn;
-        $fallbackScot = route('epc.search_scotland');
         $fallbackEW = route('epc.search');
 
-        // --- Try Scotland first
-        $scotTable = 'epc_certificates_scotland';
-        $scotBuildingColumn = $this->resolveColumn($scotTable, ['BUILDING_REFERENCE_NUMBER', 'building_reference_number']);
-        $scot = DB::table($scotTable)
-            ->where($scotBuildingColumn, $lmk)
-            ->first();
-
-        if ($scot) {
-            // Build a readable address similar to searchScotland()
-            $address = trim(implode(', ', array_filter([
-                $scot->ADDRESS1 ?? null,
-                $scot->ADDRESS2 ?? null,
-                $scot->ADDRESS3 ?? null,
-            ])));
-
-            $record = (array) $scot;
-            $record['address_display'] = $address;
-            $record['nation'] = 'scotland';
-
-            return view('epc.show', [
-                'nation' => 'scotland',
-                'lmk' => $lmk,
-                'record' => $record,   // full row as associative array
-                'columns' => array_keys($record),
-                'backUrl' => $backUrlParam ?: $fallbackScot,
-            ]);
-        }
-
-        // --- Fall back to England & Wales
         $ew = $finder->findEnglandWales($lmk);
 
         if ($ew) {
@@ -540,7 +506,6 @@ class EpcController extends Controller
             ]);
         }
 
-        // Not found in either dataset
         abort(404);
     }
 

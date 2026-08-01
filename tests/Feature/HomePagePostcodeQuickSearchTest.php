@@ -176,7 +176,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'Search by street',
             'Search postcode (e.g. SW7 5PH)',
             'Property sales',
-            'Overall Property MArket Stress Index',
+            'Overall Property Market Stress Index',
             'UK Housing Market Snapshot',
             'UK Swap Rates',
             'Signals Worth Watching',

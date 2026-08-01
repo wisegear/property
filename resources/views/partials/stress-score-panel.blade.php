@@ -7,8 +7,8 @@
     if (is_null($totalStress)) {
         $stressScore = null;
     } else {
-        // Convert to 0–100 scale (max possible is 31: seven 4-point indicators plus arrears (0–3))
-        $scaled = max(0, min(100, round(($totalStress / 31) * 100)));
+        // Convert to a 0–100 scale (eight indicators with a maximum weight of 3 each).
+        $scaled = max(0, min(100, round(($totalStress / 24) * 100)));
         $stressScore = $scaled;
 
         // Determine stress level and styling
@@ -43,7 +43,7 @@
             {{-- Left: Title and description --}}
             <div class="md:col-span-1">
                 <h2 class="text-sm text-center font-semibold tracking-wide text-gray-700 uppercase">
-                    Overall Property MArket Stress Index
+                    Overall Property Market Stress Index
                 </h2>
                 <p class="mt-1 text-sm text-center text-gray-700 md:block">
                     A single 0–100 score combining all eight indicators. Higher scores mean more stress and risk.
@@ -129,9 +129,9 @@
                 <p class="text-xs text-center text-gray-600">
                     The score rolls up eight indicators into a 0–100 index. Under 40 is low stress,
                     40–69 signals elevated risk, and 70+ points to high stress. Use it to compare
-                    momentum over time rather than a single-month snapshot.
+                    recent movements across the latest published releases.
                 </p>
-                <div class="text-xs text-gray-500 mt-2">Raw: {{ $totalStress }}/31</div>
+                <div class="text-xs text-gray-500 mt-2">Raw: {{ $totalStress }}/24</div>
             </div>
         </div>
     </section>

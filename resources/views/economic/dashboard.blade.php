@@ -10,7 +10,7 @@
                     Economic Dashboard
                 </h1>
                 <p class="mt-2 text-sm text-zinc-700">
-                    A quarterly-style housing market health check for normal consumers. {{ $heroComparisonText }}
+                    A simple housing market health check. {{ $heroComparisonText }}
                 </p>
                 <p class="mt-3 text-xs text-zinc-500">
                     Last updated: {{ now()->format('j M Y') }}
@@ -33,14 +33,19 @@
                 <p class="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">Market signals summary</p>
                 <h2 class="mt-2 text-xl font-semibold text-zinc-900">At-a-glance view</h2>
                 <p class="mt-3 text-sm leading-6 text-zinc-700">
-                    The wider housing market currently looks <span class="font-semibold text-zinc-900">{{ $summary['tone'] }}</span>. The main area to watch is <span class="font-semibold text-zinc-900">{{ $summary['main_pressure_source'] }}</span>, but this should be read alongside the wider mix of supportive, neutral and warning signals.
+                    The wider housing market currently looks <span class="font-semibold text-zinc-900">{{ $summary['tone'] }}</span>.
+                    @if ($summary['main_pressure_source'])
+                        The main area to watch is <span class="font-semibold text-zinc-900">{{ $summary['main_pressure_source'] }}</span>.
+                    @else
+                        No indicator is currently showing a worsening trend.
+                    @endif
                 </p>
             </div>
 
             <div class="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-                    <div class="font-semibold text-emerald-800">Supportive</div>
-                    <div class="mt-1 text-2xl font-semibold text-emerald-900">{{ $statusCounts['Supportive'] ?? 0 }}</div>
+                    <div class="font-semibold text-emerald-800">Positive</div>
+                    <div class="mt-1 text-2xl font-semibold text-emerald-900">{{ $statusCounts['Positive'] ?? 0 }}</div>
                 </div>
                 <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
                     <div class="font-semibold text-amber-900">Neutral</div>
@@ -68,10 +73,13 @@
 
             <div class="space-y-3 px-5 pb-5 text-sm leading-6 text-zinc-700">
                 <p>
-                    Each card compares the current quarter with the previous quarter. That keeps the dashboard consistent across rates, approvals, inflation, arrears, and other indicators.
+                    Each card shows the latest published figure, not an average created by this dashboard. The status is based on consecutive published releases.
                 </p>
                 <p>
-                    Supportive means the indicator is helping the market backdrop. Neutral means conditions are broadly steady. Warning means pressure is building. Stress means pressure is more established and deserves closer attention.
+                    Positive means the latest movement improved. Neutral means it was unchanged. Warning means one or two consecutive worsening releases, and Stress means three or more.
+                </p>
+                <p>
+                    Direction depends on the indicator. Lower inflation, Bank rate, unemployment, arrears and repossessions are positive. Higher approvals, house prices and wage growth are positive.
                 </p>
             </div>
         </details>
@@ -89,17 +97,10 @@
 
                 <div class="mt-6 flex flex-1 flex-col gap-5">
                     <div class="space-y-4">
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{{ $card['current_heading'] }}</p>
-                                <p class="mt-2 text-sm text-zinc-600">{{ $card['current_label'] }}</p>
-                                <p class="mt-2 text-3xl font-semibold tracking-tight text-zinc-950">{{ $card['current_value'] }}</p>
-                            </div>
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{{ $card['previous_heading'] }}</p>
-                                <p class="mt-2 text-sm text-zinc-600">{{ $card['previous_label'] }}</p>
-                                <p class="mt-2 text-xl font-semibold text-zinc-800">{{ $card['previous_value'] }}</p>
-                            </div>
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Latest published figure</p>
+                            <p class="mt-2 text-4xl font-semibold tracking-tight text-zinc-950">{{ $card['current_value'] }}</p>
+                            <p class="mt-2 text-sm text-zinc-600">{{ $card['current_label'] }}</p>
                         </div>
 
                         @if (! empty($card['supplementary']))
@@ -107,22 +108,19 @@
                         @endif
 
                         <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{{ $card['change_heading'] }}</p>
+                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Compared with {{ $card['previous_label'] }}</p>
                             <p class="mt-2 flex items-center gap-2 text-sm font-semibold {{ $card['status']['change'] }}">
                                 <span>{{ $card['change_arrow'] }}</span>
                                 <span>{{ $card['change'] }}</span>
                             </p>
                         </div>
 
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Signal</p>
-                            <p class="mt-2 text-base font-semibold text-zinc-900">{{ $card['signal'] }}</p>
-                        </div>
+                        <p class="text-base font-semibold text-zinc-900">{{ $card['signal'] }}</p>
 
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">What this means</p>
+                        <details class="rounded-xl border border-zinc-200 bg-white/70 px-4 py-3">
+                            <summary class="cursor-pointer text-sm font-semibold text-zinc-800">What this means</summary>
                             <p class="mt-2 text-sm leading-6 text-zinc-700">{{ $card['meaning'] }}</p>
-                        </div>
+                        </details>
                     </div>
 
                     <div class="mt-auto rounded-2xl border border-white/70 bg-white/80 p-4">
