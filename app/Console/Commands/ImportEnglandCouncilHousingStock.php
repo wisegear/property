@@ -12,19 +12,21 @@ class ImportEnglandCouncilHousingStock extends Command
                             {--truncate : Truncate the table before import}
                             {--chunk=2000 : Rows per insert batch}';
 
-    protected $description = 'Import England council housing stock (simplified LAHS extract) from CSV';
+    protected $description = 'Import England council housing stock from a full or simplified LAHS CSV extract';
 
     public function handle(): int
     {
         $path = (string) $this->option('path');
 
-        if (!$path) {
+        if (! $path) {
             $this->error('Missing --path=/full/path/to/file.csv');
+
             return self::FAILURE;
         }
 
-        if (!is_file($path) || !is_readable($path)) {
+        if (! is_file($path) || ! is_readable($path)) {
             $this->error("CSV not found or not readable: {$path}");
+
             return self::FAILURE;
         }
 
@@ -49,70 +51,87 @@ class ImportEnglandCouncilHousingStock extends Command
 
         // Read header row
         $header = $file->fgetcsv();
-        if (!$header || !is_array($header)) {
+        if (! $header || ! is_array($header)) {
             $this->error('Could not read header row.');
+
             return self::FAILURE;
         }
 
         // Normalise headers to make matching robust
-        $norm = fn($v) => strtolower(trim((string) $v));
+        $norm = fn ($v) => strtolower(trim((string) $v));
         $headerNorm = array_map($norm, $header);
         $idx = array_flip($headerNorm);
 
         // Helper to pull a column if it exists
         $get = function (array $row, string $col) use ($idx) {
             $key = strtolower(trim($col));
-            if (!array_key_exists($key, $idx)) return null;
+            if (! array_key_exists($key, $idx)) {
+                return null;
+            }
             $i = $idx[$key];
+
             return array_key_exists($i, $row) ? $row[$i] : null;
         };
 
-        // Required columns (based on your screenshot)
+        $isFullExtract = array_key_exists('a1a', $idx);
+
+        $ladNameColumn = $isFullExtract ? 'LAD24NM' : 'LAD23NM';
+        $ladCodeColumn = $isFullExtract ? 'LAD24CD' : 'LAD23CD';
+        $ladTypeColumn = $isFullExtract ? 'LAD24TYPE' : 'LAD23TYPE';
+        $totalStockColumn = $isFullExtract ? 'a1a' : 'Total_stock';
+        $newBuildsColumn = $isFullExtract ? 'a4c' : 'New_Builds';
+        $acquisitionsColumn = $isFullExtract ? 'a4d' : 'Acquisitions';
+
         $required = [
             'local_authority',
             'local_authority_code',
-            'LAD23NM',
-            'LAD23CD',
-            'LAD23TYPE',
+            $ladNameColumn,
+            $ladCodeColumn,
+            $ladTypeColumn,
             'region_name',
             'region_code',
             'county_name',
             'county_code',
             'Year',
             'status',
-            'Total_stock',
-            'New_Builds',
-            'Acquisitions',
+            $totalStockColumn,
+            $newBuildsColumn,
+            $acquisitionsColumn,
         ];
 
         // Check we have them (case-insensitive because we normalised)
         $missing = [];
         foreach ($required as $col) {
-            if (!array_key_exists(strtolower(trim($col)), $idx)) {
+            if (! array_key_exists(strtolower(trim($col)), $idx)) {
                 $missing[] = $col;
             }
         }
 
         if ($missing) {
-            $this->error('CSV is missing required columns: ' . implode(', ', $missing));
+            $this->error('CSV is missing required columns: '.implode(', ', $missing));
             $this->line('Tip: check the column names match your exported/simplified CSV exactly.');
+
             return self::FAILURE;
         }
 
         $toInt = function ($v): ?int {
             $v = trim((string) $v);
-            if ($v === '') return null;
+            if ($v === '') {
+                return null;
+            }
 
             // Remove commas and any stray spaces
             $v = str_replace([',', ' '], '', $v);
 
             // Some datasets use "0" or "0.0" etc.
-            if (!is_numeric($v)) return null;
+            if (! is_numeric($v)) {
+                return null;
+            }
 
             return (int) round((float) $v);
         };
 
-        $clean = fn($v) => ($v === null) ? null : trim((string) $v);
+        $clean = fn ($v) => ($v === null) ? null : trim((string) $v);
 
         $rows = [];
         $count = 0;
@@ -123,42 +142,42 @@ class ImportEnglandCouncilHousingStock extends Command
 
         // Iterate remaining rows
         foreach ($file as $row) {
-            if (!is_array($row) || count($row) < 2) {
+            if (! is_array($row) || count($row) < 2) {
                 continue;
             }
 
             // Skip accidental repeated header lines
-            if (strtolower(trim((string)($row[0] ?? ''))) === 'local_authority') {
+            if (strtolower(trim((string) ($row[0] ?? ''))) === 'local_authority') {
                 continue;
             }
 
             $payload = [
-                'local_authority'       => $clean($get($row, 'local_authority')),
-                'local_authority_code'  => $clean($get($row, 'local_authority_code')),
+                'local_authority' => $clean($get($row, 'local_authority')),
+                'local_authority_code' => $clean($get($row, 'local_authority_code')),
 
-                'lad23_name'            => $clean($get($row, 'LAD23NM')),
-                'lad23_code'            => $clean($get($row, 'LAD23CD')),
-                'lad23_type'            => $clean($get($row, 'LAD23TYPE')),
+                'lad23_name' => $clean($get($row, $ladNameColumn)),
+                'lad23_code' => $clean($get($row, $ladCodeColumn)),
+                'lad23_type' => $clean($get($row, $ladTypeColumn)),
 
-                'region_name'           => $clean($get($row, 'region_name')),
-                'region_code'           => $clean($get($row, 'region_code')),
+                'region_name' => $clean($get($row, 'region_name')),
+                'region_code' => $clean($get($row, 'region_code')),
 
-                'county_name'           => $clean($get($row, 'county_name')),
-                'county_code'           => $clean($get($row, 'county_code')),
+                'county_name' => $clean($get($row, 'county_name')),
+                'county_code' => $clean($get($row, 'county_code')),
 
-                'year'                  => $clean($get($row, 'Year')),
-                'status'                => $clean($get($row, 'status')),
+                'year' => $clean($get($row, 'Year')),
+                'status' => $clean($get($row, 'status')),
 
-                'total_stock'           => $toInt($get($row, 'Total_stock')),
-                'new_builds'            => $toInt($get($row, 'New_Builds')),
-                'acquisitions'          => $toInt($get($row, 'Acquisitions')),
+                'total_stock' => $toInt($get($row, $totalStockColumn)),
+                'new_builds' => $toInt($get($row, $newBuildsColumn)),
+                'acquisitions' => $toInt($get($row, $acquisitionsColumn)),
 
-                'created_at'            => now(),
-                'updated_at'            => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ];
 
             // If the row is basically empty, skip it
-            if (!$payload['lad23_code'] || !$payload['year'] || !$payload['status']) {
+            if (! $payload['lad23_code'] || ! $payload['year'] || ! $payload['status']) {
                 continue;
             }
 
@@ -183,35 +202,14 @@ class ImportEnglandCouncilHousingStock extends Command
         $bar->finish();
         $this->newLine(2);
 
-        $this->info("Done. Parsed rows: {$count}, inserted/updated: {$inserted}");
+        $this->info("Done. Parsed rows: {$count}, inserted: {$inserted}");
 
         return self::SUCCESS;
     }
 
-    /**
-     * Upsert a chunk. Requires a unique index on (lad23_code, year, status).
-     */
     private function flush(array $rows): int
     {
-        // Upsert updates the numeric values and geography/name fields if re-run
-        DB::table('england_council_housing_stock')->upsert(
-            $rows,
-            ['lad23_code', 'year', 'status'],
-            [
-                'local_authority',
-                'local_authority_code',
-                'lad23_name',
-                'lad23_type',
-                'region_name',
-                'region_code',
-                'county_name',
-                'county_code',
-                'total_stock',
-                'new_builds',
-                'acquisitions',
-                'updated_at',
-            ]
-        );
+        DB::table('england_council_housing_stock')->insert($rows);
 
         return count($rows);
     }
