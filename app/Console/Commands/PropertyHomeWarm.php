@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Property\NationalPropertyDashboard;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +20,7 @@ class PropertyHomeWarm extends Command
 
     protected $description = 'Warm the PropertyController homepage cache (England & Wales, Category A aggregates only)';
 
-    public function handle(): int
+    public function handle(NationalPropertyDashboard $dashboard): int
     {
         $this->info('Starting PropertyController home cache warm (EW Cat A only)...');
 
@@ -31,7 +33,7 @@ class PropertyHomeWarm extends Command
         // If a specific task is provided, run only that (child mode)
         $task = (string) ($this->option('task') ?? '');
         if ($task !== '') {
-            $this->runTask($task, $ttl);
+            $this->runTask($task, $ttl, $dashboard);
             Cache::put('property:home:catA:last_warm', now()->toIso8601String(), $ttl);
             $this->info("Task '{$task}' complete.");
 
@@ -39,13 +41,13 @@ class PropertyHomeWarm extends Command
         }
 
         // Orchestrator mode: define the seven independent tasks
-        $tasks = ['sales', 'avgPrice', 'p90', 'top5', 'topSale', 'top3', 'monthly24', 'typeSplit', 'newBuildSplit', 'durationSplit', 'avgPriceByType'];
+        $tasks = ['sales', 'avgPrice', 'p90', 'top5', 'topSale', 'top3', 'monthly24', 'typeSplit', 'newBuildSplit', 'durationSplit', 'avgPriceByType', 'dashboard'];
 
         $parallel = max(1, (int) ($this->option('parallel') ?? 1));
         if ($parallel <= 1) {
             // Sequential behaviour (original)
-            $this->withProgressBar($tasks, function (string $t) use ($ttl) {
-                $this->runTask($t, $ttl);
+            $this->withProgressBar($tasks, function (string $t) use ($ttl, $dashboard) {
+                $this->runTask($t, $ttl, $dashboard);
             });
             $this->newLine(2);
             Cache::put('property:home:catA:last_warm', now()->toIso8601String(), $ttl);
@@ -61,7 +63,7 @@ class PropertyHomeWarm extends Command
         $bar = $this->output->createProgressBar($total);
         $bar->start();
 
-        $maxWorkers = (int) min($parallel, 11); // safety cap (we have 11 tasks)
+        $maxWorkers = (int) min($parallel, count($tasks));
         $queue = $tasks; // array of strings
         $running = [];
         $failedTasks = [];
@@ -114,8 +116,14 @@ class PropertyHomeWarm extends Command
         return self::SUCCESS;
     }
 
-    private function runTask(string $task, int $ttl): void
+    private function runTask(string $task, int $ttl, NationalPropertyDashboard $dashboard): void
     {
+        if ($task === 'dashboard') {
+            $dashboard->cachedData();
+
+            return;
+        }
+
         $window = $this->rollingWindow();
         $cachePrefix = $this->rollingCachePrefix($window['latest_month']);
         $endMonths = $this->rollingEndMonths($window['latest_month']);
@@ -176,7 +184,7 @@ class PropertyHomeWarm extends Command
                 if (! empty($keys)) {
                     sort($keys); // ascending
                     $lastDataKey = end($keys); // e.g., '2025-08-01'
-                    $seriesEnd = \Carbon\Carbon::createFromFormat('Y-m-d', $lastDataKey)->startOfMonth();
+                    $seriesEnd = Carbon::createFromFormat('Y-m-d', $lastDataKey)->startOfMonth();
                 } else {
                     // If nothing in window, use end of previous month
                     $seriesEnd = $seedEnd->copy()->subMonth();
@@ -273,9 +281,9 @@ class PropertyHomeWarm extends Command
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, Carbon>
+     * @return Collection<int, Carbon>
      */
-    private function rollingEndMonths(Carbon $latestMonth): \Illuminate\Support\Collection
+    private function rollingEndMonths(Carbon $latestMonth): Collection
     {
         $earliestDate = DB::table('land_registry')->min('Date');
 
@@ -313,7 +321,7 @@ class PropertyHomeWarm extends Command
         ];
     }
 
-    private function buildRollingSalesSeries(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingSalesSeries(Collection $endMonths): Collection
     {
         return $endMonths->map(function (Carbon $endMonth) {
             $range = $this->rollingRangeForEndMonth($endMonth);
@@ -328,7 +336,7 @@ class PropertyHomeWarm extends Command
         });
     }
 
-    private function buildRollingMedianSeries(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingMedianSeries(Collection $endMonths): Collection
     {
         $medianExpr = $this->medianPriceExpression();
 
@@ -347,7 +355,7 @@ class PropertyHomeWarm extends Command
         });
     }
 
-    private function buildRollingP90Series(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingP90Series(Collection $endMonths): Collection
     {
         return $endMonths->map(function (Carbon $endMonth) {
             $range = $this->rollingRangeForEndMonth($endMonth);
@@ -369,7 +377,7 @@ class PropertyHomeWarm extends Command
         });
     }
 
-    private function buildRollingTop5Series(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingTop5Series(Collection $endMonths): Collection
     {
         return $endMonths->map(function (Carbon $endMonth) {
             $range = $this->rollingRangeForEndMonth($endMonth);
@@ -392,7 +400,7 @@ class PropertyHomeWarm extends Command
         });
     }
 
-    private function buildRollingTopSaleSeries(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingTopSaleSeries(Collection $endMonths): Collection
     {
         return $endMonths->map(function (Carbon $endMonth) {
             $range = $this->rollingRangeForEndMonth($endMonth);
@@ -409,7 +417,7 @@ class PropertyHomeWarm extends Command
         });
     }
 
-    private function buildRollingTop3Series(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingTop3Series(Collection $endMonths): Collection
     {
         return $endMonths->flatMap(function (Carbon $endMonth) {
             $range = $this->rollingRangeForEndMonth($endMonth);
@@ -436,22 +444,22 @@ class PropertyHomeWarm extends Command
         })->values();
     }
 
-    private function buildRollingTypeSplitSeries(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingTypeSplitSeries(Collection $endMonths): Collection
     {
         return $this->buildRollingGroupedCountSeries($endMonths, 'PropertyType', 'type', ['D', 'S', 'T', 'F']);
     }
 
-    private function buildRollingNewBuildSplitSeries(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingNewBuildSplitSeries(Collection $endMonths): Collection
     {
         return $this->buildRollingGroupedCountSeries($endMonths, 'NewBuild', 'nb', ['Y', 'N']);
     }
 
-    private function buildRollingDurationSplitSeries(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingDurationSplitSeries(Collection $endMonths): Collection
     {
         return $this->buildRollingGroupedCountSeries($endMonths, 'Duration', 'dur', ['F', 'L']);
     }
 
-    private function buildRollingAvgPriceByTypeSeries(\Illuminate\Support\Collection $endMonths): \Illuminate\Support\Collection
+    private function buildRollingAvgPriceByTypeSeries(Collection $endMonths): Collection
     {
         $medianExpr = $this->medianPriceExpression();
 
@@ -476,11 +484,11 @@ class PropertyHomeWarm extends Command
     }
 
     private function buildRollingGroupedCountSeries(
-        \Illuminate\Support\Collection $endMonths,
+        Collection $endMonths,
         string $column,
         string $alias,
         array $allowedValues
-    ): \Illuminate\Support\Collection {
+    ): Collection {
         return $endMonths->flatMap(function (Carbon $endMonth) use ($column, $alias, $allowedValues) {
             $range = $this->rollingRangeForEndMonth($endMonth);
 

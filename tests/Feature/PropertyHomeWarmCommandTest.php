@@ -70,6 +70,21 @@ class PropertyHomeWarmCommandTest extends TestCase
         $this->assertSame($expected, (int) $cached['data']->first()->avg_price);
     }
 
+    public function test_it_warms_the_cache_used_by_the_property_dashboard(): void
+    {
+        DB::table('land_registry')->insert([
+            $this->landRegistryRow('99999999-9999-9999-9999-99999999999999', 450000, '2025-06-15 00:00:00'),
+        ]);
+
+        $this->artisan('property:home-warm', ['--task' => 'dashboard'])->assertExitCode(0);
+
+        $cached = Cache::get('property:dashboard:api:v1:202506');
+
+        $this->assertIsArray($cached);
+        $this->assertSame('2025-06', $cached['metadata']['latest_month']);
+        $this->assertSame(1, $cached['summary']['sales']);
+    }
+
     private function landRegistryRow(string $transactionId, int $price, string $date): array
     {
         $row = [
