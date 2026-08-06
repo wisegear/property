@@ -15919,6 +15919,12 @@
     },
     {
         "type": "locality",
+        "name": "BARTONS COPSE",
+        "label": "BARTONS COPSE (Locality)",
+        "path": "\/property\/area\/locality\/bartons-copse"
+    },
+    {
+        "type": "locality",
         "name": "BARUGH",
         "label": "BARUGH (Locality)",
         "path": "\/property\/area\/locality\/barugh"
@@ -33343,12 +33349,6 @@
     },
     {
         "type": "locality",
-        "name": "CHOPWELL WOODS",
-        "label": "CHOPWELL WOODS (Locality)",
-        "path": "\/property\/area\/locality\/chopwell-woods"
-    },
-    {
-        "type": "locality",
         "name": "CHORLEYWOOD",
         "label": "CHORLEYWOOD (Locality)",
         "path": "\/property\/area\/locality\/chorleywood"
@@ -48628,6 +48628,12 @@
         "name": "ESCOT PARK",
         "label": "ESCOT PARK (Locality)",
         "path": "\/property\/area\/locality\/escot-park"
+    },
+    {
+        "type": "locality",
+        "name": "ESCOTT",
+        "label": "ESCOTT (Locality)",
+        "path": "\/property\/area\/locality\/escott"
     },
     {
         "type": "locality",
@@ -71491,6 +71497,12 @@
     },
     {
         "type": "locality",
+        "name": "KERSHOPEFOOT",
+        "label": "KERSHOPEFOOT (Locality)",
+        "path": "\/property\/area\/locality\/kershopefoot"
+    },
+    {
+        "type": "locality",
         "name": "KERSOE",
         "label": "KERSOE (Locality)",
         "path": "\/property\/area\/locality\/kersoe"
@@ -79189,6 +79201,12 @@
     },
     {
         "type": "locality",
+        "name": "LLANBROOK",
+        "label": "LLANBROOK (Locality)",
+        "path": "\/property\/area\/locality\/llanbrook"
+    },
+    {
+        "type": "locality",
         "name": "LLANCADLE",
         "label": "LLANCADLE (Locality)",
         "path": "\/property\/area\/locality\/llancadle"
@@ -82405,6 +82423,12 @@
     },
     {
         "type": "locality",
+        "name": "LOW BRAITHWAITE",
+        "label": "LOW BRAITHWAITE (Locality)",
+        "path": "\/property\/area\/locality\/low-braithwaite"
+    },
+    {
+        "type": "locality",
         "name": "LOW BURNHAM",
         "label": "LOW BURNHAM (Locality)",
         "path": "\/property\/area\/locality\/low-burnham"
@@ -84574,6 +84598,12 @@
         "name": "LUNDY BAY",
         "label": "LUNDY BAY (Locality)",
         "path": "\/property\/area\/locality\/lundy-bay"
+    },
+    {
+        "type": "locality",
+        "name": "LUNE BUSINESS PARK",
+        "label": "LUNE BUSINESS PARK (Locality)",
+        "path": "\/property\/area\/locality\/lune-business-park"
     },
     {
         "type": "locality",
@@ -101797,12 +101827,6 @@
     },
     {
         "type": "locality",
-        "name": "PENYBANK",
-        "label": "PENYBANK (Locality)",
-        "path": "\/property\/area\/locality\/penybank"
-    },
-    {
-        "type": "locality",
         "name": "PENYBONC",
         "label": "PENYBONC (Locality)",
         "path": "\/property\/area\/locality\/penybonc"
@@ -109015,6 +109039,12 @@
     },
     {
         "type": "locality",
+        "name": "ROCK FERRY",
+        "label": "ROCK FERRY (Locality)",
+        "path": "\/property\/area\/locality\/rock-ferry"
+    },
+    {
+        "type": "locality",
         "name": "ROCK GREEN",
         "label": "ROCK GREEN (Locality)",
         "path": "\/property\/area\/locality\/rock-green"
@@ -110734,6 +110764,12 @@
         "name": "RUSHWICK",
         "label": "RUSHWICK (Locality)",
         "path": "\/property\/area\/locality\/rushwick"
+    },
+    {
+        "type": "locality",
+        "name": "RUSHY LAKE",
+        "label": "RUSHY LAKE (Locality)",
+        "path": "\/property\/area\/locality\/rushy-lake"
     },
     {
         "type": "locality",
@@ -121153,12 +121189,6 @@
     },
     {
         "type": "locality",
-        "name": "STEAM MILLS",
-        "label": "STEAM MILLS (Locality)",
-        "path": "\/property\/area\/locality\/steam-mills"
-    },
-    {
-        "type": "locality",
         "name": "STEAN",
         "label": "STEAN (Locality)",
         "path": "\/property\/area\/locality\/stean"
@@ -128629,6 +128659,12 @@
     },
     {
         "type": "locality",
+        "name": "TIMWORTH",
+        "label": "TIMWORTH (Locality)",
+        "path": "\/property\/area\/locality\/timworth"
+    },
+    {
+        "type": "locality",
         "name": "TINCLETON",
         "label": "TINCLETON (Locality)",
         "path": "\/property\/area\/locality\/tincleton"
@@ -131374,6 +131410,12 @@
         "name": "TREVINGEY",
         "label": "TREVINGEY (Locality)",
         "path": "\/property\/area\/locality\/trevingey"
+    },
+    {
+        "type": "locality",
+        "name": "TREVISQUITE",
+        "label": "TREVISQUITE (Locality)",
+        "path": "\/property\/area\/locality\/trevisquite"
     },
     {
         "type": "locality",
