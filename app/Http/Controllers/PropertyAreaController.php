@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\FormAnalytics;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -48,11 +47,6 @@ class PropertyAreaController extends Controller
         }
 
         $areaName = $area['name'] ?? $area['label'];
-        FormAnalytics::record('property_area_search', [
-            'area_type' => $type,
-            'area_name' => $areaName,
-        ]);
-
         // Map the logical type to the actual column in land_registry
         $columnMap = [
             'locality' => 'Locality',

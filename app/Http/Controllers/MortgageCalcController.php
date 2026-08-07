@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\MortgageCalcRequest;
-use App\Services\FormAnalytics;
 use App\Services\MortgageCalculatorService;
 use Illuminate\Contracts\View\View;
 
@@ -25,13 +24,6 @@ class MortgageCalcController extends Controller
         $ratePct = (float) $validated['rate'];
         $annualOverpaymentRaw = $request->annualOverpaymentRaw();
         $annualOverpayment = $request->annualOverpayment();
-
-        FormAnalytics::record('mortgage_calculator', [
-            'amount' => $request->mortgageAmount(),
-            'term_years' => $termYears,
-            'interest_rate' => $ratePct,
-            'annual_overpayment' => $annualOverpayment,
-        ]);
 
         return view('mortgagecalc.index', [
             'result' => $this->mortgageCalculatorService->calculate(

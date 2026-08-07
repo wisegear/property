@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\FormAnalytics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -95,11 +94,6 @@ class DeprivationController extends Controller
 
                 // If this is a Welsh postcode (WIMD coverage)
                 if (isset($row->ctry) && $row->ctry === 'W92000004' && ! empty($row->lsoa11)) {
-                    FormAnalytics::record('deprivation_lookup', [
-                        'postcode' => $pcStd ?: $pcKey,
-                        'index_version' => 'wimd_2019',
-                    ]);
-
                     return redirect()->route('deprivation.wales.show', [
                         'lsoa' => $row->lsoa11,
                         'pcd' => $pcStd ?: $pcKey,
@@ -108,21 +102,11 @@ class DeprivationController extends Controller
 
                 // If this is a Scottish postcode (Data Zone held in lsoa11 as S010…)
                 if (! empty($row->lsoa11) && (function_exists('str_starts_with') ? str_starts_with($row->lsoa11, 'S010') : substr($row->lsoa11, 0, 4) === 'S010')) {
-                    FormAnalytics::record('deprivation_lookup', [
-                        'postcode' => $pcStd ?: $pcKey,
-                        'index_version' => 'simd_2020',
-                    ]);
-
                     return redirect()->route('deprivation.scot.show', ['dz' => $row->lsoa11, 'pcd' => $pcStd ?: $pcKey]);
                 }
 
                 // Redirect to details if English LSOA (IMD coverage)
                 if ($lsoa21 && (function_exists('str_starts_with') ? str_starts_with($lsoa21, 'E') : substr($lsoa21, 0, 1) === 'E')) {
-                    FormAnalytics::record('deprivation_lookup', [
-                        'postcode' => $pcStd ?: $pcKey,
-                        'index_version' => 'imd_2025',
-                    ]);
-
                     return redirect()->route('deprivation.show', $lsoa21);
                 }
 
@@ -696,10 +680,6 @@ class DeprivationController extends Controller
             ['label' => 'Living Environment',  'rank' => $row->D6_LivEnv_rank ?? null],
             ['label' => 'Crime & Disorder',    'rank' => $row->D7_CD_rank ?? null],
         ];
-        FormAnalytics::record('deprivation_lookup', [
-            'area_code' => $sa,
-            'index_version' => 'nimdm_2017',
-        ]);
 
         return view('deprivation.ni_show', [
             'sa' => $sa,

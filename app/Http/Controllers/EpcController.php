@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Services\EpcCertificateFinder;
 use App\Services\EpcDashboardData;
-use App\Services\FormAnalytics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -76,10 +75,6 @@ class EpcController extends Controller
 
         // Normalise to canonical form: uppercase and single space before last 3 chars
         $postcode = $this->normalisePostcode($postcodeInput);
-        FormAnalytics::record('epc_england_wales', [
-            'postcode' => $postcode,
-        ]);
-
         // Sorting (whitelist fields to avoid SQL injection)
         $allowedSorts = [
             'lodgement_date' => $epcLodgementColumn,
@@ -416,10 +411,6 @@ class EpcController extends Controller
 
         // Normalise to canonical form: uppercase and single space before last 3 chars
         $postcode = $this->normalisePostcode($postcodeInput);
-        FormAnalytics::record('epc_scotland', [
-            'postcode' => $postcode,
-        ]);
-
         // Sorting (whitelist fields)
         $allowedSorts = [
             'lodgement_date' => $scotLodgementColumn,

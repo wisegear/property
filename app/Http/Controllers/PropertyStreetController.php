@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\AnalyticsService;
 use App\Services\CrimeSummaryService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
@@ -104,11 +103,6 @@ class PropertyStreetController extends Controller
         if ($outcode !== $canonicalOutcode) {
             return redirect()->to(self::streetPath($normalizedOutcode, $street), 301);
         }
-
-        app(AnalyticsService::class)->recordEvent('search', 'street_search', [
-            'outcode' => Str::upper($normalizedOutcode),
-            'street_slug' => $street,
-        ]);
 
         $payload = $this->warmStreetCache($street, $outcode);
 

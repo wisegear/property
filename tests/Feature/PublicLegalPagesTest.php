@@ -42,7 +42,7 @@ class PublicLegalPagesTest extends TestCase
             ->assertSeeText('does not contain advertising or third-party analytics SDKs')
             ->assertSeeText('transmitted securely to the PropertyResearch.uk API')
             ->assertSeeText('IP address')
-            ->assertSeeText('website uses a first-party visitor cookie and Google Analytics')
+            ->assertSeeText('website uses Google Analytics')
             ->assertSeeText('property address is sent to Apple Maps for geocoding')
             ->assertSeeText('does not request or transmit your current location')
             ->assertSee('https://www.apple.com/legal/privacy/', false);

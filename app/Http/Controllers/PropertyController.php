@@ -8,7 +8,6 @@ use App\Models\LandRegistry;
 use App\Services\CouncilTaxEstimateService;
 use App\Services\CrimeSummaryService;
 use App\Services\EpcMatcher;
-use App\Services\FormAnalytics;
 use App\Services\Property\NationalPropertyDashboard;
 use App\Services\PropertyResearch\NearbySchoolsService;
 use App\Support\PropertyResearch\OfstedRating;
@@ -70,10 +69,6 @@ class PropertyController extends Controller
             // This accepts with/without space; detailed edge-cases
             // are out of scope for speed/robustness here.
             // -----------------------------------------------------
-            FormAnalytics::record('property_search', [
-                'postcode' => $postcode,
-            ]);
-
             // -----------------------------------------------------
             // Sorting: whitelist of sortable columns exposed to UI
             // -----------------------------------------------------

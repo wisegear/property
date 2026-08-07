@@ -24,7 +24,7 @@
 
     <section>
         <h2>This website and the app are different</h2>
-        <p class="mt-3">The statement that the app has no third-party analytics SDKs applies to the installed iOS app. If you visit PropertyResearch.uk in a web browser, including this policy page, the website uses a first-party visitor cookie and Google Analytics to understand website use. Browser and hosting services may receive information such as page URLs, IP address, user agent and referral information. These website technologies are not embedded in the iOS app.</p>
+        <p class="mt-3">The statement that the app has no third-party analytics SDKs applies to the installed iOS app. If you visit PropertyResearch.uk in a web browser, including this policy page, the website uses Google Analytics to understand website use. Browser and hosting services may receive information such as page URLs, IP address, user agent and referral information. These website technologies are not embedded in the iOS app.</p>
     </section>
 
     <section>

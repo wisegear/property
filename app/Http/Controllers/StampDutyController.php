@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\FormAnalytics;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -65,11 +64,6 @@ class StampDutyController extends Controller
             default:
                 abort(422, 'Unsupported region');
         }
-        FormAnalytics::record('stamp_duty', [
-            'price' => $price,
-            'buyer_type' => $buyerType,
-            'region' => $region,
-        ]);
 
         return response()->json($result);
     }

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\BlogPosts;
 use App\Models\DataUpdate;
-use App\Models\FormEvent;
 use App\Models\Support;
 use App\Models\User;
 use App\Models\UserRolesPivot;
@@ -15,8 +14,6 @@ class AdminController extends Controller
 {
     public function index(): View
     {
-        $twentyFourHoursAgo = now()->subDay();
-
         // User info
         $users = User::all();
 
@@ -59,16 +56,6 @@ class AdminController extends Controller
             ->take(3)
             ->get();
 
-        $form_event_metrics = FormEvent::query()
-            ->select('form_key')
-            ->selectRaw('COUNT(*) as total_events')
-            ->selectRaw('SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as events_last_24h', [$twentyFourHoursAgo])
-            ->selectRaw('COUNT(DISTINCT anon_visit_id) as unique_visits')
-            ->groupBy('form_key')
-            ->orderByDesc('total_events')
-            ->orderBy('form_key')
-            ->get();
-
         $data = [
             'users' => $users,
             'users_pending' => $users_pending,
@@ -83,7 +70,6 @@ class AdminController extends Controller
             'tickets_pending' => $tickets_pending,
             'tickets_awaiting' => $tickets_awaiting,
             'tickets_closed' => $tickets_closed,
-            'form_event_metrics' => $form_event_metrics,
         ];
 
         return view('admin.index')->with($data);
