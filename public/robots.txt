@@ -2,3 +2,15 @@ User-agent: *
 Disallow:
 Sitemap: https://propertyresearch.uk/sitemap.xml
 Sitemap: https://propertyresearch.uk/sitemap-index.xml
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
