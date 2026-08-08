@@ -37,6 +37,21 @@ class PropertyStreetController extends Controller
      */
     private array $nearbyStreetCatalogs = [];
 
+    /**
+     * @var null|array<string, array<int, object>>
+     */
+    private ?array $warmOnspdRowsByPostcode = null;
+
+    /**
+     * @var null|array<string, object|null>
+     */
+    private ?array $warmNearestOnspdRowsByCentroid = null;
+
+    /**
+     * @var array<string, array<string, mixed>|null>
+     */
+    private array $warmDeprivationByLsoa = [];
+
     private ?bool $hasCrimeTable = null;
 
     private ?bool $hasOnspdTable = null;
@@ -61,7 +76,17 @@ class PropertyStreetController extends Controller
 
     public static function cacheKey(string $streetSlug, string $outcode): string
     {
-        return sprintf('property:street:%s:%s:%s', self::CACHE_VERSION, $streetSlug, Str::lower($outcode));
+        return self::streetCacheKeyPrefix().$streetSlug.':'.Str::lower($outcode);
+    }
+
+    public static function streetCacheKeyPrefix(): string
+    {
+        return sprintf('property:street:%s:', self::CACHE_VERSION);
+    }
+
+    public static function cacheTtl(): int
+    {
+        return self::CACHE_TTL;
     }
 
     public static function outcodeCrimeCacheKey(string $outcode): string
@@ -196,6 +221,267 @@ class PropertyStreetController extends Controller
         return $payload;
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function loadStreetRecords(string $streetName, string $outcode, string $streetSlug): array
+    {
+        return $this->profileQuery(
+            'street sales records query',
+            $this->streetRecordsQuery($outcode)->whereRaw('TRIM("Street") = ?', [$streetName]),
+            fn (QueryBuilder $query): array => $this->mapStreetRecordRows($query->get()),
+            [
+                'street' => $streetSlug,
+                'outcode' => $outcode,
+            ]
+        );
+    }
+
+    /**
+     * @param  array<int, string>  $streetNames
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    private function loadStreetRecordsForBatch(string $outcode, array $streetNames): array
+    {
+        if ($streetNames === []) {
+            return [];
+        }
+
+        return $this->profileQuery(
+            'batch street sales records query',
+            $this->streetRecordsQuery($outcode)->whereIn(DB::raw('TRIM("Street")'), $streetNames),
+            function (QueryBuilder $query): array {
+                return collect($this->mapStreetRecordRows($query->get()))
+                    ->groupBy('street')
+                    ->map(fn ($records): array => $records->values()->all())
+                    ->all();
+            },
+            ['outcode' => $outcode]
+        );
+    }
+
+    private function streetRecordsQuery(string $outcode): QueryBuilder
+    {
+        return DB::table('land_registry')
+            ->select([
+                'Date',
+                'Price',
+                'PAON',
+                'SAON',
+                'Street',
+                'Postcode',
+                'PropertyType',
+                'Duration',
+                'NewBuild',
+            ])
+            ->whereRaw('"PPDCategoryType" = ?', ['A'])
+            ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
+            ->orderByRaw('TRIM("Street")')
+            ->orderByDesc('Date')
+            ->orderByDesc('Price');
+    }
+
+    /**
+     * @param  iterable<int, object>  $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapStreetRecordRows(iterable $rows): array
+    {
+        return collect($rows)
+            ->map(function (object $row): array {
+                $date = $row->Date !== null ? Carbon::parse((string) $row->Date) : null;
+                $price = $row->Price !== null ? (int) $row->Price : null;
+                $paon = trim((string) ($row->PAON ?? ''));
+                $saon = trim((string) ($row->SAON ?? ''));
+
+                return [
+                    'date' => $date?->toDateString(),
+                    'date_label' => $date?->format('d M Y'),
+                    'price' => $price,
+                    'price_label' => $price !== null ? '£'.number_format($price) : null,
+                    'paon' => $paon,
+                    'saon' => $saon,
+                    'street' => trim((string) ($row->Street ?? '')),
+                    'postcode' => trim((string) ($row->Postcode ?? '')),
+                    'property_type' => $this->propertyTypeLabel($row->PropertyType !== null ? (string) $row->PropertyType : null),
+                    'tenure' => $this->tenureLabel($row->Duration !== null ? (string) $row->Duration : null),
+                    'build_status' => $this->buildStatusLabel($row->NewBuild !== null ? (string) $row->NewBuild : null),
+                    'address' => $this->formatAddress($paon, $saon),
+                    'property_slug' => $this->buildPropertySlug(
+                        trim((string) ($row->Postcode ?? '')),
+                        $paon,
+                        trim((string) ($row->Street ?? '')),
+                        $saon !== '' ? $saon : null
+                    ),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<string, array<int, array<string, mixed>>>  $recordsByStreet
+     * @return array<string, array<int, object>>
+     */
+    private function loadOnspdRowsForBatch(array $recordsByStreet): array
+    {
+        if (! $this->hasOnspdTable()) {
+            return [];
+        }
+
+        $postcodes = collect($recordsByStreet)
+            ->flatten(1)
+            ->pluck('postcode')
+            ->filter(fn ($postcode): bool => is_string($postcode) && trim($postcode) !== '')
+            ->map(fn (string $postcode): string => $this->canonicalPostcode($postcode))
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($postcodes === []) {
+            return [];
+        }
+
+        $rowsByPostcode = [];
+
+        foreach (array_chunk($postcodes, 5000) as $postcodeChunk) {
+            $chunkRows = $this->profileQuery(
+                'batch centroid postcode lookup',
+                DB::table(self::ONSPD_TABLE)
+                    ->select(['pcds', 'lsoa21cd', 'lsoa11cd', 'lat', 'long', 'dointr'])
+                    ->whereIn('pcds', $postcodeChunk)
+                    ->whereNotNull('lat')
+                    ->whereNotNull('long')
+                    ->orderBy('pcds')
+                    ->orderByDesc('dointr'),
+                fn (QueryBuilder $query) => $query->get()
+            );
+
+            foreach ($chunkRows as $row) {
+                $rowsByPostcode[(string) $row->pcds][] = $row;
+            }
+        }
+
+        return $rowsByPostcode;
+    }
+
+    /**
+     * @param  array<int, array{lat:float,lng:float}>  $centroids
+     * @return array<string, object|null>
+     */
+    private function loadNearestOnspdRowsForBatch(array $centroids): array
+    {
+        $uniqueCentroids = collect($centroids)
+            ->keyBy(fn (array $centroid): string => $this->centroidKey($centroid))
+            ->all();
+
+        if ($uniqueCentroids === []) {
+            return [];
+        }
+
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return collect($uniqueCentroids)
+                ->map(fn (array $centroid) => DB::table(self::ONSPD_TABLE)
+                    ->select(['pcds', 'lsoa21cd', 'lsoa11cd', 'lat', 'long'])
+                    ->whereNotNull('lat')
+                    ->whereNotNull('long')
+                    ->orderByRaw('POWER(lat - ?, 2) + POWER("long" - ?, 2)', [$centroid['lat'], $centroid['lng']])
+                    ->first())
+                ->all();
+        }
+
+        $nearestRows = [];
+
+        foreach (array_chunk($uniqueCentroids, 250, true) as $centroidChunk) {
+            $values = [];
+            $bindings = [];
+
+            foreach ($centroidChunk as $key => $centroid) {
+                $values[] = '(?::text, ?::double precision, ?::double precision)';
+                array_push($bindings, $key, $centroid['lat'], $centroid['lng']);
+            }
+
+            $rows = DB::select(
+                'WITH centroids(cache_key, lat, lng) AS (VALUES '.implode(', ', $values).') '
+                .'SELECT centroids.cache_key, nearest.pcds, nearest.lsoa21cd, nearest.lsoa11cd, nearest.lat, nearest."long" '
+                .'FROM centroids CROSS JOIN LATERAL ('
+                .'SELECT pcds, lsoa21cd, lsoa11cd, lat, "long" FROM '.self::ONSPD_TABLE.' '
+                .'WHERE lat IS NOT NULL AND "long" IS NOT NULL '
+                .'ORDER BY point("long", lat) <-> point(centroids.lng, centroids.lat) LIMIT 1'
+                .') AS nearest',
+                $bindings,
+            );
+
+            foreach ($rows as $row) {
+                $nearestRows[(string) $row->cache_key] = $row;
+            }
+        }
+
+        return $nearestRows;
+    }
+
+    /**
+     * @param  array{lat:float,lng:float}  $centroid
+     */
+    private function centroidKey(array $centroid): string
+    {
+        return sprintf('%.7F|%.7F', $centroid['lat'], $centroid['lng']);
+    }
+
+    /**
+     * Build a bounded batch of street payloads without writing individual cache entries.
+     *
+     * @param  array<int, array{street:string,street_slug:string,outcode:string}>  $targets
+     * @return array<string, array<string, mixed>>
+     */
+    public function buildStreetCacheBatch(array $targets): array
+    {
+        $payloads = [];
+
+        foreach (collect($targets)->groupBy('outcode') as $outcode => $outcodeTargets) {
+            $slugMap = $this->streetSlugMapForOutcode((string) $outcode);
+            $outcodeTargets = $outcodeTargets
+                ->map(function (array $target) use ($slugMap): array {
+                    $target['resolved_street'] = $slugMap[$target['street_slug']] ?? $target['street'];
+
+                    return $target;
+                });
+            $streetNames = $outcodeTargets->pluck('resolved_street')->unique()->values()->all();
+            $recordsByStreet = $this->loadStreetRecordsForBatch((string) $outcode, $streetNames);
+            $this->warmOnspdRowsByPostcode = $this->loadOnspdRowsForBatch($recordsByStreet);
+            $centroids = collect($recordsByStreet)
+                ->map(fn (array $records): ?array => $this->streetCentroid($records))
+                ->filter()
+                ->values()
+                ->all();
+            $this->warmNearestOnspdRowsByCentroid = $this->loadNearestOnspdRowsForBatch($centroids);
+
+            try {
+                foreach ($outcodeTargets as $target) {
+                    $streetName = $target['resolved_street'];
+                    $streetSlug = $target['street_slug'];
+                    $records = $recordsByStreet[$streetName] ?? [];
+
+                    if ($records === []) {
+                        continue;
+                    }
+
+                    $payloads[self::cacheKey($streetSlug, (string) $outcode)] = $this->buildPayload(
+                        $streetSlug,
+                        (string) $outcode,
+                        $streetName,
+                        $records,
+                    );
+                }
+            } finally {
+                $this->warmOnspdRowsByPostcode = null;
+                $this->warmNearestOnspdRowsByCentroid = null;
+            }
+        }
+
+        return $payloads;
+    }
+
     public function enableWarmProfiling(?callable $logger = null): void
     {
         $this->warmProfilingEnabled = true;
@@ -255,72 +541,21 @@ class PropertyStreetController extends Controller
      *     deprivation_link:?string
      * }
      */
-    private function buildPayload(string $streetSlug, string $outcode): array
-    {
+    private function buildPayload(
+        string $streetSlug,
+        string $outcode,
+        ?string $resolvedStreetName = null,
+        ?array $preloadedRecords = null,
+    ): array {
         $payloadStartedAt = microtime(true);
 
-        $streetName = $this->resolveStreetName($streetSlug, $outcode);
+        $streetName = $resolvedStreetName ?? $this->resolveStreetName($streetSlug, $outcode);
 
         if ($streetName === null) {
             abort(404);
         }
 
-        $recordsQuery = DB::table('land_registry')
-            ->select([
-                'Date',
-                'Price',
-                'PAON',
-                'SAON',
-                'Street',
-                'Postcode',
-                'PropertyType',
-                'Duration',
-                'NewBuild',
-            ])
-            ->whereRaw('"PPDCategoryType" = ?', ['A'])
-            ->whereRaw('TRIM("Street") = ?', [$streetName])
-            ->whereRaw($this->outcodeExpression().' = ?', [$outcode])
-            ->orderByDesc('Date')
-            ->orderByDesc('Price');
-
-        $records = $this->profileQuery(
-            'street sales records query',
-            $recordsQuery,
-            fn (QueryBuilder $query): array => $query->get()
-                ->map(function (object $row): array {
-                    $date = $row->Date !== null ? Carbon::parse((string) $row->Date) : null;
-                    $price = $row->Price !== null ? (int) $row->Price : null;
-                    $paon = trim((string) ($row->PAON ?? ''));
-                    $saon = trim((string) ($row->SAON ?? ''));
-
-                    return [
-                        'date' => $date?->toDateString(),
-                        'date_label' => $date?->format('d M Y'),
-                        'price' => $price,
-                        'price_label' => $price !== null ? '£'.number_format($price) : null,
-                        'paon' => $paon,
-                        'saon' => $saon,
-                        'street' => trim((string) ($row->Street ?? '')),
-                        'postcode' => trim((string) ($row->Postcode ?? '')),
-                        'property_type' => $this->propertyTypeLabel($row->PropertyType !== null ? (string) $row->PropertyType : null),
-                        'tenure' => $this->tenureLabel($row->Duration !== null ? (string) $row->Duration : null),
-                        'build_status' => $this->buildStatusLabel($row->NewBuild !== null ? (string) $row->NewBuild : null),
-                        'address' => $this->formatAddress($paon, $saon),
-                        'property_slug' => $this->buildPropertySlug(
-                            trim((string) ($row->Postcode ?? '')),
-                            $paon,
-                            trim((string) ($row->Street ?? '')),
-                            $saon !== '' ? $saon : null
-                        ),
-                    ];
-                })
-                ->values()
-                ->all(),
-            [
-                'street' => $streetSlug,
-                'outcode' => $outcode,
-            ]
-        );
+        $records = $preloadedRecords ?? $this->loadStreetRecords($streetName, $outcode, $streetSlug);
 
         if ($records === []) {
             abort(404);
@@ -631,28 +866,33 @@ class PropertyStreetController extends Controller
             return null;
         };
 
-        $nearestOnspdQuery = DB::table(self::ONSPD_TABLE)
-            ->select([
-                'pcds',
-                'lsoa21cd as lsoa21',
-                'lsoa11cd as lsoa11',
-                'lat',
-                'long',
-            ])
-            ->whereNotNull('lat')
-            ->whereNotNull('long');
-
-        if (DB::connection()->getDriverName() === 'pgsql') {
-            $nearestOnspdQuery->orderByRaw('point("long", lat) <-> point(?, ?)', [$centroid['lng'], $centroid['lat']]);
+        $centroidKey = $this->centroidKey($centroid);
+        if ($this->warmNearestOnspdRowsByCentroid !== null) {
+            $nearestOnspdRow = $this->warmNearestOnspdRowsByCentroid[$centroidKey] ?? null;
         } else {
-            $nearestOnspdQuery->orderByRaw('POWER(lat - ?, 2) + POWER("long" - ?, 2)', [$centroid['lat'], $centroid['lng']]);
-        }
+            $nearestOnspdQuery = DB::table(self::ONSPD_TABLE)
+                ->select([
+                    'pcds',
+                    'lsoa21cd as lsoa21',
+                    'lsoa11cd as lsoa11',
+                    'lat',
+                    'long',
+                ])
+                ->whereNotNull('lat')
+                ->whereNotNull('long');
 
-        $nearestOnspdRow = $this->profileQuery(
-            'deprivation postcode lookup',
-            $nearestOnspdQuery,
-            fn (QueryBuilder $query) => $query->first()
-        );
+            if (DB::connection()->getDriverName() === 'pgsql') {
+                $nearestOnspdQuery->orderByRaw('point("long", lat) <-> point(?, ?)', [$centroid['lng'], $centroid['lat']]);
+            } else {
+                $nearestOnspdQuery->orderByRaw('POWER(lat - ?, 2) + POWER("long" - ?, 2)', [$centroid['lat'], $centroid['lng']]);
+            }
+
+            $nearestOnspdRow = $this->profileQuery(
+                'deprivation postcode lookup',
+                $nearestOnspdQuery,
+                fn (QueryBuilder $query) => $query->first()
+            );
+        }
 
         if ($nearestOnspdRow === null) {
             return [
@@ -661,7 +901,7 @@ class PropertyStreetController extends Controller
             ];
         }
 
-        $lsoa = trim((string) ($nearestOnspdRow->lsoa21 ?? $nearestOnspdRow->lsoa11 ?? ''));
+        $lsoa = trim((string) ($nearestOnspdRow->lsoa21 ?? $nearestOnspdRow->lsoa21cd ?? $nearestOnspdRow->lsoa11 ?? $nearestOnspdRow->lsoa11cd ?? ''));
         $isEngland = $lsoa !== '' && str_starts_with($lsoa, 'E01');
         $isWales = $lsoa !== '' && str_starts_with($lsoa, 'W01');
 
@@ -673,9 +913,15 @@ class PropertyStreetController extends Controller
         }
 
         $imd = $this->profileSection('deprivation lsoa lookup', function () use ($resolveImdForLsoa, $lsoa) {
-            return Cache::remember('depr:lsoa:street:'.$lsoa, now()->addDays(90), function () use ($resolveImdForLsoa, $lsoa) {
-                return $resolveImdForLsoa($lsoa);
-            });
+            if (array_key_exists($lsoa, $this->warmDeprivationByLsoa)) {
+                return $this->warmDeprivationByLsoa[$lsoa];
+            }
+
+            return $this->warmDeprivationByLsoa[$lsoa] = Cache::remember(
+                'depr:lsoa:street:'.$lsoa,
+                now()->addDays(90),
+                fn () => $resolveImdForLsoa($lsoa),
+            );
         });
 
         if ($imd === null) {
@@ -876,15 +1122,21 @@ class PropertyStreetController extends Controller
             return null;
         }
 
-        $rows = $this->profileQuery(
-            'centroid postcode lookup',
-            DB::table(self::ONSPD_TABLE)
-                ->select(['pcds', 'lat', 'long', 'dointr'])
-                ->whereIn('pcds', $postcodes)
-                ->orderBy('pcds')
-                ->orderByDesc('dointr'),
-            fn (QueryBuilder $query) => $query->get()
-        );
+        if ($this->warmOnspdRowsByPostcode !== null) {
+            $rows = $postcodes
+                ->flatMap(fn (string $postcode) => $this->warmOnspdRowsByPostcode[$postcode] ?? [])
+                ->values();
+        } else {
+            $rows = $this->profileQuery(
+                'centroid postcode lookup',
+                DB::table(self::ONSPD_TABLE)
+                    ->select(['pcds', 'lat', 'long', 'dointr'])
+                    ->whereIn('pcds', $postcodes)
+                    ->orderBy('pcds')
+                    ->orderByDesc('dointr'),
+                fn (QueryBuilder $query) => $query->get()
+            );
+        }
 
         $coordsByPostcode = [];
 

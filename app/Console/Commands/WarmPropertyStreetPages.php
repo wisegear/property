@@ -16,6 +16,10 @@ class WarmPropertyStreetPages extends Command
 
     private const NO_PROGRESS_LOG_INTERVAL = 500;
 
+    private const TARGET_TABLE = 'property_street_warm_targets';
+
+    private const WARMED_KEY_TABLE = 'property_street_warmed_keys';
+
     protected $signature = 'property:street-warm
                             {--min-sales=5 : Minimum Category A sales required for a street+outcode target}
                             {--limit=0 : Limit the number of street+outcode pages to warm (0 = all)}
@@ -24,6 +28,8 @@ class WarmPropertyStreetPages extends Command
                             {--skip-existing : Skip pages that already have a street cache entry}
                             {--shards=1 : Split the warm into this many deterministic shards}
                             {--shard=0 : Warm only this zero-based shard number}
+                            {--profile : Emit detailed per-section query profiling}
+                            {--cleanup-stale : Delete stale street-page entries after a successful full national run}
                             {--no-progress : Disable the progress bar for lower console overhead}';
 
     protected $description = 'Warm cached payloads for property street pages.';
@@ -37,7 +43,6 @@ class WarmPropertyStreetPages extends Command
         }
 
         DB::connection()->disableQueryLog();
-        $controller->enableWarmProfiling(fn (string $message) => $this->line($message));
 
         $minSales = max(1, (int) $this->option('min-sales'));
         $limit = max(0, (int) $this->option('limit'));
@@ -47,6 +52,12 @@ class WarmPropertyStreetPages extends Command
         $outcodeFilter = $this->normalizeOutcode((string) $this->option('outcode'));
         $shards = max(1, (int) $this->option('shards'));
         $shard = max(0, (int) $this->option('shard'));
+        $profile = (bool) $this->option('profile');
+        $cleanupStale = (bool) $this->option('cleanup-stale');
+
+        if ($profile) {
+            $controller->enableWarmProfiling(fn (string $message) => $this->line($message));
+        }
 
         if ($shard >= $shards) {
             $this->error('The --shard option must be zero-based and less than --shards. Example: --shards=4 --shard=0,1,2,3');
@@ -54,11 +65,17 @@ class WarmPropertyStreetPages extends Command
             return self::FAILURE;
         }
 
-        $baseQuery = $this->qualifyingStreetQuery($minSales, $outcodeFilter, $shards, $shard);
-        $total = (int) DB::query()->fromSub(
-            $limit > 0 ? (clone $baseQuery)->limit($limit) : $baseQuery,
-            'street_targets'
-        )->count();
+        if ($cleanupStale && ! $this->isFullNationalRun($limit, $outcodeFilter, $shards, $shard)) {
+            $this->error('--cleanup-stale may only be used for an unlimited, unfiltered, unsharded national run.');
+
+            return self::FAILURE;
+        }
+
+        $materializeStartedAt = microtime(true);
+        $this->materializeTargets($minSales, $outcodeFilter, $shards, $shard, $limit);
+        $this->prepareWarmedKeyTable();
+        $total = (int) DB::table(self::TARGET_TABLE)->count();
+        $materializeElapsed = microtime(true) - $materializeStartedAt;
 
         if ($total === 0) {
             $this->warn('No qualifying street pages found to warm.');
@@ -73,6 +90,7 @@ class WarmPropertyStreetPages extends Command
 
         $this->info('Warming '.$total.' street page caches...');
         $this->line('Minimum sales threshold: '.number_format($minSales));
+        $this->line(sprintf('Target list materialised once in %.2fs.', $materializeElapsed));
         if ($outcodeFilter !== null) {
             $this->line('Outcode filter: '.$outcodeFilter);
         }
@@ -87,74 +105,148 @@ class WarmPropertyStreetPages extends Command
             $this->output->progressStart($total);
         }
         $startedAt = microtime(true);
+        $databaseQueryMilliseconds = 0.0;
+        DB::listen(function ($query) use (&$databaseQueryMilliseconds): void {
+            $databaseQueryMilliseconds += (float) $query->time;
+        });
 
         $warmed = 0;
         $skipped = 0;
         $failed = 0;
 
         $processed = 0;
-        $page = 1;
+        $lastTargetId = 0;
+        $payloadQuerySeconds = 0.0;
+        $buildSeconds = 0.0;
+        $cacheWriteSeconds = 0.0;
         $refreshedCrimeOutcodes = [];
 
         while (true) {
-            $remaining = $limit > 0 ? max(0, $limit - (($page - 1) * self::TARGET_BATCH_SIZE)) : null;
-
-            if ($remaining === 0) {
-                break;
-            }
-
-            $batchSize = $remaining !== null
-                ? min(self::TARGET_BATCH_SIZE, $remaining)
-                : self::TARGET_BATCH_SIZE;
-
-            $targets = (clone $baseQuery)
-                ->forPage($page, $batchSize)
+            $targets = DB::table(self::TARGET_TABLE)
+                ->where('target_id', '>', $lastTargetId)
+                ->orderBy('target_id')
+                ->limit(self::TARGET_BATCH_SIZE)
                 ->get();
 
             if ($targets->isEmpty()) {
                 break;
             }
 
-            foreach ($targets as $target) {
-                $street = trim((string) ($target->street ?? ''));
-                $outcode = strtoupper(trim((string) ($target->outcode ?? '')));
-                $streetSlug = Str::slug($street);
+            $lastTargetId = (int) $targets->last()->target_id;
+            $batchTargets = $targets->map(function (object $target): array {
+                $street = trim((string) $target->street);
 
-                try {
-                    $cacheKey = PropertyStreetController::cacheKey($streetSlug, $outcode);
+                return [
+                    'street' => $street,
+                    'street_slug' => Str::slug($street),
+                    'outcode' => strtoupper(trim((string) $target->outcode)),
+                ];
+            })->all();
 
-                    if ($refresh) {
-                        Cache::forget($cacheKey);
+            $originalBatchCount = count($batchTargets);
+            $batchTargets = collect($batchTargets)
+                ->unique(fn (array $target): string => PropertyStreetController::cacheKey($target['street_slug'], $target['outcode']))
+                ->values()
+                ->all();
 
-                        if (! isset($refreshedCrimeOutcodes[$outcode])) {
-                            Cache::forget(PropertyStreetController::outcodeCrimeCacheKey($outcode));
-                            $refreshedCrimeOutcodes[$outcode] = true;
-                        }
+            $cacheKeys = collect($batchTargets)
+                ->map(fn (array $target): string => PropertyStreetController::cacheKey($target['street_slug'], $target['outcode']))
+                ->all();
+            $previouslySeenKeys = DB::table(self::WARMED_KEY_TABLE)
+                ->whereIn('cache_key', $cacheKeys)
+                ->pluck('cache_key')
+                ->all();
+
+            if ($previouslySeenKeys !== []) {
+                $previouslySeenLookup = array_fill_keys($previouslySeenKeys, true);
+                $batchTargets = collect($batchTargets)
+                    ->reject(fn (array $target): bool => isset($previouslySeenLookup[
+                        PropertyStreetController::cacheKey($target['street_slug'], $target['outcode'])
+                    ]))
+                    ->values()
+                    ->all();
+                $cacheKeys = collect($batchTargets)
+                    ->map(fn (array $target): string => PropertyStreetController::cacheKey($target['street_slug'], $target['outcode']))
+                    ->all();
+            }
+
+            $skipped += $originalBatchCount - count($batchTargets);
+
+            $targetsToBuild = $batchTargets;
+            if (! $refresh) {
+                $existing = Cache::many($cacheKeys);
+                $targetsToBuild = collect($batchTargets)
+                    ->reject(function (array $target) use ($existing): bool {
+                        $cacheKey = PropertyStreetController::cacheKey($target['street_slug'], $target['outcode']);
+
+                        return ($existing[$cacheKey] ?? null) !== null;
+                    })
+                    ->values()
+                    ->all();
+                $existingCount = count($batchTargets) - count($targetsToBuild);
+                $skipped += $skipExisting ? $existingCount : 0;
+                $warmed += $skipExisting ? 0 : $existingCount;
+            } else {
+                foreach (array_unique(array_column($batchTargets, 'outcode')) as $outcode) {
+                    if (! isset($refreshedCrimeOutcodes[$outcode])) {
+                        Cache::forget(PropertyStreetController::outcodeCrimeCacheKey($outcode));
+                        $refreshedCrimeOutcodes[$outcode] = true;
                     }
-
-                    if ($skipExisting && Cache::has($cacheKey)) {
-                        $skipped++;
-                    } else {
-                        $controller->warmStreetCache($streetSlug, $outcode);
-                        $warmed++;
-                    }
-                } catch (Throwable $throwable) {
-                    $failed++;
-                    $this->newLine();
-                    $this->error("Failed warming {$street}, {$outcode}: ".$throwable->getMessage());
-                }
-
-                $processed++;
-
-                if (! $noProgress) {
-                    $this->output->progressAdvance();
-                } elseif ($processed % self::NO_PROGRESS_LOG_INTERVAL === 0) {
-                    $this->logNoProgressStats($processed, $warmed, $skipped, $failed, $startedAt);
                 }
             }
 
+            try {
+                $buildStartedAt = microtime(true);
+                $queryMillisecondsBeforeBuild = $databaseQueryMilliseconds;
+                $payloads = $controller->buildStreetCacheBatch($targetsToBuild);
+                $batchBuildElapsed = microtime(true) - $buildStartedAt;
+                $batchQuerySeconds = ($databaseQueryMilliseconds - $queryMillisecondsBeforeBuild) / 1000;
+                $payloadQuerySeconds += $batchQuerySeconds;
+                $buildSeconds += max(0, $batchBuildElapsed - $batchQuerySeconds);
+
+                if ($payloads !== []) {
+                    $cacheWriteStartedAt = microtime(true);
+                    $stored = Cache::putMany($payloads, PropertyStreetController::cacheTtl());
+                    $cacheWriteSeconds += microtime(true) - $cacheWriteStartedAt;
+
+                    if (! $stored) {
+                        throw new \RuntimeException('The cache store rejected the batch write.');
+                    }
+
+                    $warmed += count($payloads);
+                }
+
+                $missingPayloads = count($targetsToBuild) - count($payloads);
+                if ($missingPayloads > 0) {
+                    $failed += $missingPayloads;
+                } else {
+                    $this->recordWarmedKeys($cacheKeys);
+                }
+            } catch (Throwable $throwable) {
+                $failed += count($targetsToBuild);
+                $this->newLine();
+                $this->error('Failed warming target batch ending at '.$lastTargetId.': '.$throwable->getMessage());
+            }
+
+            $processed += $originalBatchCount;
+
+            if (! $noProgress) {
+                $this->output->progressAdvance($originalBatchCount);
+            } elseif ($processed % self::NO_PROGRESS_LOG_INTERVAL === 0 || $processed === $total) {
+                $this->logNoProgressStats(
+                    $processed,
+                    $total,
+                    $warmed,
+                    $skipped,
+                    $failed,
+                    $startedAt,
+                    $payloadQuerySeconds,
+                    $buildSeconds,
+                    $cacheWriteSeconds,
+                );
+            }
+
             unset($targets);
-            $page++;
         }
 
         if (! $noProgress) {
@@ -162,27 +254,38 @@ class WarmPropertyStreetPages extends Command
             $this->newLine();
         }
 
-        Cache::put(
-            'property:street:last_warm:min'.$minSales.($outcodeFilter !== null ? ':'.$outcodeFilter : ''),
-            now()->toIso8601String(),
-            now()->addDays(45)
-        );
+        $staleDeleted = 0;
+        if ($failed === 0) {
+            Cache::put(
+                'property:street:last_warm:min'.$minSales.($outcodeFilter !== null ? ':'.$outcodeFilter : ''),
+                now()->toIso8601String(),
+                now()->addDays(45)
+            );
+
+            if ($cleanupStale) {
+                $staleDeleted = $this->deleteStaleStreetCacheEntries();
+            }
+        }
 
         $elapsed = round(microtime(true) - $startedAt, 2);
         $this->info("Street page warm complete in {$elapsed}s");
         $this->line('Warmed: '.number_format($warmed));
         $this->line('Skipped: '.number_format($skipped));
         $this->line('Failed: '.number_format($failed));
-        $this->line('Slowest sections:');
-        foreach (array_slice($controller->warmProfilingSummary(), 0, 10) as $summary) {
-            $this->line(sprintf(
-                '%s total_ms=%.2f avg_ms=%.2f max_ms=%.2f count=%d',
-                $summary['section'],
-                $summary['total_ms'],
-                $summary['avg_ms'],
-                $summary['max_ms'],
-                $summary['count']
-            ));
+        $this->line('Stale street cache entries deleted: '.number_format($staleDeleted));
+        $this->line('Peak memory: '.$this->formatBytes(memory_get_peak_usage(true)));
+        if ($profile) {
+            $this->line('Slowest sections:');
+            foreach (array_slice($controller->warmProfilingSummary(), 0, 10) as $summary) {
+                $this->line(sprintf(
+                    '%s total_ms=%.2f avg_ms=%.2f max_ms=%.2f count=%d',
+                    $summary['section'],
+                    $summary['total_ms'],
+                    $summary['avg_ms'],
+                    $summary['max_ms'],
+                    $summary['count']
+                ));
+            }
         }
 
         return $failed === 0 ? self::SUCCESS : self::FAILURE;
@@ -241,22 +344,122 @@ class WarmPropertyStreetPages extends Command
         return $normalized !== '' ? $normalized : null;
     }
 
-    private function logNoProgressStats(int $processed, int $warmed, int $skipped, int $failed, float $startedAt): void
-    {
+    private function logNoProgressStats(
+        int $processed,
+        int $total,
+        int $warmed,
+        int $skipped,
+        int $failed,
+        float $startedAt,
+        float $querySeconds,
+        float $buildSeconds,
+        float $cacheWriteSeconds,
+    ): void {
         $elapsed = max(microtime(true) - $startedAt, 0.001);
         $rate = $processed / $elapsed;
-        $total = $warmed + $skipped + $failed;
 
         $this->info(sprintf(
-            '[%s] processed=%s warmed=%s skipped=%s failed=%s total-seen=%s rate=%.2f/sec',
+            '[%s] processed=%s/%s warmed=%s skipped=%s failed=%s rate=%.2f/sec query=%.2fs build=%.2fs cache-write=%.2fs peak-memory=%s',
             now()->format('H:i:s'),
             number_format($processed),
+            number_format($total),
             number_format($warmed),
             number_format($skipped),
             number_format($failed),
-            number_format($total),
-            $rate
+            $rate,
+            $querySeconds,
+            $buildSeconds,
+            $cacheWriteSeconds,
+            $this->formatBytes(memory_get_peak_usage(true)),
         ));
+    }
+
+    private function materializeTargets(
+        int $minSales,
+        ?string $outcodeFilter,
+        int $shards,
+        int $shard,
+        int $limit,
+    ): void {
+        DB::statement('DROP TABLE IF EXISTS '.self::TARGET_TABLE);
+
+        $query = $this->qualifyingStreetQuery($minSales, $outcodeFilter, $shards, $shard);
+        if ($limit > 0) {
+            $query->limit($limit);
+        }
+
+        DB::statement(
+            'CREATE TEMPORARY TABLE '.self::TARGET_TABLE.' AS '
+            .'SELECT ROW_NUMBER() OVER (ORDER BY outcode, street) AS target_id, street, outcode, sales_count '
+            .'FROM ('.$query->toSql().') AS qualifying_streets',
+            $query->getBindings(),
+        );
+        DB::statement('CREATE UNIQUE INDEX '.self::TARGET_TABLE.'_id_idx ON '.self::TARGET_TABLE.' (target_id)');
+    }
+
+    private function prepareWarmedKeyTable(): void
+    {
+        DB::statement('DROP TABLE IF EXISTS '.self::WARMED_KEY_TABLE);
+        DB::statement('CREATE TEMPORARY TABLE '.self::WARMED_KEY_TABLE.' (cache_key VARCHAR(255) PRIMARY KEY)');
+    }
+
+    /**
+     * @param  array<int, string>  $cacheKeys
+     */
+    private function recordWarmedKeys(array $cacheKeys): void
+    {
+        if ($cacheKeys === []) {
+            return;
+        }
+
+        DB::table(self::WARMED_KEY_TABLE)->insertOrIgnore(
+            array_map(fn (string $cacheKey): array => ['cache_key' => $cacheKey], $cacheKeys)
+        );
+    }
+
+    private function deleteStaleStreetCacheEntries(): int
+    {
+        if (config('cache.default') !== 'database') {
+            $this->warn('Stale cleanup was skipped because the default cache store is not database.');
+
+            return 0;
+        }
+
+        $store = config('cache.stores.database');
+        $table = (string) ($store['table'] ?? 'cache');
+        $prefix = (string) config('cache.prefix', '');
+        $pagePrefix = $prefix.PropertyStreetController::streetCacheKeyPrefix();
+
+        return DB::table($table)
+            ->where('key', 'like', $pagePrefix.'%')
+            ->where('key', 'not like', $pagePrefix.'outcode-comparison:%')
+            ->where('key', 'not like', $pagePrefix.'street-slugs:%')
+            ->where('key', 'not like', $pagePrefix.'nearby-streets:%')
+            ->whereNotExists(function ($query) use ($prefix): void {
+                $query->selectRaw('1')
+                    ->from(self::WARMED_KEY_TABLE.' as warmed_keys')
+                    ->whereRaw('"key" = ? || warmed_keys.cache_key', [$prefix]);
+            })
+            ->delete();
+    }
+
+    private function isFullNationalRun(int $limit, ?string $outcodeFilter, int $shards, int $shard): bool
+    {
+        return $limit === 0 && $outcodeFilter === null && $shards === 1 && $shard === 0;
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $size = (float) $bytes;
+        $unit = 0;
+
+        while ($size >= 1024 && $unit < count($units) - 1) {
+            $size /= 1024;
+            $unit++;
+        }
+
+        return number_format($size, 1).' '.$units[$unit];
     }
 
     private function diagnosticSql(int $minSales, ?string $outcodeFilter): string

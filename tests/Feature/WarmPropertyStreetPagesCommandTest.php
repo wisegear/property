@@ -120,6 +120,105 @@ class WarmPropertyStreetPagesCommandTest extends TestCase
         $this->assertSame(5, $mainStreet['summary']['total_sales']);
     }
 
+    public function test_refresh_overwrites_existing_payloads_and_successful_full_run_deletes_only_stale_street_pages(): void
+    {
+        $this->useDatabaseCache();
+
+        DB::table('land_registry')->insert([
+            $this->saleRow('tx-301', 'MAIN STREET', 'B79 7AA', '2024-01-01 00:00:00'),
+            $this->saleRow('tx-302', 'MAIN STREET', 'B79 7AB', '2024-01-02 00:00:00'),
+            $this->saleRow('tx-303', 'MAIN STREET', 'B79 7AC', '2024-01-03 00:00:00'),
+            $this->saleRow('tx-304', 'MAIN STREET', 'B79 7AD', '2024-01-04 00:00:00'),
+            $this->saleRow('tx-305', 'MAIN STREET', 'B79 7AE', '2024-01-05 00:00:00'),
+        ]);
+
+        $currentKey = PropertyStreetController::cacheKey('main-street', 'B79');
+        $staleKey = PropertyStreetController::cacheKey('former-road', 'B79');
+        $sharedKey = 'property:street:v4:outcode-comparison:b79';
+        Cache::put($currentKey, ['stale' => true], 3600);
+        Cache::put($staleKey, ['stale' => true], 3600);
+        Cache::put($sharedKey, ['shared' => true], 3600);
+        Cache::put('unrelated-cache-key', ['keep' => true], 3600);
+
+        $this->artisan('property:street-warm', [
+            '--min-sales' => 5,
+            '--refresh' => true,
+            '--cleanup-stale' => true,
+            '--no-progress' => true,
+        ])->assertExitCode(0);
+
+        $this->assertSame('MAIN STREET', Cache::get($currentKey)['street_name']);
+        $this->assertNull(Cache::get($staleKey));
+        $this->assertSame(['shared' => true], Cache::get($sharedKey));
+        $this->assertSame(['keep' => true], Cache::get('unrelated-cache-key'));
+    }
+
+    public function test_failed_full_run_does_not_delete_stale_street_pages(): void
+    {
+        $this->useDatabaseCache();
+
+        DB::table('land_registry')->insert([
+            $this->saleRow('tx-401', 'MAIN STREET', 'B79 7AA', '2024-01-01 00:00:00'),
+            $this->saleRow('tx-402', 'MAIN STREET', 'B79 7AB', '2024-01-02 00:00:00'),
+            $this->saleRow('tx-403', 'MAIN STREET', 'B79 7AC', '2024-01-03 00:00:00'),
+            $this->saleRow('tx-404', 'MAIN STREET', 'B79 7AD', '2024-01-04 00:00:00'),
+            $this->saleRow('tx-405', 'MAIN STREET', 'B79 7AE', '2024-01-05 00:00:00'),
+        ]);
+
+        $staleKey = PropertyStreetController::cacheKey('former-road', 'B79');
+        Cache::put($staleKey, ['stale' => true], 3600);
+
+        $controller = \Mockery::mock(PropertyStreetController::class);
+        $controller->shouldReceive('buildStreetCacheBatch')
+            ->once()
+            ->andThrow(new \RuntimeException('Deliberate batch failure'));
+        $this->app->instance(PropertyStreetController::class, $controller);
+
+        $this->artisan('property:street-warm', [
+            '--min-sales' => 5,
+            '--refresh' => true,
+            '--cleanup-stale' => true,
+            '--no-progress' => true,
+        ])->assertExitCode(1);
+
+        $this->assertSame(['stale' => true], Cache::get($staleKey));
+    }
+
+    public function test_stale_cleanup_is_rejected_for_a_partial_run(): void
+    {
+        $this->artisan('property:street-warm', [
+            '--limit' => 1,
+            '--cleanup-stale' => true,
+        ])->assertExitCode(1);
+    }
+
+    public function test_slug_collisions_preserve_the_public_page_street_resolution(): void
+    {
+        DB::table('land_registry')->insert([
+            $this->saleRow('tx-501', 'MAIN STREET', 'B79 7AA', '2024-01-01 00:00:00'),
+            $this->saleRow('tx-502', 'MAIN STREET', 'B79 7AB', '2024-01-02 00:00:00'),
+            $this->saleRow('tx-503', 'MAIN STREET', 'B79 7AC', '2024-01-03 00:00:00'),
+            $this->saleRow('tx-504', 'MAIN STREET', 'B79 7AD', '2024-01-04 00:00:00'),
+            $this->saleRow('tx-505', 'MAIN STREET', 'B79 7AE', '2024-01-05 00:00:00'),
+            $this->saleRow('tx-506', 'MAIN-STREET', 'B79 8AA', '2024-02-01 00:00:00'),
+            $this->saleRow('tx-507', 'MAIN-STREET', 'B79 8AB', '2024-02-02 00:00:00'),
+            $this->saleRow('tx-508', 'MAIN-STREET', 'B79 8AC', '2024-02-03 00:00:00'),
+            $this->saleRow('tx-509', 'MAIN-STREET', 'B79 8AD', '2024-02-04 00:00:00'),
+            $this->saleRow('tx-510', 'MAIN-STREET', 'B79 8AE', '2024-02-05 00:00:00'),
+        ]);
+
+        $this->artisan('property:street-warm', [
+            '--min-sales' => 5,
+            '--refresh' => true,
+            '--no-progress' => true,
+        ])->assertExitCode(0);
+
+        $payload = Cache::get(PropertyStreetController::cacheKey('main-street', 'B79'));
+
+        $this->assertSame('MAIN STREET', $payload['street_name']);
+        $this->assertSame(5, $payload['summary']['total_sales']);
+    }
+
     private function ensureLandRegistryTable(): void
     {
         if (Schema::hasTable('land_registry')) {
@@ -144,6 +243,21 @@ class WarmPropertyStreetPagesCommandTest extends TestCase
             $table->enum('PPDCategoryType', ['A', 'B'])->nullable();
             $table->char('RecordStatus', 1)->nullable();
         });
+    }
+
+    private function useDatabaseCache(): void
+    {
+        if (! Schema::hasTable('cache')) {
+            Schema::create('cache', function (Blueprint $table): void {
+                $table->string('key')->primary();
+                $table->mediumText('value');
+                $table->integer('expiration')->index();
+            });
+        }
+
+        DB::table('cache')->delete();
+        config()->set('cache.default', 'database');
+        Cache::setDefaultDriver('database');
     }
 
     /**
