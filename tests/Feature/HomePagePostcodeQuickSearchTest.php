@@ -47,13 +47,6 @@ class HomePagePostcodeQuickSearchTest extends TestCase
                 'direction' => 'down',
                 'color' => 'text-red-600',
             ],
-            'homepageStatMovements' => [
-                'property_records' => ['change' => '↑ 184k this year', 'tone' => 'positive'],
-                'epc_count' => ['change' => '↑ 412k this year', 'tone' => 'positive'],
-                'uk_avg_price' => ['change' => '↑ 4.2% YoY', 'tone' => 'positive'],
-                'uk_avg_rent' => ['change' => '↑ 3.1% YoY', 'tone' => 'positive'],
-                'bank_rate' => ['change' => '↓ 1.50% over 12 months', 'tone' => 'positive'],
-            ],
             'homepageMarketMovements' => [
                 'transaction_change_percent' => -34.1,
                 'median_price_change_percent' => -0.2,
@@ -85,21 +78,21 @@ class HomePagePostcodeQuickSearchTest extends TestCase
 
         $view->assertSee($searchUrl, false);
         $view->assertSee('name="postcode"', false);
-        $view->assertSee('placeholder="Search postcode (e.g. SW7 5PH)"', false);
-        $view->assertSee('Search by street');
+        $view->assertSee('placeholder="E.g. SW7 5PH"', false);
+        $view->assertSee('Research a property');
         $view->assertSee('id="home-street-search"', false);
         $view->assertSee('id="home-street-suggestions"', false);
-        $view->assertSee('Search by street', false);
+        $view->assertSee('Street search', false);
         $view->assertSee('property_streets.json', false);
         $view->assertSee('streetMatchRank', false);
         $view->assertSee('formatStreetSuggestionLabel', false);
         $view->assertSee('Number(right.sales_count || 0) - Number(left.sales_count || 0)', false);
         $view->assertSee('.slice(0, 12)', false);
         $view->assertSee('window.location.href = item.url', false);
-        $view->assertSee('only returns results where at least 3 sales exist');
-        $view->assertSee('mx-auto grid max-w-5xl gap-4 md:grid-cols-2', false);
-        $view->assertSee('rounded-lg bg-zinc-900 px-5 py-2 text-sm text-white transition hover:bg-black', false);
-        $view->assertSee('Jump straight to full property data for any postcode in England &amp; Wales', false);
+        $view->assertSee('Matches streets with at least 3 recorded sales.');
+        $view->assertSee('grid gap-5 md:grid-cols-2 md:items-start lg:grid-cols-[22fr_44fr_34fr]', false);
+        $view->assertSee('rounded bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2', false);
+        $view->assertSee('Open the full property record for an England or Wales postcode.');
         $view->assertSee('31.1M');
         $view->assertSee('30.7M');
         $view->assertSee('£268,421');
@@ -110,14 +103,12 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('Average House Price');
         $view->assertSee('Average UK rent');
         $view->assertSee('Bank Rate');
-        $view->assertSee('↑ 184k this year');
-        $view->assertSee('↑ 412k this year');
-        $view->assertSee('↑ 4.2% YoY');
-        $view->assertSee('↑ 3.1% YoY');
-        $view->assertSee('↓ 1.50% over 12 months');
-        $view->assertSee('hover:-translate-y-0.5 hover:shadow-md', false);
+        $view->assertDontSee('this year');
+        $view->assertDontSee('over 12 months');
+        $view->assertDontSee('YoY');
+        $view->assertSee('divide-y divide-slate-200 lg:grid-cols-5 lg:divide-x lg:divide-y-0', false);
         $view->assertSee('aria-hidden="true"', false);
-        $view->assertSee('min-h-[132px] rounded-xl border border-slate-200 bg-white p-5 shadow-sm', false);
+        $view->assertSee('flex min-h-[124px] flex-col justify-center bg-white p-5', false);
         $view->assertDontSee('Live dataset');
         $view->assertDontSee('Coverage expanding');
         $view->assertDontSee('Latest UK HPI');
@@ -127,10 +118,12 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertDontSee('animateValue', false);
         $view->assertDontSee('requestAnimationFrame', false);
         $view->assertDontSee('x-text=', false);
-        $view->assertSee('UK Swap Rates');
-        $view->assertSee('Open Swap Rates');
+        $view->assertSee('Swap Rates');
+        $view->assertSee('UK swap rates');
         $view->assertSee(route('insights.swap-rates', absolute: false), false);
-        $view->assertSee('View current UK swap rates and follow the wholesale pricing moves that influence fixed mortgage costs.');
+        $view->assertSee('4.07%');
+        $view->assertSee('4.09%');
+        $view->assertSee('4.38%');
         $view->assertDontSee('Most Expensive Property Sales');
         $view->assertDontSee('The current highest sale in each top-sales segment');
         $view->assertDontSee('Open Top Property Sales');
@@ -145,14 +138,12 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('Price growth stalling');
         $view->assertSee('16% market breadth');
         $view->assertSee('100% liquidity falling');
-        $view->assertSee('stroke="#ef4444"', false);
-        $view->assertSee('stroke="#facc15"', false);
-        $view->assertSee('stroke="#22c55e"', false);
-        $view->assertSee('text-base font-bold tracking-tight text-red-700', false);
-        $view->assertSee('pt-1 text-sm font-semibold leading-5 text-slate-700', false);
+        $view->assertDontSee('partials.trend-gauge', false);
+        $view->assertSee('text-2xl font-bold tracking-tight text-red-700', false);
+        $view->assertSee('text-sm font-semibold leading-5 text-slate-700', false);
         $view->assertSee('18 / 112');
         $view->assertSee('112 / 112');
-        $view->assertSee('rounded-xl border border-slate-200 bg-white p-5 shadow-sm', false);
+        $view->assertSee('xl:grid-cols-4 xl:divide-x xl:divide-y-0', false);
         $view->assertSee('-34.1%', false);
         $view->assertSee('-0.2%', false);
         $view->assertSee('16% market breadth', false);
@@ -160,27 +151,26 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertDontSee('Top Counties with Rising Prices');
         $view->assertDontSee('Torfaen');
         $view->assertDontSee('Rutland');
-        $view->assertSee('Signals Worth Watching');
-        $view->assertSee('Open County Insights');
+        $view->assertSee('Explore PropertyResearch');
+        $view->assertSee('View current market insights');
         $view->assertSee(route('insights.index', absolute: false), false);
-        $view->assertSee('Browse the latest county-level property signals and market insights without crowding the homepage with specialist detail.');
-        $view->assertSee('Crime Insights');
-        $view->assertSee('Open Crime Insights');
+        $view->assertSee('Local and specialist research');
+        $view->assertSee('Deprivation and crime');
         $view->assertSee('/insights/crime', false);
-        $view->assertSee('Open the crime dashboard for national and local crime trends, recent movement, and area-level context alongside the property research.');
         $view->assertDontSee('128 live');
         $view->assertDontSee('Top signal (this period)');
-        $view->assertSee('md:grid-cols-2 lg:grid-cols-3', false);
-        $view->assertSee('flex h-full flex-col', false);
+        $view->assertSee('md:grid-cols-3', false);
         $view->assertSeeInOrder([
-            'Search by street',
-            'Search postcode (e.g. SW7 5PH)',
+            'Research a property',
+            'Street search',
+            'Postcode search',
             'Property sales',
-            'Overall Property Market Stress Index',
+            'Property Market Stress Index',
             'UK Housing Market Snapshot',
-            'UK Swap Rates',
-            'Signals Worth Watching',
-            'Crime Insights',
+            'Explore PropertyResearch',
+            'UK property market',
+            'Swap Rates',
+            'Local and specialist research',
         ]);
     }
 
@@ -231,8 +221,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('Signals Worth Watching');
-        $response->assertSee('UK Swap Rates');
+        $response->assertSee('Explore PropertyResearch');
+        $response->assertSee('UK swap rates');
     }
 
     public function test_home_page_normalizes_upward_top_signal_direction_and_sign(): void
@@ -268,8 +258,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('Signals Worth Watching');
-        $response->assertSee('UK Swap Rates');
+        $response->assertSee('Explore PropertyResearch');
+        $response->assertSee('UK swap rates');
     }
 
     public function test_home_page_shows_logged_in_banner_for_user_id_one(): void

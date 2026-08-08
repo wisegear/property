@@ -25,7 +25,7 @@ class ExampleTest extends TestCase
         $this->assertStringNotContainsString('https://x.com/Propertyda03', $renderedLayout);
         $this->assertStringContainsString(sprintf('href="%s"', $insightsUrl), $renderedLayout);
         $this->assertSame(2, substr_count($renderedLayout, sprintf('href="%s"', $insightsUrl)));
-        $this->assertSame(2, substr_count($renderedLayout, sprintf('href="%s"', $rentalUrl)));
+        $this->assertSame(3, substr_count($renderedLayout, sprintf('href="%s"', $rentalUrl)));
         $this->assertSame(2, substr_count($renderedLayout, sprintf('href="%s"', $repossessionsUrl)));
 
         $desktopPropertyMenu = strstr($renderedLayout, 'id="propertyDropdown"', true) === false

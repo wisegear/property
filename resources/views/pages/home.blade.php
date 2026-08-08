@@ -1,22 +1,18 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
-
     {{-- Hero --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-zinc-200 bg-white/85 px-8 py-8 shadow-sm md:min-h-[320px] md:pr-0">
-        @include('partials.hero-background')
-        <div class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(132,204,22,0.18),transparent_40%),radial-gradient(circle_at_82%_18%,rgba(163,230,53,0.10),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.92))]"></div>
-        <div class="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:gap-2 lg:gap-3">
-            <div class="md:max-w-4xl md:flex-[1.2] md:pr-4">
+    <section class="relative z-0 -mx-6 overflow-hidden border-y border-zinc-300 bg-zinc-100 py-8 shadow-[0_10px_30px_rgba(15,23,42,0.05)] md:py-9">
+        <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+            <div class="max-w-4xl">
                 <div class="flex flex-wrap items-center gap-3">
-                    <div class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white/70 px-3 py-1 text-xs text-zinc-700 shadow-sm">
-                        <span class="h-2 w-2 rounded-lg bg-lime-500"></span>
+                    <div class="inline-flex items-center gap-2 text-xs font-medium text-zinc-600">
+                        <span class="h-2 w-2 rounded-full bg-lime-600"></span>
                         Independent UK property data
                     </div>
                     @auth
                         @if (Auth::id() === 1)
-                            <div class="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-1 text-xs font-medium text-emerald-800 shadow-sm">
+                            <div class="inline-flex items-center gap-2 rounded border border-emerald-200 bg-white px-3 py-1 text-xs font-medium text-emerald-800">
                                 <span class="relative flex h-2.5 w-2.5">
                                     <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70"></span>
                                     <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
@@ -26,7 +22,7 @@
                         @endif
                     @endauth
                 </div>
-                <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-3xl">
+                <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-950 md:text-4xl">
                     Explore property prices, sales history and local trends
                 </h1>
                 <p class="mt-3 text-md leading-7 text-zinc-500">
@@ -39,67 +35,66 @@
                 </div>
             </div>
 
-            <div class="mx-auto w-full max-w-[320px] md:mx-0 md:w-[31%] md:max-w-none md:min-w-[240px] lg:w-[33%]">
-                <div class="relative home-hero-illustration-shell">
-                    <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-white/90 via-white/45 to-transparent md:w-24"></div>
+            <div class="hidden min-w-0 justify-end md:flex" aria-hidden="true">
                 <img
                     src="{{ asset('/assets/images/site/logo10.jpg') }}"
-                    alt="Property Research"
+                    alt=""
                     width="768"
                     height="512"
-                    class="home-hero-illustration h-auto w-full object-contain opacity-90 md:translate-x-8"
+                    class="h-44 w-auto max-w-full object-contain opacity-80 mix-blend-multiply [mask-image:linear-gradient(to_right,transparent_0%,black_18%,black_94%,transparent_100%)] lg:h-52"
                 >
-                </div>
             </div>
         </div>
     </section>
 
-    <section class="mt-8">
-        <div class="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
-            <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-                <div class="mb-2 text-sm font-medium text-zinc-800">Search by street</div>
+<div class="mx-auto max-w-7xl px-4 pb-8 md:pb-10">
+    <section class="mt-6 overflow-visible rounded-sm border border-blue-100 bg-blue-50/70 p-5 md:p-6">
+        <div class="grid gap-5 md:grid-cols-2 md:items-start lg:grid-cols-[22fr_44fr_34fr]">
+            <div class="md:col-span-2 lg:col-span-1 lg:self-center">
+                <h2 class="text-lg font-bold text-zinc-900">Research a property</h2>
+                <p class="mt-1 text-sm text-zinc-600">Start with a street or postcode.</p>
+            </div>
+
+            <div>
+                <label for="home-street-search" class="mb-2 block text-xs font-semibold text-zinc-700">Street search</label>
                 <div class="relative">
                     <input
                         id="home-street-search"
                         type="text"
                         autocomplete="off"
-                        placeholder="Search by street"
-                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                        placeholder="Street, place or postcode district"
+                        class="w-full rounded border border-blue-200 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                     />
                     <div
                         id="home-street-suggestions"
-                        class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-y-auto rounded-lg border border-zinc-200 bg-white text-sm shadow-lg">
+                        class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-y-auto rounded border border-zinc-200 bg-white text-sm shadow-lg">
                     </div>
                 </div>
 
-                <div class="mt-2 text-xs text-zinc-500">
-                    Autocomplete matches unique street and postcode district combinations from Land Registry sales and only returns results where at least 3 sales exist. For very common street names, you may need to add the place name or the first part of the postcode to narrow the results.
-                </div>
+                <p class="mt-2 text-xs text-zinc-500">Matches streets with at least 3 recorded sales. Add a place or postcode district to narrow common names.</p>
             </div>
 
-            <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-                <div class="mb-2 text-sm font-medium text-zinc-800">Search postcode</div>
+            <div>
+                <label for="home-postcode" class="mb-2 block text-xs font-semibold text-zinc-700">Postcode search</label>
                 <form method="GET" action="{{ route('property.search') }}" class="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <input
                         id="home-postcode"
                         name="postcode"
                         type="text"
                         value="{{ old('postcode', request('postcode', '')) }}"
-                        placeholder="Search postcode (e.g. SW7 5PH)"
-                        class="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                        placeholder="E.g. SW7 5PH"
+                        class="min-w-0 flex-1 rounded border border-blue-200 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                     />
 
                     <button
                         type="submit"
-                        class="rounded-lg bg-zinc-900 px-5 py-2 text-sm text-white transition hover:bg-black"
+                        class="rounded bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
                     >
                         Search
                     </button>
                 </form>
 
-                <div class="mt-2 text-xs text-zinc-500">
-                    Jump straight to full property data for any postcode in England &amp; Wales
-                </div>
+                <p class="mt-2 text-xs text-zinc-500">Open the full property record for an England or Wales postcode.</p>
             </div>
         </div>
     </section>
@@ -122,49 +117,37 @@
                 'value' => $formatCompactCount((int) ($stats['property_records'] ?? 0)),
                 'label' => 'Property sales',
                 'icon' => 'database',
-                'change' => $homepageStatMovements['property_records']['change'] ?? '0 this year',
-                'tone' => $homepageStatMovements['property_records']['tone'] ?? 'neutral',
             ],
             [
                 'value' => $formatCompactCount((int) ($stats['epc_count'] ?? 0)),
                 'label' => 'EPC certificates',
                 'icon' => 'file-search',
-                'change' => $homepageStatMovements['epc_count']['change'] ?? '0 this year',
-                'tone' => $homepageStatMovements['epc_count']['tone'] ?? 'neutral',
             ],
             [
                 'value' => '&pound;'.number_format((int) ($stats['uk_avg_price'] ?? 0)),
                 'label' => 'Average House Price',
                 'icon' => 'home',
-                'change' => $homepageStatMovements['uk_avg_price']['change'] ?? '0.0% YoY',
-                'tone' => $homepageStatMovements['uk_avg_price']['tone'] ?? 'neutral',
             ],
             [
                 'label' => 'Average UK rent',
                 'value' => '&pound;'.number_format((int) ($stats['uk_avg_rent'] ?? 0)),
                 'icon' => 'key',
-                'change' => $homepageStatMovements['uk_avg_rent']['change'] ?? '0.0% YoY',
-                'tone' => $homepageStatMovements['uk_avg_rent']['tone'] ?? 'neutral',
             ],
             [
                 'label' => 'Bank Rate',
                 'value' => number_format((float) ($stats['bank_rate'] ?? 0), 2).'%',
                 'icon' => 'percent',
-                'change' => $homepageStatMovements['bank_rate']['change'] ?? '0.00% over 12 months',
-                'tone' => $homepageStatMovements['bank_rate']['tone'] ?? 'neutral',
             ],
         ];
     @endphp
 
     {{-- Live Stats Section --}}
-    <section class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <section class="mt-8 grid grid-cols-1 overflow-hidden rounded-sm border border-slate-200 bg-white divide-y divide-slate-200 lg:grid-cols-5 lg:divide-x lg:divide-y-0">
         @foreach($homepageStatCards as $card)
             <x-home.stat-card
                 :value="$card['value']"
                 :label="$card['label']"
                 :icon="$card['icon']"
-                :change="$card['change']"
-                :tone="$card['tone']"
             />
         @endforeach
     </section>
@@ -175,12 +158,21 @@
     </div>
 
     <section class="mt-6">
-        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div class="rounded-sm border border-zinc-200 bg-white p-6">
             <div class="flex h-full flex-col gap-3">
                 <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                         <h2 class="text-lg font-semibold text-zinc-900">UK Housing Market Snapshot</h2>
-                        <p class="mt-1 text-sm text-zinc-600">Latest complete Land Registry quarter vs previous quarter</p>
+                        <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+                            <p class="text-sm text-zinc-600">Latest complete Land Registry quarter vs previous quarter</p>
+                            <a href="{{ route('insights.dashboard') }}"
+                               class="inline-flex items-center gap-2 text-sm font-medium text-lime-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
+                                View Market Insights
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                </svg>
+                            </a>
+                        </div>
                     </div>
 
                     @php
@@ -274,7 +266,7 @@
                     </span>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div class="grid grid-cols-1 overflow-hidden rounded-sm border border-slate-200 bg-white divide-y divide-slate-200 xl:grid-cols-4 xl:divide-x xl:divide-y-0">
                     @foreach ($snapshotCards as $card)
                         <x-home.snapshot-card
                             :value="$card['value']"
@@ -289,152 +281,73 @@
                     @endforeach
                 </div>
 
-                <div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
-                    <a href="{{ route('insights.dashboard') }}"
-                       class="inline-flex items-center gap-2 text-sm font-medium text-lime-700 hover:underline sm:ml-auto">
-                        View Market Insights
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                        </svg>
-                    </a>
+            </div>
+        </div>
+    </section>
+
+    {{-- Explore PropertyResearch --}}
+    <section class="mt-6 overflow-hidden rounded-sm border border-zinc-200 bg-white">
+        <div class="flex flex-col gap-2 border-b border-zinc-200 bg-zinc-50/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-6">
+            <div>
+                <h2 class="text-xl font-bold text-zinc-900">Explore PropertyResearch</h2>
+                <p class="mt-1 text-sm text-zinc-600">Free UK property data, market indicators and local research.</p>
+            </div>
+            <a href="{{ route('insights.dashboard') }}" class="text-sm font-semibold text-lime-700 hover:underline">View current market insights →</a>
+        </div>
+
+        <div class="grid divide-y divide-zinc-200 md:grid-cols-3 md:divide-x md:divide-y-0">
+            <div class="p-5 md:p-6">
+                <h3 class="font-bold text-zinc-900">UK property market</h3>
+                <p class="mt-1 text-xs leading-5 text-zinc-500">Prices, sales, rents and housing activity.</p>
+                <div class="mt-4 grid gap-2.5 text-sm">
+                    <a href="{{ route('property.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">Property transactions</a>
+                    <a href="{{ route('hpi.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">House Price Index</a>
+                    <a href="{{ route('rental.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Rental market</a>
+                    <a href="{{ route('newold.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">New and existing homes</a>
+                    <a href="{{ route('top-sales.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Top property sales</a>
+                    <a href="{{ route('arrears.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Arrears and repossessions</a>
+                </div>
+            </div>
+
+            <div class="p-5 md:p-6">
+                <h3 class="font-bold text-zinc-900">Swap Rates</h3>
+                <p class="mt-1 text-xs leading-5 text-zinc-500">Wholesale market rates influencing fixed mortgage pricing.</p>
+                <div class="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-y border-zinc-100 py-3">
+                    @foreach(collect($homepageSwapRates['rates'] ?? [])->take(3) as $rate)
+                        <div><span class="block text-[11px] text-zinc-500">{{ $rate['label'] }}</span><strong class="text-lg text-zinc-900">{{ number_format((float) $rate['rate'], 2) }}%</strong></div>
+                    @endforeach
+                </div>
+                <div class="mt-4 grid gap-2.5 text-sm">
+                    <a href="{{ route('economic.dashboard') }}" class="font-medium text-zinc-700 hover:text-lime-700">Economic dashboard</a>
+                    <a href="{{ route('mortgages.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">Mortgage approvals</a>
+                    <a href="{{ route('insights.swap-rates') }}" class="font-medium text-zinc-700 hover:text-lime-700">UK swap rates</a>
+                </div>
+            </div>
+
+            <div class="p-5 md:p-6">
+                <h3 class="font-bold text-zinc-900">Local and specialist research</h3>
+                <p class="mt-1 text-xs leading-5 text-zinc-500">Property-level records and wider local context.</p>
+                <div class="mt-4 grid gap-2.5 text-sm">
+                    <a href="{{ route('epc.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">EPC records and local data</a>
+                    <a href="{{ route('schools.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Schools and local markets</a>
+                    <a href="{{ route('deprivation.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Deprivation and crime</a>
+                    <a href="{{ route('property.scottish-prices') }}" class="font-medium text-zinc-700 hover:text-lime-700">Scottish property prices</a>
+                    <a href="{{ route('property.pcl') }}" class="font-medium text-zinc-700 hover:text-lime-700">Prime London markets</a>
+                    <a href="{{ route('mortgagecalc.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Calculators and tools</a>
                 </div>
             </div>
         </div>
     </section>
 
-    {{-- Explore panels --}}
-    <section class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <a href="{{ Route::has('property.home') ? route('property.home') : url('/property') }}"
-           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">Review Property Data</h2>
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke-width="1.5"
-                     stroke="currentColor"
-                     class="h-6 w-6 text-zinc-500 group-hover:text-lime-600 transition">
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
-                </svg>
-            </div>
-            <p class="mt-2 text-sm text-zinc-700">Drill into transactions by postcode, street or any area.  Now you can browse properties in a map. Yearly trends &amp; quick summaries.</p>
-            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open Property Dashboard
-            </div>
-        </a>
-
-        <a href="{{ Route::has('epc.home') ? route('epc.home') : url('/epc') }}"
-           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">Find an EPC report</h2>
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke-width="1.5"
-                     stroke="currentColor"
-                     class="h-6 w-6 text-zinc-500 group-hover:text-lime-600 transition">
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25M9 16.5v.75m3-3v3M15 12v5.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                </svg>
-            </div>
-            <p class="mt-2 text-sm text-zinc-700">EPC report details for England, Wales and Scotland.  Dashboard contains some information not available from the Land Registry</p>
-            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open EPC Dashboard
-            </div>
-        </a>
-
-        <a href="{{ Route::has('deprivation.index') ? route('deprivation.index') : url('/deprivation') }}"
-           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">View Deprivation by Area</h2>
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke-width="1.5"
-                     stroke="currentColor"
-                     class="h-6 w-6 text-zinc-500 group-hover:text-lime-600 transition">
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
-                </svg>
-            </div>
-            <p class="mt-2 text-sm text-zinc-700">Explore the Deprivation indexes. Search by postcode and see domain breakdowns.  Scotland, England, Wales and Northern Ireland.</p>
-            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open Deprivation Dashboard
-            </div>
-        </a>
-
-        <a href="{{ route('insights.swap-rates') }}"
-           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">Understand UK Swap Rates</h2>
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke-width="1.5"
-                     stroke="currentColor"
-                     class="h-6 w-6 text-zinc-500 group-hover:text-lime-600 transition">
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M3.75 15.75 9 10.5l3.75 3.75L20.25 6.75M16.5 6.75h3.75V10.5" />
-                </svg>
-            </div>
-            <p class="mt-2 text-sm text-zinc-700">View current UK swap rates and follow the wholesale pricing moves that influence fixed mortgage costs.</p>
-            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open Swap Rates
-            </div>
-        </a>
-
-        <a href="{{ route('insights.index') }}"
-           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">Property Signals Worth Watching</h2>
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke-width="1.5"
-                     stroke="currentColor"
-                     class="h-6 w-6 text-zinc-500 group-hover:text-lime-600 transition">
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M3.75 15.75 8.25 11.25l3 3 5.25-6.75 3.75 3.75" />
-                </svg>
-            </div>
-            <p class="mt-2 text-sm text-zinc-700">Browse the latest county-level property signals and market insights without crowding the homepage with specialist detail.</p>
-            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open County Insights
-            </div>
-        </a>
-
-        <a href="{{ url('/insights/crime') }}"
-           class="group flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-900">View Crime Insights</h2>
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke-width="1.5"
-                     stroke="currentColor"
-                     class="h-6 w-6 text-zinc-500 group-hover:text-lime-600 transition">
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-1.5 0h12a1.5 1.5 0 0 1 1.5 1.5v7.5a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 4.5 19.5V12a1.5 1.5 0 0 1 1.5-1.5Z" />
-                </svg>
-            </div>
-            <p class="mt-2 text-sm text-zinc-700">Open the crime dashboard for national and local crime trends, recent movement, and area-level context alongside the property research.</p>
-            <div class="mt-auto inline-flex items-center pt-4 text-sm font-medium text-lime-700 group-hover:underline">Open Crime Insights
-            </div>
-        </a>
-
-    </section>
-
     {{-- Blog Section --}}
     @if($posts->count() > 0)
-    <section class="mt-12">
-        <div class="flex items-center justify-between mb-6">
+    <section class="mt-10 border-t border-zinc-200 pt-7">
+        <div class="mb-5 flex items-end justify-between gap-4">
             <div>
                 <h2 class="text-xl font-bold text-zinc-900">Latest Insights</h2>
-                <p class="text-sm text-zinc-500 mt-1">Analysis and commentary on the UK property market</p>
+                <p class="mt-1 text-sm text-zinc-500">Analysis and commentary on the UK property market</p>
             </div>
-            <a href="{{ url('/blog') }}" class="hidden sm:inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:border-zinc-300">
+            <a href="{{ url('/blog') }}" class="hidden items-center gap-2 text-sm font-semibold text-zinc-700 hover:text-lime-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2 sm:inline-flex">
                 View all posts
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
@@ -442,37 +355,36 @@
             </a>
         </div>
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            {{-- Other posts (smaller, stacked) --}}
-            <div class="lg:col-span-12 grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-4">
-                @foreach ($posts as $post)
+        <div class="grid grid-cols-1 overflow-hidden border-y border-zinc-200 bg-white lg:grid-cols-2 lg:divide-x lg:divide-zinc-200">
+            @foreach($posts->chunk((int) ceil($posts->count() / 2)) as $columnPosts)
+                <div class="grid grid-cols-1 divide-y divide-zinc-200">
+                    @foreach($columnPosts as $post)
                     <a href="/blog/{{ $post->slug }}"
-                       class="group flex gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-md hover:border-zinc-300">
-                        <div class="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-100">
-                            <img src="{{ $post->featuredImageUrl('small') }}"
-                                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                 alt="{{ $post->title }}">
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-xs text-zinc-500 mb-1">
+                       class="group grid min-h-32 grid-cols-[minmax(0,1fr)_auto] items-center gap-5 p-5 transition-colors duration-200 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime-600">
+                        <div class="min-w-0">
+                            <div class="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
                                 {{ $post->date->format('M j, Y') }}
                             </div>
-                            <h3 class="font-semibold text-zinc-900 line-clamp-2 group-hover:text-lime-700 transition-colors">
+                            <h3 class="line-clamp-2 text-base font-bold leading-5 text-zinc-900 transition-colors group-hover:text-lime-700 sm:text-[1.05rem]">
                                 {{ $post->title }}
                             </h3>
-                            <p class="mt-1 text-sm text-zinc-500 line-clamp-2 sm:block lg:block">
+                            <p class="mt-2 line-clamp-2 text-sm leading-5 text-zinc-500">
                                 {{ $post->summary }}
                             </p>
                         </div>
+                        <svg class="h-4 w-4 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5 group-hover:text-lime-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6" />
+                        </svg>
                     </a>
-                @endforeach
-            </div>
+                    @endforeach
+                </div>
+            @endforeach
         </div>
 
         {{-- Mobile "View all" link --}}
-        <div class="mt-6 sm:hidden">
-            <a href="{{ url('/blog') }}" class="block w-full text-center rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50">
-                View all posts
+        <div class="mt-4 sm:hidden">
+            <a href="{{ url('/blog') }}" class="block text-sm font-semibold text-zinc-700 hover:text-lime-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
+                View all posts →
             </a>
         </div>
     </section>

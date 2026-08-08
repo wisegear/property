@@ -37,7 +37,7 @@ class PagesController extends Controller
         }
 
         $homepagePanels = Cache::get('homepage_panels');
-        if (! is_array($homepagePanels) || ! isset($homepagePanels['homepageStatMovements'])) {
+        if (! is_array($homepagePanels) || ! isset($homepagePanels['homepageMarketMovements'])) {
             $homepagePanels = $homepageDataService->homepagePanels();
         }
 

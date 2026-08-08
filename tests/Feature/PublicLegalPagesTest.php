@@ -62,6 +62,6 @@ class PublicLegalPagesTest extends TestCase
         $this->get('/privacy/app')
             ->assertOk()
             ->assertSee(route('legal.index'), false)
-            ->assertSeeText('Visit the Legal & Support ↗ Pages');
+            ->assertSeeText('Legal and support');
     }
 }

@@ -107,7 +107,7 @@
         <!-- DESKTOP HEADER (Logo & Social Links & Auth) -->
         <!-- Hidden on mobile (xl:block = show on extra large screens only) -->
         <!-- ============================================ -->
-        <div class="hidden xl:block bg-white border-b border-zinc-200">
+        <div class="hidden">
             <div class="mx-auto flex max-w-7xl items-center py-4">
                 
                 <!-- Left Section: Social Media Icons -->
@@ -156,7 +156,7 @@
                         <!-- User Dropdown Menu (when logged in) -->
                         <div class="relative">
                             <button id="userMenuButton" 
-                                    class="flex items-center gap-1 focus:outline-none cursor-pointer">
+                                    class="flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2 cursor-pointer">
                                 {{ Auth::user()->name }}
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -202,14 +202,17 @@
         <!-- DESKTOP NAVIGATION BAR -->
         <!-- Hidden on mobile, shown on extra large screens -->
         <!-- ============================================ -->
-        <nav class="hidden xl:block bg-white border-b border-zinc-200 px-4 py-2">
-            <div class="relative mx-auto flex max-w-7xl items-center justify-center">
+        <nav class="hidden border-b border-zinc-200 bg-white px-4 xl:block">
+            <div class="relative mx-auto flex max-w-7xl items-center gap-6">
+                <a href="{{ url('/') }}" class="inline-flex shrink-0 items-baseline tracking-tight text-slate-800">
+                    <span class="text-xl font-bold">PropertyResearch</span><span class="text-base font-bold text-lime-700">.uk</span>
+                </a>
                 
                 <!-- Mobile Toggle Button (hidden on desktop) -->
                 <button id="navToggle" 
                         aria-controls="primaryNav" 
                         aria-expanded="false" 
-                        class="md:hidden ml-auto inline-flex items-center justify-center p-2 rounded text-zinc-700 hover:text-lime-600 focus:outline-none" 
+                        class="md:hidden ml-auto inline-flex items-center justify-center p-2 rounded text-zinc-700 hover:text-lime-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2" 
                         type="button">
                     <span class="sr-only">Open main menu</span>
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -218,12 +221,12 @@
                 </button>
 
                 <!-- Primary Navigation Links -->
-                <div id="primaryNav" 
-                     class="hidden md:flex gap-2 text-sm flex-col md:flex-row mt-3 md:mt-0 justify-center">
+                <div id="primaryNav"
+                     class="hidden min-w-0 flex-1 flex-col justify-center text-sm md:flex md:flex-row md:items-center md:gap-1">
                     
                     <!-- Home Link -->
-                    <a href="{{ url('/') }}" 
-                       class="px-3 py-2 rounded {{ request()->is('/') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
+                    <a href="{{ url('/') }}"
+                       class="hidden px-3 py-4 {{ request()->is('/') ? 'text-zinc-900' : 'text-zinc-700 hover:text-lime-700' }}">
                         Home
                     </a>
                     
@@ -233,7 +236,7 @@
                                 aria-haspopup="true" 
                                 aria-controls="propertyDropdown" 
                                 aria-expanded="false" 
-                                class="px-3 py-2 rounded flex items-center gap-1 text-zinc-700 hover:text-lime-600 focus:outline-none cursor-pointer">
+                                class="flex cursor-pointer items-center gap-1 px-3 py-4 text-zinc-700 hover:text-lime-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
                             Property
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -332,8 +335,8 @@
                                 aria-haspopup="true" 
                                 aria-controls="economicsDropdown" 
                                 aria-expanded="false" 
-                                class="px-3 py-2 rounded flex items-center gap-1 text-zinc-700 hover:text-lime-600 focus:outline-none cursor-pointer">
-                            Stress Indicators
+                                class="flex cursor-pointer items-center gap-1 px-3 py-4 text-zinc-700 hover:text-lime-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
+                            Market &amp; Economy
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
@@ -350,7 +353,7 @@
                                     <a href="{{ url('/economic-dashboard') }}" 
                                        role="menuitem" 
                                        tabindex="-1" 
-                                       class="block px-4 py-2 font-semibold hover:bg-zinc-100 text-zinc-800">
+                                       class="block px-4 py-2 font-semibold hover:bg-zinc-200 text-zinc-900">
                                         Stress Indicators Dashboard
                                     </a>
                                     <a href="{{ url('/interest-rates') }}" 
@@ -413,7 +416,7 @@
                                 aria-haspopup="true"
                                 aria-controls="insightsDropdown"
                                 aria-expanded="false"
-                                class="px-3 py-2 rounded flex items-center gap-1 {{ request()->routeIs('insights.dashboard') || request()->routeIs('insights.index') || request()->routeIs('insights.search') || request()->routeIs('insights.show') || request()->routeIs('insights.crime.index') || request()->routeIs('insights.crime.show') || request()->routeIs('insights.swap-rates') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }} focus:outline-none cursor-pointer">
+                                class="flex cursor-pointer items-center gap-1 px-3 py-4 {{ request()->routeIs('insights.dashboard') || request()->routeIs('insights.index') || request()->routeIs('insights.search') || request()->routeIs('insights.show') || request()->routeIs('insights.crime.index') || request()->routeIs('insights.crime.show') || request()->routeIs('insights.swap-rates') ? 'font-semibold text-zinc-900' : 'text-zinc-700 hover:text-lime-700' }} focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
                             Insights
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -454,12 +457,18 @@
                                class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 {{ request()->routeIs('top-sales.index') ? 'font-semibold' : '' }}">
                                 Top Property Sales
                             </a>
+                            <a href="{{ url('/blog') }}"
+                               role="menuitem"
+                               tabindex="-1"
+                               class="block px-4 py-2 text-zinc-700 hover:bg-zinc-100">
+                                Blog
+                            </a>
                         </div>
                     </div>
 
                     <!-- Deprivation Link -->
-                    <a href="{{ url('/deprivation') }}" 
-                       class="px-3 py-2 rounded {{ request()->is('deprivation') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
+                    <a href="{{ url('/deprivation') }}"
+                       class="hidden px-3 py-4 {{ request()->is('deprivation') ? 'text-zinc-900' : 'text-zinc-700 hover:text-lime-700' }}">
                         Deprivation
                     </a>
 
@@ -469,8 +478,8 @@
                                 aria-haspopup="true"
                                 aria-controls="socialHousingDropdown"
                                 aria-expanded="false"
-                                class="px-3 py-2 rounded flex items-center gap-1 text-zinc-700 hover:text-lime-600 focus:outline-none cursor-pointer">
-                            Council Housing
+                                class="flex cursor-pointer items-center gap-1 px-3 py-4 text-zinc-700 hover:text-lime-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
+                            Local Research
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
@@ -480,17 +489,22 @@
                              role="menu"
                              aria-labelledby="socialHousingMenuButton"
                              class="absolute left-0 mt-4 w-56 bg-white border border-zinc-200 rounded shadow-lg z-50 transform transition duration-150 ease-out origin-top opacity-0 scale-95 pointer-events-none hidden">
+                            <a href="{{ route('epc.home') }}" role="menuitem" tabindex="-1" class="block px-4 py-2 text-zinc-700 hover:bg-zinc-100">EPC records</a>
+                            <a href="{{ route('schools.index') }}" role="menuitem" tabindex="-1" class="block px-4 py-2 text-zinc-700 hover:bg-zinc-100">Schools</a>
+                            <a href="{{ route('deprivation.index') }}" role="menuitem" tabindex="-1" class="block px-4 py-2 text-zinc-700 hover:bg-zinc-100">Deprivation</a>
+                            <a href="{{ route('insights.crime.index') }}" role="menuitem" tabindex="-1" class="block px-4 py-2 text-zinc-700 hover:bg-zinc-100">Crime insights</a>
+                            <div class="my-1 border-t border-zinc-100"></div>
                             <a href="{{ route('localauthority.england') }}"
                                role="menuitem"
                                tabindex="-1"
                                class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 {{ request()->routeIs('localauthority.england') ? 'font-semibold' : '' }}">
-                                England
+                                Council housing: England
                             </a>
                             <a href="{{ route('localauthority.scotland') }}"
                                role="menuitem"
                                tabindex="-1"
                                class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 {{ request()->routeIs('localauthority.scotland') ? 'font-semibold' : '' }}">
-                                Scotland
+                                Council housing: Scotland
                             </a>
                         </div>
                     </div>
@@ -501,8 +515,8 @@
                                 aria-haspopup="true" 
                                 aria-controls="calculatorsDropdown" 
                                 aria-expanded="false" 
-                                class="px-3 py-2 rounded flex items-center gap-1 text-zinc-700 hover:text-lime-600 focus:outline-none cursor-pointer">
-                            Calculators
+                                class="flex cursor-pointer items-center gap-1 px-3 py-4 text-zinc-700 hover:text-lime-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
+                            Tools
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
@@ -529,16 +543,29 @@
                     </div>
 
                     <!-- Blog Link -->
-                    <a href="{{ url('/blog') }}" 
-                       class="px-3 py-2 rounded {{ request()->is('blog') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
+                    <a href="{{ url('/blog') }}"
+                       class="hidden px-3 py-4 {{ request()->is('blog') ? 'text-zinc-900' : 'text-zinc-700 hover:text-lime-700' }}">
                         Blog
                     </a>
                     
                     <!-- About Link -->
-                    <a href="{{ url('/about') }}" 
-                       class="px-3 py-2 rounded {{ request()->is('about') ? 'bg-zinc-200 text-zinc-900' : 'text-zinc-700 hover:text-lime-600' }}">
+                    <a href="{{ url('/about') }}"
+                       class="px-3 py-4 {{ request()->is('about') ? 'font-semibold text-zinc-900' : 'text-zinc-700 hover:text-lime-700' }}">
                         About
                     </a>
+                </div>
+
+                <div class="flex shrink-0 items-center gap-3 text-xs text-zinc-500">
+                    @auth
+                        <a href="/profile/{{ Auth::user()->name_slug }}" class="hover:text-zinc-900">{{ Auth::user()->name }}</a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="cursor-pointer hover:text-zinc-900">Logout</button>
+                        </form>
+                    @else
+                        <a href="/login" class="hover:text-zinc-900">Login</a>
+                        <a href="/register" class="hover:text-zinc-900">Register</a>
+                    @endauth
                 </div>
 
             </div>
@@ -548,7 +575,7 @@
         <!-- MOBILE NAVIGATION -->
         <!-- Hidden on desktop (xl:hidden = hide on extra large screens) -->
         <!-- ============================================ -->
-        <nav class="bg-white border-b border-zinc-200 px-4 py-5 xl:hidden">
+        <nav class="border-b border-zinc-200 bg-white px-4 py-3 xl:hidden">
             <div class="w-full flex items-center justify-between">
                 <!-- Mobile Wordmark -->
                 <a href="{{ url('/') }}" class="inline-flex items-baseline tracking-tight text-slate-800">
@@ -559,7 +586,7 @@
                 <button id="mobileNavToggle" 
                         aria-controls="mobileNav" 
                         aria-expanded="false"
-                        class="inline-flex items-center justify-center p-2 rounded text-zinc-700 hover:text-lime-600 focus:outline-none"
+                        class="inline-flex items-center justify-center p-2 rounded text-zinc-700 hover:text-lime-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2"
                         type="button">
                     <span class="sr-only">Open main menu</span>
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -580,7 +607,7 @@
                 <!-- Property Dropdown (Mobile) -->
                 <div>
                     <button id="mobilePropertyBtn"
-                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none">
+                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
                         Property
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -639,8 +666,8 @@
                 <!-- Stress Indicators Dropdown (Mobile) -->
                 <div>
                     <button id="mobileIndicatorsBtn" 
-                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none">
-                        Stress Indicators
+                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
+                        Market &amp; Economy
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
@@ -687,7 +714,7 @@
                 <!-- Insights Dropdown (Mobile) -->
                 <div>
                     <button id="mobileInsightsBtn"
-                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none">
+                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
                         Insights
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -715,33 +742,38 @@
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 {{ request()->routeIs('top-sales.index') ? 'font-semibold' : '' }}">
                             Top Property Sales
                         </a>
+                        <a href="{{ url('/blog') }}" class="block rounded px-3 py-2 text-zinc-700 hover:bg-zinc-100">Blog</a>
                     </div>
                 </div>
 
                 <!-- Deprivation Link -->
-                <a href="{{ url('/deprivation') }}" 
-                   class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                <a href="{{ url('/deprivation') }}"
+                   class="hidden rounded px-3 py-2 text-zinc-700 hover:bg-zinc-100">
                     Deprivation
                 </a>
 
                 <!-- Social Housing Dropdown (Mobile) -->
                 <div>
                     <button id="mobileSocialHousingBtn"
-                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none">
-                        Council Housing
+                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
+                        Local Research
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
 
                     <div id="mobileSocialHousingMenu" class="hidden flex-col pl-2 space-y-1 mt-1">
+                        <a href="{{ route('epc.home') }}" class="block rounded px-3 py-2 text-zinc-700 hover:bg-zinc-100">EPC records</a>
+                        <a href="{{ route('schools.index') }}" class="block rounded px-3 py-2 text-zinc-700 hover:bg-zinc-100">Schools</a>
+                        <a href="{{ route('deprivation.index') }}" class="block rounded px-3 py-2 text-zinc-700 hover:bg-zinc-100">Deprivation</a>
+                        <a href="{{ route('insights.crime.index') }}" class="block rounded px-3 py-2 text-zinc-700 hover:bg-zinc-100">Crime insights</a>
                         <a href="{{ route('localauthority.england') }}"
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            England
+                            Council housing: England
                         </a>
                         <a href="{{ route('localauthority.scotland') }}"
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
-                            Scotland
+                            Council housing: Scotland
                         </a>
                     </div>
                 </div>
@@ -749,8 +781,8 @@
                 <!-- Calculators Dropdown (Mobile) -->
                 <div>
                     <button id="mobileCalculatorsBtn" 
-                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none">
-                        Calculators
+                            class="w-full flex justify-between items-center px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
+                        Tools
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
@@ -770,8 +802,8 @@
                 </div>
 
                 <!-- Blog Link -->
-                <a href="{{ url('/blog') }}" 
-                   class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
+                <a href="{{ url('/blog') }}"
+                   class="hidden rounded px-3 py-2 text-zinc-700 hover:bg-zinc-100">
                     Blog
                 </a>
                 
@@ -782,7 +814,7 @@
                 </a>
 
                 <!-- Social Links Section (Mobile Only) -->
-                <div class="flex items-center gap-2 px-3 py-3 border-t border-zinc-100 mt-1">
+                <div class="hidden items-center gap-2 border-t border-zinc-100 px-3 py-4">
                     <span class="text-xs uppercase tracking-wide text-zinc-500">Connect</span>
                     <div class="inline-flex items-center gap-2">
                         <!-- LinkedIn -->
@@ -845,13 +877,13 @@
                     </form>
                 @else
                     <!-- Login/Register Buttons (when not logged in) -->
-                    <div class="flex justify-between space-x-2 px-3">
+                    <div class="flex gap-4 border-t border-zinc-100 px-3 pt-3 text-sm text-zinc-600">
                         <a href="/login" 
-                           class="flex-1 text-center py-1 px-2 rounded bg-zinc-700 text-white text-sm hover:bg-zinc-500 transition">
+                           class="hover:text-zinc-900">
                             Login
                         </a>
                         <a href="/register" 
-                           class="flex-1 text-center py-1 px-2 rounded bg-zinc-200 text-zinc-700 text-sm hover:bg-zinc-300 transition">
+                           class="hover:text-zinc-900">
                             Register
                         </a>
                     </div>
@@ -870,13 +902,57 @@
         <!-- ============================================ -->
         <!-- FOOTER -->
         <!-- ============================================ -->
-        <footer class="border-t border-zinc-200 bg-white px-4 py-5 text-center text-sm text-zinc-500">
-            <p>
-                &copy; Lee Wisener - PropertyResearch.uk. 
-                Built with&nbsp;<a href="https://laravel.com" target="_blank" rel="noopener noreferrer" class="text-rose-700 hover:text-rose-900">Laravel <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>.
-                Hosted with&nbsp;<a href="https://ovh.com" target="_blank" rel="noopener noreferrer" class="text-rose-700 hover:text-rose-900">OVH <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>.
-                Visit the <a href="{{ route('legal.index') }}" class="text-rose-700 hover:text-rose-900 hover:underline">Legal &amp; Support <span aria-hidden="true">↗</span></a> Pages
-            </p>
+        <footer class="bg-slate-950 px-6 py-8 text-sm text-slate-300">
+            <div class="mx-auto grid max-w-7xl gap-8 sm:grid-cols-2 lg:grid-cols-[1.35fr_1fr_1fr_1fr]">
+                <div>
+                    <a href="{{ url('/') }}" class="inline-flex items-baseline tracking-tight text-white">
+                        <span class="text-xl font-bold">PropertyResearch</span><span class="text-base font-bold text-lime-400">.uk</span>
+                    </a>
+                    <p class="mt-3 max-w-sm leading-6 text-slate-400">Free, independent UK residential property data and research. Explore sales, prices, local records and the wider market.</p>
+                    <div class="mt-4 flex items-center gap-4 text-slate-400">
+                        <a href="https://www.linkedin.com/in/leewisener/" target="_blank" rel="noopener" class="hover:text-white" aria-label="LinkedIn profile">
+                            <svg class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.473 0 16 .513 16 1.146v13.708c0 .633-.527 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146Zm4.943 12.248V6.169H2.542v7.225h2.401ZM3.743 5.182c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.225 2.4 3.934c0 .694.506 1.248 1.327 1.248Zm1.945 8.212h2.401V9.359c0-.216.016-.432.08-.586.175-.431.576-.878 1.25-.878.883 0 1.237.662 1.237 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225Z"/></svg>
+                        </a>
+                        <a href="https://www.facebook.com/lee.wisener" target="_blank" rel="noopener" class="hover:text-white" aria-label="Facebook profile">
+                            <svg class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M16 8.049C16 3.604 12.418 0 8 0S0 3.604 0 8.049C0 12.07 2.925 15.401 6.75 16v-5.625H4.719V8.049H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98H10.554c-.993 0-1.304.621-1.304 1.258v1.51h2.219l-.354 2.326H9.25V16C13.075 15.401 16 12.07 16 8.049Z"/></svg>
+                        </a>
+                        <a href="https://wa.me/447720868799?text=Hi%20Lee%2C%20I%27m%20contacting%20you%20about%20propertyresearch.uk" target="_blank" rel="noopener" class="hover:text-white" aria-label="WhatsApp chat">
+                            <svg class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M13.601 2.326A7.854 7.854 0 0 0 8.003 0C3.58 0 .001 3.577 0 8a7.94 7.94 0 0 0 1.143 4.08L0 16l4.02-1.055A7.964 7.964 0 0 0 8.003 16c4.423 0 8-3.577 8-8 0-2.136-.832-4.146-2.399-5.674ZM8.003 14.5a6.5 6.5 0 0 1-3.317-.908l-.237-.14-2.387.626.637-2.327-.154-.24A6.5 6.5 0 1 1 8.003 14.5Zm3.566-4.844c-.194-.097-1.148-.567-1.326-.631-.177-.065-.307-.097-.437.097-.129.194-.501.63-.614.76-.113.129-.226.145-.42.048-.194-.097-.819-.302-1.56-.962-.576-.513-.964-1.146-1.077-1.34-.113-.194-.012-.299.085-.395.087-.086.194-.226.291-.339.097-.113.129-.194.194-.323.065-.129.032-.242-.016-.339-.048-.097-.437-1.052-.598-1.44-.157-.377-.317-.326-.437-.332l-.372-.006a.713.713 0 0 0-.517.242c-.178.194-.679.663-.679 1.617 0 .954.695 1.876.792 2.005.097.129 1.37 2.092 3.32 2.932.464.2.825.319 1.107.408.465.148.888.127 1.222.077.373-.056 1.148-.469 1.31-.923.162-.453.162-.841.113-.923-.048-.081-.177-.129-.371-.226Z"/></svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="font-semibold text-white">Property research</h2>
+                    <div class="mt-3 grid gap-2">
+                        <a href="{{ route('property.search') }}" class="hover:text-white">Property search</a>
+                        <a href="{{ route('epc.home') }}" class="hover:text-white">EPC records</a>
+                        <a href="{{ route('schools.index') }}" class="hover:text-white">Schools</a>
+                        <a href="{{ route('deprivation.index') }}" class="hover:text-white">Deprivation</a>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="font-semibold text-white">Market data</h2>
+                    <div class="mt-3 grid gap-2">
+                        <a href="{{ route('property.home') }}" class="hover:text-white">Transactions</a>
+                        <a href="{{ route('hpi.home') }}" class="hover:text-white">House prices</a>
+                        <a href="{{ route('rental.index') }}" class="hover:text-white">Rental market</a>
+                        <a href="{{ route('economic.dashboard') }}" class="hover:text-white">Economic indicators</a>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="font-semibold text-white">About and support</h2>
+                    <div class="mt-3 grid gap-2">
+                        <a href="{{ url('/about') }}" class="hover:text-white">About</a>
+                        <a href="{{ route('legal.data-sources') }}" class="hover:text-white">Data sources</a>
+                        <a href="{{ route('legal.index') }}" class="hover:text-white">Legal and support</a>
+                        <a href="{{ route('legal.privacy') }}" class="hover:text-white">Privacy</a>
+                    </div>
+                </div>
+            </div>
+            <div class="mx-auto mt-8 max-w-7xl border-t border-slate-800 pt-5 text-xs text-slate-500">&copy; {{ now()->year }} Lee Wisener · PropertyResearch.uk</div>
         </footer>
     </div>
 

@@ -6,7 +6,7 @@ use Tests\TestCase;
 
 class ImageDimensionAttributesTest extends TestCase
 {
-    public function test_home_page_images_include_intrinsic_dimensions(): void
+    public function test_home_page_hero_renders_the_house_data_illustration_with_intrinsic_dimensions(): void
     {
         $renderedHome = view('pages.home', [
             'posts' => collect(),
