@@ -1,26 +1,28 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-7xl mx-auto p-6 space-y-8">
     {{-- Hero / summary card --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
-        @include('partials.hero-background')
-        <div class="max-w-3xl">
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+      <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+        <div class="max-w-4xl">
             <div>
-                <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">Stamp Duty & Land Taxes Calculator</h1>
-                <p class="mt-2 text-sm leading-6 text-gray-700">Calculate <strong>SDLT</strong> (England &amp; NI), <strong>LBTT</strong> (Scotland) and <strong>LTT</strong> (Wales), including first‑time buyer rules, second home / higher rates and SDLT non‑resident surcharge.</p>
+                <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Tools</p>
+                <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Stamp Duty & Land Taxes Calculator</h1>
+                <p class="mt-3 text-sm leading-6 text-gray-700">Calculate <strong>SDLT</strong> (England &amp; NI), <strong>LBTT</strong> (Scotland) and <strong>LTT</strong> (Wales), including first‑time buyer rules, second home / higher rates and SDLT non‑resident surcharge.</p>
             </div>
         </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('assets/images/site/sdlt.jpg') }}" alt="Stamp Duty" class="w-90 h-auto">
+        <div class="hidden justify-self-end md:block">
+            <img src="{{ asset('assets/images/site/sdlt.jpg') }}" alt="Stamp Duty" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
         </div>
+      </div>
     </section>
+<div class="mx-auto max-w-7xl space-y-8 px-4 py-8">
 
     {{-- Two-column layout: form (left) + results (right) --}}
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <section class="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {{-- Form panel --}}
         <div class="lg:col-span-1">
-            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <div class="rounded-sm border border-gray-200 bg-white p-6 shadow-sm">
                 <h2 class="text-lg font-medium text-gray-900 mb-4">Inputs</h2>
                 <form id="calc" class="space-y-5">
                     @csrf
@@ -61,14 +63,14 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="inner-button">Calculate</button>
+                    <button type="submit" class="inner-button bg-zinc-900! hover:bg-zinc-700!">Calculate</button>
                 </form>
             </div>
         </div>
 
         {{-- Results panel --}}
         <div class="lg:col-span-2">
-            <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <div class="rounded-sm border border-gray-200 bg-white p-6 shadow-sm">
                 <h2 class="text-lg font-medium text-gray-900 mb-4">Results</h2>
 
                 <div id="summary" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 hidden">
@@ -126,7 +128,7 @@
         </div>
 
         {{-- Notes --}}
-        <div class="lg:col-span-3 mt-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm text-sm text-gray-700">
+        <div class="rounded-sm border border-gray-200 bg-white p-5 text-sm text-gray-700 shadow-sm lg:col-span-3">
             <h3 class="font-medium text-gray-900 mb-2">Notes</h3>
             <ul class="list-disc ml-5 space-y-1">
                 <li>England &amp; NI: SDLT higher rates add <strong>+5%</strong> to the full price; non‑resident adds <strong>+2%</strong> (both cumulative).</li>

@@ -28,9 +28,8 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
     ];
 @endphp
 
-<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
-    <section class="relative z-0 flex flex-col items-center justify-between overflow-hidden rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm lg:flex-row">
-        @include('partials.hero-background')
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+      <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
         <div class="relative z-10 max-w-4xl">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Postcode Sector Insight Detail</p>
             <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Property Market Insights – {{ $sector }}</h1>
@@ -39,12 +38,14 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
             </p>
         </div>
 
-        <div class="relative z-10 mt-6 flex-shrink-0 lg:ml-8 lg:mt-0">
-            <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="w-90 h-auto">
+        <div class="hidden justify-self-end md:block">
+            <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
         </div>
+      </div>
     </section>
+<div class="mx-auto max-w-7xl px-4 py-8">
 
-    <section class="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between gap-3">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Current Insights</p>
@@ -55,7 +56,7 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
 
         <div class="mt-5 grid gap-4">
             @forelse ($insights as $insight)
-                <article class="rounded-xl border border-zinc-200 bg-zinc-50 p-5">
+                <article class="rounded-sm border border-zinc-200 bg-zinc-50 p-5">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <span class="{{ $insightBadgeClasses[$insight->insight_type] ?? 'border-zinc-200 bg-zinc-100 text-zinc-800' }} inline-flex items-center rounded-full border px-3 py-1 text-xs tracking-wide">
                             {{ $insightTypes[$insight->insight_type] ?? str_replace('_', ' ', $insight->insight_type) }}
@@ -69,32 +70,32 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
                     <p class="mt-4 text-sm leading-6 text-zinc-700">{{ $insight->insight_text }}</p>
                 </article>
             @empty
-                <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-5 py-6 text-sm text-zinc-600">
+                <div class="rounded-sm border border-dashed border-zinc-300 bg-zinc-50 px-5 py-6 text-sm text-zinc-600">
                     No current market insights are stored for {{ $sector }}.
                 </div>
             @endforelse
         </div>
     </section>
 
-    <section class="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section class="mt-8 rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Insight Trigger</p>
         <h2 class="mt-2 text-xl font-semibold text-zinc-900">Rolling 12-Month Price Change That Triggered Insight</h2>
 
         @if ($recentPriceChange)
             <div class="mt-5 grid gap-4 md:grid-cols-3">
-                <article class="rounded-xl border border-zinc-200 bg-zinc-50 p-5">
+                <article class="rounded-sm border border-zinc-200 bg-zinc-50 p-5">
                     <p class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Previous window median price</p>
                     <p class="mt-2 text-sm text-zinc-600">{{ $recentPriceChange['previous_label'] }}</p>
                     <p class="mt-1 text-2xl font-semibold text-zinc-900">£{{ number_format($recentPriceChange['previous_price']) }}</p>
                 </article>
 
-                <article class="rounded-xl border border-zinc-200 bg-zinc-50 p-5">
+                <article class="rounded-sm border border-zinc-200 bg-zinc-50 p-5">
                     <p class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Current window median price</p>
                     <p class="mt-2 text-sm text-zinc-600">{{ $recentPriceChange['current_label'] }}</p>
                     <p class="mt-1 text-2xl font-semibold text-zinc-900">£{{ number_format($recentPriceChange['current_price']) }}</p>
                 </article>
 
-                <article class="rounded-xl border border-zinc-200 bg-zinc-50 p-5">
+                <article class="rounded-sm border border-zinc-200 bg-zinc-50 p-5">
                     <p class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Percentage change</p>
                     <p class="mt-2 text-sm text-zinc-600">{{ $recentPriceChange['previous_label'] }} vs {{ $recentPriceChange['current_label'] }}</p>
                     <p class="mt-1 text-2xl font-semibold {{ $recentPriceChange['growth'] >= 0 ? 'text-lime-700' : 'text-rose-600' }}">
@@ -103,7 +104,7 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
                 </article>
             </div>
         @else
-            <div class="mt-5 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-5 py-6 text-sm text-zinc-600">
+            <div class="mt-5 rounded-sm border border-dashed border-zinc-300 bg-zinc-50 px-5 py-6 text-sm text-zinc-600">
                 Not enough yearly median price history is available for {{ $sector }} to calculate a recent price comparison.
             </div>
         @endif
@@ -114,8 +115,8 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
         </div>
     </section>
 
-    <section class="mt-6 grid gap-6 lg:grid-cols-2">
-        <article class="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+    <section class="mt-8 grid gap-6 lg:grid-cols-2">
+        <article class="min-w-0 rounded-sm border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Rolling 12-Month Chart</p>
             <h2 class="mt-2 text-xl font-semibold text-zinc-900">Rolling 12-Month Sales</h2>
             <p class="mt-1 text-sm text-gray-500">
@@ -127,7 +128,7 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
             </div>
         </article>
 
-        <article class="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+        <article class="min-w-0 rounded-sm border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Rolling 12-Month Chart</p>
             <h2 class="mt-2 text-xl font-semibold text-zinc-900">Rolling 12-Month Median Price</h2>
             <p class="mt-1 text-sm text-gray-500">
@@ -140,8 +141,8 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
         </article>
     </section>
 
-    <section class="mt-6 grid gap-6 lg:grid-cols-2">
-        <article class="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+    <section class="mt-8 grid gap-6 lg:grid-cols-2">
+        <article class="min-w-0 rounded-sm border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Historical Chart</p>
             <h2 class="mt-2 text-xl font-semibold text-zinc-900">Sales per year</h2>
             <div class="mt-5 h-64 min-w-0 sm:h-72">
@@ -149,7 +150,7 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
             </div>
         </article>
 
-        <article class="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+        <article class="min-w-0 rounded-sm border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Historical Chart</p>
             <h2 class="mt-2 text-xl font-semibold text-zinc-900">Median price per year</h2>
             <div class="mt-5 h-64 min-w-0 sm:h-72">
@@ -158,12 +159,12 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
         </article>
     </section>
 
-    <section class="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section class="mt-8 rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Historical Data - Complete years only</p>
         <h2 class="mt-2 text-xl font-semibold text-zinc-900">Land Registry yearly summary</h2>
 
         @if ($historyRows->isEmpty())
-            <div class="mt-5 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-5 py-6 text-sm text-zinc-600">
+            <div class="mt-5 rounded-sm border border-dashed border-zinc-300 bg-zinc-50 px-5 py-6 text-sm text-zinc-600">
                 No Land Registry transaction history is available for {{ $sector }} yet.
             </div>
         @else
@@ -244,7 +245,7 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
                 backgroundColor: 'rgba(163, 230, 53, 0.18)',
                 borderWidth: 3,
                 tension: 0.25,
-                fill: true,
+                fill: false,
             }],
         },
         options: sharedChartOptions,
@@ -260,7 +261,7 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
                 backgroundColor: 'rgba(13, 148, 136, 0.16)',
                 borderWidth: 3,
                 tension: 0.25,
-                fill: true,
+                fill: false,
             }],
         },
         options: {
@@ -288,7 +289,7 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
                 backgroundColor: 'rgba(132, 204, 22, 0.18)',
                 borderWidth: 3,
                 tension: 0.25,
-                fill: true,
+                fill: false,
             }],
         },
         options: sharedChartOptions,
@@ -304,7 +305,7 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
                 backgroundColor: 'rgba(14, 165, 233, 0.18)',
                 borderWidth: 3,
                 tension: 0.25,
-                fill: true,
+                fill: false,
             }],
         },
         options: {

@@ -4,13 +4,12 @@
 @section('title', 'Mortgage arrears — MLAR')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
-
     {{-- HERO SECTION: Overview of mortgage arrears data --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
-        @include('partials.hero-background')
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+      <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
         <div class="max-w-3xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">
+            <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Market indicator</p>
+            <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">
                 Mortgage arrears (MLAR)
             </h1>
             <p class="mt-2 text-sm leading-6 text-gray-700">
@@ -26,18 +25,20 @@
         </div>
 
         {{-- Hero image --}}
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
+        <div class="hidden justify-self-end md:block">
             <img src="{{ asset('assets/images/site/arrears.jpg') }}" 
                  alt="Mortgage Arrears" 
-                 class="w-90 h-auto">
+                 class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
         </div>
+      </div>
     </section>
+<div class="mx-auto max-w-7xl space-y-8 px-4 py-8 md:py-10">
 
     {{-- MAIN CONTENT: Explainer, latest snapshot, and chart --}}
     <div class="grid md:grid-cols-[2fr,3fr] gap-6">
         
         {{-- COLLAPSIBLE EXPLAINER: How to read this indicator --}}
-        <div class="border border-zinc-200 rounded-lg bg-white">
+        <div class="rounded-sm border border-zinc-200 bg-white">
             <button type="button" 
                     class="w-full flex items-center justify-between px-4 py-3 text-left" 
                     onclick="document.getElementById('arrearsExplainer').classList.toggle('hidden'); this.querySelector('[data-chevron]').classList.toggle('rotate-180');">
@@ -68,7 +69,7 @@
         <div class="space-y-4">
             {{-- Latest quarter snapshot cards --}}
             @if($latestValues && $latestValues->count())
-                <div class="border border-zinc-200 rounded-lg bg-white p-4">
+                <div class="rounded-sm border border-zinc-200 bg-white p-4">
                     <div class="flex items-baseline justify-between gap-4 mb-3">
                         <h2 class="text-sm font-semibold text-zinc-800">
                             Latest quarter snapshot
@@ -94,7 +95,7 @@
             @endif
 
             {{-- Arrears over time chart --}}
-            <div class="border border-zinc-200 rounded-lg bg-white p-4">
+            <div class="rounded-sm border border-zinc-200 bg-white p-4">
                 <div class="flex items-center justify-between mb-3">
                     <h2 class="font-semibold text-zinc-800">Arrears over time - <span class="text-zinc-400 text-sm font-normal">Hover over lines to see more data.</span></h2>
                     @if($periods && $periods->count())
@@ -114,7 +115,7 @@
     </div>
 
     {{-- FULL HISTORY: Collapsible tables showing complete time series --}}
-    <div class="border border-zinc-200 rounded-lg bg-white p-4">
+    <div class="rounded-sm border border-zinc-200 bg-white p-4">
         <button type="button"
                 class="w-full flex items-center justify-between text-left gap-4"
                 onclick="document.getElementById('arrearsHistoryPanel').classList.toggle('hidden'); this.querySelector('[data-chevron-history]').classList.toggle('rotate-180');">
@@ -162,7 +163,7 @@
                         @continue
                     @endif
 
-                    <div class="border border-zinc-200 rounded-lg bg-zinc-50 overflow-hidden">
+                    <div class="overflow-hidden rounded-sm border border-zinc-200 bg-zinc-50">
                         <div class="px-4 py-3 border-b border-zinc-100 flex items-center justify-between">
                             <h3 class="text-sm font-semibold text-zinc-800">
                                 {{ $bandDescription }}

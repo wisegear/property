@@ -1,8 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mx-auto max-w-7xl px-4 py-8 md:py-12">
-
     {{-- HERO SECTION: Summary of latest Bank Rate --}}
     @php
         // Sort rates chronologically and get first/last entries
@@ -11,10 +9,11 @@
         $first  = $sorted->first();
     @endphp
 
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
-        @include('partials.hero-background')
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+      <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
         <div class="max-w-3xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">
+            <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Market indicator</p>
+            <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">
                 UK Bank Rate (BoE)
             </h1>
             
@@ -39,12 +38,14 @@
         </div>
         
         {{-- Hero image --}}
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
+        <div class="hidden justify-self-end md:block">
             <img src="{{ asset('assets/images/site/boe_rates.jpg') }}" 
                  alt="Bank Rate" 
-                 class="w-90 h-auto">
+                 class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
         </div>
+      </div>
     </section>
+<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
 
     {{-- PREPARE CHART DATA --}}
     @php
@@ -88,7 +89,7 @@
 
     {{-- MAIN CHART: Line chart showing Bank Rate over time --}}
     <section class="mb-6">
-        <div class="border p-4 bg-white rounded-lg shadow">
+        <div class="rounded-sm border bg-white p-4 shadow">
             <div class="mb-2 text-sm font-medium text-gray-700">
                 Bank Rate over time (hover over line for more detail)
             </div>
@@ -105,7 +106,7 @@
 
     {{-- RATE SPIKE HIGHLIGHTS: Collapsible panel explaining major rate movements --}}
     <section class="mb-6">
-        <details class="group rounded-lg border border-zinc-200 bg-white shadow-sm">
+        <details class="group rounded-sm border border-zinc-200 bg-white shadow-sm">
             <summary class="cursor-pointer px-5 py-3 text-sm font-medium text-orange-500 flex items-center justify-between">
                 Rate spike highlights
                 <span class="text-xs text-lime-600 ml-3 group-open:hidden">Show</span>
@@ -275,7 +276,7 @@
     {{-- SUMMARY CARDS: Key statistics at a glance --}}
     <section class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         {{-- Highest rate card --}}
-        <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <div class="rounded-sm border border-gray-200 bg-white p-5 shadow-sm">
             <div class="text-xs uppercase tracking-wide text-gray-500">Highest recorded</div>
             <div class="mt-1 text-2xl font-semibold">
                 {{ number_format((float) $maxRate, 2) }}%
@@ -288,7 +289,7 @@
         </div>
 
         {{-- Lowest rate card --}}
-        <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <div class="rounded-sm border border-gray-200 bg-white p-5 shadow-sm">
             <div class="text-xs uppercase tracking-wide text-gray-500">Lowest recorded</div>
             <div class="mt-1 text-2xl font-semibold">
                 {{ number_format((float) $minRate, 2) }}%
@@ -301,7 +302,7 @@
         </div>
 
         {{-- Last change card with color coding (red=up, green=down) --}}
-        <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <div class="rounded-sm border border-gray-200 bg-white p-5 shadow-sm">
             <div class="text-xs uppercase tracking-wide text-gray-500">Last change</div>
             @if(!is_null($lastChangeDir) && !is_null($lastChangeDelta))
                 <div class="mt-1 text-2xl font-semibold {{ $lastChangeDir === 'up' ? 'text-red-500' : ($lastChangeDir === 'down' ? 'text-lime-600' : 'text-zinc-900') }}">
@@ -327,7 +328,7 @@
 
     {{-- MOVEMENT STATISTICS: Summary of all rate changes and streaks --}}
     <section class="mb-6">
-        <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <div class="rounded-sm border border-gray-200 bg-white p-5 shadow-sm">
             <div class="text-sm text-gray-800">
                 <p>
                     Since records began there have been <span class="font-semibold">{{ number_format($totalMoves) }}</span> rate movements —

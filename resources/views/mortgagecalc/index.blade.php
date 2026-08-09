@@ -2,25 +2,26 @@
 @include('partials.chartjs-head')
 
 @section('content')
-<div class="mx-auto max-w-7xl px-4 py-10 md:py-12">
     {{-- Hero / summary card --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
-        @include('partials.hero-background')
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+      <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
         <div class="max-w-4xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">Mortgage Calculator</h1>
-            <p class="mt-2 text-sm leading-6 text-gray-700">
+            <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Tools</p>
+            <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Mortgage Calculator</h1>
+            <p class="mt-3 text-sm leading-6 text-gray-700">
                 <span class="text-zinc-600">Calculate mortgage payments for repayment and interest only mortgages.  Select term, interest rate and get information that factors
                     in a lender stress rate to see the potential impact on payments.  You can also add an annual overpayment amount to see how it affects your mortgage.</span><br>
-                </span>
             </p>
         </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('assets/images/site/calculator.jpg') }}" alt="Mortgage-Caclulator" class="w-90 h-auto">
+        <div class="hidden justify-self-end md:block">
+            <img src="{{ asset('assets/images/site/calculator.jpg') }}" alt="Mortgage calculator" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
         </div>
-</section>    
+      </div>
+    </section>
+<div class="mx-auto max-w-7xl px-4 py-8">
 
     {{-- Calculator form panel --}}
-    <section class="rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8">
+    <section class="mb-8 rounded-sm border border-gray-200 bg-white/80 p-6 shadow-sm md:p-8">
         <h2 class="text-xl font-semibold text-gray-900 mb-4">Calculate Your Mortgage</h2>
         <form method="POST" action="{{ route('mortgagecalc.index') }}" class="space-y-4">
             @csrf
@@ -52,7 +53,7 @@
             </div>
 
             <div>
-                <button type="submit" class="inner-button">
+                <button type="submit" class="inner-button bg-zinc-900! hover:bg-zinc-700!">
                     Calculate
                 </button>
             </div>
@@ -62,7 +63,7 @@
     <!-- Form results -->
     <div class="">
 @if(!empty($result))
-<section class="rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm">
+<section class="rounded-sm border border-gray-200 bg-white/80 p-6 shadow-sm md:p-8">
   <h3 class="text-lg font-semibold text-gray-900">Results</h3>
   <p class="text-sm text-zinc-500 mb-6">The results below show payment for both a repayment and interest only mortgage with charts demonstrating how the mortgage is paid off,
     or not if interest only.  Many mortgage lenders still use a stress rate in their affordability calculations, the bottom panel shows what the impact would be if a stress rate of
@@ -71,7 +72,7 @@
   </p>
 
   {{-- Input summary --}}
-  <div class="grid sm:grid-cols-3 gap-4 text-sm mb-6 border rounded-lg p-4 text-center">
+  <div class="mb-6 grid gap-4 rounded-sm border p-4 text-center text-sm sm:grid-cols-3">
     <div class="flex flex-col items-center">
       <div class="text-gray-500">Amount</div>
       <div class="font-medium">£{{ number_format($result['amount']) }}</div>
@@ -88,7 +89,7 @@
 
   <div class="grid md:grid-cols-2 gap-6">
     {{-- Repayment panel --}}
-    <div class="rounded-lg border border-gray-200 bg-white p-5">
+    <div class="rounded-sm border border-gray-200 bg-white p-5">
       <h4 class="text-base font-semibold text-gray-900 mb-3">Repayment Mortgage</h4>
       <dl class="grid grid-cols-3 gap-3 text-sm">
         <div>
@@ -124,7 +125,7 @@
     </div>
 
     {{-- Interest-only panel --}}
-    <div class="rounded-lg border border-gray-200 bg-white p-5">
+    <div class="rounded-sm border border-gray-200 bg-white p-5">
       <h4 class="text-base font-semibold text-gray-900 mb-3">Interest-Only Mortgage</h4>
       <dl class="grid grid-cols-3 gap-3 text-sm">
         <div>
@@ -161,7 +162,7 @@
     </div>
   </div>
   @if(!empty($result['overpayment_impact']))
-  <div class="mt-6 rounded-lg border border-lime-300 bg-lime-50/60 p-5">
+  <div class="mt-6 rounded-sm border border-lime-300 bg-lime-50/60 p-5">
     <h4 class="text-base font-semibold text-gray-900 mb-2">Annual Overpayment Impact</h4>
     <p class="text-sm text-zinc-700">
       This compares repayment and interest-only schedules with a yearly overpayment of
@@ -169,19 +170,19 @@
     </p>
     <h5 class="mt-4 text-sm font-medium text-gray-700">Repayment Mortgage</h5>
     <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-      <div class="rounded-lg border border-lime-200 bg-white p-4">
+      <div class="rounded-sm border border-lime-200 bg-white p-4">
         <div class="text-gray-500">Time saved</div>
         <div class="mt-1 font-medium">{{ $result['overpayment_impact']['repayment']['time_saved_label'] }}</div>
       </div>
-      <div class="rounded-lg border border-lime-200 bg-white p-4">
+      <div class="rounded-sm border border-lime-200 bg-white p-4">
         <div class="text-gray-500">Interest saved</div>
         <div class="mt-1 font-medium">£{{ number_format($result['overpayment_impact']['repayment']['interest_saved'], 2) }}</div>
       </div>
-      <div class="rounded-lg border border-lime-200 bg-white p-4">
+      <div class="rounded-sm border border-lime-200 bg-white p-4">
         <div class="text-gray-500">New estimated mortgage length</div>
         <div class="mt-1 font-medium">{{ $result['overpayment_impact']['repayment']['new_term_label'] }}</div>
       </div>
-      <div class="rounded-lg border border-lime-200 bg-white p-4">
+      <div class="rounded-sm border border-lime-200 bg-white p-4">
         <div class="text-gray-500">Total interest with overpayments</div>
         <div class="mt-1 font-medium">£{{ number_format($result['overpayment_impact']['repayment']['total_interest'], 2) }}</div>
       </div>
@@ -189,19 +190,19 @@
 
     <h5 class="mt-5 text-sm font-medium text-gray-700">Interest-Only Mortgage</h5>
     <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-      <div class="rounded-lg border border-lime-200 bg-white p-4">
+      <div class="rounded-sm border border-lime-200 bg-white p-4">
         <div class="text-gray-500">Time saved</div>
         <div class="mt-1 font-medium">{{ $result['overpayment_impact']['interest_only']['time_saved_label'] }}</div>
       </div>
-      <div class="rounded-lg border border-lime-200 bg-white p-4">
+      <div class="rounded-sm border border-lime-200 bg-white p-4">
         <div class="text-gray-500">Interest saved</div>
         <div class="mt-1 font-medium">£{{ number_format($result['overpayment_impact']['interest_only']['interest_saved'], 2) }}</div>
       </div>
-      <div class="rounded-lg border border-lime-200 bg-white p-4">
+      <div class="rounded-sm border border-lime-200 bg-white p-4">
         <div class="text-gray-500">New estimated mortgage length</div>
         <div class="mt-1 font-medium">{{ $result['overpayment_impact']['interest_only']['new_term_label'] }}</div>
       </div>
-      <div class="rounded-lg border border-lime-200 bg-white p-4">
+      <div class="rounded-sm border border-lime-200 bg-white p-4">
         <div class="text-gray-500">Total interest with overpayments</div>
         <div class="mt-1 font-medium">£{{ number_format($result['overpayment_impact']['interest_only']['total_interest'], 2) }}</div>
       </div>
@@ -209,7 +210,7 @@
   </div>
   @endif
   <!-- Stress rate impact -->
-  <div class="text-smmt-8 rounded-lg border border-rose-600 p-5 mt-6">
+  <div class="mt-6 rounded-sm border border-rose-600 p-5 text-sm">
     <h4 class="text-base font-semibold text-rose-600 mb-2">Stress Rate Impact</h4>
     <p class="text-sm text-zinc-700">
       Some lenders assess affordability by <em>stressing</em> the interest rate. Using a stress rate of

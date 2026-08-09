@@ -165,6 +165,8 @@ class EconomicDashboardTest extends TestCase
 
         $response->assertOk();
         $response->assertDontSee('sticky top-0 z-40 backdrop-blur-sm bg-white/95', false);
+        $response->assertSee('-mx-6 -mt-6', false);
+        $response->assertSee('rounded-sm border border-zinc-200', false);
 
         $sparklines = $response->viewData('sparklines');
         $approvals = $response->viewData('approvals');

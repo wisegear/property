@@ -3,13 +3,13 @@
 @section('title', 'Deprivation — IMD (England) · SIMD (Scotland) · WIMD (Wales) · NIMDM (N. Ireland)')
 
 @section('content')
-<div class="max-w-7xl mx-auto p-6 space-y-8">
   {{-- Hero / summary card --}}
-  <section class="relative z-0 overflow-hidden rounded border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-4 flex flex-col md:flex-row justify-between items-center">
-      @include('partials.hero-background')
+  <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+    <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
     <div class="max-w-4xl">
-      <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-600">Deprivation Index</h1>
-      <p class="mt-2 text-sm leading-6 text-gray-700">
+      <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Local Research</p>
+      <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Deprivation Index</h1>
+      <p class="mt-3 text-sm leading-6 text-gray-700">
         Quick view of the most and least deprived areas using <strong>IMD 2025</strong> (England), <strong>SIMD 2020</strong> (Scotland), <strong>WIMD 2019</strong> (Wales) and <strong>NIMDM 2017</strong> (Northern Ireland). 
         Use the postcode box to jump straight to a specific place (England / Scotland / Wales).  Northern Ireland is not available by postcode search due to no free matching file being available.  There is a new search by area 
         option below for Northern Ireland.
@@ -29,28 +29,30 @@
         <span class="inline-block align-middle rounded px-1.5 py-0.5 text-[11px] bg-emerald-300 text-zinc-900">8–10</span> lower deprivation.
       </p>
     </div>
-    <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-      <img src="{{ asset('assets/images/site/deprivation.jpg') }}" alt="Deprivation Dashboard" class="w-90 h-auto">
+    <div class="hidden justify-self-end md:block">
+      <img src="{{ asset('assets/images/site/deprivation.jpg') }}" alt="Deprivation Dashboard" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
+    </div>
     </div>
   </section>
+<div class="mx-auto max-w-7xl space-y-8 px-4 py-8">
 
   {{-- Postcode + NI search --}}
   @if(session('status'))
     <div class="rounded border border-amber-200 bg-amber-50 text-amber-800 px-4 py-2 text-sm">{{ session('status') }}</div>
   @endif
 
-  <div class="flex flex-col items-center justify-center my-6">
+  <div class="flex flex-col items-center justify-center">
     <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-10">
       {{-- GB postcode search --}}
       <form method="get" class="h-full">
-        <div class="w-full border p-6 bg-white rounded h-full flex flex-col justify-center gap-3">
+        <div class="flex h-full w-full flex-col justify-center gap-3 rounded-sm border bg-white p-6">
           <p class="text-xs text-gray-600 -mt-2 mb-2 w-full">
             Postcode can be in England, Scotland or Wales (<span class="text-rose-500">not NI</span>).
           </p>
           <div class="flex flex-row items-center gap-2 w-full">
             <input name="postcode" value="{{ request('postcode') }}" placeholder="Enter postcode (e.g. SW1A 1AA)"
                    class="flex-grow h-10 rounded border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-lime-500 focus:border-lime-500" />
-            <button class="inner-button">
+            <button class="inner-button bg-zinc-900! hover:bg-zinc-700!">
               Search
             </button>
           </div>
@@ -58,7 +60,7 @@
       </form>
 
       {{-- Northern Ireland area search (no postcode) --}}
-      <section class="w-full border p-6 bg-white rounded h-full flex flex-col justify-center gap-3">
+      <section class="flex h-full w-full flex-col justify-center gap-3 rounded-sm border bg-white p-6">
         <p class="text-xs text-gray-600 -mt-2 mb-2 w-full">
           Northern Ireland does not support postcode search. Start typing a Small Area or council name instead.  Result names are limited to what is contained with the NI Index.
         </p>
@@ -104,7 +106,7 @@
   <div class="space-y-8">
 
     {{-- England (IMD) --}}
-    <section class="rounded border border-gray-200 bg-white/80 p-6 shadow-sm">
+    <section class="rounded-sm border border-gray-200 bg-white/80 p-6 shadow-sm">
       <h2 class="text-lg font-semibold text-gray-900">England — IMD 2025</h2>
       <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
         {{-- Least deprived (Top 10 by rank desc) --}}
@@ -219,7 +221,7 @@
     </section>
 
     {{-- Scotland (SIMD) --}}
-    <section class="rounded border border-gray-200 bg-white/80 p-6 shadow-sm">
+    <section class="rounded-sm border border-gray-200 bg-white/80 p-6 shadow-sm">
       <h2 class="text-lg font-semibold text-gray-900">Scotland — SIMD 2020</h2>
       <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
         {{-- Least deprived --}}
@@ -334,7 +336,7 @@
     </section>
 
     {{-- Wales (WIMD) --}}
-    <section class="rounded border border-gray-200 bg-white/80 p-6 shadow-sm">
+    <section class="rounded-sm border border-gray-200 bg-white/80 p-6 shadow-sm">
       <h2 class="text-lg font-semibold text-gray-900">Wales — WIMD 2019</h2>
       <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
         {{-- Least deprived (Top 10 by rank desc) --}}
@@ -449,7 +451,7 @@
     </section>
 
     {{-- Northern Ireland (NIMDM) --}}
-    <section class="rounded border border-gray-200 bg-white/80 p-6 shadow-sm">
+    <section class="rounded-sm border border-gray-200 bg-white/80 p-6 shadow-sm">
       <h2 class="text-lg font-semibold text-gray-900">Northern Ireland — NIMDM 2017</h2>
       <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
         {{-- Least deprived (Top 10 by rank desc) --}}

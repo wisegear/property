@@ -122,16 +122,11 @@
         ->all();
 @endphp
 
-<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
-    <section class="relative z-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-8">
-        @include('partials.hero-background')
-        <div class="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+        <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
             <div>
-                <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
-                    <span class="h-2 w-2 rounded-full bg-lime-500"></span>
-                    Insights
-                </div>
-                <h1 class="mt-4 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">UK Swap Rates Today</h1>
+                <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Insights</p>
+                <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">UK Swap Rates Today</h1>
                 <p class="mt-4 max-w-3xl text-sm leading-6 text-zinc-600">
                     Track the latest UK 2-year, 5-year and 10-year SONIA swap rates and see what recent wholesale moves may mean for fixed mortgage pricing.
                 </p>
@@ -148,20 +143,21 @@
                     </span>
                 </div>
             </div>
-            <div class="relative z-10 mt-2 flex justify-center lg:mt-0 lg:justify-end">
-                <div class="w-90 overflow-hidden rounded-2xl">
+            <div class="hidden justify-self-end md:block">
+                <div class="overflow-hidden">
                     <img
                         src="{{ asset('assets/images/site/swap-rates.jpg') }}"
                         alt="UK swap rates illustration"
-                        class="h-auto w-full"
+                        class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]"
                     >
                 </div>
             </div>
         </div>
     </section>
+<div class="mx-auto max-w-7xl px-4 py-8">
 
-    <section class="mt-8">
-        <article class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section>
+        <article class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Mortgage Market Summary</p>
                 <div class="mt-3 flex flex-wrap items-center gap-3">
@@ -184,7 +180,7 @@
                         $snapshot = $termSnapshots[$term] ?? null;
                         $range = $rateRanges[$term] ?? null;
                     @endphp
-                    <article class="rounded-xl border border-zinc-200 bg-zinc-50/60 p-5">
+                    <article class="rounded-sm border border-zinc-200 bg-zinc-50/60 p-5">
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">{{ $title }}</p>
@@ -235,8 +231,8 @@
         </article>
     </section>
 
-    <section class="mt-6 grid gap-6 lg:grid-cols-2">
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section class="mt-8 grid gap-6 lg:grid-cols-2">
+        <article class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Mortgage Context</p>
             <h2 class="mt-2 text-xl font-semibold text-zinc-900">What this means for mortgages</h2>
             <div class="mt-4 space-y-4 text-sm leading-7 text-zinc-600">
@@ -247,7 +243,7 @@
             </div>
         </article>
 
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Understanding Swaps</p>
             <h2 class="mt-2 text-xl font-semibold text-zinc-900">Why swap rates matter before Bank Rate moves</h2>
             <div class="mt-4 space-y-4 text-sm leading-7 text-zinc-600">
@@ -259,7 +255,7 @@
     </section>
 
     <section class="mt-8">
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Main Chart</p>
@@ -285,8 +281,8 @@
         </article>
     </section>
 
-    <section class="mt-6">
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section class="mt-8">
+        <article class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Comparison</p>
@@ -300,15 +296,15 @@
                     <canvas id="bank-rate-vs-swaps-chart" class="block h-full w-full max-w-full"></canvas>
                 </div>
             @else
-                <div class="mt-6 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-600">
+                <div class="mt-6 rounded-sm border border-dashed border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-600">
                     Bank Rate comparison data is not available yet.
                 </div>
             @endif
         </article>
     </section>
 
-    <section class="mt-6">
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section class="mt-8">
+        <article class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Current Rates</p>
                 <h2 class="mt-2 text-xl font-semibold text-zinc-900">Current UK Swap Rates</h2>
@@ -341,24 +337,24 @@
         </article>
     </section>
 
-    <section class="mt-6">
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section class="mt-8">
+        <article class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">FAQ</p>
             <h2 class="mt-2 text-xl font-semibold text-zinc-900">Swap rate questions</h2>
             <div class="mt-5 grid gap-5 lg:grid-cols-2">
-                <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                <div class="rounded-sm border border-zinc-200 bg-zinc-50 p-4">
                     <h3 class="text-base font-semibold text-zinc-900">What are swap rates?</h3>
                     <p class="mt-2 text-sm leading-7 text-zinc-600">Swap rates are wholesale market interest rates that help lenders judge the cost of offering fixed-rate lending over different time periods.</p>
                 </div>
-                <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                <div class="rounded-sm border border-zinc-200 bg-zinc-50 p-4">
                     <h3 class="text-base font-semibold text-zinc-900">Why do swap rates matter for mortgages?</h3>
                     <p class="mt-2 text-sm leading-7 text-zinc-600">They are one of the main market inputs behind fixed mortgage pricing, so sustained moves in swaps can influence whether lenders cut, hold or raise deals.</p>
                 </div>
-                <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                <div class="rounded-sm border border-zinc-200 bg-zinc-50 p-4">
                     <h3 class="text-base font-semibold text-zinc-900">Do mortgage rates change immediately when swap rates move?</h3>
                     <p class="mt-2 text-sm leading-7 text-zinc-600">Not always. Lenders also consider margins, competition, funding costs and risk before changing mortgage pricing.</p>
                 </div>
-                <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                <div class="rounded-sm border border-zinc-200 bg-zinc-50 p-4">
                     <h3 class="text-base font-semibold text-zinc-900">What is the difference between Bank Rate and swap rates?</h3>
                     <p class="mt-2 text-sm leading-7 text-zinc-600">Bank Rate is the official rate set by the Bank of England. Swap rates reflect market expectations for future rates and tend to matter more for fixed mortgages.</p>
                 </div>
@@ -366,20 +362,20 @@
         </article>
     </section>
 
-    <section class="mt-6">
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section class="mt-8">
+        <article class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Explore The Wider Market</p>
             <h2 class="mt-2 text-xl font-semibold text-zinc-900">Explore the wider market</h2>
             <p class="mt-3 max-w-3xl text-sm leading-7 text-zinc-600">
                 Swap rates are one part of the mortgage picture. You can also explore Bank Rate, mortgage approvals, house prices and local property data across PropertyResearch.
             </p>
             <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <a href="{{ route('mortgagecalc.index') }}" class="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 transition hover:border-lime-300 hover:text-lime-700">Mortgage calculator</a>
-                <a href="{{ route('interest.home') }}" class="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 transition hover:border-lime-300 hover:text-lime-700">Interest rates and Bank Rate</a>
-                <a href="{{ route('mortgages.home') }}" class="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 transition hover:border-lime-300 hover:text-lime-700">Mortgage approvals</a>
-                <a href="{{ route('hpi.home') }}" class="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 transition hover:border-lime-300 hover:text-lime-700">House Price Index</a>
-                <a href="{{ route('economic.dashboard') }}" class="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 transition hover:border-lime-300 hover:text-lime-700">Market Stress Dashboard</a>
-                <a href="{{ route('property.search') }}" class="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 transition hover:border-lime-300 hover:text-lime-700">Property and postcode search</a>
+                <a href="{{ route('mortgagecalc.index') }}" class="rounded-sm border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 transition hover:border-lime-300 hover:text-lime-700">Mortgage calculator</a>
+                <a href="{{ route('interest.home') }}" class="rounded-sm border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 transition hover:border-lime-300 hover:text-lime-700">Interest rates and Bank Rate</a>
+                <a href="{{ route('mortgages.home') }}" class="rounded-sm border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 transition hover:border-lime-300 hover:text-lime-700">Mortgage approvals</a>
+                <a href="{{ route('hpi.home') }}" class="rounded-sm border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 transition hover:border-lime-300 hover:text-lime-700">House Price Index</a>
+                <a href="{{ route('economic.dashboard') }}" class="rounded-sm border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 transition hover:border-lime-300 hover:text-lime-700">Market Stress Dashboard</a>
+                <a href="{{ route('property.search') }}" class="rounded-sm border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 transition hover:border-lime-300 hover:text-lime-700">Property and postcode search</a>
             </div>
         </article>
     </section>

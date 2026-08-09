@@ -155,7 +155,7 @@
                     @if(Auth::check())
                         <!-- User Dropdown Menu (when logged in) -->
                         <div class="relative">
-                            <button id="userMenuButton" 
+                            <button id="legacyUserMenuButton"
                                     class="flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2 cursor-pointer">
                                 {{ Auth::user()->name }}
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -164,7 +164,7 @@
                             </button>
 
                             <!-- Dropdown Menu Items -->
-                            <div id="userDropdown" 
+                            <div id="legacyUserDropdown"
                                  class="absolute right-0 mt-4 w-30 bg-white border border-slate-200 translate-x-4 rounded-xl shadow-lg z-50 hidden">
                                 <div>
                                     <a href="/profile/{{ Auth::user()->name_slug }}" 
@@ -555,11 +555,39 @@
 
                 <div class="flex shrink-0 items-center gap-3 text-xs text-zinc-500">
                     @auth
-                        <a href="/profile/{{ Auth::user()->name_slug }}" class="hover:text-zinc-900">{{ Auth::user()->name }}</a>
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit" class="cursor-pointer hover:text-zinc-900">Logout</button>
-                        </form>
+                        <div class="relative">
+                            <button
+                                id="userMenuButton"
+                                type="button"
+                                aria-haspopup="true"
+                                aria-controls="userDropdown"
+                                aria-expanded="false"
+                                class="flex cursor-pointer items-center gap-1 rounded-sm px-2 py-2 text-zinc-600 hover:text-zinc-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2"
+                            >
+                                {{ Auth::user()->name }}
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <div
+                                id="userDropdown"
+                                role="menu"
+                                aria-labelledby="userMenuButton"
+                                class="pointer-events-none absolute right-0 z-50 mt-3 hidden w-44 origin-top-right scale-95 rounded-sm border border-zinc-200 bg-white py-1 text-sm text-zinc-700 opacity-0 shadow-lg transition duration-150 ease-out"
+                            >
+                                <a href="/profile/{{ Auth::user()->name_slug }}" role="menuitem" class="block px-4 py-2 hover:bg-zinc-100 hover:text-zinc-900">Profile</a>
+                                <a href="/support" role="menuitem" class="block px-4 py-2 hover:bg-zinc-100 hover:text-zinc-900">Support</a>
+                                @can('Admin')
+                                    <a href="/admin" role="menuitem" class="block px-4 py-2 font-semibold text-orange-800 hover:bg-zinc-100">Admin</a>
+                                @endcan
+                                <div class="my-1 border-t border-zinc-100"></div>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" role="menuitem" class="w-full cursor-pointer px-4 py-2 text-left hover:bg-zinc-100 hover:text-zinc-900">Logout</button>
+                                </form>
+                            </div>
+                        </div>
                     @else
                         <a href="/login" class="hover:text-zinc-900">Login</a>
                         <a href="/register" class="hover:text-zinc-900">Register</a>

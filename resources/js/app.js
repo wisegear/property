@@ -61,10 +61,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     window._registerDropdownPair(button, dropdown);
 
+    const closeDropdown = () => {
+        window._animateClose(dropdown);
+        button.setAttribute('aria-expanded', 'false');
+    };
+
     // Close dropdown when clicking outside
     document.addEventListener('click', function (e) {
         if (!button.contains(e.target) && !dropdown.contains(e.target)) {
-            window._animateClose(dropdown);
+            closeDropdown();
         }
     });
 
@@ -76,9 +81,16 @@ document.addEventListener('DOMContentLoaded', function () {
           window._closeAllDropdownsExcept(dropdown);
           window._animateOpen(dropdown);
         } else {
-          window._animateClose(dropdown);
+          closeDropdown();
         }
         button.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && ! dropdown.classList.contains('hidden')) {
+            closeDropdown();
+            button.focus();
+        }
     });
 });
 

@@ -44,16 +44,11 @@
     ];
 @endphp
 
-<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
-    <section class="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-        @include('partials.hero-background')
-        <div class="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+        <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
             <div>
-                <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
-                    <span class="h-2 w-2 rounded-full bg-lime-500"></span>
-                    Insights / Crime / {{ $area }}
-                </div>
-                <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">{{ $area }} Crime Drilldown</h1>
+                <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Insights / Crime / {{ $area }}</p>
+                <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">{{ $area }} Crime Drilldown</h1>
                 <p class="mt-4 max-w-3xl text-sm leading-6 text-zinc-600">
                     How crime is changing and what is driving it in {{ $area }}.
                 </p>
@@ -61,25 +56,26 @@
                     <span class="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm font-medium">
                         Latest month: {{ $latest_month_label ?? 'No data' }}
                     </span>
-                    <a href="{{ route('insights.crime.index') }}" class="inline-flex items-center rounded-full border border-lime-200 bg-lime-50 px-4 py-2 text-sm font-semibold text-lime-800 transition hover:border-lime-300 hover:text-lime-700 hover:underline">
+                    <a href="{{ route('insights.crime.index') }}" class="inline-flex items-center rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900">
                         Back to national dashboard
                     </a>
                 </div>
             </div>
-            <div class="relative z-10 flex justify-center lg:justify-end">
-                <img src="{{ asset('/assets/images/site/crime.jpg') }}" alt="{{ $area }} crime trends" class="w-90 h-auto">
+            <div class="hidden justify-self-end md:block">
+                <img src="{{ asset('/assets/images/site/crime.jpg') }}" alt="{{ $area }} crime trends" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
             </div>
         </div>
     </section>
+<div class="mx-auto max-w-7xl px-4 py-8">
 
-    <section class="mt-8 grid gap-5 lg:grid-cols-3">
-        <article class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+    <section class="grid gap-5 lg:grid-cols-3">
+        <article class="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Total Crime</p>
             <p class="mt-3 text-3xl font-bold text-zinc-900">{{ number_format($summary['total_12m']) }}</p>
             <p class="mt-2 text-sm text-zinc-600">Latest 12 months</p>
         </article>
 
-        <article class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <article class="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
             <div class="flex items-start justify-between gap-3">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">YoY Change</p>
@@ -92,7 +88,7 @@
             </div>
         </article>
 
-        <article class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <article class="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
             <div class="flex items-start justify-between gap-3">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Last 3-Month Trend</p>
@@ -107,14 +103,14 @@
     </section>
 
     <section class="mt-8">
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">What&apos;s Driving Change</p>
             <h2 class="mt-2 text-xl font-semibold text-zinc-900">High level changes impacting crime figures regionally</h2>
             <p class="mt-3 text-sm text-zinc-700">
                 Crime is {{ $summary['pct_change'] >= 0 ? 'up' : 'down' }} {{ number_format(abs($drivers['overall_yoy']), 1) }}% in this area.
             </p>
             <div class="mt-5 grid gap-4 lg:grid-cols-2">
-                <div class="rounded-xl border border-red-200 bg-red-50 p-4">
+                <div class="rounded-sm border border-red-200 bg-red-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-red-700">Driven by</p>
                     <div class="mt-3 grid gap-2 text-sm text-zinc-700">
                         @forelse ($drivers['increases'] as $increase)
@@ -127,7 +123,7 @@
                         @endforelse
                     </div>
                 </div>
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <div class="rounded-sm border border-emerald-200 bg-emerald-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Offset by</p>
                     <div class="mt-3 grid gap-2 text-sm text-zinc-700">
                         @forelse ($drivers['decreases'] as $decrease)
@@ -145,7 +141,7 @@
     </section>
 
     <section class="mt-8">
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Crime Breakdown</p>
             <h2 class="mt-2 text-xl font-semibold text-zinc-900">Share of total crime (%)</h2>
             <div class="mt-6 h-80">
@@ -155,7 +151,7 @@
     </section>
 
     <section class="mt-8">
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Monthly Trend</p>
@@ -171,7 +167,7 @@
     </section>
 
     <section class="mt-8">
-        <article class="rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <article class="rounded-sm border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 px-6 py-5">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
@@ -262,7 +258,7 @@
                         data: areaChartData.current_year,
                         borderColor: '#2563eb',
                         backgroundColor: 'rgba(37, 99, 235, 0.12)',
-                        fill: true,
+                        fill: false,
                         borderWidth: 3,
                         tension: 0.28,
                     },
@@ -302,7 +298,7 @@
                     label: 'Share of total crime (%)',
                     data: sortedTypeBreakdown.map((item) => item.share_pct),
                     backgroundColor: ['#2563eb', '#0f766e', '#84cc16', '#f97316', '#dc2626', '#7c3aed'],
-                    borderRadius: 8,
+                    borderRadius: 0,
                 }],
             },
             options: {

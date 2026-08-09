@@ -67,16 +67,11 @@
     $tableCellClass = 'px-3 py-3 text-sm text-zinc-700 sm:px-4';
 @endphp
 
-<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
-    <section class="relative z-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-8">
-        @include('partials.hero-background')
-        <div class="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+        <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
             <div>
-                <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
-                    <span class="h-2 w-2 rounded-full bg-lime-500"></span>
-                    Insights Dashboard
-                </div>
-                <h1 class="mt-4 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">Housing Market Movement Dashboard</h1>
+                <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Insights dashboard</p>
+                <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Housing Market Movement Dashboard</h1>
                 <p class="mt-4 max-w-3xl text-sm leading-6 text-zinc-600">
                     This dashboard highlights the most significant movements in the England &amp; Wales housing market between two recent quarters using Land Registry transaction data. Counties are used to provide a localised view of market shifts, 
                     while national trends and property type movements offer broader context. The insights here are designed to help homeowners, buyers, and industry professionals understand 
@@ -91,7 +86,7 @@
                     </span>
                 </div>
                 <div class="mt-5">
-                    <a href="/insights" class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-400 hover:bg-zinc-100">
+                    <a href="/insights" class="inline-flex items-center gap-2 rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900">
                         View County Insights
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -99,15 +94,16 @@
                     </a>
                 </div>
             </div>
-            <div class="relative z-10 mt-2 flex justify-center lg:mt-0 lg:ml-8 lg:justify-end">
-                <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="w-90 h-auto">
+            <div class="hidden justify-self-end md:block">
+                <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
             </div>
         </div>
     </section>
+<div class="mx-auto max-w-7xl px-4 py-8">
 
-    <section class="mt-8 grid gap-5 md:grid-cols-2">
+    <section class="grid gap-5 md:grid-cols-2">
         @foreach ($metricCards as $index => $card)
-            <article class="min-w-0 overflow-hidden flex h-full flex-col rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <article class="flex h-full min-w-0 flex-col overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
                 <div class="flex items-center justify-between gap-4">
                     <div class="min-w-0">
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">{{ $card['title'] }}</p>
@@ -133,8 +129,8 @@
         @endforeach
     </section>
 
-    <section class="mt-6">
-        <article class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+    <section class="mt-8">
+        <article class="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
             <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Market Momentum</p>
@@ -156,7 +152,7 @@
     </section>
 
     <section class="mt-8 grid gap-6 xl:grid-cols-2">
-        <article class="min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">National Trend</p>
@@ -169,7 +165,7 @@
             </div>
         </article>
 
-        <article class="min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">National Trend</p>
@@ -183,8 +179,8 @@
         </article>
     </section>
 
-    <section class="mt-6">
-        <article class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+    <section class="mt-8">
+        <article class="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Market Breadth</p>
             <p class="mt-2 text-sm text-zinc-600">How widespread the recent market movements are across counties.</p>
 
@@ -233,7 +229,7 @@
     </section>
 
     <section class="mt-8 grid items-stretch gap-6 xl:grid-cols-2">
-        <article class="flex h-full flex-col rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <article class="flex h-full flex-col rounded-sm border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 px-6 py-5">
                 <h2 class="text-xl font-semibold text-zinc-900">Top Transaction Growth Counties</h2>
             </div>
@@ -263,7 +259,7 @@
             </div>
         </article>
 
-        <article class="flex h-full flex-col rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <article class="flex h-full flex-col rounded-sm border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 px-6 py-5">
                 <h2 class="text-xl font-semibold text-zinc-900">Top Transaction Decline Counties</h2>
             </div>
@@ -294,8 +290,8 @@
         </article>
     </section>
 
-    <section class="mt-6 grid items-stretch gap-6 xl:grid-cols-2">
-        <article class="flex h-full flex-col rounded-xl border border-zinc-200 bg-white shadow-sm">
+    <section class="mt-8 grid items-stretch gap-6 xl:grid-cols-2">
+        <article class="flex h-full flex-col rounded-sm border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 px-6 py-5">
                 <h2 class="text-xl font-semibold text-zinc-900">Top Price Growth Counties</h2>
             </div>
@@ -325,7 +321,7 @@
             </div>
         </article>
 
-        <article class="flex h-full flex-col rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <article class="flex h-full flex-col rounded-sm border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 px-6 py-5">
                 <h2 class="text-xl font-semibold text-zinc-900">Top Price Decline Counties</h2>
             </div>
@@ -357,7 +353,7 @@
     </section>
 
     <section class="mt-8 grid items-stretch gap-6 xl:grid-cols-2">
-        <article class="flex min-w-0 h-full flex-col rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <article class="flex h-full min-w-0 flex-col rounded-sm border border-zinc-200 bg-white shadow-sm">
                 <div class="border-b border-zinc-200 px-6 py-5">
                     <h2 class="text-xl font-semibold text-zinc-900">Top 10 emerging hotspots</h2>
                 </div>
@@ -385,7 +381,7 @@
                 </div>
         </article>
 
-        <article class="flex min-w-0 h-full flex-col rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <article class="flex h-full min-w-0 flex-col rounded-sm border border-zinc-200 bg-white shadow-sm">
                 <div class="border-b border-zinc-200 px-6 py-5">
                     <h2 class="text-xl font-semibold text-zinc-900">Top 10 cooling markets</h2>
                 </div>
@@ -414,8 +410,8 @@
         </article>
     </section>
 
-    <section class="mt-6">
-        <article class="min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section class="mt-8">
+        <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Property Type Shifts</p>
@@ -465,7 +461,7 @@
                 data: dashboardChartData.monthlyTransactions,
                 borderColor: '#65a30d',
                 backgroundColor: 'rgba(101, 163, 13, 0.14)',
-                fill: true,
+                fill: false,
                 tension: 0.3,
                 pointRadius: 3,
             }],
@@ -499,7 +495,7 @@
                 data: dashboardChartData.monthlyPrices,
                 borderColor: '#0f766e',
                 backgroundColor: 'rgba(15, 118, 110, 0.12)',
-                fill: true,
+                fill: false,
                 tension: 0.3,
                 pointRadius: 3,
             }],
@@ -538,12 +534,14 @@
                 backgroundColor: 'rgba(148, 163, 184, 0.75)',
                 borderColor: '#64748b',
                 borderWidth: 1,
+                borderRadius: 0,
             }, {
                 label: 'Comparison quarter',
                 data: dashboardChartData.propertyTypes.comparisonSales,
                 backgroundColor: 'rgba(59, 130, 246, 0.72)',
                 borderColor: '#2563eb',
                 borderWidth: 1,
+                borderRadius: 0,
             }],
         },
         options: {

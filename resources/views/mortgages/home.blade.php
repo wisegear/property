@@ -1,8 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mx-auto max-w-7xl px-4 py-8 md:py-12">
-
     {{-- PREPARE DATA: Extract series data --}}
     @php
         $hp = $seriesData['LPMVTVX'] ?? null;   // House purchase
@@ -21,10 +19,11 @@
     @endphp
 
     {{-- HERO SECTION: Latest mortgage approvals statistics --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
-        @include('partials.hero-background')
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+      <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
         <div class="max-w-3xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">
+            <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Market indicator</p>
+            <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">
                 Mortgage Approvals
             </h1>
             
@@ -115,12 +114,14 @@
         </div>
 
         {{-- Hero image --}}
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
+        <div class="hidden justify-self-end md:block">
             <img src="{{ asset('assets/images/site/approvals.jpg') }}" 
                  alt="Mortgage approvals" 
-                 class="w-90 h-auto">
+                 class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
         </div>
+      </div>
     </section>
+<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
 
     {{-- PREPARE CHART DATA --}}
     @php
@@ -144,7 +145,7 @@
 
     {{-- MAIN CHART: Combined approvals over time --}}
     <section class="mb-6">
-        <div class="border p-4 bg-white rounded-lg shadow">
+        <div class="rounded-sm border bg-white p-4 shadow">
             <div class="mb-2 text-sm font-medium text-gray-700">
                 Approvals over time
             </div>
@@ -162,7 +163,7 @@
     {{-- 24-MONTH DETAILED CHARTS: House purchase & Remortgaging side-by-side --}}
     <section class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         {{-- House purchase 24-month chart --}}
-        <div class="border p-4 bg-white rounded-lg shadow">
+        <div class="rounded-sm border bg-white p-4 shadow">
             <div class="mb-2 text-sm font-medium text-gray-700">
                 Mortgage Approvals over the last 24 months
             </div>
@@ -177,7 +178,7 @@
         </div>
 
         {{-- Remortgaging 24-month chart --}}
-        <div class="border p-4 bg-white rounded-lg shadow">
+        <div class="rounded-sm border bg-white p-4 shadow">
             <div class="mb-2 text-sm font-medium text-gray-700">
                 Remortgaging over the last 24 months
             </div>
@@ -193,7 +194,7 @@
     </section>
 
     {{-- YEARLY TOTALS TABLE: Historical data by year --}}
-    <div class="overflow-hidden bg-white shadow-sm rounded-lg">
+    <div class="overflow-hidden rounded-sm bg-white shadow-sm">
         <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
                 <thead class="bg-gray-50 text-left text-gray-600">

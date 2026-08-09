@@ -56,16 +56,11 @@
     ];
 @endphp
 
-<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
-    <section class="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-        @include('partials.hero-background')
-        <div class="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-center">
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+        <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
             <div>
-                <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
-                    <span class="h-2 w-2 rounded-full bg-lime-500"></span>
-                    Insights / Crime
-                </div>
-                <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">National Crime Dashboard</h1>
+                <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Insights / Crime</p>
+                <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">National Crime Dashboard</h1>
                 <p class="mt-4 max-w-3xl text-sm leading-6 text-zinc-600">
                     Monthly crime volumes across the latest 24 months, with national totals and area drilldowns derived from the crime dataset.
                 </p>
@@ -78,14 +73,15 @@
                     </span>
                 </div>
             </div>
-            <div class="relative z-10 mt-2 flex justify-center lg:mt-0 lg:justify-end">
-                <img src="{{ asset('/assets/images/site/crime.jpg') }}" alt="Crime insights dashboard" class="w-90 h-auto">
+            <div class="hidden justify-self-end md:block">
+                <img src="{{ asset('/assets/images/site/crime.jpg') }}" alt="Crime insights dashboard" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
             </div>
         </div>
     </section>
+<div class="mx-auto max-w-7xl px-4 py-8">
 
-    <section class="mt-8 grid gap-5 lg:grid-cols-3">
-        <article class="overflow-hidden rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+    <section class="grid gap-5 lg:grid-cols-3">
+        <article class="overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Total Crime</p>
@@ -106,7 +102,7 @@
             </div>
         </article>
 
-        <article class="overflow-hidden rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <article class="overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">YoY Change</p>
@@ -122,7 +118,7 @@
             </div>
         </article>
 
-        <article class="overflow-hidden rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <article class="overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Last 3-Month Trend</p>
@@ -140,14 +136,14 @@
     </section>
 
     <section class="mt-8">
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">What&apos;s Driving Change</p>
             <h2 class="mt-2 text-xl font-semibold text-zinc-900">High level changes impacting crime figures nationally</h2>
             <p class="mt-3 text-sm text-zinc-700">
                 Crime is {{ $summary['pct_change'] >= 0 ? 'up' : 'down' }} {{ number_format(abs($drivers['overall_yoy']), 1) }}% nationally.
             </p>
             <div class="mt-5 grid gap-4 lg:grid-cols-2">
-                <div class="rounded-xl border border-red-200 bg-red-50 p-4">
+                <div class="rounded-sm border border-red-200 bg-red-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-red-700">Driven by</p>
                     <div class="mt-3 grid gap-2 text-sm text-zinc-700">
                         @forelse ($drivers['increases'] as $increase)
@@ -160,7 +156,7 @@
                         @endforelse
                     </div>
                 </div>
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <div class="rounded-sm border border-emerald-200 bg-emerald-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Offset by</p>
                     <div class="mt-3 grid gap-2 text-sm text-zinc-700">
                         @forelse ($drivers['decreases'] as $decrease)
@@ -178,7 +174,7 @@
     </section>
 
     <section class="mt-8">
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Monthly Trend</p>
@@ -194,7 +190,7 @@
     </section>
 
     <section class="mt-8">
-        <article class="rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <article class="rounded-sm border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 px-6 py-5">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
@@ -254,7 +250,7 @@
     </section>
 
     <section class="mt-8">
-        <article class="rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <article class="rounded-sm border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 px-6 py-5">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
@@ -389,7 +385,7 @@
                         data: crimeChartData.current_year,
                         borderColor: '#2563eb',
                         backgroundColor: 'rgba(37, 99, 235, 0.12)',
-                        fill: true,
+                        fill: false,
                         borderWidth: 3,
                         tension: 0.28,
                     },

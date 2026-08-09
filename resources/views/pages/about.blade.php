@@ -1,29 +1,28 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mx-auto max-w-7xl px-4 py-10 md:py-12">
-
-    <section class="relative z-0 mb-12 overflow-hidden rounded-lg border border-zinc-200 bg-white p-8 shadow-sm">
-        @include('partials.hero-background')
-        <div class="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+        <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
             <div class="max-w-3xl">
-                <h1 class="text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">
+                <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>About PropertyResearch.uk</p>
+                <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">
                     Independent UK Property Research
                 </h1>
-                <p class="mt-4 text-md leading-7 text-zinc-500">
+                <p class="mt-3 text-base leading-7 text-zinc-600">
                     PropertyResearch.uk helps people understand the UK property market through official data, clear analysis and practical tools.
                 </p>
-                <p class="mt-4 text-md leading-7 text-zinc-500">
+                <p class="mt-3 text-base leading-7 text-zinc-600">
                     The platform brings together housing, economic and local area datasets so users can explore property sales, market trends and neighbourhood context in one place.
                 </p>
             </div>
-            <div class="mx-auto w-full max-w-sm shrink-0 lg:mx-0">
-                <img src="{{ asset('/assets/images/site/about.jpg') }}" alt="About Property Research" class="h-auto w-full">
+            <div class="hidden justify-self-end md:block">
+                <img src="{{ asset('/assets/images/site/about.jpg') }}" alt="About Property Research" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
             </div>
         </div>
     </section>
+<div class="mx-auto max-w-7xl space-y-8 px-4 py-8">
 
-    <section class="mb-8 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+    <section class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
         <h2 class="text-xl font-semibold text-zinc-900">Why the platform exists</h2>
         <div class="mt-4 space-y-4 text-md leading-7 text-zinc-700">
             <p>
@@ -35,28 +34,28 @@
         </div>
     </section>
 
-    <section class="mb-8 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+    <section class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
         <h2 class="text-xl font-semibold text-zinc-900">Why trust PropertyResearch.uk?</h2>
         <div class="mt-6 grid gap-4 md:grid-cols-2">
-            <article class="rounded-lg border border-zinc-200 bg-white p-5">
+            <article class="rounded-sm border border-zinc-200 bg-white p-5">
                 <h3 class="text-base font-semibold text-zinc-900">Official data</h3>
                 <p class="mt-2 text-sm leading-6 text-zinc-700">
                     Built from public datasets including HM Land Registry, the Bank of England, EPC registers, official court statistics, crime data and deprivation indices.
                 </p>
             </article>
-            <article class="rounded-lg border border-zinc-200 bg-white p-5">
+            <article class="rounded-sm border border-zinc-200 bg-white p-5">
                 <h3 class="text-base font-semibold text-zinc-900">Independent</h3>
                 <p class="mt-2 text-sm leading-6 text-zinc-700">
                     No sponsored rankings, paid placements or commercial influence over the analysis.
                 </p>
             </article>
-            <article class="rounded-lg border border-zinc-200 bg-white p-5">
+            <article class="rounded-sm border border-zinc-200 bg-white p-5">
                 <h3 class="text-base font-semibold text-zinc-900">Transparent</h3>
                 <p class="mt-2 text-sm leading-6 text-zinc-700">
                     Sources and methods are explained wherever practical so the work can be understood and challenged.
                 </p>
             </article>
-            <article class="rounded-lg border border-zinc-200 bg-white p-5">
+            <article class="rounded-sm border border-zinc-200 bg-white p-5">
                 <h3 class="text-base font-semibold text-zinc-900">Regularly updated</h3>
                 <p class="mt-2 text-sm leading-6 text-zinc-700">
                     Datasets are refreshed as new official releases become available.
@@ -65,7 +64,7 @@
         </div>
     </section>
 
-    <section class="mb-8 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+    <section class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
         <h2 class="text-xl font-semibold text-zinc-900">What the platform covers</h2>
         <div class="mt-4 space-y-4 text-md leading-7 text-zinc-700">
             <p>
@@ -77,7 +76,7 @@
         </div>
     </section>
 
-    <section class="mb-8 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+    <section class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
         <h2 class="text-xl font-semibold text-zinc-900">How the data is handled</h2>
         <div class="mt-4 space-y-4 text-md leading-7 text-zinc-700">
             <p>
@@ -89,7 +88,7 @@
         </div>
     </section>
 
-    <section class="mb-8 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+    <section class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
         <h2 class="text-xl font-semibold text-zinc-900">About the creator</h2>
         <div class="mt-4 space-y-4 text-md leading-7 text-zinc-700">
             <p>
@@ -98,7 +97,7 @@
         </div>
     </section>
 
-    <section class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+    <section class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
         <p class="max-w-3xl text-md leading-7 text-zinc-700">
             PropertyResearch.uk continues to evolve as new datasets become available and new ideas emerge. Feedback, corrections and suggestions are welcome.
         </p>

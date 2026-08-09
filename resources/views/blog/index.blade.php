@@ -3,14 +3,11 @@
 @section('content')
 
    {{-- Hero --}}
-   <section class="relative z-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 shadow-sm flex flex-col lg:flex-row justify-between items-center max-w-7xl mx-auto my-10">
-       @include('partials.hero-background')
-       <div class="max-w-4xl relative z-10">
-           <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white/80 px-3 py-1 text-xs text-zinc-700 shadow-sm">
-               <span class="h-2 w-2 rounded-full bg-lime-500"></span>
-               Property research desk
-           </div>
-           <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">
+   <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+     <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+       <div class="max-w-4xl">
+           <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Property research desk</p>
+           <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">
                Market notes, data checks &amp; field commentary
            </h1>
            <p class="mt-3 text-base leading-7 text-zinc-600">
@@ -18,23 +15,22 @@
                signals are interpreted and where the numbers come from.  Best case, you find it interesting, worst, you killed some time whilst the kettle boils.
            </p>
        </div>
-       <div class="mt-6 lg:mt-0 lg:ml-8 flex-shrink-0 relative z-10">
-           <div class="">
-               <img src="{{ asset('/assets/images/site/blog.jpg') }}" alt="Blog" class="w-90 h-auto">
-           </div>
+       <div class="hidden justify-self-end md:block">
+           <img src="{{ asset('/assets/images/site/blog.jpg') }}" alt="Blog" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
        </div>
+     </div>
    </section>
 
     <div class="flex-grow max-w-7xl mx-auto px-4 lg:px-0">
         <!-- Split into 2, one for articles and another for whatever -->
-        <main class="my-10 md:my-16 flex flex-col lg:flex-row gap-8 lg:gap-10">
+        <main class="my-8 flex flex-col gap-8 lg:flex-row lg:gap-10">
             <div class="lg:w-9/12">
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
                     @foreach($posts as $post)
-                        <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                        <article class="rounded-sm border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                             <!-- Post image -->
                             <div class="max-w-3xl mx-auto mb-4">
-                                <div class="w-full max-w-[800px] mx-auto overflow-hidden rounded-xl border border-slate-200 bg-slate-50 h-[200px]">
+                                <div class="mx-auto h-[200px] w-full max-w-[800px] overflow-hidden rounded-sm border border-slate-200 bg-slate-50">
                                     <img
                                         src="{{ $post->featuredImageUrl('small') }}"
                                         alt="{{ $post->title }}"
@@ -120,7 +116,7 @@
             <!-- Blog Sidebar -->
             <div class="lg:w-4/12 hidden lg:block">
                 <!-- Search -->
-                <div class="mb-6 w-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="mb-6 w-full rounded-sm border border-slate-200 bg-white p-5 shadow-sm">
                     <form method="get" action="/blog" class="mb-5">
                         <h2 class="text-lg font-bold mb-2">Search the archive</h2>
                         <div class="relative">
@@ -130,7 +126,7 @@
                     </form>
                 </div>
                 <!-- Categories -->
-                <div class="text-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="rounded-sm border border-slate-200 bg-white p-5 text-sm shadow-sm">
                     <div class="border-b pb-2 border-slate-200">
                         <h2 class="text-lg font-bold">Topics</h2>
                     </div>
@@ -143,7 +139,7 @@
                     </div>
                 </div>
                 <!-- Blog Tags -->
-                <div class="hidden md:block my-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="my-6 hidden rounded-sm border border-slate-200 bg-white p-5 shadow-sm md:block">
                     <h2 class="text-lg font-bold border-b mb-4 border-slate-200">Popular Tags</h2>
                     @foreach ($popular_tags as $tag)
                     <a href="/blog?tag={{ $tag->name }}" class="">
@@ -153,7 +149,7 @@
                 </div>
                 @can('Admin')
                     <!-- Admin -->
-                    <div class="hidden md:block my-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div class="my-6 hidden rounded-sm border border-slate-200 bg-white p-5 shadow-sm md:block">
                         <h2 class="text-xl font-bold text-red-500 border-b border-gray-200 mb-4"><svg class="inline-block h-[1em] w-[1em] text-red-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5Zm-4.5 16.157a8.25 8.25 0 0 1 9 0 8.22 8.22 0 0 1-9 0Zm7.5-1.13a6.72 6.72 0 0 0-6 0 6.75 6.75 0 1 1 6 0ZM12 6.75a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5Z" clip-rule="evenodd"/></svg> Admin Tools</h2>
                         <div class="flex justify-center">
                             <a href="/blog/create" class="standard-button">Create New Post</a>

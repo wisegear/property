@@ -2,17 +2,15 @@
 @include('partials.chartjs-head')
 
 @section('content')
-<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
-
     {{-- Hero --}}
-    <section class="relative z-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm flex flex-col md:flex-row justify-between items-center">
-        @include('partials.hero-background')
-        <div class="max-w-5xl relative z-10">
-            <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+      <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+        <div class="max-w-5xl">
+            <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">
                 <span class="h-2 w-2 rounded-full bg-lime-500"></span>
                 Social Housing
             </div>
-            <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-3xl">
+            <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">
                 Scottish Council Housing Stock Figures
             </h1>
             <p class="mt-3 text-sm text-zinc-500">
@@ -22,24 +20,26 @@
             </p>
 
             <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-zinc-600">
-                <span class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/70 px-3 py-1">
-                    <span class="h-2 w-2 rounded-lg bg-lime-500"></span>
+                <span class="inline-flex items-center gap-2 rounded-sm border border-zinc-200 bg-white/70 px-3 py-1">
+                    <span class="h-2 w-2 rounded-full bg-lime-500"></span>
                     Latest data<datalist></datalist>: <class="">Dec 2025
                 </span>
-                <span class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/70 px-3 py-1">
-                    <span class="h-2 w-2 rounded-lg bg-zinc-400"></span>
+                <span class="inline-flex items-center gap-2 rounded-sm border border-zinc-200 bg-white/70 px-3 py-1">
+                    <span class="h-2 w-2 rounded-full bg-zinc-400"></span>
                     Next update Expected: <class="">Dec 2026
                 </span>
             </div>
         </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('/assets/images/site/houses.jpg') }}" alt="Property Research" class="w-90 h-auto">
+        <div class="hidden justify-self-end md:block">
+            <img src="{{ asset('/assets/images/site/houses.jpg') }}" alt="Property Research" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
         </div>
-</section>
+      </div>
+    </section>
+<div class="mx-auto max-w-7xl px-4 py-8">
 
     {{-- Controls --}}
-    <section class="mt-10 w-1/2 mx-auto">
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+    <section class="mx-auto w-full max-w-2xl">
+        <div class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col items-center justify-center">
                 <label for="councilSelect" class="block text-sm text-zinc-700">
                     Use the dropdown to see specific council data
@@ -58,8 +58,8 @@
     </section>
 
     {{-- Council overview (selected council) --}}
-    <section class="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <section class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+        <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Council Stock</p>
@@ -74,7 +74,7 @@
             </div>
         </article>
 
-        <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Council Stock</p>
@@ -91,8 +91,8 @@
     </section>
 
     {{-- Council detail --}}
-    <section class="mt-10 grid grid-cols-1 gap-6">
-        <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <section class="mt-8 grid grid-cols-1 gap-6">
+        <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Council Stock</p>
@@ -109,8 +109,8 @@
     </section>
 
     {{-- National overview --}}
-    <section class="mt-10">
-        <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <section class="mt-8">
+        <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">National View</p>
@@ -127,14 +127,14 @@
     </section>
 
     {{-- Top movers --}}
-    <section class="mt-12">
+    <section class="mt-8">
         <h2 class="text-lg font-semibold text-zinc-900 mb-4">
             Largest changes in total stock ({{ $baselineYear }} → {{ $compareYear }})
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {{-- Declines --}}
-            <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+            <div class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
                 <h3 class="font-semibold text-zinc-900 mb-3">Top 10 declines</h3>
                 <table class="min-w-full text-sm">
                     <thead class="text-zinc-500 border-b">
@@ -161,7 +161,7 @@
             </div>
 
             {{-- Increases --}}
-            <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+            <div class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
                 <h3 class="font-semibold text-zinc-900">Top 10 increases</h3>
                 <p class="text-sm text-zinc-500 mb-3">Yup, currently there is only one council over the past 25 years that has more stock.</p>
                 <table class="min-w-full text-sm">
@@ -191,14 +191,14 @@
     </section>
 
     {{-- Top movers (recent window) --}}
-    <section class="mt-12">
+    <section class="mt-8">
         <h2 class="text-lg font-semibold text-zinc-900 mb-4">
             Largest changes in total stock ({{ $baselineYearRecent }} → {{ $compareYear }})
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {{-- Declines --}}
-            <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+            <div class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
                 <h3 class="font-semibold text-zinc-900">Top 10 declines</h3>
                 <p class="text-sm text-zinc-500 mb-3">Yup, also correct, no councils show a decline in the last 5 years.  Bear in mind that right to buy ended in Scotland during 2016.  Soon after the
                     stock started going back up. </p>
@@ -227,7 +227,7 @@
             </div>
 
             {{-- Increases --}}
-            <div class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+            <div class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
                 <h3 class="font-semibold text-zinc-900 mb-3">Top 10 increases</h3>
                 <table class="min-w-full text-sm">
                     <thead class="text-zinc-500 border-b">
@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     data: years.map(y => national[y].total_stock),
                     borderColor: '#2563eb',
                     backgroundColor: 'rgba(37, 99, 235, 0.12)',
-                    fill: true,
+                    fill: false,
                     pointRadius: 3,
                     pointHoverRadius: 5,
                     tension: 0.28,
@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     data: years.map(y => rows[y]?.total_stock ?? 0),
                     borderColor: '#2563eb',
                     backgroundColor: 'rgba(37, 99, 235, 0.12)',
-                    fill: true,
+                    fill: false,
                     pointRadius: 3,
                     pointHoverRadius: 5,
                     tension: 0.28,
@@ -407,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ].map(([k,l]) => ({
                     label: l,
                     data: years.map(y => rows[y]?.[k] ?? 0),
-                    fill: true,
+                    fill: false,
                     pointRadius: 3,
                     pointHoverRadius: 5,
                     tension: 0.28,
@@ -429,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ].map(([k,l]) => ({
                     label: l,
                     data: years.map(y => rows[y]?.[k] ?? 0),
-                    fill: true,
+                    fill: false,
                     pointRadius: 3,
                     pointHoverRadius: 5,
                     tension: 0.28,

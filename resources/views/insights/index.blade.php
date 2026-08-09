@@ -26,29 +26,25 @@
         ->all();
 @endphp
 
-<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
-    <section class="relative z-0 flex flex-col items-center justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 shadow-sm lg:flex-row">
-        @include('partials.hero-background')
-        <div class="max-w-4xl relative z-10">
-            <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white/80 px-3 py-1 text-xs text-zinc-700 shadow-sm">
-                <span class="h-2 w-2 rounded-full bg-lime-500"></span>
-                Property Insights
-            </div>
-            <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Property Market Insights</h1>
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+      <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+        <div class="max-w-4xl">
+            <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Property insights</p>
+            <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Property Market Insights</h1>
             <p class="mt-3 text-sm leading-6 text-zinc-600">
                 <span class="font-semibold text-zinc-800">Price Spike</span> highlights unusually strong median price growth, <span class="font-semibold text-zinc-800">Liquidity Stress</span> flags falling transaction volumes despite rising prices, <span class="font-semibold text-zinc-800">Sector Outperformance</span> shows sectors rising faster than the national HPI trend, and <span class="font-semibold text-zinc-800">Momentum Reversal</span> identifies areas where earlier strong price growth has turned into decline.
             </p>
             <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-zinc-600">
-                <span class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/80 px-3 py-1">
+                <span class="inline-flex items-center gap-2 rounded-sm border border-zinc-200 bg-white/80 px-3 py-1">
                     <span class="h-2 w-2 rounded-full bg-lime-500"></span>
                     Nine anomaly types
                 </span>
-                <span class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/80 px-3 py-1">
+                <span class="inline-flex items-center gap-2 rounded-sm border border-zinc-200 bg-white/80 px-3 py-1">
                     <span class="h-2 w-2 rounded-full bg-zinc-400"></span>
                     Searchable by area and insight text
                 </span>
                 @if ($lastRunAt)
-                    <span class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/80 px-3 py-1">
+                    <span class="inline-flex items-center gap-2 rounded-sm border border-zinc-200 bg-white/80 px-3 py-1">
                         <span class="h-2 w-2 rounded-full bg-sky-500"></span>
                         Last run {{ $lastRunAt->timezone(config('app.timezone'))->format('d M Y, H:i') }}
                     </span>
@@ -56,13 +52,15 @@
             </div>
         </div>
 
-        <div class="mt-6 lg:mt-0 lg:ml-8 flex-shrink-0 relative z-10">
-            <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="w-90 h-auto">
+        <div class="hidden justify-self-end md:block">
+            <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
         </div>
+      </div>
     </section>
+<div class="mx-auto max-w-7xl px-4 py-8">
 
-    <section class="mt-6">
-        <details class="group rounded-2xl border border-zinc-200 bg-white shadow-sm">
+    <section>
+        <details class="group rounded-sm border border-zinc-200 bg-white shadow-sm">
             <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Guide</p>
@@ -77,7 +75,7 @@
             <div class="border-t border-zinc-200 px-6 py-6">
                 <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     @foreach ($insightTypes as $type => $label)
-                        <article class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                        <article class="rounded-sm border border-zinc-200 bg-zinc-50 p-4">
                             <span class="{{ $insightBadgeClasses[$type] ?? 'border-zinc-200 bg-zinc-100 text-zinc-800' }} inline-flex items-center rounded-full border px-3 py-1 text-xs tracking-wide">
                                 {{ $label }}
                             </span>
@@ -91,8 +89,8 @@
         </details>
     </section>
 
-    <section class="mt-6">
-        <article class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <section class="mt-8">
+        <article class="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Signal Mix</p>
@@ -111,7 +109,7 @@
     <div class="mx-auto max-w-7xl py-6 sm:px-2 lg:px-0">
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
             <div class="order-2 lg:order-1">
-                <div class="mb-4 flex flex-col gap-1 rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                <div class="mb-4 flex flex-col gap-1 rounded-sm border border-zinc-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <form action="{{ route('insights.index', request()->query()) }}" method="GET" class="flex flex-col gap-2 sm:flex-row sm:items-center">
                             @if ($search !== '')
@@ -141,7 +139,7 @@
                     @forelse ($query as $insight)
                         <a
                             href="{{ route('insights.show', ['sector' => strtolower($insight->area_code)]) }}"
-                            class="flex h-full min-h-[240px] flex-col rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-lime-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-lime-300"
+                            class="flex h-full min-h-[240px] flex-col rounded-sm border border-zinc-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-lime-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-lime-300"
                         >
                             <div class="mb-4 flex items-start justify-between gap-3">
                                 <span class="{{ $insightBadgeClasses[$insight->insight_type] ?? 'border-zinc-200 bg-zinc-100 text-zinc-800' }} inline-flex items-center rounded-full border px-3 py-1 text-xs tracking-wide">
@@ -173,7 +171,7 @@
                             </div>
                         </a>
                     @empty
-                        <div class="rounded-xl border border-zinc-200 bg-white px-4 py-6 text-center text-sm text-zinc-500 shadow-sm">
+                        <div class="rounded-sm border border-zinc-200 bg-white px-4 py-6 text-center text-sm text-zinc-500 shadow-sm">
                             No market insights found.
                         </div>
                     @endforelse
@@ -187,7 +185,7 @@
             </div>
 
             <div class="order-1 flex h-fit flex-col gap-6 lg:order-2">
-                <aside class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+                <aside class="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Search</p>
                         <h2 class="mt-2 text-lg font-semibold text-zinc-900">Find a place or signal</h2>
@@ -209,18 +207,18 @@
                             name="search"
                             value="{{ $search }}"
                             placeholder="Area code or insight text"
-                            class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm focus:border-lime-500 focus:outline-none focus:ring-2 focus:ring-lime-200"
+                            class="w-full rounded border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm focus:border-lime-500 focus:outline-none focus:ring-2 focus:ring-lime-200"
                         >
                         <button
                             type="submit"
-                            class="inline-flex items-center justify-center rounded-xl border border-lime-600 bg-lime-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-lime-400"
+                            class="inline-flex items-center justify-center rounded bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
                         >
                             Search
                         </button>
                     </form>
                 </aside>
 
-                <aside class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+                <aside class="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Browse</p>
                         <h2 class="mt-2 text-lg font-semibold text-zinc-900">Filter insights</h2>
@@ -232,7 +230,7 @@
                         <nav class="mt-3 flex flex-col gap-2">
                             <a
                                 href="{{ route('insights.index', array_filter(['search' => $search, 'sort' => $sort !== 'sector_asc' ? $sort : null])) }}"
-                                class="{{ $selectedType === '' ? 'border-lime-300 bg-lime-50 text-lime-900' : 'border-zinc-200 bg-zinc-100 text-zinc-700 hover:border-zinc-300 hover:text-zinc-900' }} rounded-xl border px-4 py-3 text-sm font-medium shadow-sm transition"
+                                class="{{ $selectedType === '' ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-200 bg-zinc-100 text-zinc-700 hover:border-zinc-300 hover:text-zinc-900' }} rounded-sm border px-4 py-3 text-sm font-medium shadow-sm transition"
                             >
                                 All Insights ({{ number_format($query->total()) }})
                             </a>
@@ -244,7 +242,7 @@
                                         @foreach ($types as $type)
                                             <a
                                                 href="{{ route('insights.search', array_filter(['type' => $type, 'search' => $search, 'sort' => $sort !== 'sector_asc' ? $sort : null])) }}"
-                                                class="{{ $selectedType === $type ? (($insightBadgeClasses[$type] ?? 'border-lime-300 bg-lime-50 text-lime-900').' shadow-sm') : 'border-zinc-200 bg-zinc-100 text-zinc-700 hover:border-zinc-300 hover:text-zinc-900' }} rounded-xl border px-4 py-3 text-sm font-medium transition"
+                                                class="{{ $selectedType === $type ? 'border-zinc-900 bg-zinc-900 text-white shadow-sm' : 'border-zinc-200 bg-zinc-100 text-zinc-700 hover:border-zinc-300 hover:text-zinc-900' }} rounded-sm border px-4 py-3 text-sm font-medium transition"
                                             >
                                                 {{ $insightTypes[$type] ?? str_replace('_', ' ', $type) }} ({{ number_format($insightTypeCounts[$type] ?? 0) }})
                                             </a>
@@ -256,7 +254,7 @@
                     </div>
 
                     @if ($selectedType !== '' && isset($insightDescriptions[$selectedType]))
-                        <div class="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4">
+                        <div class="mt-6 rounded-sm border border-zinc-200 bg-zinc-50 px-4 py-4">
                             <p class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Selected signal</p>
                             <p class="mt-2 text-sm font-semibold text-zinc-900">
                                 {{ $insightTypes[$selectedType] ?? str_replace('_', ' ', $selectedType) }}
@@ -266,7 +264,7 @@
                     @endif
                 </aside>
 
-                <aside class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+                <aside class="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Methodology</p>
                     <h2 class="mt-2 text-lg font-semibold text-zinc-900">How to read the signals</h2>
                     <p class="mt-2 text-sm leading-6 text-zinc-600">
@@ -315,7 +313,7 @@
                     '#c2410c',
                 ],
                 borderWidth: 1,
-                borderRadius: 8,
+                borderRadius: 0,
             }],
         },
         options: {
