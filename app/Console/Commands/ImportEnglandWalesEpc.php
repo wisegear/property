@@ -9,7 +9,7 @@ use Symfony\Component\Process\Process;
 
 class ImportEnglandWalesEpc extends Command
 {
-    protected $signature = 'epc:import-ew {path : Path to folder containing yearly CSV files} {--scan-only : Scan headers only and do not import} {--write-migration= : Write a generated migration stub to this file path if needed}';
+    protected $signature = 'epc:import-ew {path : Path to a CSV file or folder containing yearly CSV files} {--scan-only : Scan headers only and do not import} {--write-migration= : Write a generated migration stub to this file path if needed}';
 
     protected $description = 'Bulk import England and Wales EPC yearly CSV files into epc_certificates';
 
@@ -17,13 +17,22 @@ class ImportEnglandWalesEpc extends Command
     {
         $path = (string) $this->argument('path');
 
-        if (! is_dir($path)) {
-            $this->error("Directory not found: {$path}");
+        if (is_file($path)) {
+            if (strtolower((string) pathinfo($path, PATHINFO_EXTENSION)) !== 'csv') {
+                $this->error("File is not a CSV: {$path}");
+
+                return self::FAILURE;
+            }
+
+            $files = [$path];
+        } elseif (is_dir($path)) {
+            $files = glob(rtrim($path, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'*.csv');
+        } else {
+            $this->error("File or directory not found: {$path}");
 
             return self::FAILURE;
         }
 
-        $files = glob(rtrim($path, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'*.csv');
         if (empty($files)) {
             $this->warn("No CSV files found in {$path}");
 
@@ -476,13 +485,26 @@ class ImportEnglandWalesEpc extends Command
             $copyColumns[] = '"'.str_replace('"', '""', $targetColumn).'"';
         }
 
+        $temporaryTable = 'epc_import_'.bin2hex(random_bytes(6));
+        $quotedTemporaryTable = '"'.$temporaryTable.'"';
+        $createTemporaryTableSql = "CREATE TEMP TABLE {$quotedTemporaryTable} (LIKE public.epc_certificates INCLUDING DEFAULTS)";
         $copySql = sprintf(
-            "\\copy public.epc_certificates (%s) FROM %s WITH (FORMAT csv, HEADER true, QUOTE '\"', ESCAPE '\"', NULL '')",
+            "\\copy %s (%s) FROM %s WITH (FORMAT csv, HEADER true, QUOTE '\"', ESCAPE '\"', NULL '')",
+            $quotedTemporaryTable,
             implode(', ', $copyColumns),
             $this->quoteSqlString((string) realpath(stream_get_meta_data($handle)['uri'] ?? ''))
         );
 
-        $process = $this->buildPsqlProcess($copySql);
+        $insertColumns = [...$copyColumns, '"source_file"'];
+        $selectColumns = [...$copyColumns, $this->quoteSqlString($base)];
+        $insertSql = sprintf(
+            'WITH inserted AS (INSERT INTO public.epc_certificates (%s) SELECT %s FROM %s WHERE "LMK_KEY" IS NOT NULL ON CONFLICT ("LMK_KEY") DO NOTHING RETURNING 1) SELECT \'EPC_INSERTED \' || COUNT(*) FROM inserted',
+            implode(', ', $insertColumns),
+            implode(', ', $selectColumns),
+            $quotedTemporaryTable
+        );
+
+        $process = $this->buildPsqlProcess([$createTemporaryTableSql, $copySql, $insertSql]);
         $process->run();
 
         if (! $process->isSuccessful()) {
@@ -493,16 +515,15 @@ class ImportEnglandWalesEpc extends Command
         }
 
         $output = trim($process->getOutput()."\n".$process->getErrorOutput());
-        preg_match('/COPY\s+(\d+)/i', $output, $matches);
-        $rowCount = isset($matches[1]) ? (int) $matches[1] : 0;
-        DB::table('epc_certificates')
-            ->whereNull('source_file')
-            ->update(['source_file' => $base]);
+        preg_match('/COPY\s+(\d+)/i', $output, $processedMatches);
+        preg_match('/EPC_INSERTED\s+(\d+)/i', $output, $insertedMatches);
+        $processed = isset($processedMatches[1]) ? (int) $processedMatches[1] : 0;
+        $inserted = isset($insertedMatches[1]) ? (int) $insertedMatches[1] : 0;
 
         return [
-            'inserted' => $rowCount,
-            'processed' => $rowCount,
-            'skippedExisting' => 0,
+            'inserted' => $inserted,
+            'processed' => $processed,
+            'skippedExisting' => $processed - $inserted,
             'skippedMissingLmkKey' => 0,
         ];
     }
@@ -521,21 +542,28 @@ class ImportEnglandWalesEpc extends Command
         return count($batch);
     }
 
-    private function buildPsqlProcess(string $copySql): Process
+    /**
+     * @param  array<int, string>  $commands
+     */
+    private function buildPsqlProcess(array $commands): Process
     {
         $config = config('database.connections.pgsql');
         if (! is_array($config)) {
             throw new \RuntimeException('PostgreSQL connection configuration is missing.');
         }
 
-        $command = [
+        $commandLine = [
             'psql',
             '-h', (string) ($config['host'] ?? '127.0.0.1'),
             '-p', (string) ($config['port'] ?? '5432'),
             '-U', (string) ($config['username'] ?? ''),
             '-d', (string) ($config['database'] ?? ''),
-            '-c', $copySql,
         ];
+
+        foreach ($commands as $command) {
+            $commandLine[] = '-c';
+            $commandLine[] = $command;
+        }
 
         $environment = [
             'PGPASSWORD' => (string) ($config['password'] ?? ''),
@@ -545,7 +573,7 @@ class ImportEnglandWalesEpc extends Command
             $environment['PGSSLMODE'] = (string) $config['sslmode'];
         }
 
-        return new Process($command, base_path(), $environment, null, null);
+        return new Process($commandLine, base_path(), $environment, null, null);
     }
 
     private function quoteSqlString(string $value): string

@@ -11,6 +11,26 @@ class ImportEnglandWalesEpcCommandTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_it_imports_a_single_csv_file(): void
+    {
+        $file = storage_path('framework/testing/certificates-single.csv');
+        file_put_contents(
+            $file,
+            "certificate_number,postcode,lodgement_date\n".
+            "EW-SINGLE,SW1A 1AA,2026-08-09\n"
+        );
+
+        $this->artisan("epc:import-ew {$file}")
+            ->expectsOutputToContain('Importing certificates-single.csv...')
+            ->expectsOutputToContain(' - inserted 1 row(s)')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseHas('epc_certificates', [
+            'LMK_KEY' => 'EW-SINGLE',
+            'source_file' => 'certificates-single.csv',
+        ]);
+    }
+
     public function test_it_imports_multiple_yearly_files_with_direct_header_mapping(): void
     {
         $directory = storage_path('framework/testing/england-wales-epc-import');
