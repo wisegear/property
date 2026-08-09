@@ -51,9 +51,11 @@
                     <span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $stressTone }}">{{ $stressLabel }}</span>
                 </div>
 
-                <div class="relative mt-4 w-full" role="img" aria-label="Property Market Stress Index score: {{ $stressScore }} out of 100, {{ $stressLabel }}">
-                    <div class="h-2.5 overflow-hidden rounded-full bg-linear-to-r from-emerald-500 from-0% via-amber-400 via-55% to-rose-500 to-100%"></div>
-                    <span class="absolute top-1/2 h-5 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-900 ring-2 ring-white" style="left: clamp(0.125rem, {{ $stressScore }}%, calc(100% - 0.125rem))"></span>
+                <div class="mt-4 w-full" role="img" aria-label="Property Market Stress Index score: {{ $stressScore }} out of 100, {{ $stressLabel }}">
+                    <div class="relative">
+                        <div class="h-2.5 overflow-hidden rounded-full bg-linear-to-r from-emerald-500 from-0% via-amber-400 via-55% to-rose-500 to-100%"></div>
+                        <span class="absolute top-1/2 h-5 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-900 ring-2 ring-white" style="left: clamp(0.125rem, {{ $stressScore }}%, calc(100% - 0.125rem))"></span>
+                    </div>
                     <div class="mt-2 flex justify-between text-[11px] font-medium text-zinc-500">
                         <span>Low</span>
                         <span>Elevated</span>
