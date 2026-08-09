@@ -976,7 +976,13 @@
                     </div>
                 </div>
             </div>
-            <div class="mx-auto mt-8 max-w-7xl border-t border-slate-800 pt-5 text-xs text-slate-500">&copy; {{ now()->year }} Lee Wisener · PropertyResearch.uk</div>
+            <div class="mx-auto mt-8 flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-slate-800 pt-5 text-xs text-slate-500">
+                <span>&copy; {{ now()->year }} Lee Wisener · PropertyResearch.uk</span>
+                <span>
+                    Built using <a href="https://laravel.com" target="_blank" rel="noopener noreferrer" class="text-slate-400 transition hover:text-white">Laravel</a>
+                    · Hosted with <a href="https://www.hetzner.com/cloud/" target="_blank" rel="noopener noreferrer" class="text-slate-400 transition hover:text-white">Hetzner Cloud</a>
+                </span>
+            </div>
         </footer>
     </div>
 
