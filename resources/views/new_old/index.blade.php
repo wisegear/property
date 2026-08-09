@@ -1,31 +1,32 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
-
-  {{-- Hero / summary card --}}
-  <section class="relative z-0 mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:flex md:flex-row md:items-center md:justify-between md:p-8">
-      @include('partials.hero-background')
-    <div class="relative z-10 max-w-4xl">
-      <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
-        <span class="h-2 w-2 rounded-full bg-lime-500"></span>
+{{-- Hero --}}
+<section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.18)] md:py-9">
+  <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+    <div class="max-w-4xl">
+      <div class="inline-flex items-center gap-2 text-xs font-medium text-zinc-600">
+        <span class="h-2 w-2 rounded-full bg-lime-600"></span>
         New Build Comparison
       </div>
-      <h1 class="mt-4 text-2xl font-bold tracking-tight text-zinc-900 md:text-3xl">New Build vs Existing Sales Dashboard</h1>
-      <p class="mt-4 text-sm leading-6 text-zinc-600">
-        This dashboard compares <span class="font-semibold">new build</span> and <span class="font-semibold">existing property</span> sales across the UK.  This data is provided as part of
+      <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-950 md:text-4xl">New Build vs Existing Sales Dashboard</h1>
+      <p class="mt-3 text-sm leading-6 text-zinc-600">
+        This dashboard compares <span class="font-semibold">new build</span> and <span class="font-semibold">existing property</span> sales across the UK. This data is provided as part of
         the Government's HPI data which may differ from the England/Wales Land Registry information used elsewhere on this site.
       </p>
     </div>
-    <div class="relative z-10 mt-6 flex-shrink-0 md:mt-0 md:ml-8">
-      <img src="{{ asset('assets/images/site/new_old.jpg') }}" alt="New vs Existing" class="w-90 h-auto">
+    <div class="hidden min-w-0 justify-end md:flex" aria-hidden="true">
+      <img src="{{ asset('assets/images/site/new_old.jpg') }}" alt="" class="h-44 w-auto max-w-full object-contain opacity-80 mix-blend-multiply [mask-image:linear-gradient(to_right,transparent_0%,black_18%,black_94%,transparent_100%)] lg:h-52">
     </div>
-  </section>
+  </div>
+</section>
+
+<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
 
   {{-- UK trend --}}
   <div class="mb-6">
     <h2 class="mb-3 text-xl font-semibold text-zinc-900">Last 15 years — UK totals</h2>
-    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
       <div class="flex items-start justify-between gap-4">
         <div>
           <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">National Trend</p>
@@ -44,7 +45,7 @@
     <h2 class="mb-3 text-xl font-semibold text-zinc-900">Last 15 years — by nation</h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+      <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Nation Trend</p>
@@ -57,7 +58,7 @@
         </div>
       </article>
 
-      <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+      <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Nation Trend</p>
@@ -70,7 +71,7 @@
         </div>
       </article>
 
-      <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+      <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Nation Trend</p>
@@ -83,7 +84,7 @@
         </div>
       </article>
 
-      <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+      <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Nation Trend</p>
@@ -144,7 +145,7 @@
                 backgroundColor: barFill,
                 borderColor: barBorder,
                 borderWidth: 1,
-                borderRadius: 8,
+                borderRadius: 0,
                 maxBarThickness: 28
               },
               {
@@ -195,10 +196,12 @@
             },
             scales: {
               x: {
-                grid: { display: false },
+                offset: false,
+                grid: { display: false, offset: false },
                 border: { color: chartBorderColor },
                 ticks: {
                   color: chartTickColor,
+                  align: 'inner',
                   callback: function(value, index) {
                     const lbl = this.getLabelForValue(value);
                     const clean = String(lbl).replace(/,/g, '');

@@ -13,17 +13,16 @@
     $allDistrictOverviewDescription = $allDistrictOverviewDescription ?? 'This section aggregates <strong>all Prime Central London postcodes</strong> into a single area for year-by-year analysis.';
     $rollingRangeTitle = $rollingRangeLabel ?? '';
 @endphp
-<div class="mx-auto max-w-7xl px-4 py-8 md:py-12">
-    {{-- Hero / summary card --}}
-    <section class="relative z-0 mb-8 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:flex md:flex-row md:items-center md:justify-between md:p-8">
-        @include('partials.hero-background')
-        <div class="relative z-10 max-w-4xl">
-            <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
-                <span class="h-2 w-2 rounded-full bg-lime-500"></span>
+{{-- Hero --}}
+<section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.18)] md:py-9">
+    <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+        <div class="max-w-4xl">
+            <div class="inline-flex items-center gap-2 text-xs font-medium text-zinc-600">
+                <span class="h-2 w-2 rounded-full bg-lime-600"></span>
                 Prime Dashboard
             </div>
-            <h1 class="mt-4 text-2xl font-bold tracking-tight text-zinc-900 md:text-3xl">{{ $pageTitle }}</h1>
-            <p class="mt-4 text-sm leading-6 text-zinc-600">
+            <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-950 md:text-4xl">{{ $pageTitle }}</h1>
+            <p class="mt-3 text-sm leading-6 text-zinc-600">
                 {!! $heroDescription !!}
             </p>
             <p class="mt-3 text-sm leading-6 text-zinc-600">
@@ -49,10 +48,13 @@
                 </span>
             </p>
         </div>
-        <div class="relative z-10 mt-6 flex-shrink-0 md:mt-0 md:ml-8">
-            <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="{{ $pageTitle }}" class="h-auto w-90">
+        <div class="hidden min-w-0 justify-end md:flex" aria-hidden="true">
+            <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="" class="h-44 w-auto max-w-full object-contain opacity-80 mix-blend-multiply [mask-image:linear-gradient(to_right,transparent_0%,black_18%,black_94%,transparent_100%)] lg:h-52">
         </div>
-    </section>
+    </div>
+</section>
+
+<div class="mx-auto max-w-7xl px-4 py-8 md:py-12">
 
     @include('property.partials.market_snapshot')
 
@@ -84,19 +86,19 @@
     </div>
 
     @if(($districts ?? collect())->isEmpty())
-        <div class="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-zinc-600">{{ $emptyDistrictMessage }}</div>
+        <div class="rounded-sm border border-zinc-200 bg-zinc-50 p-6 text-zinc-600">{{ $emptyDistrictMessage }}</div>
     @else
         @foreach($districts as $district)
             @php $__label = ($district === 'ALL') ? $allDistrictLabel : $district; @endphp
             <section class="mb-10 district-section" data-district="{{ $district }}">
                 @if($district === 'ALL')
-                    <div class="mb-4 rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
+                    <div class="mb-4 rounded-sm border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Overview</p>
                         <h2 class="mt-2 text-lg font-semibold text-zinc-900">{{ $allDistrictOverviewTitle }}</h2>
                         <p>{!! $allDistrictOverviewDescription !!}</p>
                     </div>
                 @elseif(!empty($notes[$district] ?? null))
-                    <div class="mb-4 rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
+                    <div class="mb-4 rounded-sm border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Overview</p>
                         <h2 class="mt-2 text-lg font-semibold text-zinc-900">{{ $district }} – Overview</h2>
                         <p>{{ $notes[$district] }}</p>
@@ -104,7 +106,7 @@
                 @endif
 
                 <div class="grid gap-6 xl:grid-cols-2">
-                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Market Activity</p>
@@ -116,7 +118,7 @@
                             <canvas id="sc_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
                         </div>
                     </article>
-                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Trend</p>
@@ -128,7 +130,7 @@
                             <canvas id="ap_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
                         </div>
                     </article>
-                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Housing Mix</p>
@@ -140,7 +142,7 @@
                             <canvas id="pt_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
                         </div>
                     </article>
-                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Housing Mix</p>
@@ -152,7 +154,7 @@
                             <canvas id="apt_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
                         </div>
                     </article>
-                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Stock Profile</p>
@@ -164,7 +166,7 @@
                             <canvas id="nb_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
                         </div>
                     </article>
-                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Tenure Mix</p>
@@ -176,7 +178,7 @@
                             <canvas id="dur_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
                         </div>
                     </article>
-                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-2">
+                    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-2">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Prime Signals</p>
@@ -188,7 +190,7 @@
                             <canvas id="ts_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
                         </div>
                     </article>
-                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-2">
+                    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-2">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Ladder</p>
@@ -201,7 +203,7 @@
                             <canvas id="api_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
                         </div>
                     </article>
-                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
@@ -213,7 +215,7 @@
                             <canvas id="yoy_sales_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
                         </div>
                     </article>
-                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
@@ -225,7 +227,7 @@
                             <canvas id="yoy_p90_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
                         </div>
                     </article>
-                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
@@ -237,14 +239,14 @@
                             <canvas id="yoy_avg_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
                         </div>
                     </article>
-                    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
                                 <h3 class="mt-2 text-xl font-semibold text-zinc-900">Prime property price change</h3>
                                 <p class="mt-2 text-sm text-zinc-600">Top 5% uses average to preserve high-end outlier signal.</p>
                             </div>
-                            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Rolling 12 month YoY</span>
+                            <span class="shrink-0 whitespace-nowrap rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Rolling 12 month YoY</span>
                         </div>
                         <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
                             <canvas id="yoy_top5_{{ $district }}" class="block h-full w-full max-w-full"></canvas>
@@ -712,7 +714,7 @@
                     data: years.map(y => (yearTypeMap.get(y)?.get(t)) || 0),
                     backgroundColor: `${baseColors[i % baseColors.length]}bb`,
                     borderWidth: 1,
-                    borderRadius: 8,
+                    borderRadius: 0,
                     borderColor: baseColors[i % baseColors.length]
                 }));
 
@@ -858,7 +860,7 @@
                                     data: newData,
                                     backgroundColor: 'rgba(101, 163, 13, 0.72)',
                                     borderWidth: 1,
-                                    borderRadius: 8,
+                                    borderRadius: 0,
                                     borderColor: '#65a30d'
                                 },
                                 {
@@ -866,7 +868,7 @@
                                     data: exData,
                                     backgroundColor: 'rgba(37, 99, 235, 0.72)',
                                     borderWidth: 1,
-                                    borderRadius: 8,
+                                    borderRadius: 0,
                                     borderColor: '#2563eb'
                                 }
                             ]
@@ -939,7 +941,7 @@
                                     data: freeData,
                                     backgroundColor: 'rgba(101, 163, 13, 0.72)',
                                     borderWidth: 1,
-                                    borderRadius: 8,
+                                    borderRadius: 0,
                                     borderColor: '#65a30d'
                                 },
                                 {
@@ -947,7 +949,7 @@
                                     data: leaseData,
                                     backgroundColor: 'rgba(234, 88, 12, 0.72)',
                                     borderWidth: 1,
-                                    borderRadius: 8,
+                                    borderRadius: 0,
                                     borderColor: '#ea580c'
                                 }
                             ]
@@ -1171,7 +1173,7 @@
                             backgroundColor: barColorsFrom(yoySales),
                             borderColor: borderColorsFrom(yoySales),
                             borderWidth: 1,
-                            borderRadius: 8,
+                            borderRadius: 0,
                             maxBarThickness: 28
                         }]
                     },
@@ -1219,7 +1221,7 @@
                             backgroundColor: barColorsFrom(yoyP90),
                             borderColor: borderColorsFrom(yoyP90),
                             borderWidth: 1,
-                            borderRadius: 8,
+                            borderRadius: 0,
                             maxBarThickness: 28
                         }]
                     },
@@ -1267,7 +1269,7 @@
                             backgroundColor: barColorsFrom(yoyAvg),
                             borderColor: borderColorsFrom(yoyAvg),
                             borderWidth: 1,
-                            borderRadius: 8,
+                            borderRadius: 0,
                             maxBarThickness: 28
                         }]
                     },
@@ -1315,7 +1317,7 @@
                             backgroundColor: barColorsFrom(yoyTop5),
                             borderColor: borderColorsFrom(yoyTop5),
                             borderWidth: 1,
-                            borderRadius: 8,
+                            borderRadius: 0,
                             maxBarThickness: 28
                         }]
                     },

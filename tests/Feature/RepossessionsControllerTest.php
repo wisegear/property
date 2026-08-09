@@ -63,6 +63,10 @@ class RepossessionsControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('Repossession Actions');
         $response->assertSee('Birmingham');
+        $response->assertSee('-mx-6 -mt-6', false);
+        $response->assertSee('borderRadius: 0', false);
+        $response->assertSee("k === 'Mortgage' ? 'Lender'", false);
+        $response->assertSee('Types: Accelerated Landlord, Lender, Private Landlord, Social Landlord.');
 
         $rows = collect($response->viewData('la_breakdown_rows'));
         $this->assertSame('Birmingham', $rows->first()['local_authority']);
@@ -99,6 +103,10 @@ class RepossessionsControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Birmingham');
+        $response->assertSee('-mx-6 -mt-6', false);
+        $response->assertSee('borderRadius: 0', false);
+        $response->assertSee("k === 'Mortgage' ? 'Lender'", false);
+        $response->assertSee('Types: Accelerated Landlord, Lender, Private Landlord, Social Landlord.');
     }
 
     protected function ensureRepoTableExists(): void

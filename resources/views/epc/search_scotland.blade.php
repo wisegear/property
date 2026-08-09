@@ -29,26 +29,27 @@
     $query  = http_build_query($qs, '', '&', PHP_QUERY_RFC1738); // RFC1738 encodes spaces as '+'
     $cleanReturnUrl = $scheme . '://' . $host . $port . $path . ($query ? ('?' . $query) : '');
 @endphp
-<div class="mx-auto max-w-7xl px-4 py-10 md:py-12">
-    {{-- Hero / summary card --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
-        @include('partials.hero-background')
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+      <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
         <div class="max-w-4xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">Search EPC records in Scotland</h1>
+            <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>EPC search</p>
+            <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Search EPC records in Scotland</h1>
             <p class="mt-1 text-sm leading-6 text-gray-700">
                 Data covers the period from 2015 to 2025 (latest available),  Use the map below to zoom in and explore EPC locations, or enter a postcode to search for specific properties.
             </p>
         </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('assets/images/site/epc.jpg') }}" alt="EPC Search Scotland" class="w-90 h-auto">
+        <div class="hidden justify-self-end md:block">
+            <img src="{{ asset('assets/images/site/epc.jpg') }}" alt="EPC Search Scotland" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
         </div>
+      </div>
     </section>
+<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
 
     @isset($byYear)
         <section class="mb-8">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {{-- Certificates issued by year --}}
-                <div class="rounded-lg border border-gray-200 bg-white/80 p-4 md:p-6 shadow-sm">
+                <div class="rounded-sm border border-gray-200 bg-white/80 p-4 shadow-sm md:p-6">
                     <h2 class="text-base md:text-lg font-semibold text-gray-900 mb-1">Certificates issued by year</h2>
                     <p class="text-xs md:text-sm text-gray-600 mb-3">
                         Number of EPC certificates lodged each year in Scotland.
@@ -60,7 +61,7 @@
 
                 {{-- Tenure by year --}}
                 @isset($tenureByYear)
-                    <div class="rounded-lg border border-gray-200 bg-white/80 p-4 md:p-6 shadow-sm">
+                    <div class="rounded-sm border border-gray-200 bg-white/80 p-4 shadow-sm md:p-6">
                         <h2 class="text-base md:text-lg font-semibold text-gray-900 mb-1">Tenure by year</h2>
                         <p class="text-xs md:text-sm text-gray-600 mb-3">
                             Split of EPCs by tenure (owner-occupied, private rented, social rented) each year.
@@ -96,7 +97,7 @@
 
                 <button
                     type="submit"
-                    class="bg-zinc-700 hover:bg-zinc-500 text-white font-medium px-4 py-2 rounded-md transition cursor-pointer">
+                    class="cursor-pointer rounded bg-zinc-900 px-4 py-2 font-medium text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900">
                     Search
                 </button>
             </div>
@@ -296,12 +297,16 @@
                             datasets: [{
                                 label: 'Certificates',
                                 data: dataScot,
-                                borderWidth: 1
+                                borderWidth: 1,
+                                borderRadius: 0
                             }]
                         },
                         options: {
                             maintainAspectRatio: false,
                             scales: {
+                                x: {
+                                    offset: false
+                                },
                                 y: {
                                     beginAtZero: true,
                                     ticks: {
@@ -334,7 +339,8 @@
                                     const match = tenureRawScot.find(r => r.yr === y && r.tenure === cat);
                                     return match ? match.cnt : 0;
                                 }),
-                                borderWidth: 1
+                                borderWidth: 1,
+                                borderRadius: 0
                             };
                         });
 

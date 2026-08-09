@@ -8,37 +8,40 @@
 @php
     $chartScopeLabel = $selectedAuthority ?? 'All Scotland';
 @endphp
-<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
-    <section class="relative z-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
-        @include('partials.hero-background')
-        <div class="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div class="max-w-4xl">
-                <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase text-zinc-600">
-                    <span class="h-2 w-2 rounded-full bg-lime-500"></span>
+{{-- Hero --}}
+<section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.18)] md:py-9">
+    <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+        <div class="max-w-4xl">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="inline-flex items-center gap-2 text-xs font-medium text-zinc-600">
+                    <span class="h-2 w-2 rounded-full bg-lime-600"></span>
                     Scotland
                 </div>
                 @if ($latestCoveredMonth)
-                    <div class="mt-3 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase text-zinc-600">
+                    <div class="inline-flex items-center gap-2 rounded border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-600">
                         <span class="h-2 w-2 rounded-full bg-sky-500"></span>
                         Latest data: {{ $latestCoveredMonth }}
                     </div>
                 @endif
-                <h1 class="mt-4 text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">Scottish House Prices</h1>
-                <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-600 md:text-base">
-                    Explore yearly Scottish residential property data across the whole of Scotland or focus on an individual local authority.
-                    The charts below aggregate official monthly records into annual averages for prices and annual totals for sales activity.
-                    There is limited data for Scotland but hopefully this will grow over time depending on the availability of official records.  Current
-                    year is year to date.
-                </p>
             </div>
-
-            <div class="flex-shrink-0">
-                <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="Scottish property prices" class="h-auto w-90">
-            </div>
+            <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-950 md:text-4xl">Scottish House Prices</h1>
+            <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-600 md:text-base">
+                Explore yearly Scottish residential property data across the whole of Scotland or focus on an individual local authority.
+                The charts below aggregate official monthly records into annual averages for prices and annual totals for sales activity.
+                There is limited data for Scotland but hopefully this will grow over time depending on the availability of official records. Current
+                year is year to date.
+            </p>
         </div>
-    </section>
 
-    <section class="mx-auto mt-8 w-full rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 lg:w-1/2">
+        <div class="hidden min-w-0 justify-end md:flex" aria-hidden="true">
+            <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="" class="h-44 w-auto max-w-full object-contain opacity-80 mix-blend-multiply [mask-image:linear-gradient(to_right,transparent_0%,black_18%,black_94%,transparent_100%)] lg:h-52">
+        </div>
+    </div>
+</section>
+
+<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
+
+    <section class="mx-auto w-full rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 lg:w-1/2">
         <form method="GET" action="{{ route('property.scottish-prices', absolute: false) }}" class="flex flex-col gap-4 lg:flex-row lg:items-end">
             <div class="flex-1">
                 <label for="local_authority" class="block text-sm font-medium text-zinc-800">Local authority</label>
@@ -55,10 +58,10 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-lime-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-lime-700">
+                <button type="submit" class="inline-flex items-center justify-center rounded bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900">
                     Update view
                 </button>
-                <a href="{{ route('property.scottish-prices', absolute: false) }}" class="inline-flex items-center justify-center rounded-xl bg-zinc-200 px-5 py-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-300">
+                <a href="{{ route('property.scottish-prices', absolute: false) }}" class="inline-flex items-center justify-center rounded bg-zinc-200 px-5 py-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-300">
                     Reset
                 </a>
             </div>
@@ -67,30 +70,30 @@
 
     @if ($years !== [])
         <section class="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
-            <article class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <article class="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Latest Year to Date</p>
                 <p class="mt-3 text-2xl font-semibold text-zinc-900">{{ $stats['latestYear'] }}</p>
             </article>
-            <article class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <article class="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Average</p>
                 <p class="mt-3 text-2xl font-semibold text-zinc-900">£{{ number_format((float) $stats['latestMeanPrice']) }}</p>
             </article>
-            <article class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <article class="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Median</p>
                 <p class="mt-3 text-2xl font-semibold text-zinc-900">£{{ number_format((float) $stats['latestMedianPrice']) }}</p>
             </article>
-            <article class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <article class="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Volume</p>
                 <p class="mt-3 text-2xl font-semibold text-zinc-900">{{ number_format((int) $stats['latestSalesVolume']) }}</p>
             </article>
-            <article class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <article class="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Total Value</p>
                 <p class="mt-3 text-2xl font-semibold text-zinc-900">£{{ number_format((float) $stats['latestSalesValue']) }}</p>
             </article>
         </section>
 
         <section class="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <article class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <article class="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Trend · {{ $chartScopeLabel }}</p>
@@ -103,7 +106,7 @@
                 </div>
             </article>
 
-            <article class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <article class="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Trend · {{ $chartScopeLabel }}</p>
@@ -116,7 +119,7 @@
                 </div>
             </article>
 
-            <article class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <article class="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Sales Activity · {{ $chartScopeLabel }}</p>
@@ -129,7 +132,7 @@
                 </div>
             </article>
 
-            <article class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <article class="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Sales Activity · {{ $chartScopeLabel }}</p>
@@ -143,7 +146,7 @@
             </article>
         </section>
     @else
-        <section class="mt-8 rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center shadow-sm">
+        <section class="mt-8 rounded-sm border border-dashed border-zinc-300 bg-white p-8 text-center shadow-sm">
             <h2 class="text-xl font-semibold text-zinc-900">No data available</h2>
             <p class="mt-3 text-sm text-zinc-600">
                 No yearly Scottish property price records were found for {{ $selectedAuthority ?? 'this selection' }}.
@@ -315,7 +318,7 @@
                 data: salesVolumes,
                 backgroundColor: 'rgba(101, 163, 13, 0.78)',
                 borderColor: '#4d7c0f',
-                borderRadius: 10,
+                borderRadius: 0,
                 maxBarThickness: 34,
             }],
         },
@@ -351,7 +354,7 @@
                 data: salesValues,
                 backgroundColor: 'rgba(217, 119, 6, 0.78)',
                 borderColor: '#b45309',
-                borderRadius: 10,
+                borderRadius: 0,
                 maxBarThickness: 34,
             }],
         },

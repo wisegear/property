@@ -1,13 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mx-auto max-w-7xl px-4 py-10 md:py-12">
-
-    {{-- Hero / summary card --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-6 flex flex-col md:flex-row justify-between items-center">
-        @include('partials.hero-background')
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+      <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
         <div class="max-w-4xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">EPC Dashboard</h1>
+            <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Energy performance</p>
+            <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">EPC Dashboard</h1>
             <p class="mt-2 text-sm leading-6 text-gray-700">
                 @if(($nation ?? 'ew') === 'scotland')
                     <span class="font-semibold">Scottish data (Quarterly)</span>
@@ -39,15 +37,17 @@
                   Search Scotland</a>
             </div>
         </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('assets/images/site/epc.jpg') }}" alt="EPC Dashboard" class="w-90 h-auto">
+        <div class="hidden justify-self-end md:block">
+            <img src="{{ asset('assets/images/site/epc.jpg') }}" alt="EPC Dashboard" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
         </div>
+      </div>
     </section>
+<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
 
     <!-- Buttons to swith from England to Scotland -->
     <div class="mb-6 flex justify-center gap-4">
         <a href="{{ url('/epc?nation=ew') }}"
-           class="inner-button inline-flex items-center gap-2 whitespace-nowrap {{ (($nation ?? 'ew') === 'ew') ? 'bg-lime-600 text-white' : '' }}"
+           class="inner-button inline-flex items-center gap-2 whitespace-nowrap {{ (($nation ?? 'ew') === 'ew') ? 'bg-zinc-900 text-white' : '' }}"
            aria-current="{{ (($nation ?? 'ew') === 'ew') ? 'page' : 'false' }}">
           <svg class="inline-block h-[1em] w-[1em]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M3 3.75A.75.75 0 0 1 3.75 3h16.5a.75.75 0 0 1 0 1.5H4.5v15.75a.75.75 0 0 1-1.5 0V3.75Z"/>
@@ -56,7 +56,7 @@
            England &amp; Wales
         </a>
         <a href="{{ url('/epc?nation=scotland') }}"
-           class="inner-button inline-flex items-center gap-2 whitespace-nowrap {{ (($nation ?? 'ew') === 'scotland') ? 'bg-lime-600 text-white' : '' }}"
+           class="inner-button inline-flex items-center gap-2 whitespace-nowrap {{ (($nation ?? 'ew') === 'scotland') ? 'bg-zinc-900 text-white' : '' }}"
            aria-current="{{ (($nation ?? 'ew') === 'scotland') ? 'page' : 'false' }}">
           <svg class="inline-block h-[1em] w-[1em]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M3 3.75A.75.75 0 0 1 3.75 3h16.5a.75.75 0 0 1 0 1.5H4.5v15.75a.75.75 0 0 1-1.5 0V3.75Z"/>
@@ -89,7 +89,7 @@
     {{-- EPCs by Year & Tenure --}}
     <div class="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- Certificates issued by year --}}
-        <article class="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <article class="flex min-w-0 flex-col overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Certificates</p>
@@ -106,7 +106,7 @@
         </article>
 
         {{-- Tenure by year --}}
-        <div class="flex min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex min-w-0 flex-col rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
             <h2 class="text-lg font-semibold">Reason for EPC by year</h2>
             <p class="mt-2 text-xs text-gray-600">
                 Count of EPCs by reason for each year.
@@ -216,6 +216,7 @@
             backgroundColor: tenureColors[idx % tenureColors.length],
             borderColor: tenureBorderColors[idx % tenureBorderColors.length],
             borderWidth: 1,
+            borderRadius: 0,
             stack: 'tenure'
           }));
 
@@ -238,6 +239,7 @@
               },
               scales: {
                 x: {
+                  offset: false,
                   stacked: true,
                   title: { display: true, text: 'Year' }
                 },
@@ -286,7 +288,7 @@
         }
     @endphp
 
-    <div class="mb-8 border rounded-lg bg-white p-4 shadow">
+    <div class="mb-8 rounded-sm border bg-white p-4 shadow">
         <h2 class="text-lg font-semibold">Actual Energy ratings by year (A–G, % of certificates)</h2>
         <p class="mb-2 text-xs text-zinc-700">For clarity, yes the A category is so small you can hardly see it.</p>
         <div class="w-full h-72">
@@ -315,6 +317,7 @@
           backgroundColor: colors[i % colors.length],
           borderColor: borderColors[i % borderColors.length],
           borderWidth: 1,
+          borderRadius: 0,
           stack: 'stack1'
         }));
 
@@ -343,7 +346,7 @@
               }
             },
             scales: {
-              x: { stacked: true, title: { display: true, text: 'Year' } },
+              x: { offset: false, stacked: true, title: { display: true, text: 'Year' } },
               y: {
                 stacked: true,
                 beginAtZero: true,
@@ -383,7 +386,7 @@
         }
     @endphp
 
-    <div class="mb-8 border rounded-lg bg-white p-4 shadow">
+    <div class="mb-8 rounded-sm border bg-white p-4 shadow">
         <h2 class="text-lg font-semibold">Potential energy ratings by year (A–G, % of certificates)</h2>
         <p class="mb-2 text-xs text-zinc-700">This data show the potential energy ratings if every property completed the recomendations made in the EPC.</p>
         <div class="w-full h-72">
@@ -412,6 +415,7 @@
           backgroundColor: colors[i % colors.length],
           borderColor: borderColors[i % borderColors.length],
           borderWidth: 1,
+          borderRadius: 0,
           stack: 'stack1'
         }));
 
@@ -440,7 +444,7 @@
               }
             },
             scales: {
-              x: { stacked: true, title: { display: true, text: 'Year' } },
+              x: { offset: false, stacked: true, title: { display: true, text: 'Year' } },
               y: {
                 stacked: true,
                 beginAtZero: true,

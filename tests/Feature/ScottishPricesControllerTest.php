@@ -48,6 +48,9 @@ class ScottishPricesControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('Scottish Prices');
         $response->assertSee('Explore yearly Scottish residential property data across the whole of Scotland or focus on an individual local authority.');
+        $response->assertSee('rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6', false);
+        $response->assertSee('rounded bg-zinc-900', false);
+        $response->assertSee('borderRadius: 0', false);
         $response->assertViewHas('selectedAuthority', null);
         $response->assertViewHas('localAuthorities', ['Aberdeen City', 'Dundee City']);
         $response->assertViewHas('years', [2003, 2004]);

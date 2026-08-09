@@ -1,18 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mx-auto max-w-7xl space-y-6 px-4 py-8 md:py-10">
-
-    {{-- Hero / summary card --}}
-    <section class="relative z-0 mb-8 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:flex md:flex-row md:items-center md:justify-between md:p-8">
-        @include('partials.hero-background')
-        <div class="relative z-10 max-w-4xl">
-            <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
-                <span class="h-2 w-2 rounded-full bg-lime-500"></span>
+{{-- Hero --}}
+<section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.18)] md:py-9">
+    <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+        <div class="max-w-4xl">
+            <div class="inline-flex items-center gap-2 text-xs font-medium text-zinc-600">
+                <span class="h-2 w-2 rounded-full bg-lime-600"></span>
                 House Price Index
             </div>
-            <h1 class="mt-4 text-2xl font-bold tracking-tight text-zinc-900 md:text-3xl">HPI Dashboard</h1>
-            <p class="mt-4 text-sm leading-6 text-zinc-600">
+            <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-950 md:text-4xl">HPI Dashboard</h1>
+            <p class="mt-3 text-sm leading-6 text-zinc-600">
                 <span class="font-semibold">House Price Index for UK and England, Wales, Scotland & Northern Ireland.</span>
             </p>
             <p class="mt-2 text-sm leading-6 text-zinc-600">All data provided by gov.uk from the various nations and presented here without modification.  There are many
@@ -22,14 +20,17 @@
                 Data covers the period from 1969 to 2026 (May).  Next Update expected July 2026.
             </p>
         </div>
-        <div class="relative z-10 mt-6 flex-shrink-0 md:mt-0 md:ml-8">
-            <img src="{{ asset('assets/images/site/hp_index.jpg') }}" alt="HPI Dashboard" class="w-90 h-auto">
+        <div class="hidden min-w-0 justify-end md:flex" aria-hidden="true">
+            <img src="{{ asset('assets/images/site/hp_index.jpg') }}" alt="" class="h-44 w-auto max-w-full object-contain opacity-80 mix-blend-multiply [mask-image:linear-gradient(to_right,transparent_0%,black_18%,black_94%,transparent_100%)] lg:h-52">
         </div>
-    </section>
+    </div>
+</section>
+
+<div class="mx-auto max-w-7xl space-y-6 px-4 py-8 md:py-10">
 
   <div class="grid gap-4 md:grid-cols-5">
     @foreach($nations as $n)
-      <div class="rounded-2xl border border-zinc-200 p-4 shadow-sm {{ $n->twelve_m_change > 0 ? 'bg-lime-50' : ($n->twelve_m_change < 0 ? 'bg-rose-50' : 'bg-white') }}">
+      <div class="rounded-sm border border-zinc-200 p-4 shadow-sm {{ $n->twelve_m_change > 0 ? 'bg-lime-50' : ($n->twelve_m_change < 0 ? 'bg-rose-50' : 'bg-white') }}">
         <div class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">{{ $n->RegionName }}</div>
         <div class="mt-3 text-2xl font-semibold text-zinc-900">£{{ number_format($n->AveragePrice,0) }}</div>
         <div class="mt-2 text-xs text-zinc-600">
@@ -57,7 +58,7 @@
 
   {{-- UK wide chart (index 0) --}}
   @if(isset($seriesByArea[0]))
-    <article class="mb-6 min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <article class="mb-6 min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
       <div class="flex items-start justify-between gap-4">
         <div>
           <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">HPI Trend</p>
@@ -75,7 +76,7 @@
   <div class="grid gap-6 md:grid-cols-1">
     @foreach($seriesByArea as $i => $s)
       @continue($i === 0)
-      <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+      <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">HPI Trend</p>
@@ -291,7 +292,7 @@
 
   {{-- UK wide property-type chart (index 0) --}}
   @if(isset($typePriceSeries[0]))
-    <article class="mb-6 min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <article class="mb-6 min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
       <div class="flex items-start justify-between gap-4">
         <div>
           <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Property Types</p>
@@ -316,7 +317,7 @@
   <div class="grid gap-6 md:grid-cols-2">
     @foreach($typePriceSeries as $i => $s)
       @continue($i === 0)
-      <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+      <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Property Types</p>
@@ -480,7 +481,7 @@
     <h2 class="mt-4 text-xl font-semibold text-zinc-900">Top Movers &amp; Losers (latest month)</h2>
     <p class="mb-4 text-sm text-zinc-600">Top 30 regions that have gained and lost the most over the past 12 months.</p>
     <div class="grid md:grid-cols-2 gap-6">
-      <div class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <div class="overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm">
         <div class="border-b border-zinc-200 px-5 py-4">
         <h3 class="text-lg font-semibold mb-2">Top Movers</h3>
         </div>
@@ -511,7 +512,7 @@
           </tbody>
         </table>
       </div>
-      <div class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <div class="overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm">
         <div class="border-b border-zinc-200 px-5 py-4">
         <h3 class="text-lg font-semibold mb-2">Top Losers</h3>
         </div>

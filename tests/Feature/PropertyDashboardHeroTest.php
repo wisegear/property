@@ -37,7 +37,9 @@ class PropertyDashboardHeroTest extends TestCase
         $view->assertSee('Property Search');
         $view->assertSee($searchUrl, false);
         $view->assertSeeInOrder(['Property Search', 'Outer Prime London']);
-        $view->assertSee('rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6', false);
+        $view->assertSee('rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6', false);
+        $view->assertSee('The most recent three months are highlighted in amber while Land Registry backfills them', false);
+        $view->assertSee('borderRadius: 0', false);
         $view->assertSee('Housing Mix', false);
         $view->assertSee('buildCommonChartOptions', false);
     }
@@ -92,6 +94,9 @@ class PropertyDashboardHeroTest extends TestCase
         $view->assertSee('canvas id="api_ALL" class="block h-full w-full max-w-full"', false);
         $view->assertSee('canvas id="yoy_top5_ALL" class="block h-full w-full max-w-full"', false);
         $view->assertSee('Prime Signals', false);
+        $view->assertSee('rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6', false);
+        $view->assertSee('shrink-0 whitespace-nowrap rounded-full', false);
+        $view->assertSee('borderRadius: 0', false);
         $view->assertSee('text: yoyRangeTitle,', false);
         $view->assertSee('font: {', false);
         $view->assertSee('size: 12', false);

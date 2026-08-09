@@ -2,26 +2,32 @@
 @include('partials.chartjs-head')
 
 @section('content')
-<div class="max-w-7xl mx-auto">
-    {{-- Hero / summary card --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
-        @include('partials.hero-background')
-        <div class="max-w-5xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">Property Dashboard</h1>
-            <p class="mt-2 text-sm leading-6 text-gray-700">Charts below use a rolling 12-month window from 1995 and ending with the latest Land Registry month ({{ isset($latestMonth) ? \Carbon\Carbon::parse($latestMonth)->format('F') : now()->format('F') }}).</p>
-            <p class="mt-2 text-sm leading-6 text-gray-700">All property data includes <span class="text-lime-600 font-bold">Category A</span> sales only, these are sales at market value on an arms length basis.  <span class="text-rose-500 font-bold">Category B</span> sales are not included as they are transactions for a variety of reasons not neccessairly at 
-                arms length therefore skew the data so are excluded. Read more about this <a href="/blog/category-a-vs-category-b-property-sales-what-the-land-registry-is-actually-telling-you" class="text-lime-600 hover:text-lime-700">Here.</a>All data provided from the Land Registry.</p>     
-            <div class="mt-4 flex flex-wrap gap-2"> <!-- Avoids unset in css -->
+{{-- Hero --}}
+<section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.18)] md:py-9">
+    <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+        <div class="max-w-4xl">
+            <div class="inline-flex items-center gap-2 text-xs font-medium text-zinc-600">
+                <span class="h-2 w-2 rounded-full bg-lime-600"></span>
+                England and Wales transaction data
+            </div>
+            <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-950 md:text-4xl">Property Dashboard</h1>
+            <p class="mt-3 text-sm leading-6 text-zinc-600">Charts use a rolling 12-month window from 1995, ending with the latest Land Registry month ({{ isset($latestMonth) ? \Carbon\Carbon::parse($latestMonth)->format('F') : now()->format('F') }}).</p>
+            <p class="mt-2 text-sm leading-6 text-zinc-600">Property data includes <span class="font-bold text-lime-600">Category A</span> arm's-length market sales only. <span class="font-bold text-rose-500">Category B</span> transactions are excluded because their circumstances can skew the data. <a href="/blog/category-a-vs-category-b-property-sales-what-the-land-registry-is-actually-telling-you" class="text-lime-600 hover:text-lime-700">Read more about the categories.</a> Data is provided by HM Land Registry.</p>
+            <div class="mt-4 flex flex-wrap gap-2">
                 <a href="{{ route('property.search', absolute: false) }}" class="inner-button bg-lime-600! hover:bg-lime-700!">Property Search</a>
                 <a href="/property/outer-prime-london" class="inner-button">Outer Prime London</a>
                 <a href="/property/prime-central-london" class="inner-button">Prime Central London</a>
                 <a href="/property/ultra-prime-central-london" class="inner-button">Ultra Prime Central London</a>
             </div>
         </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="Property dashboard" class="w-90 h-auto">
+
+        <div class="hidden min-w-0 justify-end md:flex" aria-hidden="true">
+            <img src="{{ asset('assets/images/site/property1.jpg') }}" alt="" class="h-44 w-auto max-w-full object-contain opacity-80 mix-blend-multiply [mask-image:linear-gradient(to_right,transparent_0%,black_18%,black_94%,transparent_100%)] lg:h-52">
         </div>
+    </div>
 </section>
+
+<div class="mx-auto max-w-7xl pt-8">
 
 @php
     $salesSeriesForSnapshot = collect($salesByYear ?? []);
@@ -40,28 +46,28 @@
 @endphp
 
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-    <div class="rounded-2xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
+    <div class="rounded-sm border border-zinc-200 bg-white p-4 text-center shadow-sm">
         <div class="text-xs text-gray-500 uppercase">LAST 12 MONTHS SALES</div>
         <div class="text-2xl font-semibold">
             {{ number_format($snapshot['rolling_12_sales']) }}
         </div>
     </div>
 
-    <div class="rounded-2xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
+    <div class="rounded-sm border border-zinc-200 bg-white p-4 text-center shadow-sm">
         <div class="text-xs text-gray-500 uppercase">Median Price</div>
         <div class="text-2xl font-semibold">
             £{{ number_format($snapshot['rolling_12_median_price']) }}
         </div>
     </div>
 
-    <div class="rounded-2xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
+    <div class="rounded-sm border border-zinc-200 bg-white p-4 text-center shadow-sm">
         <div class="text-xs text-gray-500 uppercase">MEDIAN PRICE CHANGE</div>
         <div class="text-2xl font-semibold {{ $snapshot['rolling_12_price_yoy'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
             {{ number_format($snapshot['rolling_12_price_yoy'], 1) }}%
         </div>
     </div>
 
-    <div class="rounded-2xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
+    <div class="rounded-sm border border-zinc-200 bg-white p-4 text-center shadow-sm">
         <div class="text-xs text-gray-500 uppercase">SALES VOLUME CHANGE</div>
         <div class="text-2xl font-semibold {{ $snapshot['rolling_12_sales_yoy'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
             {{ number_format($snapshot['rolling_12_sales_yoy'], 1) }}%
@@ -78,7 +84,7 @@
     $hasMonthly24  = !empty($sales24Labels) && !empty($sales24Data);
 @endphp
 
-<section class="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+<section class="mb-6 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
     <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">National Trend</p>
@@ -88,7 +94,7 @@
         <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Last 24 months</span>
     </div>
     <p class="mt-4 text-xs text-zinc-500 italic">
-        Note: Land Registry backfills the most recent months; the last few months may be incomplete. April 2025 is likely a rush ahead of year end.
+        Note: The most recent three months are highlighted in amber while Land Registry backfills them, so their totals may rise.
     </p>
 
     <div class="mt-5 h-72 min-w-0 overflow-hidden sm:h-80">
@@ -121,10 +127,10 @@
           label: 'Sales',
           data,
           type: 'bar',
-          backgroundColor: 'rgba(37, 99, 235, 0.74)',
-          borderColor: '#2563eb',
+          backgroundColor: data.map((value, index) => index >= data.length - 3 ? 'rgba(245, 158, 11, 0.76)' : 'rgba(37, 99, 235, 0.74)'),
+          borderColor: data.map((value, index) => index >= data.length - 3 ? '#d97706' : '#2563eb'),
           borderWidth: 1,
-          borderRadius: 8,
+          borderRadius: 0,
           maxBarThickness: 28
         }
       ]
@@ -192,7 +198,7 @@
 @endpush
 
 <div class="max-w-7xl mx-auto grid grid-cols-1 gap-6 xl:grid-cols-2">
-    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Market Activity</p>
@@ -204,7 +210,7 @@
             <canvas id="salesChart" class="block h-full w-full max-w-full"></canvas>
         </div>
     </article>
-    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Prime Signals</p>
@@ -216,7 +222,7 @@
             <canvas id="topSaleChart" class="block h-full w-full max-w-full"></canvas>
         </div>
     </article>
-    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-2">
+    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-2">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Ladder</p>
@@ -229,7 +235,7 @@
             <canvas id="p90AvgTop5Chart" class="block h-full w-full max-w-full"></canvas>
         </div>
     </article>
-    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Housing Mix</p>
@@ -241,7 +247,7 @@
             <canvas id="propertyTypeSplitChart" class="block h-full w-full max-w-full"></canvas>
         </div>
     </article>
-    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Housing Mix</p>
@@ -253,7 +259,7 @@
             <canvas id="avgPriceByTypeChart" class="block h-full w-full max-w-full"></canvas>
         </div>
     </article>
-    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Stock Profile</p>
@@ -265,7 +271,7 @@
             <canvas id="newBuildSplitChart" class="block h-full w-full max-w-full"></canvas>
         </div>
     </article>
-    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Tenure Mix</p>
@@ -280,7 +286,7 @@
 </div>
 
 <div class="max-w-7xl mx-auto mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
@@ -292,7 +298,7 @@
             <canvas id="salesYoyBar" class="block h-full w-full max-w-full"></canvas>
         </div>
     </article>
-    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
@@ -304,7 +310,7 @@
             <canvas id="avgYoyBar" class="block h-full w-full max-w-full"></canvas>
         </div>
     </article>
-    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
@@ -316,14 +322,14 @@
             <canvas id="p90YoyBar" class="block h-full w-full max-w-full"></canvas>
         </div>
     </article>
-    <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-start justify-between gap-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Momentum</p>
                 <h2 class="mt-2 text-xl font-semibold text-zinc-900">Top 5% average YoY change</h2>
                 <p class="mt-2 text-sm text-zinc-600">Average is retained here to keep higher-end outlier moves visible.</p>
             </div>
-            <span class="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Rolling 12 month YoY</span>
+            <span class="shrink-0 whitespace-nowrap rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">Rolling 12 month YoY</span>
         </div>
         <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
             <canvas id="top5YoyBar" class="block h-full w-full max-w-full"></canvas>
@@ -1048,7 +1054,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     backgroundColor: barColorsFrom(series),
                     borderColor: borderColorsFrom(series),
                     borderWidth: 1,
-                    borderRadius: 8,
+                    borderRadius: 0,
                     maxBarThickness: 28,
                 }]
             },
@@ -1110,7 +1116,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     backgroundColor: barColorsFrom(p90SeriesYoY),
                     borderColor: borderColorsFrom(p90SeriesYoY),
                     borderWidth: 1,
-                    borderRadius: 8,
+                    borderRadius: 0,
                     maxBarThickness: 28,
                 }]
             },
@@ -1142,7 +1148,7 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
                     backgroundColor: barColorsFrom(top5SeriesYoY),
                     borderColor: borderColorsFrom(top5SeriesYoY),
                     borderWidth: 1,
-                    borderRadius: 8,
+                    borderRadius: 0,
                     maxBarThickness: 28,
                 }]
             },
@@ -1188,10 +1194,10 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
             data: {
                 labels,
                 datasets: [
-                    { label: 'Detached',      data: dataD, backgroundColor: 'rgba(37, 99, 235, 0.72)', borderColor: '#2563eb', borderWidth: 1, borderRadius: 8, stack: 'types' },
-                    { label: 'Semi-detached', data: dataS, backgroundColor: 'rgba(15, 118, 110, 0.72)', borderColor: '#0f766e', borderWidth: 1, borderRadius: 8, stack: 'types' },
-                    { label: 'Terraced',      data: dataT, backgroundColor: 'rgba(234, 88, 12, 0.72)', borderColor: '#ea580c', borderWidth: 1, borderRadius: 8, stack: 'types' },
-                    { label: 'Flat',          data: dataF, backgroundColor: 'rgba(225, 29, 72, 0.72)', borderColor: '#e11d48', borderWidth: 1, borderRadius: 8, stack: 'types' },
+                    { label: 'Detached',      data: dataD, backgroundColor: 'rgba(37, 99, 235, 0.72)', borderColor: '#2563eb', borderWidth: 1, borderRadius: 0, stack: 'types' },
+                    { label: 'Semi-detached', data: dataS, backgroundColor: 'rgba(15, 118, 110, 0.72)', borderColor: '#0f766e', borderWidth: 1, borderRadius: 0, stack: 'types' },
+                    { label: 'Terraced',      data: dataT, backgroundColor: 'rgba(234, 88, 12, 0.72)', borderColor: '#ea580c', borderWidth: 1, borderRadius: 0, stack: 'types' },
+                    { label: 'Flat',          data: dataF, backgroundColor: 'rgba(225, 29, 72, 0.72)', borderColor: '#e11d48', borderWidth: 1, borderRadius: 0, stack: 'types' },
                 ]
             },
             options: buildCommonChartOptions({
@@ -1329,8 +1335,8 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
             data: {
                 labels,
                 datasets: [
-                    { label: 'New build (Y)', data: pctNew, backgroundColor: 'rgba(101, 163, 13, 0.72)', borderColor: '#65a30d', borderWidth: 1, borderRadius: 8, stack: 'nb' },
-                    { label: 'Existing (N)',  data: pctOld, backgroundColor: 'rgba(37, 99, 235, 0.72)', borderColor: '#2563eb', borderWidth: 1, borderRadius: 8, stack: 'nb' },
+                    { label: 'New build (Y)', data: pctNew, backgroundColor: 'rgba(101, 163, 13, 0.72)', borderColor: '#65a30d', borderWidth: 1, borderRadius: 0, stack: 'nb' },
+                    { label: 'Existing (N)',  data: pctOld, backgroundColor: 'rgba(37, 99, 235, 0.72)', borderColor: '#2563eb', borderWidth: 1, borderRadius: 0, stack: 'nb' },
                 ]
             },
             options: buildCommonChartOptions({
@@ -1397,8 +1403,8 @@ $durPctLeasehold = $durYears->map(function ($y) use ($durByYear) {
             data: {
                 labels,
                 datasets: [
-                    { label: 'Leasehold (L)', data: pctL, backgroundColor: 'rgba(234, 88, 12, 0.72)', borderColor: '#ea580c', borderWidth: 1, borderRadius: 8, stack: 'dur', order: 0 },
-                    { label: 'Freehold (F)',  data: pctF, backgroundColor: 'rgba(101, 163, 13, 0.72)', borderColor: '#65a30d', borderWidth: 1, borderRadius: 8, stack: 'dur', order: 1 },
+                    { label: 'Leasehold (L)', data: pctL, backgroundColor: 'rgba(234, 88, 12, 0.72)', borderColor: '#ea580c', borderWidth: 1, borderRadius: 0, stack: 'dur', order: 0 },
+                    { label: 'Freehold (F)',  data: pctF, backgroundColor: 'rgba(101, 163, 13, 0.72)', borderColor: '#65a30d', borderWidth: 1, borderRadius: 0, stack: 'dur', order: 1 },
                 ]
             },
             options: buildCommonChartOptions({

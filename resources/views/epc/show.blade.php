@@ -3,14 +3,11 @@
 @section('title', 'EPC Report')
 
 @section('content')
-<div class="mx-auto max-w-7xl px-4 py-10 md:py-12">
-
-    {{-- Hero Panel --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm mb-8">
-        @include('partials.hero-background')
-        <div class="flex flex-col md:flex-row justify-between items-center p-8 gap-6">
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+        <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
             <div class="flex-1">
-                <h1 class="text-3xl font-semibold text-zinc-900 mb-2">Energy Performance Certificate</h1>
+                <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>EPC report</p>
+                <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Energy Performance Certificate</h1>
                 @php
                     $addressParts = [];
                     foreach (['address_display','address','ADDRESS','address1','address2','address3','town','postcode','POSTCODE'] as $key) {
@@ -23,14 +20,15 @@
                     $fullAddress = implode(', ', array_filter($addressParts));
                 @endphp
                 @if($fullAddress)
-                    <p class="text-zinc-600 leading-relaxed">{{ $fullAddress }}</p>
+                    <p class="mt-2 leading-relaxed text-zinc-600">{{ $fullAddress }}</p>
                 @endif
             </div>
-            <div class="flex-shrink-0">
-                <img src="{{ asset('assets/images/site/epc.svg') }}" alt="EPC Report" class="w-90 h-auto">
+            <div class="hidden justify-self-end md:block">
+                <img src="{{ asset('assets/images/site/epc.svg') }}" alt="EPC Report" class="h-44 w-full max-w-sm object-contain [mask-image:linear-gradient(to_right,transparent,black_22%)]">
             </div>
         </div>
     </section>
+<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
 
     @php
         $backUrl = $backUrl
@@ -127,7 +125,7 @@
     @endphp
 
     <div class="grid gap-6 md:grid-cols-2">
-    <div class="mb-8 rounded-lg border border-zinc-200 bg-white shadow">
+    <div class="mb-8 rounded-sm border border-zinc-200 bg-white shadow">
         <div class="px-6 py-4 border-b border-zinc-200 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-zinc-900">Energy rating</h2>
             <div class="text-sm text-zinc-500">
@@ -293,7 +291,7 @@
         $envPotColor = $envPotLetter && isset($envBandColor[$envPotLetter]) ? $envBandColor[$envPotLetter] : '#60a5fa';
     @endphp
 
-    <div class="mb-8 rounded-lg border border-zinc-200 bg-white shadow">
+    <div class="mb-8 rounded-sm border border-zinc-200 bg-white shadow">
         <div class="px-6 py-4 border-b border-zinc-200 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-zinc-900">Environmental impact (CO₂)</h2>
             <div class="text-sm text-zinc-500">
@@ -369,7 +367,7 @@
     </div>
     </div>
 
-    <div class="overflow-x-auto bg-white shadow rounded-lg border border-zinc-200">
+    <div class="overflow-x-auto rounded-sm border border-zinc-200 bg-white shadow">
         <table class="min-w-full text-sm text-left text-zinc-700">
             <thead class="bg-zinc-100 text-zinc-800 uppercase text-xs">
                 <tr>
@@ -391,7 +389,7 @@
     </div>
 
     <div class="mt-6">
-        <a href="{{ $backUrl }}" class="inline-block px-4 py-2 bg-lime-600 text-white rounded hover:bg-lime-700">
+        <a href="{{ $backUrl }}" class="inline-flex items-center justify-center rounded bg-zinc-900 px-4 py-2 text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900">
             ← Back to results
         </a>
     </div>

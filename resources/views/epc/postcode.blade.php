@@ -28,10 +28,11 @@
     };
 @endphp
 
-<div class="mx-auto max-w-7xl px-4 py-8">
-    <section class="relative z-0 overflow-hidden rounded-lg border border-zinc-200 bg-white/80 p-6 md:p-8 shadow-sm mb-6 flex flex-col md:flex-row justify-between items-center">
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+      <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
         <div class="max-w-4xl">
-            <h1 class="text-2xl md:text-2xl font-semibold tracking-tight text-zinc-900">
+            <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Postcode summary</p>
+            <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">
                 EPC (Energy Performance Certificate) data for postcode {{ $postcode }}
             </h1>
             <p class="mt-2 text-sm leading-6 text-zinc-700">
@@ -51,13 +52,15 @@
             Latest inspection date: {{ $formatUkDate($stats['inspection_dates']['latest'] ?? null) }}
         </p>
         </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('assets/images/site/epc.jpg') }}" alt="EPC Dashboard" class="w-90 h-auto">
+        <div class="hidden justify-self-end md:block">
+            <img src="{{ asset('assets/images/site/epc.jpg') }}" alt="EPC Dashboard" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
         </div>
+      </div>
     </section>
+<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
 
     <div class="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <section class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+        <section class="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 class="text-lg font-semibold text-zinc-900">Current EPC Rating Distribution</h2>
             <p class="mt-1 text-sm text-zinc-700">Count of certificates by current EPC rating band (A-G).</p>
             <div class="mt-4 h-72">
@@ -65,7 +68,7 @@
             </div>
         </section>
 
-        <section class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+        <section class="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 class="text-lg font-semibold text-zinc-900">Potential EPC Rating Distribution</h2>
             <p class="mt-1 text-sm text-zinc-700">Projected rating if recommended improvements in the EPC report are completed.</p>
             <div class="mt-4 h-72">
@@ -75,7 +78,7 @@
     </div>
 
     <div class="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <section class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+        <section class="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 class="text-lg font-semibold text-zinc-900">Current Environmental Rating Distribution</h2>
             <p class="mt-1 text-sm text-zinc-700">Environmental impact values grouped into EPC-style A-G bands.</p>
             <div class="mt-4 h-72">
@@ -83,7 +86,7 @@
             </div>
         </section>
 
-        <section class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+        <section class="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 class="text-lg font-semibold text-zinc-900">Potential Environmental Rating Distribution</h2>
             <p class="mt-1 text-sm text-zinc-700">Projected environmental impact bands after recommended improvements.</p>
             <div class="mt-4 h-72">
@@ -92,7 +95,7 @@
         </section>
     </div>
 
-    <section class="mb-6 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+    <section class="mb-6 rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
         <h2 class="text-lg font-semibold text-zinc-900">EPC Certificates</h2>
         <div class="mt-3 overflow-x-auto">
             <table class="min-w-full text-sm">
@@ -178,7 +181,8 @@
                         data: values,
                         backgroundColor: colors,
                         borderColor: colors,
-                        borderWidth: 1
+                        borderWidth: 1,
+                        borderRadius: 0
                     }]
                 },
                 options: {
@@ -190,6 +194,9 @@
                         }
                     },
                     scales: {
+                        x: {
+                            offset: false
+                        },
                         y: {
                             beginAtZero: true,
                             ticks: {

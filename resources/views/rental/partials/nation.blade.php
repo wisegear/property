@@ -2,22 +2,17 @@
 @include('partials.chartjs-head')
 
 @section('content')
-<div class="mx-auto max-w-7xl space-y-6 px-4 py-8 md:py-10">
-    {{-- Hero / summary card --}}
-    <section class="relative z-0 mb-8 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:flex md:flex-row md:items-center md:justify-between md:p-8">
-        @include('partials.hero-background')
-        <div class="relative z-10 max-w-3xl">
-            <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-600">
-                <span class="h-2 w-2 rounded-full bg-lime-500"></span>
-                Rental Trends
-            </div>
-            <h1 class="mt-4 text-2xl font-bold tracking-tight text-zinc-900 md:text-3xl">{{ $nationName }} Rental Dashboard</h1>
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+        <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+        <div class="max-w-3xl">
+            <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Rental trends</p>
+            <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">{{ $nationName }} Rental Dashboard</h1>
             <p class="mt-4 text-sm leading-6 text-zinc-600">
                 <span class="font-semibold">Quarterly rental costs and changes for {{ $nationName }}.</span>
             </p>
             <p class="mt-2 text-sm leading-6 text-zinc-600">
-                Charts show average rent levels alongside quarter-on-quarter percentage changes.  Information shows average overall and then splits it down into 1,2,3, 
-                and 4+ bedroom properties. Alsco covers detached, semi-detached, terraced, and flats.
+                Charts show average rent levels alongside quarter-on-quarter percentage changes. Information shows the overall average and then splits it into one, two, three,
+                and four or more bedroom properties. It also covers detached, semi-detached, terraced properties, and flats.
             </p>
             @if($latestPeriod)
                 <p class="mt-2 text-sm leading-6 text-zinc-600">
@@ -52,16 +47,18 @@
                 @endif
             </div>
         </div>
-        <div class="relative z-10 mt-6 flex-shrink-0 md:mt-0 md:ml-8">
-            <img src="{{ asset('assets/images/site/rental.jpg') }}" alt="Rental dashboard" class="w-90 h-auto">
+        <div class="hidden justify-self-end md:block">
+            <img src="{{ asset('assets/images/site/rental.jpg') }}" alt="Rental dashboard" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
+        </div>
         </div>
     </section>
+<div class="mx-auto max-w-7xl space-y-6 px-4 py-8 md:py-10">
 
     <h2 class="mt-8 text-xl font-semibold text-zinc-900">Quarterly Rent Change</h2>
-    <p class="mb-4 text-sm text-zinc-600">Rental price line uses pounds; quarterly change line uses percentage.</p>
+    <p class="mb-4 text-sm text-zinc-600">The blue rental-price line uses pounds; the green quarterly-change line uses percentage.</p>
 
     @if(isset($seriesByArea[0]))
-        <article class="mb-8 min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <article class="mb-8 min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Rental Trend</p>
@@ -80,7 +77,7 @@
 
     <div class="grid gap-6 md:grid-cols-2">
         @foreach($typeSeries as $type)
-            <article class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <article class="min-w-0 overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Property Type</p>
@@ -108,7 +105,7 @@
         const chartTickColor = '#52525b';
         const chartLegendColor = '#3f3f46';
 
-        const formatQuarterTick = (value, index, ticks, scale) => {
+        const formatQuarterTick = (value, scale) => {
             const label = scale.getLabelForValue(value);
 
             if (!label) {
@@ -116,15 +113,14 @@
             }
 
             const quarterMatch = label.match(/^(\d{4})-Q([1-4])$/);
-            const isLastTick = index === ticks.length - 1;
 
             if (!quarterMatch) {
-                return isLastTick ? label : '';
+                return '';
             }
 
             const [, year, quarter] = quarterMatch;
 
-            if (quarter === '1' || isLastTick) {
+            if (quarter === '1') {
                 return year;
             }
 
@@ -139,30 +135,32 @@
                     labels,
                     datasets: [
                         {
+                            type: 'line',
                             label: 'Rental price',
                             data: prices,
                             yAxisID: 'y1',
                             borderColor: PRICE,
-                            backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                            backgroundColor: 'transparent',
                             spanGaps: true,
                             pointRadius: 2,
                             pointHoverRadius: 4,
                             borderWidth: 2,
                             tension: 0.28,
-                            fill: true,
+                            fill: false,
                         },
                         {
+                            type: 'line',
                             label: 'Quarterly change',
                             data: changes,
                             yAxisID: 'y',
                             borderColor: CHANGE,
-                            backgroundColor: 'rgba(22, 163, 74, 0.10)',
+                            backgroundColor: 'transparent',
                             spanGaps: true,
                             pointRadius: 2,
                             pointHoverRadius: 4,
                             borderWidth: 2,
                             tension: 0.28,
-                            fill: true,
+                            fill: false,
                         },
                     ],
                 },
@@ -211,15 +209,16 @@
                     },
                     scales: {
                         x: {
-                            grid: { display: false },
+                            offset: false,
+                            grid: { display: false, offset: false },
                             border: { color: chartBorderColor },
                             ticks: {
                                 color: chartTickColor,
                                 autoSkip: false,
                                 maxRotation: 0,
                                 minRotation: 0,
-                                callback: function (value, index, ticks) {
-                                    return formatQuarterTick(value, index, ticks, this);
+                                callback: function (value) {
+                                    return formatQuarterTick(value, this);
                                 },
                             },
                         },
@@ -234,7 +233,9 @@
                             ticks: {
                                 color: chartTickColor,
                                 callback: function (value) {
-                                    return value + '%';
+                                    const roundedValue = Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+
+                                    return roundedValue.toLocaleString('en-GB', { maximumFractionDigits: 2 }) + '%';
                                 },
                             },
                         },

@@ -28,6 +28,8 @@ class HpiDashboardControllerTest extends TestCase
         $response->assertSee('HPI Dashboard');
         $response->assertSee('United Kingdom');
         $response->assertSee('England');
+        $response->assertSee('rounded-sm border border-zinc-200', false);
+        $response->assertDontSee('rounded-2xl', false);
     }
 
     public function test_hpi_overview_renders_with_postgres_safe_percent_columns(): void

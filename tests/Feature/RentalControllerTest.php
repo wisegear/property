@@ -76,6 +76,11 @@ class RentalControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('return year;', false);
+        $response->assertSee("if (quarter === '1')", false);
+        $response->assertSee('maximumFractionDigits: 2', false);
+        $response->assertSee("type: 'line'", false);
+        $response->assertSee('fill: false', false);
+        $response->assertDontSee("type: 'bar'", false);
 
         $typeSeries = collect($response->viewData('typeSeries'));
         $oneBedSeries = $typeSeries->firstWhere('key', 'one_bed');

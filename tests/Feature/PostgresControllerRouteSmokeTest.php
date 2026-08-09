@@ -227,7 +227,12 @@ class PostgresControllerRouteSmokeTest extends TestCase
 
     public function test_new_old_route_loads_without_mysql_specific_sql(): void
     {
-        $this->get('/new-old')->assertOk();
+        $this->get('/new-old')
+            ->assertOk()
+            ->assertSee('rounded-sm border border-zinc-200 bg-white p-5 shadow-sm sm:p-6', false)
+            ->assertSee('borderRadius: 0', false)
+            ->assertSee('offset: false', false)
+            ->assertDontSee('rounded-2xl', false);
     }
 
     private function seedPrimeDataset(string $category, string $postcodePrefix): void
