@@ -37,10 +37,11 @@ class CrimeControllerTest extends TestCase
         $response->assertSee('Crime Insights', false);
         $response->assertSee('text-lime-800 transition hover:text-lime-900 hover:underline', false);
         $response->assertSee('↗', false);
-        $response->assertSee('stroke="#22c55e"', false);
-        $response->assertSee('stroke="#ef4444"', false);
-        $response->assertSee('stroke-linecap="butt"', false);
-        $response->assertSee('stroke="#241c27"', false);
+        $response->assertSee('bg-linear-to-r from-emerald-500 via-amber-400 to-rose-500', false);
+        $response->assertSee('left: clamp(0.125rem, 65.40%, calc(100% - 0.125rem))', false);
+        $response->assertSee('Lower');
+        $response->assertSee('No change');
+        $response->assertSee('Higher');
         $response->assertViewHas('summary', function (array $summary): bool {
             return $summary['total_12m'] === 51
                 && $summary['prev_12m'] === 39

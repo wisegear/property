@@ -104,7 +104,7 @@
     <section class="grid gap-5 md:grid-cols-2">
         @foreach ($metricCards as $index => $card)
             <article class="flex h-full min-w-0 flex-col overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
-                <div class="flex items-center justify-between gap-4">
+                <div>
                     <div class="min-w-0">
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">{{ $card['title'] }}</p>
                         <p class="mt-3 text-3xl font-bold {{ isset($card['badge']) ? $changeValueClass($card['badge']) : 'text-zinc-900' }}">{{ $card['value'] }}</p>
@@ -119,9 +119,11 @@
                         @include('partials.trend-gauge', [
                             'value' => $card['badge'],
                             'title' => $card['gauge_title'] ?? $card['value'],
-                            'variant' => 'dashboard-dual',
-                            'wrapperClass' => 'ml-0 h-16 w-24 sm:h-20 sm:w-28 lg:h-24 lg:w-32 justify-end self-stretch',
-                            'svgClass' => 'h-12 w-20 sm:h-16 sm:w-24 lg:h-20 lg:w-28',
+                            'variant' => 'line',
+                            'wrapperClass' => 'mt-5 w-full',
+                            'leftLabel' => 'Falling',
+                            'middleLabel' => 'No change',
+                            'rightLabel' => 'Rising',
                         ])
                     @endisset
                 </div>

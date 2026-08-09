@@ -36,15 +36,12 @@ class InsightsDashboardControllerTest extends TestCase
         $response->assertSee('Top 10 emerging hotspots');
         $response->assertSee('Top 10 cooling markets');
         $response->assertSee('Market Momentum');
-        $response->assertSee('rotate(9.81, 60, 60)', false);
-        $response->assertSee('lg:h-24 lg:w-32', false);
-        $response->assertSee('svg class="h-12 w-20 sm:h-16 sm:w-24 lg:h-20 lg:w-28"', false);
-        $response->assertSee('stroke="#ea580c"', false);
-        $response->assertSee('stroke="#5faa1f"', false);
-        $response->assertSee('stroke="#ef4444"', false);
-        $response->assertSee('stroke="#22c55e"', false);
-        $response->assertSee('stroke-linecap="butt"', false);
-        $response->assertSee('stroke="#241c27"', false);
+        $response->assertSee('bg-linear-to-r from-rose-500 via-amber-400 to-emerald-500', false);
+        $response->assertSee('left: clamp(0.125rem, 55.45%, calc(100% - 0.125rem))', false);
+        $response->assertSee('Falling');
+        $response->assertSee('No change');
+        $response->assertSee('Rising');
+        $response->assertDontSee('<svg class="h-12 w-20', false);
         $response->assertViewHas('summary', function (array $summary): bool {
             return $summary['benchmark_transactions'] === 92
                 && $summary['comparison_transactions'] === 102

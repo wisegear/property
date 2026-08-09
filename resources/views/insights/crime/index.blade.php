@@ -82,7 +82,7 @@
 
     <section class="grid gap-5 lg:grid-cols-3">
         <article class="overflow-hidden rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
-            <div class="flex items-start justify-between gap-4">
+            <div>
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Total Crime</p>
                     <p class="mt-3 text-3xl font-bold text-zinc-900">{{ number_format($summary['total_12m']) }}</p>
@@ -92,9 +92,11 @@
                     'value' => $summary['pct_change'],
                     'invert' => true,
                     'title' => $formatChange($summary['pct_change']),
-                    'variant' => 'dashboard-dual',
-                    'wrapperClass' => 'ml-0 h-16 w-24 sm:h-20 sm:w-28 justify-end self-stretch',
-                    'svgClass' => 'h-12 w-20 sm:h-16 sm:w-24',
+                    'variant' => 'line',
+                    'wrapperClass' => 'mt-5 w-full',
+                    'leftLabel' => 'Lower',
+                    'middleLabel' => 'No change',
+                    'rightLabel' => 'Higher',
                 ])
             </div>
             <div class="mt-5 h-14">

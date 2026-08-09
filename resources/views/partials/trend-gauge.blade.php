@@ -12,6 +12,7 @@
     }
 
     $trendNeedleRotation = number_format($trendNeedleRotationValue, 2, '.', '');
+    $trendLinePosition = number_format(($trendGaugeValue + 100) / 2, 2, '.', '');
     $trendNeedleColor = match ($color ?? null) {
         'red' => '#dc2626',
         'yellow' => '#ca8a04',
@@ -26,11 +27,24 @@
 @endphp
 
 <div @class([
-    'flex shrink-0 items-center justify-center rounded-full',
+    'flex shrink-0 items-center justify-center',
+    'rounded-full' => $gaugeVariant !== 'line',
     'ml-3 h-11 w-11' => empty($wrapperClass),
     $wrapperClass ?? null,
-]) title="{{ $title ?? '' }}">
-    @if ($gaugeVariant === 'market-status')
+]) title="{{ $title ?? '' }}" @if($gaugeVariant === 'line') role="img" aria-label="{{ $title ?? 'Trend' }}: {{ $leftLabel ?? 'Falling' }} to {{ $rightLabel ?? 'Rising' }}" @endif>
+    @if ($gaugeVariant === 'line')
+        <div class="w-full">
+            <div class="relative">
+                <div class="h-2.5 overflow-hidden rounded-full bg-linear-to-r {{ $invertTrendScale ? 'from-emerald-500 via-amber-400 to-rose-500' : 'from-rose-500 via-amber-400 to-emerald-500' }}"></div>
+                <span class="absolute top-1/2 h-5 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-900 ring-2 ring-white" style="left: clamp(0.125rem, {{ $trendLinePosition }}%, calc(100% - 0.125rem))"></span>
+            </div>
+            <div class="mt-2 flex justify-between text-[11px] font-medium text-zinc-500">
+                <span>{{ $leftLabel ?? 'Falling' }}</span>
+                <span>{{ $middleLabel ?? 'No change' }}</span>
+                <span>{{ $rightLabel ?? 'Rising' }}</span>
+            </div>
+        </div>
+    @elseif ($gaugeVariant === 'market-status')
         <svg class="{{ $svgClass ?? 'h-7 w-11' }}" viewBox="0 0 120 70" aria-hidden="true">
             <path d="M 12 60 A 48 48 0 0 1 36 18"
                   fill="none"
