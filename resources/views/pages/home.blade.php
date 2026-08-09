@@ -2,7 +2,7 @@
 
 @section('content')
     {{-- Hero --}}
-    <section class="relative z-0 -mx-6 overflow-hidden border-y border-zinc-300 bg-zinc-100 py-8 shadow-[0_10px_30px_rgba(15,23,42,0.05)] md:py-9">
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.18)] md:py-9">
         <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
             <div class="max-w-4xl">
                 <div class="flex flex-wrap items-center gap-3">
@@ -47,12 +47,12 @@
         </div>
     </section>
 
-<div class="mx-auto max-w-7xl px-4 pb-8 md:pb-10">
-    <section class="mt-6 overflow-visible rounded-sm border border-blue-100 bg-blue-50/70 p-5 md:p-6">
-        <div class="grid gap-5 md:grid-cols-2 md:items-start lg:grid-cols-[22fr_44fr_34fr]">
+<div class="mx-auto flex max-w-7xl flex-col gap-8 px-4 pt-8 pb-8 md:pb-10">
+    <section class="overflow-visible rounded-sm border border-lime-200/70 bg-lime-50/50 p-5 md:p-6">
+        <div class="grid gap-5 md:grid-cols-2 md:items-start lg:grid-cols-[22fr_40fr_38fr]">
             <div class="md:col-span-2 lg:col-span-1 lg:self-center">
-                <h2 class="text-lg font-bold text-zinc-900">Research a property</h2>
-                <p class="mt-1 text-sm text-zinc-600">Start with a street or postcode.</p>
+                <h2 class="text-lg font-bold text-zinc-900">Search properties</h2>
+                <p class="mt-1 text-sm text-zinc-600">Search properties across England and Wales</p>
             </div>
 
             <div>
@@ -63,7 +63,7 @@
                         type="text"
                         autocomplete="off"
                         placeholder="Street, place or postcode district"
-                        class="w-full rounded border border-blue-200 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                        class="w-full rounded border border-lime-200 bg-white px-4 py-2.5 text-sm focus:border-lime-600 focus:outline-none focus:ring-2 focus:ring-lime-200"
                     />
                     <div
                         id="home-street-suggestions"
@@ -74,7 +74,7 @@
                 <p class="mt-2 text-xs text-zinc-500">Matches streets with at least 3 recorded sales. Add a place or postcode district to narrow common names.</p>
             </div>
 
-            <div>
+            <div class="lg:pl-8">
                 <label for="home-postcode" class="mb-2 block text-xs font-semibold text-zinc-700">Postcode search</label>
                 <form method="GET" action="{{ route('property.search') }}" class="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <input
@@ -83,7 +83,7 @@
                         type="text"
                         value="{{ old('postcode', request('postcode', '')) }}"
                         placeholder="E.g. SW7 5PH"
-                        class="min-w-0 flex-1 rounded border border-blue-200 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                        class="min-w-0 flex-1 rounded border border-lime-200 bg-white px-4 py-2.5 text-sm focus:border-lime-600 focus:outline-none focus:ring-2 focus:ring-lime-200 lg:w-64 lg:flex-none"
                     />
 
                     <button
@@ -142,7 +142,7 @@
     @endphp
 
     {{-- Live Stats Section --}}
-    <section class="mt-8 grid grid-cols-1 overflow-hidden rounded-sm border border-slate-200 bg-white divide-y divide-slate-200 lg:grid-cols-5 lg:divide-x lg:divide-y-0">
+    <section class="grid grid-cols-1 overflow-hidden rounded-sm border border-slate-200 bg-white divide-y divide-slate-200 lg:grid-cols-5 lg:divide-x lg:divide-y-0">
         @foreach($homepageStatCards as $card)
             <x-home.stat-card
                 :value="$card['value']"
@@ -153,11 +153,11 @@
     </section>
 
     {{-- Property Stress Index --}}
-    <div class="mt-8">
+    <div>
         @include('partials.stress-score-panel', ['totalStress' => $totalStress ?? null, 'isSticky' => false, 'showDashboardLink' => true])
     </div>
 
-    <section class="mt-6">
+    <section>
         <div class="rounded-sm border border-zinc-200 bg-white p-6">
             <div class="flex h-full flex-col gap-3">
                 <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -286,7 +286,7 @@
     </section>
 
     {{-- Explore PropertyResearch --}}
-    <section class="mt-6 overflow-hidden rounded-sm border border-zinc-200 bg-white">
+    <section class="overflow-hidden rounded-sm border border-zinc-200 bg-white">
         <div class="flex flex-col gap-2 border-b border-zinc-200 bg-zinc-50/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-6">
             <div>
                 <h2 class="text-xl font-bold text-zinc-900">Explore PropertyResearch</h2>
@@ -341,13 +341,13 @@
 
     {{-- Blog Section --}}
     @if($posts->count() > 0)
-    <section class="mt-10 border-t border-zinc-200 pt-7">
+    <section class="border-t border-zinc-200 pt-7">
         <div class="mb-5 flex items-end justify-between gap-4">
             <div>
                 <h2 class="text-xl font-bold text-zinc-900">Latest Insights</h2>
                 <p class="mt-1 text-sm text-zinc-500">Analysis and commentary on the UK property market</p>
             </div>
-            <a href="{{ url('/blog') }}" class="hidden items-center gap-2 text-sm font-semibold text-zinc-700 hover:text-lime-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2 sm:inline-flex">
+            <a href="{{ url('/blog') }}" class="hidden items-center gap-2 text-sm font-semibold text-lime-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2 sm:inline-flex">
                 View all posts
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
@@ -383,7 +383,7 @@
 
         {{-- Mobile "View all" link --}}
         <div class="mt-4 sm:hidden">
-            <a href="{{ url('/blog') }}" class="block text-sm font-semibold text-zinc-700 hover:text-lime-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
+            <a href="{{ url('/blog') }}" class="block text-sm font-semibold text-lime-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
                 View all posts →
             </a>
         </div>

@@ -79,7 +79,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee($searchUrl, false);
         $view->assertSee('name="postcode"', false);
         $view->assertSee('placeholder="E.g. SW7 5PH"', false);
-        $view->assertSee('Research a property');
+        $view->assertSee('Search properties');
+        $view->assertSee('Search properties across England and Wales');
         $view->assertSee('id="home-street-search"', false);
         $view->assertSee('id="home-street-suggestions"', false);
         $view->assertSee('Street search', false);
@@ -90,7 +91,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('.slice(0, 12)', false);
         $view->assertSee('window.location.href = item.url', false);
         $view->assertSee('Matches streets with at least 3 recorded sales.');
-        $view->assertSee('grid gap-5 md:grid-cols-2 md:items-start lg:grid-cols-[22fr_44fr_34fr]', false);
+        $view->assertSee('grid gap-5 md:grid-cols-2 md:items-start lg:grid-cols-[22fr_40fr_38fr]', false);
+        $view->assertSee('class="lg:pl-8"', false);
         $view->assertSee('rounded bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2', false);
         $view->assertSee('Open the full property record for an England or Wales postcode.');
         $view->assertSee('31.1M');
@@ -161,7 +163,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertDontSee('Top signal (this period)');
         $view->assertSee('md:grid-cols-3', false);
         $view->assertSeeInOrder([
-            'Research a property',
+            'Search properties',
             'Street search',
             'Postcode search',
             'Property sales',
