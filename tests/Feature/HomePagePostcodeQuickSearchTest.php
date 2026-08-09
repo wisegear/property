@@ -160,8 +160,23 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('View current market insights');
         $view->assertSee(route('insights.index', absolute: false), false);
         $view->assertSee('Local and specialist research');
-        $view->assertSee('Deprivation and crime');
-        $view->assertSee('/insights/crime', false);
+        $view->assertSee('Deprivation');
+        $view->assertSee('Crime');
+        $view->assertSee('Arrears and repossessions');
+        $view->assertSee(route('deprivation.index', absolute: false), false);
+        $view->assertSee(route('insights.crime.index', absolute: false), false);
+        $view->assertSeeInOrder([
+            'UK property market',
+            'EPC records and local data',
+            'Mortgage approvals',
+            'Arrears and repossessions',
+            'Swap Rates',
+            'UK swap rates',
+            'Economic dashboard',
+            'Local and specialist research',
+            'Deprivation',
+            'Crime',
+        ]);
         $view->assertDontSee('128 live');
         $view->assertDontSee('Top signal (this period)');
         $view->assertSee('md:grid-cols-3', false);
@@ -174,6 +189,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'UK Housing Market Snapshot',
             'Explore PropertyResearch',
             'UK property market',
+            'Property transactions',
+            'EPC records and local data',
             'Swap Rates',
             'Local and specialist research',
         ]);

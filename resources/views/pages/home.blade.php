@@ -301,10 +301,10 @@
                 <p class="mt-1 text-xs leading-5 text-zinc-500">Prices, sales, rents and housing activity.</p>
                 <div class="mt-4 grid gap-2.5 text-sm">
                     <a href="{{ route('property.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">Property transactions</a>
+                    <a href="{{ route('epc.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">EPC records and local data</a>
                     <a href="{{ route('hpi.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">House Price Index</a>
                     <a href="{{ route('rental.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Rental market</a>
-                    <a href="{{ route('newold.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">New and existing homes</a>
-                    <a href="{{ route('top-sales.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Top property sales</a>
+                    <a href="{{ route('mortgages.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">Mortgage approvals</a>
                     <a href="{{ route('arrears.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Arrears and repossessions</a>
                 </div>
             </div>
@@ -326,9 +326,8 @@
                     @endforeach
                 </div>
                 <div class="mt-4 grid gap-2.5 text-sm">
-                    <a href="{{ route('economic.dashboard') }}" class="font-medium text-zinc-700 hover:text-lime-700">Economic dashboard</a>
-                    <a href="{{ route('mortgages.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">Mortgage approvals</a>
                     <a href="{{ route('insights.swap-rates') }}" class="font-medium text-zinc-700 hover:text-lime-700">UK swap rates</a>
+                    <a href="{{ route('economic.dashboard') }}" class="font-medium text-zinc-700 hover:text-lime-700">Economic dashboard</a>
                 </div>
             </div>
 
@@ -336,9 +335,9 @@
                 <h3 class="font-bold text-zinc-900">Local and specialist research</h3>
                 <p class="mt-1 text-xs leading-5 text-zinc-500">Property-level records and wider local context.</p>
                 <div class="mt-4 grid gap-2.5 text-sm">
-                    <a href="{{ route('epc.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">EPC records and local data</a>
                     <a href="{{ route('schools.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Schools and local markets</a>
-                    <a href="{{ route('deprivation.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Deprivation and crime</a>
+                    <a href="{{ route('deprivation.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Deprivation</a>
+                    <a href="{{ route('insights.crime.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Crime</a>
                     <a href="{{ route('property.scottish-prices') }}" class="font-medium text-zinc-700 hover:text-lime-700">Scottish property prices</a>
                     <a href="{{ route('property.pcl') }}" class="font-medium text-zinc-700 hover:text-lime-700">Prime London markets</a>
                     <a href="{{ route('mortgagecalc.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Calculators and tools</a>
