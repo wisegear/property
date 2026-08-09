@@ -6,7 +6,7 @@
 @section('legal-intro', 'The app combines records from multiple official sources. Coverage, update dates and licensing conditions differ by dataset.')
 
 @section('legal-content')
-    <aside class="rounded-lg border border-lime-300 bg-lime-50 p-5 text-zinc-900">
+    <aside class="mb-7 border-l-4 border-lime-500 bg-lime-50 p-5 text-zinc-900">
         <p class="font-semibold">Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener noreferrer">Open Government Licence v3.0 <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>.</p>
     </aside>
 
