@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SchoolSearchRequest;
 use App\Models\PropertySchoolEstablishment;
 use App\Support\PropertyResearch\OfstedRating;
 use App\Support\PropertyResearch\SchoolSlug;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class SchoolController extends Controller
 {
@@ -23,32 +27,240 @@ class SchoolController extends Controller
         return 'school:show:'.self::SHOW_CACHE_VERSION.':'.$urn;
     }
 
-    public function index()
+    private const INDEX_CACHE_VERSION = 'v7';
+
+    public function index(SchoolSearchRequest $request): View
     {
-        $schools = Cache::remember('schools:index:v1', self::CACHE_TTL, function (): Collection {
-            return PropertySchoolEstablishment::query()
-                ->select(['urn', 'establishment_name', 'town', 'postcode', 'phase_of_education_name', 'type_of_establishment_name'])
-                ->whereNotNull('establishment_name')
-                ->where('establishment_name', '!=', '')
-                ->orderBy('establishment_name')
-                ->limit(100)
-                ->get()
-                ->map(function (PropertySchoolEstablishment $school): object {
-                    return (object) [
-                        'name' => (string) $school->establishment_name,
-                        'phase' => $school->phase_of_education_name,
-                        'type' => $school->type_of_establishment_name,
-                        'place' => collect([$school->town, $school->postcode])->filter()->join(', '),
-                        'url' => route('schools.show', [
-                            'slug' => SchoolSlug::for((string) $school->establishment_name, $school->urn),
-                        ]),
-                    ];
-                });
-        });
+        $dashboard = Cache::remember(
+            'schools:index:dashboard:'.self::INDEX_CACHE_VERSION,
+            self::CACHE_TTL,
+            fn (): array => $this->buildIndexDashboard(),
+        );
+
+        $filters = Cache::remember(
+            'schools:index:filters:'.self::INDEX_CACHE_VERSION,
+            self::CACHE_TTL,
+            fn (): array => $this->buildIndexFilters(),
+        );
+
+        $results = null;
+
+        if (collect($request->validated())->filter(fn (mixed $value): bool => filled($value))->isNotEmpty()) {
+            $results = $this->searchSchools($request);
+        }
 
         return view('schools.index', [
-            'schools' => $schools,
+            'dashboard' => $dashboard,
+            'filters' => $filters,
+            'results' => $results?->items() ?? [],
+            'pagination' => $results === null ? null : $this->paginationData($results),
+            'search' => $request->validated(),
         ]);
+    }
+
+    public function search(SchoolSearchRequest $request): JsonResponse
+    {
+        $schools = $this->searchSchools($request);
+
+        return response()->json([
+            'data' => $schools->items(),
+            'pagination' => $this->paginationData($schools),
+        ]);
+    }
+
+    /**
+     * @return array{total:int,excluded:int,ratings:array<int, array{value:string,label:string,count:int,percentage:float}>,landscape:array<int, array{value:string,label:string,count:int}>}
+     */
+    private function buildIndexDashboard(): array
+    {
+        $allOpenSchoolsQuery = PropertySchoolEstablishment::query()->where('establishment_status_code', '1')->whereNotNull('establishment_name')->where('establishment_name', '!=', '');
+        $this->excludeWelshSchools($allOpenSchoolsQuery, 'property_school_establishments');
+        $allOpenSchools = $allOpenSchoolsQuery->count();
+        $ratingQuery = DB::table('property_school_establishments as pse');
+        $this->joinOfstedData($ratingQuery, 'pse.urn');
+        $this->excludeWelshSchools($ratingQuery, 'pse');
+        $ratingCounts = $ratingQuery
+            ->whereNotNull('pse.establishment_name')
+            ->where('pse.establishment_name', '!=', '')
+            ->where('pse.establishment_status_code', '1')
+            ->whereNotNull('os.urn')
+            ->selectRaw("COALESCE(os.latest_oeif_overall_effectiveness, 'none') as rating, COUNT(*) as aggregate")
+            ->groupBy('os.latest_oeif_overall_effectiveness')
+            ->pluck('aggregate', 'rating');
+        $total = (int) $ratingCounts->sum();
+
+        $ratings = collect([
+            ['value' => '1', 'label' => 'Outstanding'],
+            ['value' => '2', 'label' => 'Good'],
+            ['value' => '3', 'label' => 'Requires improvement'],
+            ['value' => '4', 'label' => 'Inadequate'],
+            ['value' => 'not_judged', 'label' => 'Not judged'],
+            ['value' => 'no_grade', 'label' => 'No current overall grade'],
+        ])->map(function (array $rating) use ($ratingCounts, $total): array {
+            $sourceValue = match ($rating['value']) {
+                'not_judged' => 'Not judged',
+                'no_grade' => 'none',
+                default => $rating['value'],
+            };
+            $count = (int) ($ratingCounts[$sourceValue] ?? 0);
+
+            return $rating + [
+                'count' => $count,
+                'percentage' => $total > 0 ? round(($count / $total) * 100, 1) : 0.0,
+            ];
+        })->all();
+
+        $phaseQuery = DB::table('property_school_establishments as pse');
+        $this->joinOfstedData($phaseQuery, 'pse.urn');
+        $this->excludeWelshSchools($phaseQuery, 'pse');
+        $phaseCounts = $phaseQuery
+            ->where('pse.establishment_status_code', '1')
+            ->whereNotNull('os.urn')
+            ->whereNotNull('pse.phase_of_education_name')
+            ->where('pse.phase_of_education_name', '!=', '')
+            ->whereRaw("LOWER(pse.phase_of_education_name) NOT IN ('not applicable', 'does not apply')")
+            ->selectRaw('pse.phase_of_education_name, COUNT(*) as aggregate')
+            ->groupBy('pse.phase_of_education_name')
+            ->orderByDesc('aggregate')
+            ->limit(6)
+            ->get();
+
+        return [
+            'total' => $total,
+            'excluded' => $allOpenSchools - $total,
+            'ratings' => $ratings,
+            'landscape' => $phaseCounts->map(fn (object $phase): array => [
+                'value' => (string) $phase->phase_of_education_name,
+                'label' => Str::headline((string) $phase->phase_of_education_name),
+                'count' => (int) $phase->aggregate,
+            ])->all(),
+        ];
+    }
+
+    /**
+     * @return array{phases:Collection<int, string>,localAuthorities:Collection<int, string>}
+     */
+    private function buildIndexFilters(): array
+    {
+        $phasesQuery = DB::table('property_school_establishments as pse');
+        $this->joinOfstedData($phasesQuery, 'pse.urn');
+        $this->excludeWelshSchools($phasesQuery, 'pse');
+        $phases = $phasesQuery->where('pse.establishment_status_code', '1')->whereNotNull('pse.phase_of_education_name')->where('pse.phase_of_education_name', '!=', '')->whereRaw("LOWER(pse.phase_of_education_name) NOT IN ('not applicable', 'does not apply')")->distinct()->orderBy('pse.phase_of_education_name')->pluck('pse.phase_of_education_name')->values();
+
+        $authoritiesQuery = DB::table('property_school_establishments as pse');
+        $this->joinOfstedData($authoritiesQuery, 'pse.urn');
+        $this->excludeWelshSchools($authoritiesQuery, 'pse');
+        $localAuthorities = $authoritiesQuery->where('pse.establishment_status_code', '1')->whereNotNull('pse.la_name')->where('pse.la_name', '!=', '')->distinct()->orderBy('pse.la_name')->pluck('pse.la_name')->values();
+
+        return compact('phases', 'localAuthorities');
+    }
+
+    private function searchSchools(SchoolSearchRequest $request): LengthAwarePaginator
+    {
+        $validated = $request->validated();
+        $term = trim((string) ($validated['q'] ?? ''));
+        $rating = $validated['rating'] ?? null;
+
+        $query = PropertySchoolEstablishment::query()
+            ->select([
+                'property_school_establishments.urn',
+                'property_school_establishments.establishment_name',
+                'property_school_establishments.town',
+                'property_school_establishments.postcode',
+                'property_school_establishments.phase_of_education_name',
+                'property_school_establishments.type_of_establishment_name',
+                'property_school_establishments.la_name',
+            ]);
+        $this->joinOfstedData($query, 'property_school_establishments.urn');
+        $query->addSelect('os.latest_oeif_overall_effectiveness as rating')
+            ->whereNotNull('property_school_establishments.establishment_name')
+            ->where('property_school_establishments.establishment_name', '!=', '')
+            ->where('property_school_establishments.establishment_status_code', '1');
+        $this->excludeWelshSchools($query, 'property_school_establishments');
+
+        if ($term !== '') {
+            $normalisedPostcode = strtoupper((string) preg_replace('/\s+/', '', $term));
+            $query->where(function ($query) use ($term, $normalisedPostcode): void {
+                $query->whereRaw('LOWER(property_school_establishments.establishment_name) LIKE ?', ['%'.strtolower($term).'%'])
+                    ->orWhereRaw("REPLACE(UPPER(property_school_establishments.postcode), ' ', '') LIKE ?", [$normalisedPostcode.'%']);
+            });
+        }
+
+        if ($rating === 'no_grade') {
+            $query->whereNull('os.latest_oeif_overall_effectiveness');
+        } elseif ($rating === 'not_judged') {
+            $query->where('os.latest_oeif_overall_effectiveness', 'Not judged');
+        } elseif ($rating !== null) {
+            $query->where('os.latest_oeif_overall_effectiveness', $rating);
+        }
+
+        $query->when($validated['phase'] ?? null, fn ($query, string $phase) => $query->where('property_school_establishments.phase_of_education_name', $phase));
+        $query->when($validated['local_authority'] ?? null, fn ($query, string $authority) => $query->where('property_school_establishments.la_name', $authority));
+
+        $schools = $query->orderBy('property_school_establishments.establishment_name')->paginate(20);
+        $duplicateNames = PropertySchoolEstablishment::query()
+            ->whereIn('establishment_name', $schools->getCollection()->pluck('establishment_name'))
+            ->selectRaw('establishment_name, COUNT(*) as aggregate')
+            ->groupBy('establishment_name')
+            ->havingRaw('COUNT(*) > 1')
+            ->pluck('aggregate', 'establishment_name');
+
+        $schools->through(function (PropertySchoolEstablishment $school) use ($duplicateNames): array {
+            $rating = OfstedRating::from($school->rating);
+
+            return [
+                'name' => (string) $school->establishment_name,
+                'phase' => $school->phase_of_education_name,
+                'type' => $school->type_of_establishment_name,
+                'town' => $school->town,
+                'local_authority' => $school->la_name,
+                'postcode' => $school->postcode,
+                'rating' => $rating->label,
+                'rating_class' => $rating->badgeClass,
+                'url' => route('schools.show', ['slug' => SchoolSlug::for((string) $school->establishment_name, $school->urn, $duplicateNames->has($school->establishment_name))]),
+            ];
+        });
+
+        return $schools;
+    }
+
+    /**
+     * @return array{current_page:int,last_page:int,per_page:int,total:int,from:?int,to:?int}
+     */
+    private function paginationData(LengthAwarePaginator $schools): array
+    {
+        return [
+            'current_page' => $schools->currentPage(),
+            'last_page' => $schools->lastPage(),
+            'per_page' => $schools->perPage(),
+            'total' => $schools->total(),
+            'from' => $schools->firstItem(),
+            'to' => $schools->lastItem(),
+        ];
+    }
+
+    private function excludeWelshSchools(mixed $query, string $tableAlias): void
+    {
+        $query
+            ->where(function ($query) use ($tableAlias): void {
+                $query->whereNull($tableAlias.'.type_of_establishment_name')
+                    ->orWhere($tableAlias.'.type_of_establishment_name', '!=', 'Welsh establishment');
+            })
+            ->where(function ($query) use ($tableAlias): void {
+                $query->whereNull($tableAlias.'.gssla_code')
+                    ->orWhere($tableAlias.'.gssla_code', 'not like', 'W%');
+            });
+    }
+
+    private function joinOfstedData(mixed $query, string $urnColumn): void
+    {
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            $query->leftJoin('property_schools as os', fn ($join) => $join->whereRaw($urnColumn.' = os.urn::text'));
+
+            return;
+        }
+
+        $query->leftJoin('property_schools as os', $urnColumn, '=', 'os.urn');
     }
 
     public function show(string $slug)

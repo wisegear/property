@@ -41,7 +41,7 @@ class CheckboxValueTest extends TestCase
         $response->assertSee('id="additional_property" name="additional_property" value="1"', false);
         $response->assertSee('id="non_resident" name="non_resident" value="1"', false);
         $response->assertSee('src="'.asset('assets/images/site/sdlt.jpg').'"', false);
-        $response->assertSee('class="w-90 h-auto"', false);
+        $response->assertSee('class="h-44 w-full max-w-sm object-cover', false);
     }
 
     public function test_mortgage_calculator_hero_image_uses_reduced_width(): void
@@ -50,6 +50,6 @@ class CheckboxValueTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('src="'.asset('assets/images/site/calculator.jpg').'"', false);
-        $response->assertSee('class="w-90 h-auto"', false);
+        $response->assertSee('class="h-44 w-full max-w-sm object-cover', false);
     }
 }

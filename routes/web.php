@@ -89,7 +89,9 @@ Route::get('/property/prime-central-london', [PrimeLondonController::class, 'hom
 Route::get('/property/outer-prime-london', [OuterPrimeLondonController::class, 'home'])->name('property.outer');
 Route::get('/property/ultra-prime-central-london', [UltraLondonController::class, 'home'])->name('property.upcl');
 Route::get('/property/scottish-prices', [ScottishPricesController::class, 'index'])->name('property.scottish-prices');
-Route::get('/schools', [SchoolController::class, 'index'])->name('schools.index');
+Route::redirect('/schools', '/schools/england', 301);
+Route::get('/schools/england', [SchoolController::class, 'index'])->name('schools.index');
+Route::get('/schools/england/search', [SchoolController::class, 'search'])->name('schools.search');
 Route::get('/school/{slug}', [SchoolController::class, 'show'])
     ->where('slug', '[a-z0-9\-]+')
     ->name('schools.show');

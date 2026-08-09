@@ -489,7 +489,7 @@
                              role="menu"
                              aria-labelledby="socialHousingMenuButton"
                              class="absolute left-0 mt-4 w-56 bg-white border border-zinc-200 rounded shadow-lg z-50 transform transition duration-150 ease-out origin-top opacity-0 scale-95 pointer-events-none hidden">
-                            <a href="{{ route('schools.index') }}" role="menuitem" tabindex="-1" class="block px-4 py-2 text-zinc-700 hover:bg-zinc-100">Schools</a>
+                            <a href="{{ route('schools.index') }}" role="menuitem" tabindex="-1" class="block px-4 py-2 text-zinc-700 hover:bg-zinc-100">Schools (England)</a>
                             <a href="{{ route('deprivation.index') }}" role="menuitem" tabindex="-1" class="block px-4 py-2 text-zinc-700 hover:bg-zinc-100">Deprivation</a>
                             <div class="my-1 border-t border-zinc-100"></div>
                             <a href="{{ route('localauthority.england') }}"
@@ -789,7 +789,7 @@
                     </button>
 
                     <div id="mobileSocialHousingMenu" class="hidden flex-col pl-2 space-y-1 mt-1">
-                        <a href="{{ route('schools.index') }}" class="block rounded px-3 py-2 text-zinc-700 hover:bg-zinc-100">Schools</a>
+                        <a href="{{ route('schools.index') }}" class="block rounded px-3 py-2 text-zinc-700 hover:bg-zinc-100">Schools (England)</a>
                         <a href="{{ route('deprivation.index') }}" class="block rounded px-3 py-2 text-zinc-700 hover:bg-zinc-100">Deprivation</a>
                         <a href="{{ route('localauthority.england') }}"
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">

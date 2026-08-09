@@ -97,7 +97,7 @@ class PropertyStreetControllerTest extends TestCase
         $response->assertSee('Questions about Cromwell Road');
         $response->assertSee('What is the average house price on Cromwell Road?');
         $response->assertSee(route('property.show.slug', ['slug' => 'sw7-5ph-1-cromwell-road-flat-1'], false), false);
-        $response->assertSee('<link rel="canonical" href="http://localhost/property/street/sw7/cromwell-road">', false);
+        $response->assertSee('<link rel="canonical" href="'.url('/property/street/sw7/cromwell-road').'">', false);
         $response->assertSee('<meta name="robots" content="noindex, follow">', false);
         $response->assertSee('"@type":"BreadcrumbList"', false);
         $response->assertSee('"@type":"FAQPage"', false);

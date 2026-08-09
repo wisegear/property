@@ -196,10 +196,11 @@ class SchoolControllerTest extends TestCase
     {
         $this->insertSchool();
 
-        $this->get('/schools')
+        $this->get('/schools/england')
             ->assertOk()
-            ->assertSee('Schools')
-            ->assertSee('/school/the-london-oratory-school', false);
+            ->assertSee('Schools in England')
+            ->assertSee('Find a school')
+            ->assertDontSee('Example schools A–Z');
     }
 
     public function test_school_page_warmer_populates_show_cache(): void

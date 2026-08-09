@@ -54,8 +54,8 @@ class PropertyShowNearbySchoolsTest extends TestCase
             ->assertSee('md:grid-cols-2', false)
             ->assertSee('Alpha Primary')
             ->assertSee('Beta Secondary')
-            ->assertSee('href="http://localhost/school/alpha-primary"', false)
-            ->assertSee('href="http://localhost/school/beta-secondary"', false)
+            ->assertSee('href="'.route('schools.show', ['slug' => 'alpha-primary']).'"', false)
+            ->assertSee('href="'.route('schools.show', ['slug' => 'beta-secondary']).'"', false)
             ->assertViewHas('nearbySchools', function (array $nearbySchools): bool {
                 return $nearbySchools['primary']->first()->establishment_name === 'Alpha Primary'
                     && $nearbySchools['secondary']->first()->establishment_name === 'Beta Secondary';
