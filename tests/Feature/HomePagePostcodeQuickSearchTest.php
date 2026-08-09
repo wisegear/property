@@ -68,7 +68,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
                 'latestAvailableDate' => Carbon::create(2026, 5, 28),
                 'rates' => [
                     ['term' => 2, 'label' => '2Y Swap', 'rate' => 4.07, 'daily_change' => -3.9, 'rate_date' => Carbon::create(2026, 5, 28)],
-                    ['term' => 5, 'label' => '5Y Swap', 'rate' => 4.09, 'daily_change' => -3.3, 'rate_date' => Carbon::create(2026, 5, 28)],
+                    ['term' => 5, 'label' => '5Y Swap', 'rate' => 4.09, 'daily_change' => 0, 'rate_date' => Carbon::create(2026, 5, 28)],
                     ['term' => 10, 'label' => '10Y Swap', 'rate' => 4.38, 'daily_change' => 4.5, 'rate_date' => Carbon::create(2026, 5, 28)],
                 ],
             ],
@@ -126,6 +126,9 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('4.07%');
         $view->assertSee('4.09%');
         $view->assertSee('4.38%');
+        $view->assertSee('text-lg text-emerald-700">4.07%', false);
+        $view->assertSee('text-lg text-zinc-900">4.09%', false);
+        $view->assertSee('text-lg text-rose-700">4.38%', false);
         $view->assertDontSee('Most Expensive Property Sales');
         $view->assertDontSee('The current highest sale in each top-sales segment');
         $view->assertDontSee('Open Top Property Sales');

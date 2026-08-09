@@ -314,7 +314,15 @@
                 <p class="mt-1 text-xs leading-5 text-zinc-500">Wholesale market rates influencing fixed mortgage pricing.</p>
                 <div class="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-y border-zinc-100 py-3">
                     @foreach(collect($homepageSwapRates['rates'] ?? [])->take(3) as $rate)
-                        <div><span class="block text-[11px] text-zinc-500">{{ $rate['label'] }}</span><strong class="text-lg text-zinc-900">{{ number_format((float) $rate['rate'], 2) }}%</strong></div>
+                        @php
+                            $dailyChange = (float) ($rate['daily_change'] ?? 0);
+                            $rateColorClass = match (true) {
+                                $dailyChange < 0 => 'text-emerald-700',
+                                $dailyChange > 0 => 'text-rose-700',
+                                default => 'text-zinc-900',
+                            };
+                        @endphp
+                        <div><span class="block text-[11px] text-zinc-500">{{ $rate['label'] }}</span><strong class="text-lg {{ $rateColorClass }}">{{ number_format((float) $rate['rate'], 2) }}%</strong></div>
                     @endforeach
                 </div>
                 <div class="mt-4 grid gap-2.5 text-sm">
