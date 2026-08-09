@@ -104,24 +104,6 @@
         </form>
     </div>
 
-    {{-- EPC map --}}
-    <section class="mb-10 rounded border border-zinc-200 bg-white/80 p-6">
-        <div class="flex items-start justify-between gap-6 flex-col md:flex-row">
-            <div>
-                <h2 class="text-base font-semibold mb-2">
-                    <svg class="inline-block h-[1em] w-[1em] text-lime-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M11.54 22.351a.75.75 0 0 0 .92 0c4.472-3.73 6.79-7.003 6.79-9.851a7.25 7.25 0 1 0-14.5 0c0 2.848 2.318 6.12 6.79 9.851ZM12 14a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z" clip-rule="evenodd"/>
-                    </svg> EPC locations (Scotland)
-                </h2>
-                <p class="text-xs text-zinc-600">
-                    Zoom in to see EPC certificates as pins. Click a pin to open the EPC report.  Data is only as accurate as the EPC inputs, which may not always reflect the exact property location.
-                </p>
-            </div>
-        </div>
-        <div id="epc-map-scotland" class="mt-4 h-96 md:h-[36rem] w-full rounded border border-zinc-200 bg-zinc-50"></div>
-        <p id="epc-map-scotland-status" class="mt-2 text-xs text-zinc-500">Zoom in to load EPC points.</p>
-    </section>
-
     {{-- Results --}}
     @isset($results)
         @if($results instanceof \Illuminate\Contracts\Pagination\Paginator || $results instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)
@@ -279,6 +261,24 @@
             @endif
         @endif
     @endisset
+
+    {{-- EPC map --}}
+    <section class="mt-10 mb-10 rounded border border-zinc-200 bg-white/80 p-6">
+        <div class="flex flex-col items-start justify-between gap-6 md:flex-row">
+            <div>
+                <h2 class="mb-2 text-base font-semibold">
+                    <svg class="inline-block h-[1em] w-[1em] text-lime-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M11.54 22.351a.75.75 0 0 0 .92 0c4.472-3.73 6.79-7.003 6.79-9.851a7.25 7.25 0 1 0-14.5 0c0 2.848 2.318 6.12 6.79 9.851ZM12 14a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z" clip-rule="evenodd"/>
+                    </svg> EPC locations (Scotland)
+                </h2>
+                <p class="text-xs text-zinc-600">
+                    Zoom in to see EPC certificates as pins. Click a pin to open the EPC report. Data is only as accurate as the EPC inputs, which may not always reflect the exact property location.
+                </p>
+            </div>
+        </div>
+        <div id="epc-map-scotland" class="mt-4 h-96 w-full rounded border border-zinc-200 bg-zinc-50 md:h-[36rem]"></div>
+        <p id="epc-map-scotland-status" class="mt-2 text-xs text-zinc-500">Zoom in to load EPC points.</p>
+    </section>
 
     @isset($byYear)
         <script>

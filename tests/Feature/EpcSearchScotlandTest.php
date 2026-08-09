@@ -28,6 +28,14 @@ class EpcSearchScotlandTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('EH1 1AA');
+
+        $content = $response->getContent();
+
+        $this->assertIsString($content);
+        $this->assertLessThan(
+            strpos($content, 'id="epc-map-scotland"'),
+            strpos($content, '1 Scot Street')
+        );
     }
 
     private function ensureScotlandEpcSchema(): void

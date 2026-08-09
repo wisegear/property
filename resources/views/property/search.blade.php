@@ -1,39 +1,40 @@
 @extends('layouts.app')
 
+@section('title', 'Property Search | PropertyResearch.uk')
+@section('description', 'Search Land Registry property sale records across England and Wales by street, postcode or area.')
+
 @section('content')
-<div class="max-w-7xl mx-auto">
-    {{-- Hero / summary card --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
-        @include('partials.hero-background')
-        <div class="max-w-4xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">Property Search</h1>
-            <p class="mt-2 text-sm leading-6 text-gray-700">
-                Use this page to explore <span class="font-bold">Land Registry</span> sale records for England &amp; Wales.
-                There are currently in excess of<span class="text-lime-700"> 30m</span> records in this table.
-            </p>
-            <p class="mt-1 text-sm leading-6 text-gray-700">
-                You can either search directly on the map, for a specific postcode to see every sale in that postcode, or search for a
-                locality, town/city, district or county to view a wider area summary. Data covers the period from
-                January 1995 to October 2025.
-            </p>
-        </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('assets/images/site/propertysearch.jpg') }}" alt="Property search" class="w-90 h-auto">
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden border-b border-zinc-200 bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+        <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+            <div class="max-w-4xl">
+                <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="size-2 rounded-full bg-lime-500"></span>Land Registry research</p>
+                <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Property search</h1>
+                <p class="mt-3 max-w-3xl text-base leading-7 text-zinc-600">Explore more than 30 million Land Registry sale records across England and Wales, covering transactions from January 1995 onwards.</p>
+                <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">Search for a street or full postcode, open an area-level property dashboard, or explore recorded sales directly on the map.</p>
+            </div>
+            <div class="hidden justify-self-end md:block">
+                <img src="{{ asset('assets/images/site/propertysearch.jpg') }}" alt="Homes in a residential street" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
+            </div>
         </div>
     </section>
 
-    {{-- Search tools --}}
-    <section class="mb-10">
-        <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+    <div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
+        {{-- Search tools --}}
+        <section class="mb-10 border border-zinc-200 bg-white shadow-sm" aria-labelledby="property-search-tools-title">
+            <div class="border-b border-zinc-200 bg-zinc-50 px-5 py-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Choose how to search</p>
+                <h2 id="property-search-tools-title" class="mt-1 text-xl font-bold text-zinc-900">Find property records</h2>
+                <p class="mt-1 text-sm text-zinc-600">Choose a street for its sales history, a full postcode for individual transactions, or an area for broader market trends.</p>
+            </div>
+            <div class="grid divide-y divide-zinc-200 xl:grid-cols-3 xl:divide-x xl:divide-y-0">
 
             {{-- Search by street --}}
-            <div class="rounded border border-zinc-200 bg-white/80 p-6">
-                <h2 class="mb-2 text-base font-semibold"><svg class="inline-block h-[1em] w-[1em] text-lime-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.5 3a7.5 7.5 0 1 0 4.79 13.29l4.71 4.71a.75.75 0 1 0 1.06-1.06l-4.71-4.71A7.5 7.5 0 0 0 10.5 3Zm-6 7.5a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" clip-rule="evenodd"/><path d="M8.25 12.75a.75.75 0 0 1 .53-.22h.02a.75.75 0 0 1 .53.22l1.2 1.2 1.95-1.95a.75.75 0 0 1 1.06 1.06l-2.48 2.47a.75.75 0 0 1-1.06 0l-1.2-1.2-1.42 1.42a.75.75 0 0 1-1.06-1.06l1.93-1.94Z"/></svg> Search by street</h2>
-                <p class="mb-4 text-xs text-zinc-600">
-                    Start typing a street name to jump straight to the matching street and postcode district view, using the same indexed street search as the homepage.
-                </p>
+            <div class="p-5">
+                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-lime-700">Street sales history</p>
+                <h3 class="mt-1 text-base font-semibold text-zinc-900">Search by street</h3>
+                <p class="mt-1 min-h-10 text-xs leading-5 text-zinc-600">View sale prices and trends for a named street within its postcode district.</p>
 
-                <div class="relative">
+                <div class="relative mt-4">
                     <input
                         id="property-street-search"
                         type="text"
@@ -46,20 +47,18 @@
                         class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-y-auto rounded-md border border-zinc-200 bg-white text-sm shadow-lg">
                     </div>
                 </div>
-                <p class="mt-2 text-xs text-zinc-500">
-                    Autocomplete matches unique street and postcode district combinations from Land Registry sales and only returns results where at least 3 sales exist. For very common street names, you may need to add the place name or the first part of the postcode to narrow the results.
+                <p class="mt-2 text-xs leading-5 text-zinc-500">
+                    Shows streets with at least three recorded sales. Add a place name or postcode area to narrow common street names.
                 </p>
             </div>
 
             {{-- Search by postcode (specific properties) --}}
-            <div class="rounded border border-zinc-200 bg-white/80 p-6">
-                <h2 class="text-base font-semibold mb-2"><svg class="inline-block h-[1em] w-[1em] text-lime-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.5 3a7.5 7.5 0 1 0 4.79 13.29l4.71 4.71a.75.75 0 1 0 1.06-1.06l-4.71-4.71A7.5 7.5 0 0 0 10.5 3Zm-6 7.5a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" clip-rule="evenodd"/><path d="M8.25 12.75a.75.75 0 0 1 .53-.22h.02a.75.75 0 0 1 .53.22l1.2 1.2 1.95-1.95a.75.75 0 0 1 1.06 1.06l-2.48 2.47a.75.75 0 0 1-1.06 0l-1.2-1.2-1.42 1.42a.75.75 0 0 1-1.06-1.06l1.93-1.94Z"/></svg> Search by postcode</h2>
-                <p class="text-xs text-zinc-600 mb-4">
-                    Enter a full postcode to see every sale in that postcode from 1995 onwards. This is best when you
-                    want to look at a specific street or a small cluster of properties.  Property results are show in a table below once you click 'Search postcode'.
-                </p>
+            <div class="p-5">
+                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-lime-700">Individual transactions</p>
+                <h3 class="mt-1 text-base font-semibold text-zinc-900">Search by postcode</h3>
+                <p class="mt-1 min-h-10 text-xs leading-5 text-zinc-600">See every recorded sale from 1995 onwards for properties in one full postcode.</p>
 
-                <form method="GET" action="{{ route('property.search') }}" class="space-y-3">
+                <form method="GET" action="{{ route('property.search') }}" class="mt-4 space-y-3">
                     <div>
                         <input
                             id="postcode"
@@ -83,14 +82,12 @@
             </div>
 
             {{-- Search by area (summary dashboards) --}}
-            <div class="rounded border border-zinc-200 bg-white/80 p-6">
-                <h2 class="text-base font-semibold mb-2"><svg class="inline-block h-[1em] w-[1em] text-lime-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.5 3a7.5 7.5 0 1 0 4.79 13.29l4.71 4.71a.75.75 0 1 0 1.06-1.06l-4.71-4.71A7.5 7.5 0 0 0 10.5 3Zm-6 7.5a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M10.54 14.351a.75.75 0 0 0 .92 0c1.993-1.663 3.04-3.084 3.04-4.351a2.96 2.96 0 1 0-5.92 0c0 1.267 1.047 2.688 3.04 4.351ZM11 10.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd"/></svg> Search by area</h2>
-                <p class="text-xs text-zinc-600 mb-4">
-                    Start typing the name of a locality, town/city, district or county in England &amp; Wales. Choose one
-                    of the suggestions to go straight to an area dashboard showing prices, sales and property types.
-                </p>
+            <div class="p-5">
+                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-lime-700">Local market overview</p>
+                <h3 class="mt-1 text-base font-semibold text-zinc-900">Search by area</h3>
+                <p class="mt-1 min-h-10 text-xs leading-5 text-zinc-600">Open a dashboard of prices, sales and property types for a locality, town, district or county.</p>
 
-                <div class="relative">
+                <div class="relative mt-4">
                     <input
                         id="district-search"
                         type="text"
@@ -107,8 +104,8 @@
                 <p class="mt-2 text-xs text-zinc-500">Click on one of the suggestions to open the dashboard for that area.</p>
             </div>
 
-        </div>
-    </section>
+            </div>
+        </section>
 
     {{-- Results --}}
     @if(isset($results))
@@ -120,7 +117,7 @@
             <div class="flex justify-center mb-4 text-sm text-zinc-500">
                 <p>Click on the magnifying glass on the right hand side to get more detail about a specific property</p>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto border border-zinc-200 bg-white shadow-sm">
                 <table class="min-w-full text-sm">
                     <thead class="bg-zinc-50">
                         @php
@@ -308,8 +305,8 @@
     @endif
 
     {{-- England & Wales heatmap --}}
-    <section class="mb-12">
-        <div class="rounded border border-zinc-200 bg-white/80 p-6">
+        <section class="mb-12">
+        <div class="border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
             <div class="flex items-start justify-between gap-6 flex-col md:flex-row">
                 <div>
                     <h2 class="text-base font-semibold mb-2">
@@ -323,11 +320,11 @@
                 </div>
                 <p class="text-xs text-zinc-400">Data source: Land Registry + ONSPD</p>
             </div>
-            <div id="property-points-map" class="mt-4 h-96 md:h-[36rem] w-full rounded border border-zinc-200 bg-zinc-50"></div>
+            <div id="property-points-map" class="mt-4 h-96 w-full border border-zinc-200 bg-zinc-50 md:h-[36rem]"></div>
             <p id="points-status" class="mt-2 text-xs text-zinc-500">Zoom in to load property points.</p>
         </div>
-    </section>
-</div>
+        </section>
+    </div>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />

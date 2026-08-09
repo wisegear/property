@@ -82,6 +82,24 @@
 @endsection
 
 @section('content')
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden border-b border-zinc-200 bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+        <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+            <div class="max-w-4xl">
+                <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="size-2 rounded-full bg-lime-500"></span>Street property data</p>
+                <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">{{ $displayStreetName }}, {{ $outcode }}</h1>
+                <p class="mt-3 max-w-3xl text-base leading-7 text-zinc-600">Sold prices, recent transactions, property mix and local market context for {{ $displayStreetName }} in the {{ $outcode }} postcode district.</p>
+                <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">This page combines recorded Land Registry sales with local price trends, nearby crime trends and deprivation context.</p>
+
+                @if($limitedData)
+                    <p class="mt-4 max-w-3xl border-l-2 border-amber-400 pl-3 text-sm text-amber-800">There is limited sales data for this street, so wider postcode district figures may give a better view of the local market.</p>
+                @endif
+            </div>
+            <div class="hidden justify-self-end md:block">
+                <img src="{{ asset('assets/images/site/street.png') }}" alt="Street property sales" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
+            </div>
+        </div>
+    </section>
+
 <div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
     <nav aria-label="Breadcrumb" class="mb-6">
         <ol class="flex flex-wrap items-center gap-2 text-sm text-zinc-500">
@@ -97,32 +115,7 @@
         </ol>
     </nav>
 
-    <section class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <div class="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-            <div class="max-w-3xl">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Street Property Data</p>
-                <h1 class="mt-2 text-2xl font-semibold text-zinc-900">{{ $displayStreetName }} {{ $outcode }} Sold Prices &amp; Property Data</h1>
-                <p class="mt-2 text-sm text-zinc-600">
-                    View sold house prices, recent transactions, property mix, and local context for {{ $displayStreetName }}, {{ $outcode }}.
-                </p>
-                <p class="mt-3 text-sm leading-6 text-zinc-600">
-                    {{ $displayStreetName }} is a street in the {{ $outcode }} postcode district. This page brings together recorded Land Registry sales, local price trends, property types, nearby crime trends and deprivation context to give a clearer view of the local property market.
-                </p>
-
-                @if($limitedData)
-                    <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                        There is limited sales data for this street, so wider postcode district figures may give a better view of the local market.
-                    </div>
-                @endif
-            </div>
-
-            <div class="shrink-0">
-                <img src="{{ asset('assets/images/site/street.png') }}" alt="Street property sales" class="h-auto w-90">
-            </div>
-        </div>
-    </section>
-
-    <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section class="border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
         <div class="flex flex-col gap-2">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Street Snapshot</p>
             <h2 class="text-xl font-semibold text-zinc-900">{{ $displayStreetName }} at a glance</h2>
@@ -132,7 +125,7 @@
         <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             @foreach($glanceMetrics as $metric)
                 <div @class([
-                    'rounded-xl border border-zinc-200 bg-zinc-50 p-5',
+                    'border border-zinc-200 bg-zinc-50 p-5',
                     'xl:col-span-2' => $metric['label'] === 'Crime level',
                 ])>
                     <div class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ $metric['label'] }}</div>
@@ -142,7 +135,7 @@
         </div>
     </section>
 
-    <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section class="mt-6 border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
         <div class="flex flex-col gap-2">
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Comparison</p>
             <h2 class="text-xl font-semibold text-zinc-900">{{ $displayStreetName }} compared with {{ $outcode }}</h2>
@@ -185,7 +178,7 @@
     </section>
 
     <section class="mt-6 grid gap-6 xl:grid-cols-2">
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Chart</p>
                 <h2 class="mt-2 text-lg font-semibold text-zinc-900">Yearly median price</h2>
@@ -195,7 +188,7 @@
             </div>
         </article>
 
-        <article class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <article class="border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Chart</p>
                 <h2 class="mt-2 text-lg font-semibold text-zinc-900">Yearly sales count</h2>
@@ -207,7 +200,7 @@
     </section>
 
     @if(! empty($crimeTrend))
-        <section class="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg">
+        <section class="mt-6 border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
             <div class="mb-2 flex items-center justify-between gap-3">
                 <h2 class="text-lg font-semibold text-zinc-600">Crime trends near {{ $displayStreetName }}, {{ $outcode }}</h2>
 
@@ -315,7 +308,7 @@
 
     <section class="mt-6">
         @if($depr)
-            <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-lg">
+            <div class="border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
                 <div class="grid gap-6 lg:grid-cols-[1.2fr,0.8fr]">
                     <div>
                         <div class="text-lg font-bold text-zinc-600">Closest deprivation area for this street</div>
@@ -379,7 +372,7 @@
     </section>
 
     @if($faqItems !== [])
-        <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section class="mt-6 border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
             <div class="flex flex-col gap-2">
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">FAQ</p>
                 <h2 class="text-lg font-semibold text-zinc-900">Questions about {{ $displayStreetName }}</h2>
@@ -397,7 +390,7 @@
     @endif
 
     @if($nearbyStreets !== [])
-        <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section class="mt-6 border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
             <div class="flex flex-col gap-2">
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Internal Links</p>
                 <h2 class="text-lg font-semibold text-zinc-900">Nearby streets in {{ $outcode }}</h2>
@@ -414,7 +407,7 @@
         </section>
     @endif
 
-    <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section class="mt-6 border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
         <div class="flex items-start justify-between gap-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Recent Sales</p>

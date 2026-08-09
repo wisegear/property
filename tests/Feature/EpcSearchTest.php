@@ -28,6 +28,14 @@ class EpcSearchTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('WR5 3EU');
+
+        $content = $response->getContent();
+
+        $this->assertIsString($content);
+        $this->assertLessThan(
+            strpos($content, 'id="epc-map"'),
+            strpos($content, '1 Search Street')
+        );
     }
 
     private function ensureEpcSchema(): void

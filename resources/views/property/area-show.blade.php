@@ -3,6 +3,11 @@
 
 @php
     $areaLabel = trim((string) $areaName);
+    $areaDisplayLabel = str_replace(
+        [' And ', ' Of ', ' Upon ', ' On ', ' In '],
+        [' and ', ' of ', ' upon ', ' on ', ' in '],
+        \Illuminate\Support\Str::title(\Illuminate\Support\Str::lower($areaLabel)),
+    );
     $typeLabel = ucfirst($type);
     $areaTitle = "House Prices in {$areaLabel}";
     $yearsCount = isset($byYear) ? (is_countable($byYear) ? count($byYear) : $byYear->count()) : 0;
@@ -109,55 +114,60 @@
 @endsection
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4">
-
-    {{-- Hero / summary card --}}
-    <section class="relative z-0 overflow-hidden rounded-lg border border-gray-200 bg-white/80 p-6 md:p-8 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center">
-        @include('partials.hero-background')
-        <div class="max-w-6xl">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-gray-900">House Prices in {{ $areaLabel }}</h1>
-            <p class="mt-2 text-sm leading-6 text-gray-700">{{ $yearOverYearSummary ?? "House price movement over the past year for {$areaLabel} is not available, based on current Land Registry data." }}</p>
-            <p class="mt-1 text-xs leading-5 text-gray-600">Data provided for informational and research purposes. Based on recorded residential sales.</p>
-        </div>
-        <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-            <img src="{{ asset('assets/images/site/propertysearch.jpg') }}" alt="Area" class="w-90 h-auto">
+    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden border-b border-zinc-200 bg-white py-8 shadow-[0_1px_0_rgba(0,0,0,0.06)] md:py-9">
+        <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
+            <div class="max-w-4xl">
+                <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="size-2 rounded-full bg-lime-500"></span>Area property research</p>
+                <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">House prices in {{ $areaDisplayLabel }}</h1>
+                <p class="mt-3 max-w-3xl text-base leading-7 text-zinc-600">{{ $yearOverYearSummary ?? "House price movement over the past year for {$areaLabel} is not available, based on current Land Registry data." }}</p>
+                <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">Explore recorded residential sales, price trends, property types and new-build activity using Land Registry data.</p>
+                <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-400">Data provided for informational and research purposes.</p>
+            </div>
+            <div class="hidden justify-self-end md:block">
+                <img src="{{ asset('assets/images/site/propertysearch.jpg') }}" alt="Property market research for {{ $areaDisplayLabel }}" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
+            </div>
         </div>
     </section>
 
+<div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
     @if($summary)
-        <div class="mt-4 grid gap-4 grid-cols-1 md:grid-cols-4 text-sm">
-            <div class="border rounded p-3 bg-white shadow-lg">
+        <section aria-labelledby="area-overview-title">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Area overview</p>
+            <h2 id="area-overview-title" class="mt-1 text-xl font-bold text-zinc-900">{{ $areaDisplayLabel }} at a glance</h2>
+        <div class="mt-4 grid grid-cols-2 border-l border-t border-zinc-200 bg-white text-sm md:grid-cols-4">
+            <div class="border-b border-r border-t-4 border-t-slate-800 border-zinc-200 p-4">
                 <div class="text-xs text-zinc-500">Total sales</div>
-                <div class="text-lg font-semibold">
+                <div class="mt-2 text-2xl font-bold tabular-nums text-zinc-950">
                     {{ number_format((float) $summary->sales_count) }}
                 </div>
             </div>
-            <div class="border rounded p-3 bg-white shadow-lg">
+            <div class="border-b border-r border-t-4 border-t-lime-600 border-zinc-200 p-4">
                 <div class="text-xs text-zinc-500">Median price</div>
-                <div class="text-lg font-semibold">
+                <div class="mt-2 text-2xl font-bold tabular-nums text-zinc-950">
                     £{{ number_format((float) $summary->avg_price, 0) }}
                 </div>
             </div>
-            <div class="border rounded p-3 bg-white shadow-lg">
+            <div class="border-b border-r border-t-4 border-t-zinc-400 border-zinc-200 p-4">
                 <div class="text-xs text-zinc-500">Lowest recorded</div>
-                <div class="text-lg font-semibold">
+                <div class="mt-2 text-2xl font-bold tabular-nums text-zinc-950">
                     £{{ number_format((float) $summary->min_price, 0) }}
                 </div>
             </div>
-            <div class="border rounded p-3 bg-white shadow-lg">
+            <div class="border-b border-r border-t-4 border-t-zinc-700 border-zinc-200 p-4">
                 <div class="text-xs text-zinc-500">Highest recorded</div>
-                <div class="text-lg font-semibold">
+                <div class="mt-2 text-2xl font-bold tabular-nums text-zinc-950">
                     £{{ number_format((float) $summary->max_price, 0) }}
                 </div>
             </div>
         </div>
+        </section>
     @endif
 
-    <div class="mt-10">
+    <div class="mt-8">
 
-        <div class="border rounded bg-white p-4 shadow-lg">
+        <div class="border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
             <div class="mb-2">
-                <h3 class="text-base font-semibold text-gray-900 text-center">Median sale price and number of sales per year for {{ $typeLabel }} in {{ $areaLabel }}</h3>
+                <h3 class="text-center text-base font-semibold text-gray-900">Median sale price and number of sales per year for {{ $typeLabel }} in {{ $areaDisplayLabel }}</h3>
                 <p class="text-xs text-zinc-600 text-center">{{ $overallInsight }}</p>
             </div>
             <div class="w-full">
@@ -167,20 +177,20 @@
         </div>
     </div>
 
-    <div class="mt-10">
+    <div class="mt-7">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="border rounded bg-white p-4 shadow-lg">
+            <div class="border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
                 <div class="mb-2">
-                    <h3 class="text-base font-semibold text-gray-900 text-center">Sales split by property type in {{ $areaLabel }}</h3>
+                    <h3 class="text-center text-base font-semibold text-gray-900">Sales split by property type in {{ $areaDisplayLabel }}</h3>
                     <p class="text-xs text-zinc-600 text-center">{{ $typeSplitInsight }}</p>
                 </div>
                 <canvas id="areaTypeSplitChart" class="w-full max-h-[260px]"></canvas>
                 <div class="chart-empty hidden py-6 text-center text-sm text-zinc-500">No property type split data available for this area.</div>
             </div>
 
-            <div class="border rounded bg-white p-4 shadow-lg">
+            <div class="border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
                 <div class="mb-2">
-                    <h3 class="text-base font-semibold text-gray-900 text-center">New build vs existing sales in {{ $areaLabel }}</h3>
+                    <h3 class="text-center text-base font-semibold text-gray-900">New build vs existing sales in {{ $areaDisplayLabel }}</h3>
                     <p class="text-xs text-zinc-600 text-center">{{ $newBuildInsight }}</p>
                 </div>
                 <canvas id="newBuildSplitChart" class="w-full max-h-[260px]"></canvas>
@@ -189,36 +199,36 @@
         </div>
     </div>
 
-    <div class="mt-10">
+    <div class="mt-7">
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="border rounded bg-white p-4 shadow-lg">
+            <div class="border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
                 <div class="mb-2">
-                    <h3 class="text-base font-semibold text-gray-900 text-center">Detached homes in {{ $areaLabel }} - median price and number of sales</h3>
+                    <h3 class="text-center text-base font-semibold text-gray-900">Detached homes in {{ $areaDisplayLabel }} - median price and number of sales</h3>
                     <p class="text-xs text-zinc-600 text-center">{{ $typeInsights['detached'] ?? "No detached sales data is available yet for {$areaLabel}." }}</p>
                 </div>
                 <canvas id="areaTypeChart_detached" class="w-full max-h-[320px]"></canvas>
                 <div class="chart-empty hidden py-6 text-center text-sm text-zinc-500">No detached sales data available for this area.</div>
             </div>
-            <div class="border rounded bg-white p-4 shadow-lg">
+            <div class="border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
                 <div class="mb-2">
-                    <h3 class="text-base font-semibold text-gray-900 text-center">Semi-detached homes in {{ $areaLabel }} - median price and number of sales</h3>
+                    <h3 class="text-center text-base font-semibold text-gray-900">Semi-detached homes in {{ $areaDisplayLabel }} - median price and number of sales</h3>
                     <p class="text-xs text-zinc-600 text-center">{{ $typeInsights['semi'] ?? "No semi-detached sales data is available yet for {$areaLabel}." }}</p>
                 </div>
                 <canvas id="areaTypeChart_semi" class="w-full max-h-[320px]"></canvas>
                 <div class="chart-empty hidden py-6 text-center text-sm text-zinc-500">No semi-detached sales data available for this area.</div>
             </div>
-            <div class="border rounded bg-white p-4 shadow-lg">
+            <div class="border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
                 <div class="mb-2">
-                    <h3 class="text-base font-semibold text-gray-900 text-center">Terraced homes in {{ $areaLabel }} - median price and number of sales</h3>
+                    <h3 class="text-center text-base font-semibold text-gray-900">Terraced homes in {{ $areaDisplayLabel }} - median price and number of sales</h3>
                     <p class="text-xs text-zinc-600 text-center">{{ $typeInsights['terraced'] ?? "No terraced sales data is available yet for {$areaLabel}." }}</p>
                 </div>
                 <canvas id="areaTypeChart_terraced" class="w-full max-h-[320px]"></canvas>
                 <div class="chart-empty hidden py-6 text-center text-sm text-zinc-500">No terraced sales data available for this area.</div>
             </div>
-            <div class="border rounded bg-white p-4 shadow-lg">
+            <div class="border border-zinc-200 bg-white p-5 shadow-sm md:p-6">
                 <div class="mb-2">
-                    <h3 class="text-base font-semibold text-gray-900 text-center">Flats in {{ $areaLabel }} - median price and number of sales</h3>
+                    <h3 class="text-center text-base font-semibold text-gray-900">Flats in {{ $areaDisplayLabel }} - median price and number of sales</h3>
                     <p class="text-xs text-zinc-600 text-center">{{ $typeInsights['flat'] ?? "No flat sales data is available yet for {$areaLabel}." }}</p>
                 </div>
                 <canvas id="areaTypeChart_flat" class="w-full max-h-[320px]"></canvas>
