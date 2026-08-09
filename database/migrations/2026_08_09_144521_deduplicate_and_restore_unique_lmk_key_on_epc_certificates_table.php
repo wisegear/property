@@ -16,6 +16,12 @@ return new class extends Migration
             return;
         }
 
+        $indexName = 'uq_epc_certificates_lmk_key';
+
+        if (Schema::hasIndex('epc_certificates', $indexName, 'unique')) {
+            return;
+        }
+
         DB::statement(<<<'SQL'
             DELETE FROM epc_certificates duplicate
             USING epc_certificates original
@@ -23,8 +29,14 @@ return new class extends Migration
               AND duplicate.ctid > original.ctid
             SQL);
 
-        Schema::table('epc_certificates', function (Blueprint $table): void {
-            $table->unique('LMK_KEY', 'uq_epc_certificates_lmk_key');
+        if (Schema::hasIndex('epc_certificates', $indexName)) {
+            Schema::table('epc_certificates', function (Blueprint $table) use ($indexName): void {
+                $table->dropIndex($indexName);
+            });
+        }
+
+        Schema::table('epc_certificates', function (Blueprint $table) use ($indexName): void {
+            $table->unique('LMK_KEY', $indexName);
         });
     }
 
