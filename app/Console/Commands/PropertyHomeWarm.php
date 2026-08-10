@@ -119,7 +119,7 @@ class PropertyHomeWarm extends Command
     private function runTask(string $task, int $ttl, NationalPropertyDashboard $dashboard): void
     {
         if ($task === 'dashboard') {
-            $dashboard->cachedData();
+            $dashboard->refreshCache($ttl);
 
             return;
         }

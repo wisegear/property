@@ -75,6 +75,10 @@ class PropertyHomeWarmCommandTest extends TestCase
         DB::table('land_registry')->insert([
             $this->landRegistryRow('99999999-9999-9999-9999-99999999999999', 450000, '2025-06-15 00:00:00'),
         ]);
+        Cache::put('property:dashboard:api:v1:202506', [
+            'metadata' => ['latest_month' => 'stale'],
+            'summary' => ['sales' => 999],
+        ], 3600);
 
         $this->artisan('property:home-warm', ['--task' => 'dashboard'])->assertExitCode(0);
 

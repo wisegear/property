@@ -68,18 +68,42 @@ class NationalPropertyDashboard
      */
     public function cachedData(): array
     {
-        $latestDate = DB::table('land_registry')
-            ->where('PPDCategoryType', self::CATEGORY)
-            ->max('Date');
-        $latestMonth = $latestDate === null
-            ? now()->startOfMonth()
-            : Carbon::parse($latestDate)->startOfMonth();
+        $latestMonth = $this->latestMonth();
 
         return Cache::remember(
-            'property:dashboard:api:v1:'.$latestMonth->format('Ym'),
+            $this->cacheKey($latestMonth),
             self::CACHE_TTL,
             fn (): array => $this->build($latestMonth)
         );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function refreshCache(int $ttl): array
+    {
+        $latestMonth = $this->latestMonth();
+        $data = $this->build($latestMonth);
+
+        Cache::put($this->cacheKey($latestMonth), $data, $ttl);
+
+        return $data;
+    }
+
+    private function latestMonth(): Carbon
+    {
+        $latestDate = DB::table('land_registry')
+            ->where('PPDCategoryType', self::CATEGORY)
+            ->max('Date');
+
+        return $latestDate === null
+            ? now()->startOfMonth()
+            : Carbon::parse($latestDate)->startOfMonth();
+    }
+
+    private function cacheKey(Carbon $latestMonth): string
+    {
+        return 'property:dashboard:api:v1:'.$latestMonth->format('Ym');
     }
 
     /**
