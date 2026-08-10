@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CommentsController extends Controller
 {
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
+        abort_unless(config('blog.comments_enabled'), 404);
+
         // Validate the incoming request
         $request->validate([
             'comment_text' => 'required|string|max:500',

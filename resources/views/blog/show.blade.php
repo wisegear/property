@@ -167,14 +167,16 @@
         @endif
     </div>
 
-    <!-- Comments Section -->
-    <div class="max-w-4xl mx-auto mb-10">
-        @include('partials.comments',
-        [
-            'comments' => $page->comments,
-            'model' => $page
-        ])
-    </div>
+    @if (config('blog.comments_enabled'))
+        <!-- Comments Section -->
+        <div class="max-w-4xl mx-auto mb-10">
+            @include('partials.comments',
+            [
+                'comments' => $page->comments,
+                'model' => $page
+            ])
+        </div>
+    @endif
     
 
     <script>

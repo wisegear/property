@@ -52,7 +52,23 @@ class BlogControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Market Update');
+        $response->assertDontSee('Comments (');
         $this->assertSame('market-update', $response->viewData('page')->slug);
+    }
+
+    public function test_blog_comments_cannot_be_submitted_while_disabled(): void
+    {
+        $this->seedBlogFixtures();
+        $user = User::query()->findOrFail(1);
+
+        $response = $this->actingAs($user)->post(route('comments.store', absolute: false), [
+            'comment_text' => 'A new comment',
+            'commentable_id' => 1,
+            'commentable_type' => 'App\\Models\\BlogPosts',
+        ]);
+
+        $response->assertNotFound();
+        $this->assertDatabaseMissing('comments', ['comment_text' => 'A new comment']);
     }
 
     public function test_blog_category_filter_accepts_lowercase_slug_values(): void
