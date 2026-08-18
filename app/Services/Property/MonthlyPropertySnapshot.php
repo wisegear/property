@@ -21,7 +21,7 @@ class MonthlyPropertySnapshot
         $latestMonth = $this->latestMonth();
 
         return Cache::remember(
-            'property:monthly-snapshot:v2:'.$latestMonth->format('Ym'),
+            'property:monthly-snapshot:v3:'.$latestMonth->format('Ym'),
             now()->addDay(),
             fn (): array => $this->build($latestMonth),
         );
@@ -34,12 +34,15 @@ class MonthlyPropertySnapshot
     {
         $month = $month->copy()->startOfMonth();
         $query = $this->monthQuery($month);
-        $sales = (clone $query)->count();
-        $medianPrice = $this->median(clone $query);
-        $ranked = (clone $query)
-            ->where('Price', '>', 0)
-            ->selectRaw('"Price", CUME_DIST() OVER (ORDER BY "Price") as cd');
-        $percentile90 = DB::query()->fromSub($ranked, 'prices')->where('cd', '>=', 0.9)->min('Price');
+        $headlineMetrics = $this->headlineMetrics($month) ?? [
+            'sales' => 0,
+            'median_price' => null,
+            'p90_price' => null,
+            'million_plus_share' => 0.0,
+        ];
+        $sales = $headlineMetrics['sales'];
+        $medianPrice = $headlineMetrics['median_price'];
+        $percentile90 = $headlineMetrics['p90_price'];
         $topRanked = (clone $query)
             ->where('Price', '>', 0)
             ->selectRaw('"Price", ROW_NUMBER() OVER (ORDER BY "Price" DESC) as rn, COUNT(*) OVER () as cnt');
@@ -74,6 +77,7 @@ class MonthlyPropertySnapshot
             'medianPrice' => $medianPrice,
             'percentile90' => $percentile90 === null ? null : (int) $percentile90,
             'top5Average' => $top5Average === null ? null : (int) $top5Average,
+            'comparison' => $this->comparison($month, $headlineMetrics),
             'propertyTypes' => $propertyTypes,
             'newBuildMix' => $this->mix(clone $query, 'NewBuild', ['New build' => 'Y', 'Existing' => 'N']),
             'tenureMix' => $this->mix(clone $query, 'Duration', ['Freehold' => 'F', 'Leasehold' => 'L']),
@@ -101,6 +105,108 @@ class MonthlyPropertySnapshot
         return DB::table('land_registry')
             ->where('PPDCategoryType', self::CATEGORY)
             ->whereBetween('Date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()]);
+    }
+
+    /**
+     * @return array{previous: Carbon, year_ago: Carbon}
+     */
+    public function comparisonMonths(Carbon $month): array
+    {
+        $month = $month->copy()->startOfMonth();
+
+        return [
+            'previous' => $month->copy()->subMonth(),
+            'year_ago' => $month->copy()->subYear(),
+        ];
+    }
+
+    public function percentageChange(int|float|null $current, int|float|null $comparison): ?float
+    {
+        if ($current === null || $comparison === null || (float) $comparison === 0.0) {
+            return null;
+        }
+
+        return round((($current - $comparison) / $comparison) * 100, 1);
+    }
+
+    public function percentagePointChange(int|float|null $current, int|float|null $comparison): ?float
+    {
+        if ($current === null || $comparison === null) {
+            return null;
+        }
+
+        return round($current - $comparison, 1);
+    }
+
+    /**
+     * @param  array{sales: int, median_price: int|null, p90_price: int|null, million_plus_share: float}  $current
+     * @return array<string, mixed>
+     */
+    private function comparison(Carbon $month, array $current): array
+    {
+        $months = $this->comparisonMonths($month);
+        $previous = $this->headlineMetrics($months['previous']);
+        $yearAgo = $this->headlineMetrics($months['year_ago']);
+
+        return [
+            'previous_label' => $months['previous']->format('F'),
+            'year_label' => $months['year_ago']->format('F Y'),
+            'sales' => $this->comparisonMetric($current['sales'], $previous['sales'] ?? null, $yearAgo['sales'] ?? null),
+            'median_price' => $this->comparisonMetric($current['median_price'], $previous['median_price'] ?? null, $yearAgo['median_price'] ?? null),
+            'p90_price' => $this->comparisonMetric($current['p90_price'], $previous['p90_price'] ?? null, $yearAgo['p90_price'] ?? null),
+            'million_plus_share' => $this->comparisonMetric(
+                $current['million_plus_share'],
+                $previous['million_plus_share'] ?? null,
+                $yearAgo['million_plus_share'] ?? null,
+                true,
+            ),
+        ];
+    }
+
+    /**
+     * @return array{current: int|float|null, previous: int|float|null, previous_change: float|null, year_ago: int|float|null, year_change: float|null}
+     */
+    private function comparisonMetric(
+        int|float|null $current,
+        int|float|null $previous,
+        int|float|null $yearAgo,
+        bool $percentagePoints = false,
+    ): array {
+        $change = $percentagePoints ? $this->percentagePointChange(...) : $this->percentageChange(...);
+
+        return [
+            'current' => $current,
+            'previous' => $previous,
+            'previous_change' => $change($current, $previous),
+            'year_ago' => $yearAgo,
+            'year_change' => $change($current, $yearAgo),
+        ];
+    }
+
+    /**
+     * @return array{sales: int, median_price: int|null, p90_price: int|null, million_plus_share: float}|null
+     */
+    private function headlineMetrics(Carbon $month): ?array
+    {
+        $query = $this->monthQuery($month);
+        $sales = (clone $query)->count();
+
+        if ($sales === 0) {
+            return null;
+        }
+
+        $ranked = (clone $query)
+            ->where('Price', '>', 0)
+            ->selectRaw('"Price", CUME_DIST() OVER (ORDER BY "Price") as cd');
+        $percentile90 = DB::query()->fromSub($ranked, 'prices')->where('cd', '>=', 0.9)->min('Price');
+        $millionPlusSales = (clone $query)->where('Price', '>=', 1000000)->count();
+
+        return [
+            'sales' => $sales,
+            'median_price' => $this->median(clone $query),
+            'p90_price' => $percentile90 === null ? null : (int) $percentile90,
+            'million_plus_share' => round(($millionPlusSales / $sales) * 100, 1),
+        ];
     }
 
     private function median(Builder $query): ?int

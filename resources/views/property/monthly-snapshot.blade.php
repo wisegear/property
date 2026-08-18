@@ -28,6 +28,14 @@
     $maximumPriceBandSales = max(array_column($priceBands, 'sales') ?: [0]);
     $maximumDistrictSales = max(array_column($topDistricts, 'sales') ?: [0]);
     $propertyTypeNames = ['D' => 'Detached', 'S' => 'Semi-detached', 'T' => 'Terraced', 'F' => 'Flat / maisonette', 'O' => 'Other'];
+    $formatChange = fn (?float $value): string => $value === null
+        ? '—'
+        : ($value > 0 ? '+' : '').number_format($value, 1).'%';
+    $changeClass = fn (?float $value): string => match (true) {
+        $value === null, abs($value) < 0.1 => 'text-zinc-500',
+        $value > 0 => 'text-emerald-700',
+        default => 'text-rose-700',
+    };
 @endphp
 
 <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.18)] md:py-9">
@@ -73,6 +81,38 @@
             <p class="mt-3 text-4xl font-semibold tracking-tight text-lime-700">{{ $formatPrice($top5Average) }}</p>
             <p class="mt-2 text-sm text-zinc-500">Average of the top 5%</p>
         </article>
+    </section>
+
+    <section class="overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm">
+        <div class="border-b border-zinc-100 px-6 py-5">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Monthly context</p>
+            <h2 class="mt-2 text-xl font-semibold text-zinc-950">How does this month compare?</h2>
+            <p class="mt-1 text-sm text-zinc-500">Headline indicators compared with the previous month and the same month last year.</p>
+            <p class="mt-2 text-xs text-zinc-400">The current month may continue to be backfilled as HM Land Registry receives additional registrations in the coming months.</p>
+        </div>
+        <div class="grid sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-zinc-100">
+            @foreach ([
+                ['label' => 'Recorded sales', 'metric' => $comparison['sales'], 'format' => fn ($value) => number_format($value)],
+                ['label' => 'Median sale price', 'metric' => $comparison['median_price'], 'format' => $formatPrice],
+                ['label' => '90th percentile sale price', 'metric' => $comparison['p90_price'], 'format' => $formatPrice],
+                ['label' => '£1m+ sales share', 'metric' => $comparison['million_plus_share'], 'format' => fn ($value) => number_format($value, 1).'%'],
+            ] as $item)
+                <article class="border-b border-zinc-100 p-6 sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0">
+                    <p class="text-sm font-medium text-zinc-600">{{ $item['label'] }}</p>
+                    <p class="mt-2 text-2xl font-semibold tabular-nums tracking-tight text-zinc-950">{{ $item['format']($item['metric']['current']) }}</p>
+                    <div class="mt-4 grid gap-1.5 text-xs tabular-nums">
+                        <p class="{{ $changeClass($item['metric']['previous_change']) }}">
+                            <span class="font-semibold">{{ $formatChange($item['metric']['previous_change']) }}</span>
+                            <span class="text-zinc-400">vs {{ $comparison['previous_label'] }}</span>
+                        </p>
+                        <p class="{{ $changeClass($item['metric']['year_change']) }}">
+                            <span class="font-semibold">{{ $formatChange($item['metric']['year_change']) }}</span>
+                            <span class="text-zinc-400">vs {{ $comparison['year_label'] }}</span>
+                        </p>
+                    </div>
+                </article>
+            @endforeach
+        </div>
     </section>
 
     <section class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
