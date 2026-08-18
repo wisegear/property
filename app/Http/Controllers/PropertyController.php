@@ -8,6 +8,7 @@ use App\Models\LandRegistry;
 use App\Services\CouncilTaxEstimateService;
 use App\Services\CrimeSummaryService;
 use App\Services\EpcMatcher;
+use App\Services\Property\MonthlyPropertySnapshot;
 use App\Services\Property\NationalPropertyDashboard;
 use App\Services\PropertyResearch\NearbySchoolsService;
 use App\Support\PropertyResearch\OfstedRating;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class PropertyController extends Controller
 {
@@ -36,6 +38,11 @@ class PropertyController extends Controller
     public function home(Request $request)
     {
         return view('property.home', $this->nationalPropertyDashboard->webData());
+    }
+
+    public function monthlySnapshot(MonthlyPropertySnapshot $monthlyPropertySnapshot): View
+    {
+        return view('property.monthly-snapshot', $monthlyPropertySnapshot->cachedData());
     }
 
     public function search(PropertySearchRequest $request)

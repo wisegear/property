@@ -14,6 +14,7 @@
             <p class="mt-3 text-sm leading-6 text-zinc-600">Charts use a rolling 12-month window from 1995, ending with the latest Land Registry month ({{ isset($latestMonth) ? \Carbon\Carbon::parse($latestMonth)->format('F') : now()->format('F') }}).</p>
             <p class="mt-2 text-sm leading-6 text-zinc-600">Property data includes <span class="font-bold text-lime-600">Category A</span> arm's-length market sales only. <span class="font-bold text-rose-500">Category B</span> transactions are excluded because their circumstances can skew the data. <a href="/blog/category-a-vs-category-b-property-sales-what-the-land-registry-is-actually-telling-you" class="text-lime-600 hover:text-lime-700">Read more about the categories.</a> Data is provided by HM Land Registry.</p>
             <div class="mt-4 flex flex-wrap gap-2">
+                <a href="{{ route('property.monthly-snapshot', absolute: false) }}" class="inner-button bg-lime-600! hover:bg-lime-700!">Latest month snapshot</a>
                 <a href="{{ route('property.search', absolute: false) }}" class="inner-button bg-lime-600! hover:bg-lime-700!">Property Search</a>
                 <a href="/property/outer-prime-london" class="inner-button">Outer Prime London</a>
                 <a href="/property/prime-central-london" class="inner-button">Prime Central London</a>

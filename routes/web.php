@@ -72,6 +72,7 @@ Route::get('/support', fn () => Auth::check()
 Route::view('/legal', 'legal.index')->name('legal.index');
 
 Route::get('/property', [PropertyController::class, 'home'])->name('property.home');
+Route::get('/property/monthly-snapshot', [PropertyController::class, 'monthlySnapshot'])->name('property.monthly-snapshot');
 Route::get('/property/search', [PropertyController::class, 'search'])->name('property.search');
 Route::get('/property/street/{outcode}/{street}', [PropertyStreetController::class, 'show'])
     ->where('outcode', '[A-Za-z0-9]+')
