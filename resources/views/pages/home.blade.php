@@ -331,16 +331,24 @@
                 </div>
             </div>
 
-            <div class="p-5 md:p-6">
-                <h3 class="font-bold text-zinc-900">Local and specialist research</h3>
-                <p class="mt-1 text-xs leading-5 text-zinc-500">Property-level records and wider local context.</p>
-                <div class="mt-4 grid gap-2.5 text-sm">
-                    <a href="{{ route('schools.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Schools and local markets</a>
-                    <a href="{{ route('deprivation.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Deprivation</a>
-                    <a href="{{ route('insights.crime.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Crime</a>
-                    <a href="{{ route('property.scottish-prices') }}" class="font-medium text-zinc-700 hover:text-lime-700">Scottish property prices</a>
-                    <a href="{{ route('property.pcl') }}" class="font-medium text-zinc-700 hover:text-lime-700">Prime London markets</a>
-                    <a href="{{ route('mortgagecalc.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Calculators and tools</a>
+            <div class="relative overflow-hidden bg-lime-50/40 p-5 md:p-6">
+                <div class="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-lime-100/70" aria-hidden="true"></div>
+                <div class="relative">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-lime-700">New property research</p>
+                    <h3 class="mt-2 font-bold text-zinc-900">Property Monthly Snapshot</h3>
+                    <p class="mt-1 text-xs leading-5 text-zinc-600">See what the latest Land Registry month reveals about sales, prices and market activity.</p>
+
+                    <div class="mt-4 grid grid-cols-2 border-y border-lime-200/70 text-xs text-zinc-600">
+                        <span class="border-b border-r border-lime-200/70 py-2.5 pr-2">Monthly comparisons</span>
+                        <span class="border-b border-lime-200/70 py-2.5 pl-3">Housing mix</span>
+                        <span class="border-r border-lime-200/70 py-2.5 pr-2">Regional map</span>
+                        <span class="py-2.5 pl-3">Notable sales</span>
+                    </div>
+
+                    <a href="{{ route('property.monthly-snapshot') }}" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-lime-700 hover:underline">
+                        Explore the latest snapshot
+                        <span aria-hidden="true">→</span>
+                    </a>
                 </div>
             </div>
         </div>

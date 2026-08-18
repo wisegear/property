@@ -159,12 +159,12 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('Explore PropertyResearch');
         $view->assertSee('View current market insights');
         $view->assertSee(route('insights.index', absolute: false), false);
-        $view->assertSee('Local and specialist research');
-        $view->assertSee('Deprivation');
-        $view->assertSee('Crime');
+        $view->assertSee('Property Monthly Snapshot');
+        $view->assertSee('Monthly comparisons');
+        $view->assertSee('Regional map');
+        $view->assertSee('Explore the latest snapshot');
+        $view->assertSee(route('property.monthly-snapshot', absolute: false), false);
         $view->assertSee('Arrears and repossessions');
-        $view->assertSee(route('deprivation.index', absolute: false), false);
-        $view->assertSee(route('insights.crime.index', absolute: false), false);
         $view->assertSeeInOrder([
             'UK property market',
             'EPC records and local data',
@@ -173,9 +173,10 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'Swap Rates',
             'UK swap rates',
             'Economic dashboard',
-            'Local and specialist research',
-            'Deprivation',
-            'Crime',
+            'Property Monthly Snapshot',
+            'Monthly comparisons',
+            'Regional map',
+            'Explore the latest snapshot',
         ]);
         $view->assertDontSee('128 live');
         $view->assertDontSee('Top signal (this period)');
@@ -192,7 +193,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'Property transactions',
             'EPC records and local data',
             'Swap Rates',
-            'Local and specialist research',
+            'Property Monthly Snapshot',
         ]);
     }
 
