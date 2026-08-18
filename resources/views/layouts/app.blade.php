@@ -10,7 +10,7 @@
             'description',
             'Independent UK property data, sales trends, market signals, and research insights across England, Wales, Scotland, and Northern Ireland.'
         ));
-        $metaUrl = url()->current();
+        $metaUrl = $canonicalUrl ?? url()->current();
         $metaImage = asset('assets/images/site/research-logo-4.png');
         $schemaWebsite = [
             '@context' => 'https://schema.org',

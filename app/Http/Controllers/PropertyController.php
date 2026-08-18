@@ -42,7 +42,36 @@ class PropertyController extends Controller
 
     public function monthlySnapshot(MonthlyPropertySnapshot $monthlyPropertySnapshot): View
     {
-        return view('property.monthly-snapshot', $monthlyPropertySnapshot->cachedData());
+        return $this->monthlySnapshotView($monthlyPropertySnapshot, $monthlyPropertySnapshot->latestMonth());
+    }
+
+    public function monthlySnapshotByMonth(
+        string $year,
+        string $month,
+        MonthlyPropertySnapshot $monthlyPropertySnapshot,
+    ): View {
+        $snapshotMonth = Carbon::createFromFormat('!Y-m', $year.'-'.$month);
+
+        abort_unless($monthlyPropertySnapshot->isAvailable($snapshotMonth), 404);
+
+        return $this->monthlySnapshotView($monthlyPropertySnapshot, $snapshotMonth);
+    }
+
+    private function monthlySnapshotView(
+        MonthlyPropertySnapshot $monthlyPropertySnapshot,
+        Carbon $month,
+    ): View {
+        $month = $month->copy()->startOfMonth();
+
+        return view('property.monthly-snapshot', [
+            ...$monthlyPropertySnapshot->cachedDataFor($month),
+            'snapshotNavigationYear' => now()->year,
+            'snapshotMonths' => $monthlyPropertySnapshot->availableMonthsForYear(now()->year),
+            'canonicalUrl' => route('property.monthly-snapshot.show', [
+                'year' => $month->format('Y'),
+                'month' => $month->format('m'),
+            ]),
+        ]);
     }
 
     public function search(PropertySearchRequest $request)

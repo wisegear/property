@@ -20,11 +20,51 @@ class MonthlyPropertySnapshot
     {
         $latestMonth = $this->latestMonth();
 
+        return $this->cachedDataFor($latestMonth);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function cachedDataFor(Carbon $month): array
+    {
+        $month = $month->copy()->startOfMonth();
+
         return Cache::remember(
-            'property:monthly-snapshot:v3:'.$latestMonth->format('Ym'),
+            'property:monthly-snapshot:v3:'.$month->format('Ym'),
             now()->addDay(),
-            fn (): array => $this->build($latestMonth),
+            fn (): array => $this->build($month),
         );
+    }
+
+    public function isAvailable(Carbon $month): bool
+    {
+        $month = $month->copy()->startOfMonth();
+
+        return $month->lessThanOrEqualTo($this->latestMonth())
+            && $this->monthQuery($month)->exists();
+    }
+
+    /**
+     * @return array<int, Carbon>
+     */
+    public function availableMonthsForYear(int $year): array
+    {
+        $start = Carbon::create($year, 1, 1)->startOfDay();
+        $end = $start->copy()->endOfYear();
+        $monthExpression = DB::connection()->getDriverName() === 'pgsql'
+            ? 'EXTRACT(MONTH FROM "Date")'
+            : 'CAST(strftime(\'%m\', "Date") AS INTEGER)';
+
+        return DB::table('land_registry')
+            ->where('PPDCategoryType', self::CATEGORY)
+            ->whereBetween('Date', [$start, $end])
+            ->selectRaw($monthExpression.' as month_number')
+            ->groupByRaw($monthExpression)
+            ->orderByRaw($monthExpression)
+            ->pluck('month_number')
+            ->map(fn (mixed $month): Carbon => Carbon::create($year, (int) $month, 1))
+            ->all();
     }
 
     /**
@@ -91,7 +131,7 @@ class MonthlyPropertySnapshot
         ];
     }
 
-    private function latestMonth(): Carbon
+    public function latestMonth(): Carbon
     {
         $latestDate = DB::table('land_registry')
             ->where('PPDCategoryType', self::CATEGORY)

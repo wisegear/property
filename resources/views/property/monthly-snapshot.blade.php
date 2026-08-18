@@ -54,8 +54,23 @@
                     <span class="text-2xl font-semibold tabular-nums text-zinc-950">{{ number_format($sales) }}</span>
                     <span class="ml-1 text-sm text-zinc-500">recorded sales</span>
                 </div>
-                <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">Provisional</span>
             </div>
+            @if (count($snapshotMonths) > 0)
+                <nav class="mt-4 flex flex-wrap items-center gap-x-1 gap-y-2 border-t border-zinc-100 pt-3 text-sm" aria-label="{{ $snapshotNavigationYear }} property snapshots">
+                    <span class="mr-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">{{ $snapshotNavigationYear }} snapshots</span>
+                    @foreach ($snapshotMonths as $snapshotMonth)
+                        @php
+                            $isActiveMonth = $month->isSameMonth($snapshotMonth);
+                        @endphp
+                        <a
+                            href="{{ route('property.monthly-snapshot.show', ['year' => $snapshotMonth->format('Y'), 'month' => $snapshotMonth->format('m')], absolute: false) }}"
+                            data-snapshot-month="{{ $snapshotMonth->format('Y-m') }}"
+                            class="border-b-2 px-2 py-1 font-medium transition-colors {{ $isActiveMonth ? 'border-lime-600 bg-lime-50 text-lime-700' : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-900' }}"
+                            @if ($isActiveMonth) aria-current="page" @endif
+                        >{{ $snapshotMonth->format('M') }}</a>
+                    @endforeach
+                </nav>
+            @endif
         </div>
 
         <div class="hidden min-w-0 justify-end md:flex" aria-hidden="true">
