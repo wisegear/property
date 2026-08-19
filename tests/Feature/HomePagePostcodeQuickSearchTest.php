@@ -168,9 +168,18 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('PropertyResearch iPhone app');
         $view->assertSee('https://apps.apple.com/gb/app/id6794914030', false);
         $view->assertSee('Download PropertyResearch on the App Store (opens in a new tab)');
+        $view->assertSee('High Value Property');
+        $view->assertSee('90th percentile');
+        $view->assertSee('Hotspot map');
+        $view->assertSee('Explore high-value property');
+        $view->assertSee(route('top-sales.index', absolute: false), false);
         $view->assertDontSee('Arrears and repossessions');
         $view->assertSeeInOrder([
             'PropertyResearch iPhone app',
+            'Explore PropertyResearch',
+            'High Value Property',
+            '90th percentile',
+            'Explore high-value property',
             'Swap Rates',
             'UK swap rates',
             'Economic dashboard',
@@ -183,6 +192,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertDontSee('Top signal (this period)');
         $view->assertSee('md:grid-cols-3', false);
         $view->assertSeeInOrder([
+            'PropertyResearch iPhone app',
             'Search properties',
             'Street search',
             'Postcode search',
@@ -190,7 +200,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'Property Market Stress Index',
             'UK Housing Market Snapshot',
             'Explore PropertyResearch',
-            'PropertyResearch iPhone app',
+            'High Value Property',
             'Swap Rates',
             'Property Monthly Snapshot',
         ]);

@@ -35,14 +35,22 @@
                 </div>
             </div>
 
-            <div class="hidden min-w-0 justify-end md:flex" aria-hidden="true">
-                <img
-                    src="{{ asset('/assets/images/site/logo10.jpg') }}"
-                    alt=""
-                    width="768"
-                    height="512"
-                    class="h-44 w-auto max-w-full object-contain opacity-80 mix-blend-multiply [mask-image:linear-gradient(to_right,transparent_0%,black_18%,black_94%,transparent_100%)] lg:h-52"
+            <div class="hidden min-w-0 justify-end md:flex">
+                <a
+                    href="https://apps.apple.com/gb/app/id6794914030"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Download PropertyResearch on the App Store (opens in a new tab)"
+                    class="group block max-w-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-4"
                 >
+                    <img
+                        src="{{ asset('/propertyresearch-app.png') }}"
+                        alt="PropertyResearch iPhone app"
+                        width="1536"
+                        height="1024"
+                        class="h-44 w-auto max-w-full object-contain transition-transform duration-200 group-hover:scale-[1.02] lg:h-52"
+                    >
+                </a>
             </div>
         </div>
     </section>
@@ -296,20 +304,25 @@
         </div>
 
         <div class="grid divide-y divide-zinc-200 md:grid-cols-3 md:divide-x md:divide-y-0">
-            <div class="flex items-center p-5 md:p-6">
-                <a
-                    href="https://apps.apple.com/gb/app/id6794914030"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Download PropertyResearch on the App Store (opens in a new tab)"
-                    class="block w-full rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2"
-                >
-                    <img
-                        src="{{ asset('/propertyresearch-app.png') }}"
-                        alt="PropertyResearch iPhone app"
-                        class="aspect-3/2 w-full rounded-sm object-cover"
-                    >
-                </a>
+            <div class="relative overflow-hidden bg-lime-50/40 p-5 md:p-6">
+                <div class="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-lime-100/70" aria-hidden="true"></div>
+                <div class="relative">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-lime-700">High-end market research</p>
+                    <h3 class="mt-2 font-bold text-zinc-900">High Value Property</h3>
+                    <p class="mt-1 text-xs leading-5 text-zinc-600">Explore the top 10% of residential transactions and see where expensive homes are selling.</p>
+
+                    <div class="mt-4 grid grid-cols-2 border-y border-lime-200/70 text-xs text-zinc-600">
+                        <span class="border-b border-r border-lime-200/70 py-2.5 pr-2">90th percentile</span>
+                        <span class="border-b border-lime-200/70 py-2.5 pl-3">Top sales</span>
+                        <span class="border-r border-lime-200/70 py-2.5 pr-2">Hotspot map</span>
+                        <span class="py-2.5 pl-3">£1m+ market</span>
+                    </div>
+
+                    <a href="{{ route('top-sales.index') }}" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-lime-700 hover:underline">
+                        Explore high-value property
+                        <span aria-hidden="true">→</span>
+                    </a>
+                </div>
             </div>
 
             <div class="p-5 md:p-6">

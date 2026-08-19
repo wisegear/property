@@ -142,6 +142,9 @@ Route::get('/insights/crime', [CrimeController::class, 'index'])->name('insights
 Route::get('/insights/crime/{area}', [CrimeController::class, 'show'])->name('insights.crime.show');
 Route::get('/insights/swap-rates', [SwapRateController::class, 'index'])->name('insights.swap-rates');
 Route::get('/top-property-sales', [TopSalesController::class, 'index'])->name('top-sales.index');
+Route::get('/top-property-sales/{year}/{month}', [TopSalesController::class, 'show'])
+    ->where(['year' => '\\d{4}', 'month' => '\\d{2}'])
+    ->name('top-sales.show');
 Route::get('/insights/{sector}', [InsightController::class, 'show'])
     ->where('sector', '[A-Za-z0-9]+')
     ->name('insights.show');

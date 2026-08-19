@@ -455,7 +455,7 @@
                                role="menuitem"
                                tabindex="-1"
                                class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 {{ request()->routeIs('top-sales.index') ? 'font-semibold' : '' }}">
-                                Top Property Sales
+                                High Value Property
                             </a>
                             <a href="{{ url('/blog') }}"
                                role="menuitem"
@@ -766,7 +766,7 @@
                         </a>
                         <a href="{{ route('top-sales.index') }}"
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 {{ request()->routeIs('top-sales.index') ? 'font-semibold' : '' }}">
-                            Top Property Sales
+                            High Value Property
                         </a>
                         <a href="{{ url('/blog') }}" class="block rounded px-3 py-2 text-zinc-700 hover:bg-zinc-100">Blog</a>
                     </div>
