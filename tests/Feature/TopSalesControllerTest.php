@@ -54,6 +54,30 @@ class TopSalesControllerTest extends TestCase
         $this->assertNotNull(Cache::get('property:high-value:v2:202607'));
     }
 
+    public function test_public_api_returns_the_latest_high_value_dashboard(): void
+    {
+        $rows = [];
+
+        for ($index = 1; $index <= 10; $index++) {
+            $rows[] = $this->transaction("api-sale-{$index}", $index * 100000, '2026-07-'.str_pad((string) $index, 2, '0', STR_PAD_LEFT), $index === 10 ? 'GREATER LONDON' : 'WEST MIDLANDS');
+        }
+
+        DB::table('land_registry')->insert($rows);
+
+        $response = $this->getJson('/api/v1/property/top-sales');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.threshold', fn (int $value): bool => $value >= 900000)
+            ->assertJsonPath('data.headline.sales', fn (int $value): bool => $value >= 1)
+            ->assertJsonPath('data.topSales.0.price', 1000000)
+            ->assertJsonPath('data.topSales.0.property_slug', 'sw1a-1aa-10-example-street')
+            ->assertJsonPath('data.millionMarket.counts.1000000', 1)
+            ->assertHeader('cache-control');
+
+        $this->assertNotNull($response->headers->get('ETag'));
+    }
+
     public function test_month_archive_navigation_only_shows_available_current_year_months(): void
     {
         DB::table('land_registry')->insert([
