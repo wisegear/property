@@ -18,7 +18,21 @@ class HighValuePropertyDashboard
     {
         $month = $month->copy()->startOfMonth();
 
-        return Cache::remember('property:high-value:v2:'.$month->format('Ym'), now()->addDay(), fn (): array => $this->build($month));
+        return Cache::remember($this->cacheKey($month), now()->addDay(), fn (): array => $this->build($month));
+    }
+
+    /** @return array<string, mixed> */
+    public function refreshCachedDataFor(Carbon $month): array
+    {
+        $month = $month->copy()->startOfMonth();
+        Cache::forget($this->cacheKey($month));
+
+        return $this->cachedDataFor($month);
+    }
+
+    public function cacheKey(Carbon $month): string
+    {
+        return 'property:high-value:v2:'.$month->copy()->startOfMonth()->format('Ym');
     }
 
     public function latestMonth(): Carbon

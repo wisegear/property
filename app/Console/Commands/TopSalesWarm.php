@@ -2,32 +2,69 @@
 
 namespace App\Console\Commands;
 
-use App\Services\TopSalesService;
+use App\Services\Property\HighValuePropertyDashboard;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 
 class TopSalesWarm extends Command
 {
-    protected $signature = 'property:top-sales-warm';
+    protected $signature = 'property:top-sales-warm
+                            {--year= : Year of a specific month to warm}
+                            {--month= : Month number of a specific month to warm}';
 
-    protected $description = 'Warm top property sales cache';
+    protected $description = 'Warm the High Value Property dashboard cache';
 
     /**
      * Execute the console command.
      */
-    public function handle(TopSalesService $topSalesService): int
+    public function handle(HighValuePropertyDashboard $dashboard): int
     {
-        $this->info('Warming top property sales...');
+        $year = $this->option('year');
+        $month = $this->option('month');
 
-        foreach (['ultra', 'london', 'rest'] as $mode) {
-            $topSalesService->warmMode($mode);
+        if (($year === null) !== ($month === null)) {
+            $this->error('The --year and --month options must be used together.');
 
-            $this->info("Warmed {$mode}");
+            return self::FAILURE;
         }
 
-        Cache::put($topSalesService->lastWarmedCacheKey(), now()->toIso8601String(), now()->addDays(45));
+        if ($year !== null && $month !== null) {
+            if ((int) $year !== now()->year) {
+                $this->error('The warmer only supports months in the current year.');
 
-        $this->info('Done.');
+                return self::FAILURE;
+            }
+
+            $selectedMonth = Carbon::createFromFormat('!Y-n', $year.'-'.$month);
+
+            if (! $dashboard->isAvailable($selectedMonth)) {
+                $this->error('No High Value Property data is available for that month.');
+
+                return self::FAILURE;
+            }
+
+            $months = [$selectedMonth];
+        } else {
+            $months = $dashboard->availableMonthsForYear(now()->year);
+        }
+
+        if ($months === []) {
+            $this->warn('No High Value Property months are available to warm.');
+
+            return self::SUCCESS;
+        }
+
+        $this->info('Warming High Value Property dashboard cache...');
+
+        foreach ($months as $selectedMonth) {
+            $dashboard->refreshCachedDataFor($selectedMonth);
+            $this->info('Warmed '.$selectedMonth->format('F Y'));
+        }
+
+        Cache::put('property:high-value:last-warmed-at', now()->toIso8601String(), now()->addDays(2));
+
+        $this->info('High Value Property cache warming complete ('.count($months).' '.str('month')->plural(count($months)).').');
 
         return self::SUCCESS;
     }

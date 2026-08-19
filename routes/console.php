@@ -22,3 +22,7 @@ Schedule::command('swaps:import-boe')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/boe-swap-scheduler.log'));
 
+Schedule::command('property:top-sales-warm')
+    ->everySixHours()
+    ->withoutOverlapping(180)
+    ->appendOutputTo(storage_path('logs/high-value-property-warm.log'));

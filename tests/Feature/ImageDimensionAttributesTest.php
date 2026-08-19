@@ -6,7 +6,7 @@ use Tests\TestCase;
 
 class ImageDimensionAttributesTest extends TestCase
 {
-    public function test_home_page_hero_renders_the_house_data_illustration_with_intrinsic_dimensions(): void
+    public function test_home_page_hero_renders_the_app_promotion_with_intrinsic_dimensions(): void
     {
         $renderedHome = view('pages.home', [
             'posts' => collect(),
@@ -22,11 +22,11 @@ class ImageDimensionAttributesTest extends TestCase
         ])->render();
 
         $this->assertStringContainsString(
-            'src="'.asset('/assets/images/site/logo10.jpg').'"',
+            'src="'.asset('/propertyresearch-app.png').'"',
             $renderedHome
         );
-        $this->assertStringContainsString('width="768"', $renderedHome);
-        $this->assertStringContainsString('height="512"', $renderedHome);
+        $this->assertStringContainsString('width="1536"', $renderedHome);
+        $this->assertStringContainsString('height="1024"', $renderedHome);
     }
 
     public function test_login_page_logo_includes_intrinsic_dimensions(): void
