@@ -164,12 +164,13 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('Regional map');
         $view->assertSee('Explore the latest snapshot');
         $view->assertSee(route('property.monthly-snapshot', absolute: false), false);
-        $view->assertSee('Arrears and repossessions');
+        $view->assertSee('/propertyresearch-app.png', false);
+        $view->assertSee('PropertyResearch iPhone app');
+        $view->assertSee('https://apps.apple.com/gb/app/id6794914030', false);
+        $view->assertSee('Download PropertyResearch on the App Store (opens in a new tab)');
+        $view->assertDontSee('Arrears and repossessions');
         $view->assertSeeInOrder([
-            'UK property market',
-            'EPC records and local data',
-            'Mortgage approvals',
-            'Arrears and repossessions',
+            'PropertyResearch iPhone app',
             'Swap Rates',
             'UK swap rates',
             'Economic dashboard',
@@ -189,9 +190,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'Property Market Stress Index',
             'UK Housing Market Snapshot',
             'Explore PropertyResearch',
-            'UK property market',
-            'Property transactions',
-            'EPC records and local data',
+            'PropertyResearch iPhone app',
             'Swap Rates',
             'Property Monthly Snapshot',
         ]);

@@ -296,17 +296,20 @@
         </div>
 
         <div class="grid divide-y divide-zinc-200 md:grid-cols-3 md:divide-x md:divide-y-0">
-            <div class="p-5 md:p-6">
-                <h3 class="font-bold text-zinc-900">UK property market</h3>
-                <p class="mt-1 text-xs leading-5 text-zinc-500">Prices, sales, rents and housing activity.</p>
-                <div class="mt-4 grid gap-2.5 text-sm">
-                    <a href="{{ route('property.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">Property transactions</a>
-                    <a href="{{ route('epc.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">EPC records and local data</a>
-                    <a href="{{ route('hpi.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">House Price Index</a>
-                    <a href="{{ route('rental.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Rental market</a>
-                    <a href="{{ route('mortgages.home') }}" class="font-medium text-zinc-700 hover:text-lime-700">Mortgage approvals</a>
-                    <a href="{{ route('arrears.index') }}" class="font-medium text-zinc-700 hover:text-lime-700">Arrears and repossessions</a>
-                </div>
+            <div class="flex items-center p-5 md:p-6">
+                <a
+                    href="https://apps.apple.com/gb/app/id6794914030"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Download PropertyResearch on the App Store (opens in a new tab)"
+                    class="block w-full rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2"
+                >
+                    <img
+                        src="{{ asset('/propertyresearch-app.png') }}"
+                        alt="PropertyResearch iPhone app"
+                        class="aspect-3/2 w-full rounded-sm object-cover"
+                    >
+                </a>
             </div>
 
             <div class="p-5 md:p-6">
