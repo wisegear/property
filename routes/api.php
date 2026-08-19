@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\EpcCertificateController;
 use App\Http\Controllers\Api\EpcDashboardController;
 use App\Http\Controllers\Api\EpcSearchController;
 use App\Http\Controllers\Api\HpiDashboardController;
+use App\Http\Controllers\Api\MonthlyPropertySnapshotController;
 use App\Http\Controllers\Api\PropertyDashboardController;
 use App\Http\Controllers\Api\SchoolController;
 use App\Http\Controllers\Api\SchoolPostcodeSearchController;
@@ -47,6 +48,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::get('/property/dashboard', PropertyDashboardController::class)
         ->middleware('cache.headers:public;max_age=3600;s_maxage=86400;stale_while_revalidate=604800;etag')
         ->name('property.dashboard');
+    Route::get('/property/monthly-snapshot', MonthlyPropertySnapshotController::class)
+        ->middleware('cache.headers:public;max_age=3600;s_maxage=86400;stale_while_revalidate=604800;etag')
+        ->name('property.monthly-snapshot');
     Route::get('/properties/{slug}', [PropertyController::class, 'showBySlug'])
         ->where('slug', '[a-z0-9-]+')
         ->name('properties.show');
