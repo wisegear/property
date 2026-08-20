@@ -13,6 +13,8 @@ class MonthlyPropertySnapshot
 {
     private const CATEGORY = 'A';
 
+    private const CACHE_DAYS = 45;
+
     /**
      * @return array<string, mixed>
      */
@@ -31,10 +33,24 @@ class MonthlyPropertySnapshot
         $month = $month->copy()->startOfMonth();
 
         return Cache::remember(
-            'property:monthly-snapshot:v3:'.$month->format('Ym'),
-            now()->addDay(),
+            $this->cacheKey($month),
+            now()->addDays(self::CACHE_DAYS),
             fn (): array => $this->build($month),
         );
+    }
+
+    /** @return array<string, mixed> */
+    public function refreshCachedDataFor(Carbon $month): array
+    {
+        $month = $month->copy()->startOfMonth();
+        Cache::forget($this->cacheKey($month));
+
+        return $this->cachedDataFor($month);
+    }
+
+    public function cacheKey(Carbon $month): string
+    {
+        return 'property:monthly-snapshot:v3:'.$month->copy()->startOfMonth()->format('Ym');
     }
 
     public function isAvailable(Carbon $month): bool
@@ -64,6 +80,23 @@ class MonthlyPropertySnapshot
             ->orderByRaw($monthExpression)
             ->pluck('month_number')
             ->map(fn (mixed $month): Carbon => Carbon::create($year, (int) $month, 1))
+            ->all();
+    }
+
+    /** @return array<int, Carbon> */
+    public function availableMonths(): array
+    {
+        $monthExpression = DB::connection()->getDriverName() === 'pgsql'
+            ? 'DATE_TRUNC(\'month\', "Date")'
+            : 'strftime(\'%Y-%m-01\', "Date")';
+
+        return DB::table('land_registry')
+            ->where('PPDCategoryType', self::CATEGORY)
+            ->selectRaw($monthExpression.' as month_start')
+            ->groupByRaw($monthExpression)
+            ->orderByRaw($monthExpression)
+            ->pluck('month_start')
+            ->map(fn (mixed $month): Carbon => Carbon::parse((string) $month)->startOfMonth())
             ->all();
     }
 
