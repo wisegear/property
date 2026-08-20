@@ -62,7 +62,7 @@ class TopSalesWarm extends Command
             $this->info('Warmed '.$selectedMonth->format('F Y'));
         }
 
-        Cache::put('property:high-value:last-warmed-at', now()->toIso8601String(), now()->addDays(2));
+        Cache::put('property:high-value:last-warmed-at', now()->toIso8601String(), now()->addDays(45));
 
         $this->info('High Value Property cache warming complete ('.count($months).' '.str('month')->plural(count($months)).').');
 

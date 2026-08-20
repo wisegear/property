@@ -13,12 +13,14 @@ class HighValuePropertyDashboard
 {
     private const CATEGORY = 'A';
 
+    private const CACHE_DAYS = 45;
+
     /** @return array<string, mixed> */
     public function cachedDataFor(Carbon $month): array
     {
         $month = $month->copy()->startOfMonth();
 
-        return Cache::remember($this->cacheKey($month), now()->addDay(), fn (): array => $this->build($month));
+        return Cache::remember($this->cacheKey($month), now()->addDays(self::CACHE_DAYS), fn (): array => $this->build($month));
     }
 
     /** @return array<string, mixed> */
