@@ -41,14 +41,14 @@
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Download PropertyResearch on the App Store (opens in a new tab)"
-                    class="group block max-w-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-4"
+                    class="group block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-4"
                 >
                     <img
                         src="{{ asset('/applogo.jpg') }}"
                         alt="PropertyResearch iPhone app"
                         width="768"
                         height="512"
-                        class="h-28 w-auto max-w-full object-contain transition-transform duration-200 group-hover:scale-[1.02] lg:h-32"
+                        class="h-auto w-full object-contain transition-transform duration-200 group-hover:scale-[1.02]"
                     >
                 </a>
             </div>
