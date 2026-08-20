@@ -129,6 +129,12 @@ class PropertyControllerPostgresCompatibilityTest extends TestCase
 
         $this->get(route('property.show.slug', ['slug' => $slug], false))
             ->assertOk();
+
+        $propertyCacheKey = 'property:AB1 2CD:10:MARKET ROAD:NOSAON';
+
+        $this->assertFalse(Cache::has($propertyCacheKey.':records:v2:catAB'));
+        $this->assertFalse(Cache::has($propertyCacheKey.':priceHistory:v4:catA'));
+        $this->assertFalse(Cache::has($propertyCacheKey.':council-tax-estimate:v2'));
     }
 
     public function test_property_search_can_return_json_results_for_a_postcode(): void

@@ -408,17 +408,7 @@ class PropertyController extends Controller
             });
         }
 
-        // Build a base cache key for this property
-        $saonKey = $saon !== null && $saon !== '' ? $saon : 'NOSAON';
-        $propertyCacheKeyBase = sprintf('property:%s:%s:%s:%s', $postcode, $paon, $street, $saonKey);
-
-        $records = Cache::remember(
-            $propertyCacheKeyBase.':records:v2:catAB',
-            self::CACHE_TTL,
-            function () use ($query) {
-                return $query->orderBy('Date', 'desc')->limit(100)->get();
-            }
-        );
+        $records = $query->orderBy('Date', 'desc')->limit(100)->get();
 
         if ($records->isEmpty()) {
             abort(404, 'Property not found');
@@ -944,13 +934,7 @@ class PropertyController extends Controller
         }
         $priceHistoryQuery->where('PPDCategoryType', 'A');
 
-        $priceHistory = Cache::remember(
-            $propertyCacheKeyBase.':priceHistory:v4:catA',
-            self::CACHE_TTL,
-            function () use ($priceHistoryQuery, $yearExpr) {
-                return $priceHistoryQuery->groupByRaw($yearExpr)->orderBy('year', 'asc')->get();
-            }
-        );
+        $priceHistory = $priceHistoryQuery->groupByRaw($yearExpr)->orderBy('year', 'asc')->get();
 
         $postcodePriceHistory = Cache::remember(
             'postcode:'.$postcode.':type:'.$propertyTypeCode.':priceHistory:v4:catA',
@@ -1217,11 +1201,7 @@ class PropertyController extends Controller
         $townAreaLink = $showTownCharts ? $this->resolvePropertyAreaLink('town', $town) : null;
         $districtAreaLink = $showDistrictCharts ? $this->resolvePropertyAreaLink('district', $districtName) : null;
         $countyAreaLink = ! empty($countyName) ? $this->resolvePropertyAreaLink('county', $countyName) : null;
-        $councilTaxEstimate = Cache::remember(
-            $propertyCacheKeyBase.':council-tax-estimate:v2',
-            now()->addDays(90),
-            fn (): ?array => $this->councilTaxEstimateService->forProperty($records, $postcode),
-        );
+        $councilTaxEstimate = $this->councilTaxEstimateService->forProperty($records, $postcode);
 
         $viewData = [
             'results' => $records,
