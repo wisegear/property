@@ -22,11 +22,11 @@ class ImageDimensionAttributesTest extends TestCase
         ])->render();
 
         $this->assertStringContainsString(
-            'src="'.asset('/propertyresearch-app.png').'"',
+            'src="'.asset('/applogo.jpg').'"',
             $renderedHome
         );
-        $this->assertStringContainsString('width="1536"', $renderedHome);
-        $this->assertStringContainsString('height="1024"', $renderedHome);
+        $this->assertStringContainsString('width="768"', $renderedHome);
+        $this->assertStringContainsString('height="512"', $renderedHome);
     }
 
     public function test_login_page_logo_includes_intrinsic_dimensions(): void

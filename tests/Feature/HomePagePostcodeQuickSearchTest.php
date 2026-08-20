@@ -164,7 +164,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $view->assertSee('Regional map');
         $view->assertSee('Explore the latest snapshot');
         $view->assertSee(route('property.monthly-snapshot', absolute: false), false);
-        $view->assertSee('/propertyresearch-app.png', false);
+        $view->assertSee('/applogo.jpg', false);
         $view->assertSee('PropertyResearch iPhone app');
         $view->assertSee('https://apps.apple.com/gb/app/id6794914030', false);
         $view->assertSee('Download PropertyResearch on the App Store (opens in a new tab)');
