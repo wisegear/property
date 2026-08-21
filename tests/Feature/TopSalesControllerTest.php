@@ -78,6 +78,31 @@ class TopSalesControllerTest extends TestCase
         $this->assertNotNull($response->headers->get('ETag'));
     }
 
+    public function test_public_api_returns_a_requested_available_month(): void
+    {
+        $rows = [];
+        for ($index = 1; $index <= 10; $index++) {
+            $rows[] = $this->transaction("march-api-{$index}", $index * 100000, '2026-03-'.str_pad((string) $index, 2, '0', STR_PAD_LEFT), 'WEST MIDLANDS');
+            $rows[] = $this->transaction("april-api-{$index}", $index * 200000, '2026-04-'.str_pad((string) $index, 2, '0', STR_PAD_LEFT), 'GREATER LONDON');
+        }
+        DB::table('land_registry')->insert($rows);
+
+        $this->getJson('/api/v1/property/top-sales?year=2026&month=03')
+            ->assertOk()
+            ->assertJsonPath('data.month', '2026-03-01T00:00:00.000000Z')
+            ->assertJsonPath('data.topSales.0.price', 1000000);
+    }
+
+    public function test_public_api_rejects_an_unavailable_month(): void
+    {
+        DB::table('land_registry')->insert(
+            $this->transaction('march-only', 600000, '2026-03-10', 'WEST MIDLANDS'),
+        );
+
+        $this->getJson('/api/v1/property/top-sales?year=2026&month=02')
+            ->assertNotFound();
+    }
+
     public function test_month_archive_navigation_only_shows_available_current_year_months(): void
     {
         DB::table('land_registry')->insert([
