@@ -44,6 +44,29 @@ class MonthlyPropertySnapshotApiTest extends TestCase
         $this->assertNotNull($response->headers->get('ETag'));
     }
 
+    public function test_public_api_returns_a_requested_available_month(): void
+    {
+        DB::table('land_registry')->insert([
+            $this->transaction('january', 200000, '2026-01-10', 'D', 'N', 'F', 'A'),
+            $this->transaction('february', 300000, '2026-02-10', 'T', 'N', 'F', 'A'),
+        ]);
+
+        $this->getJson('/api/v1/property/monthly-snapshot?year=2026&month=01')
+            ->assertOk()
+            ->assertJsonPath('data.sales', 1)
+            ->assertJsonPath('data.medianPrice', 200000);
+    }
+
+    public function test_public_api_rejects_an_unavailable_month(): void
+    {
+        DB::table('land_registry')->insert(
+            $this->transaction('january', 200000, '2026-01-10', 'D', 'N', 'F', 'A'),
+        );
+
+        $this->getJson('/api/v1/property/monthly-snapshot?year=2026&month=02')
+            ->assertNotFound();
+    }
+
     /** @return array<string, mixed> */
     private function transaction(
         string $id,
