@@ -52,6 +52,30 @@ class RentalControllerTest extends TestCase
         $this->assertSame('Apr 2024', $response->viewData('latestPeriod'));
     }
 
+    public function test_public_rental_api_returns_overview_and_nation_breakdown(): void
+    {
+        RentalCost::query()->create([
+            'time_period' => '2026-07-01',
+            'area_name' => 'England',
+            'rental_price' => 1450,
+            'monthly_change' => 0.8,
+            'rental_price_one_bed' => 1100,
+            'monthly_change_one_bed' => 0.5,
+        ]);
+
+        $this->getJson('/api/v1/rental')
+            ->assertOk()
+            ->assertJsonPath('data.latestPeriod', 'Jul 2026')
+            ->assertJsonPath('data.seriesByArea.1.name', 'England')
+            ->assertJsonPath('data.seriesByArea.1.prices.0', 1450);
+
+        $this->getJson('/api/v1/rental/england')
+            ->assertOk()
+            ->assertJsonPath('data.nationName', 'England')
+            ->assertJsonPath('data.typeSeries.0.label', 'One bed')
+            ->assertJsonPath('data.typeSeries.0.prices.0', 1100);
+    }
+
     public function test_england_page_builds_type_series_with_portable_date_sorting(): void
     {
         RentalCost::query()->create([

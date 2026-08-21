@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\EpcSearchController;
 use App\Http\Controllers\Api\HpiDashboardController;
 use App\Http\Controllers\Api\MonthlyPropertySnapshotController;
 use App\Http\Controllers\Api\PropertyDashboardController;
+use App\Http\Controllers\Api\RentalDashboardController;
 use App\Http\Controllers\Api\SchoolController;
 use App\Http\Controllers\Api\SchoolPostcodeSearchController;
 use App\Http\Controllers\Api\ScottishEpcCertificateController;
@@ -55,6 +56,13 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::get('/property/top-sales', TopPropertySalesController::class)
         ->middleware('cache.headers:public;max_age=3600;s_maxage=86400;stale_while_revalidate=604800;etag')
         ->name('property.top-sales');
+    Route::get('/rental', [RentalDashboardController::class, 'index'])
+        ->middleware('cache.headers:public;max_age=3600;s_maxage=86400;stale_while_revalidate=604800;etag')
+        ->name('rental.index');
+    Route::get('/rental/{nation}', [RentalDashboardController::class, 'show'])
+        ->where('nation', 'england|scotland|wales|northern-ireland')
+        ->middleware('cache.headers:public;max_age=3600;s_maxage=86400;stale_while_revalidate=604800;etag')
+        ->name('rental.show');
     Route::get('/properties/{slug}', [PropertyController::class, 'showBySlug'])
         ->where('slug', '[a-z0-9-]+')
         ->name('properties.show');

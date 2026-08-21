@@ -8,6 +8,12 @@ class RentalController extends Controller
 {
     public function index()
     {
+        return view('rental.index', $this->dashboardData());
+    }
+
+    /** @return array{seriesByArea: array, latestPeriod: ?string} */
+    public function dashboardData(): array
+    {
         $areas = [
             'United Kingdom',
             'England',
@@ -19,10 +25,10 @@ class RentalController extends Controller
         $latestPeriod = $this->latestTimePeriod();
         $seriesByArea = $this->buildSeriesByArea($areas);
 
-        return view('rental.index', [
+        return [
             'seriesByArea' => $seriesByArea,
             'latestPeriod' => $latestPeriod,
-        ]);
+        ];
     }
 
     public function england()
@@ -160,16 +166,22 @@ class RentalController extends Controller
 
     private function nationView(string $nationName, string $view)
     {
+        return view($view, $this->nationData($nationName));
+    }
+
+    /** @return array{seriesByArea: array, latestPeriod: ?string, nationName: string, typeSeries: array} */
+    public function nationData(string $nationName): array
+    {
         $seriesByArea = $this->buildSeriesByArea([$nationName]);
         $latestPeriod = $this->latestTimePeriod($nationName);
         $typeSeries = $this->buildTypeSeriesForArea($nationName);
 
-        return view($view, [
+        return [
             'seriesByArea' => $seriesByArea,
             'latestPeriod' => $latestPeriod,
             'nationName' => $nationName,
             'typeSeries' => $typeSeries,
-        ]);
+        ];
     }
 
     private function buildQuarterlySeries($rows, string $priceField, string $changeField): array
