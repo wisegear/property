@@ -11,6 +11,11 @@ class ScottishPricesController extends Controller
 {
     public function index(Request $request): View
     {
+        return view('property.scottish-prices', $this->dashboardData($request));
+    }
+
+    public function dashboardData(Request $request): array
+    {
         $localAuthorities = Cache::remember(
             'scottish_prices:authorities',
             now()->addDays(45),
@@ -41,7 +46,7 @@ class ScottishPricesController extends Controller
             'latestSalesValue' => $dataset['salesValues'] !== [] ? end($dataset['salesValues']) : null,
         ];
 
-        return view('property.scottish-prices', [
+        return [
             'localAuthorities' => $localAuthorities,
             'selectedAuthority' => $selectedAuthority,
             'years' => $dataset['years'],
@@ -51,7 +56,7 @@ class ScottishPricesController extends Controller
             'salesValues' => $dataset['salesValues'],
             'latestCoveredMonth' => $latestCoveredMonth,
             'stats' => $stats,
-        ]);
+        ];
     }
 
     /**

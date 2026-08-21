@@ -100,6 +100,24 @@ class ScottishPricesControllerTest extends TestCase
         ], Cache::get('scottish_prices:la:'.md5('aberdeen city')));
     }
 
+    public function test_public_api_returns_scottish_prices_and_filters_by_authority(): void
+    {
+        $this->seedScottishPropertyPrices();
+
+        $this->getJson('/api/v1/property/scottish-prices')
+            ->assertOk()
+            ->assertJsonPath('data.localAuthorities.0', 'Aberdeen City')
+            ->assertJsonPath('data.selectedAuthority', null)
+            ->assertJsonPath('data.years.1', 2004)
+            ->assertJsonPath('data.stats.latestMeanPrice', 135000);
+
+        $this->getJson('/api/v1/property/scottish-prices?local_authority=Aberdeen%20City')
+            ->assertOk()
+            ->assertJsonPath('data.selectedAuthority', 'Aberdeen City')
+            ->assertJsonPath('data.meanPrices.1', 132500)
+            ->assertJsonPath('data.salesVolumes.1', 21);
+    }
+
     public function test_scottish_prices_page_ignores_unknown_authority_and_layout_includes_nav_links(): void
     {
         $this->seedScottishPropertyPrices();
