@@ -31,7 +31,7 @@
                 </p>
 
                 <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-zinc-600">
-                    <p>31 million property sales • 24 million EPC certificates • Updated monthly</p>
+                    <p>31 million property sales • 29 million EPC certificates • Updated monthly</p>
                 </div>
             </div>
 
