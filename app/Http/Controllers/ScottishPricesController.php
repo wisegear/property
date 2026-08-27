@@ -118,33 +118,31 @@ class ScottishPricesController extends Controller
 
     private function latestCoveredMonth(): ?string
     {
-        return Cache::remember('scottish_prices:latest_month', now()->addDays(45), function (): ?string {
-            $months = DB::table('scottish_property_prices')
-                ->whereNotNull('month')
-                ->whereRaw("trim(month) <> ''")
-                ->distinct()
-                ->pluck('month');
+        $months = DB::table('scottish_property_prices')
+            ->whereNotNull('month')
+            ->whereRaw("trim(month) <> ''")
+            ->distinct()
+            ->pluck('month');
 
-            $latestLabel = null;
-            $latestTimestamp = null;
+        $latestLabel = null;
+        $latestTimestamp = null;
 
-            foreach ($months as $month) {
-                $label = trim((string) $month);
-                $date = \DateTimeImmutable::createFromFormat('!F Y', $label);
+        foreach ($months as $month) {
+            $label = trim((string) $month);
+            $date = \DateTimeImmutable::createFromFormat('!F Y', $label);
 
-                if (! $date instanceof \DateTimeImmutable) {
-                    continue;
-                }
-
-                $timestamp = $date->getTimestamp();
-
-                if ($latestTimestamp === null || $timestamp > $latestTimestamp) {
-                    $latestTimestamp = $timestamp;
-                    $latestLabel = $date->format('F Y');
-                }
+            if (! $date instanceof \DateTimeImmutable) {
+                continue;
             }
 
-            return $latestLabel;
-        });
+            $timestamp = $date->getTimestamp();
+
+            if ($latestTimestamp === null || $timestamp > $latestTimestamp) {
+                $latestTimestamp = $timestamp;
+                $latestLabel = $date->format('F Y');
+            }
+        }
+
+        return $latestLabel;
     }
 }

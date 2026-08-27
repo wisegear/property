@@ -135,6 +135,29 @@ class ScottishPricesControllerTest extends TestCase
         $this->assertStringContainsString('Scottish House Prices', $renderedLayout);
     }
 
+    public function test_latest_month_is_read_from_the_table_instead_of_a_stale_cache_entry(): void
+    {
+        $this->seedScottishPropertyPrices();
+        Cache::put('scottish_prices:latest_month', 'May 2003', now()->addDays(45));
+
+        DB::table('scottish_property_prices')->insert([
+            'month' => 'June 2026',
+            'local_authority' => 'Aberdeen City',
+            'local_authority_code' => 'S12000033',
+            'volume_of_residential_property_sales' => 10,
+            'mean_residential_property_price' => 200000,
+            'median_residential_property_price' => 190000,
+            'value_of_residential_property_sales' => 2000000,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->get(route('property.scottish-prices', absolute: false))
+            ->assertOk()
+            ->assertViewHas('latestCoveredMonth', 'June 2026')
+            ->assertSee('Latest data: June 2026');
+    }
+
     private function seedScottishPropertyPrices(): void
     {
         DB::table('scottish_property_prices')->insert([
