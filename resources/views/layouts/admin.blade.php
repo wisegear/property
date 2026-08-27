@@ -31,6 +31,7 @@
                         <a href="/admin" class="hover:text-lime-600">Dashboard</a>
                         <a href="/admin/users" class="hover:text-lime-600">Users</a>
                         <a href="/admin/blog" class="hover:text-lime-600">Blog</a>
+                        <a href="{{ route('admin.changelog.index') }}" class="hover:text-lime-600">Change Log</a>
                         <a href="/admin/support" class="hover:text-lime-600">Support</a>
 
                         <div class="relative">

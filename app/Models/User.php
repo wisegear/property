@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -46,6 +47,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function changeLogEntries(): HasMany
+    {
+        return $this->hasMany(ChangeLogEntry::class, 'author_id');
+    }
+
     /**
      * Automatically generate the name_slug when the name is set.
      */
@@ -55,7 +61,8 @@ class User extends Authenticatable
         $this->attributes['name_slug'] = Str::slug($value); // Automatically create the slug
     }
 
-    public function user_roles() {
+    public function user_roles()
+    {
 
         return $this->belongsToMany(UserRoles::class, 'user_roles_pivot', 'user_id', 'role_id');
 
@@ -68,8 +75,7 @@ class User extends Authenticatable
                 return true;
             }
         }
-    
+
         return false;
     }
-    
 }

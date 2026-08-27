@@ -970,6 +970,7 @@
                     <h2 class="font-semibold text-white">About and support</h2>
                     <div class="mt-3 grid gap-2">
                         <a href="{{ url('/about') }}" class="hover:text-white">About</a>
+                        <a href="{{ route('changelog.index') }}" class="hover:text-white">Change Log</a>
                         <a href="{{ route('legal.data-sources') }}" class="hover:text-white">Data sources</a>
                         <a href="{{ route('legal.index') }}" class="hover:text-white">Legal and support</a>
                         <a href="{{ route('legal.privacy') }}" class="hover:text-white">Privacy</a>

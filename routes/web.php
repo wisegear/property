@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ChangeLogController as AdminChangeLogController;
 use App\Http\Controllers\Admin\DataUpdateController;
 use App\Http\Controllers\AdminArrearsController;
 use App\Http\Controllers\AdminBlogController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\AdminUnemploymentController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminWageGrowthController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\ChangeLogController;
 use App\Http\Controllers\CommentsController;
 use App\Http\Controllers\CrimeController;
 use App\Http\Controllers\DeprivationController;
@@ -160,6 +162,8 @@ Route::get('/deprivation/wales/{lsoa}', [DeprivationController::class, 'showWale
 Route::get('/deprivation/northern-ireland/{sa}', [DeprivationController::class, 'showNorthernIreland'])->name('deprivation.ni.show');
 
 Route::resource('/blog', BlogController::class);
+Route::get('/changelog', [ChangeLogController::class, 'index'])->name('changelog.index');
+Route::get('/changelog/{changeLogEntry}', [ChangeLogController::class, 'show'])->name('changelog.show');
 
 // Area property search
 Route::get('/property/area/{type}/{slug}', [PropertyAreaController::class, 'show'])
@@ -198,6 +202,9 @@ Route::middleware('auth')->group(function () {
             Route::resource('postcodes', AdminPostCodesController::class);
             Route::resource('/support', AdminSupportController::class);
             Route::resource('updates', DataUpdateController::class)->except(['show']);
+            Route::resource('changelog', AdminChangeLogController::class)
+                ->parameters(['changelog' => 'changeLogEntry'])
+                ->except(['show']);
             // Inflation (admin)
             Route::get('/inflation', [AdminInflationController::class, 'index'])->name('inflation.index');
             Route::post('/inflation/add', [AdminInflationController::class, 'add'])->name('inflation.add');
