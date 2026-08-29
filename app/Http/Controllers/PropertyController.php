@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\MonthlySnapshotMapPointsRequest;
 use App\Http\Requests\PropertySearchRequest;
 use App\Http\Resources\PropertyResearchResource;
 use App\Models\LandRegistry;
@@ -14,6 +15,7 @@ use App\Services\PropertyResearch\NearbySchoolsService;
 use App\Support\PropertyResearch\OfstedRating;
 use App\Support\PropertyResearch\SchoolSlug;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -57,6 +59,29 @@ class PropertyController extends Controller
         return $this->monthlySnapshotView($monthlyPropertySnapshot, $snapshotMonth);
     }
 
+    public function monthlySnapshotPoints(
+        MonthlySnapshotMapPointsRequest $request,
+        string $year,
+        string $month,
+        MonthlyPropertySnapshot $monthlyPropertySnapshot,
+    ): JsonResponse {
+        $snapshotMonth = Carbon::createFromFormat('!Y-m', $year.'-'.$month);
+
+        abort_if($snapshotMonth->lessThan(Carbon::create(2026, 7, 1)), 404);
+        abort_unless($monthlyPropertySnapshot->isAvailable($snapshotMonth), 404);
+
+        $validated = $request->validated();
+
+        return response()->json($monthlyPropertySnapshot->propertyMapPoints(
+            $snapshotMonth,
+            (int) $validated['e_min'],
+            (int) $validated['e_max'],
+            (int) $validated['n_min'],
+            (int) $validated['n_max'],
+            (int) ($validated['limit'] ?? 2500),
+        ));
+    }
+
     private function monthlySnapshotView(
         MonthlyPropertySnapshot $monthlyPropertySnapshot,
         Carbon $month,
@@ -71,6 +96,11 @@ class PropertyController extends Controller
                 'year' => $month->format('Y'),
                 'month' => $month->format('m'),
             ]),
+            'propertyMapAvailable' => $month->greaterThanOrEqualTo(Carbon::create(2026, 7, 1)),
+            'propertyMapPointsUrl' => route('property.monthly-snapshot.points', [
+                'year' => $month->format('Y'),
+                'month' => $month->format('m'),
+            ], absolute: false),
         ]);
     }
 

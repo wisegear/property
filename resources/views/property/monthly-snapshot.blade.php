@@ -5,6 +5,10 @@
 
 @push('head')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+@if ($propertyMapAvailable)
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+@endif
 @endpush
 
 @section('content')
@@ -208,21 +212,27 @@
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Geographic activity</p>
                 <h2 class="mt-2 text-2xl font-semibold text-zinc-950">Where sales were recorded</h2>
                 <p class="mt-2 max-w-3xl text-sm text-zinc-500">District-centred activity derived from the coordinates of matched Land Registry postcodes in ONSPD.</p>
+                @if ($propertyMapAvailable)
+                    <p id="monthly-property-map-note" class="mt-3 hidden max-w-3xl text-xs leading-5 text-zinc-500">Property-level mapping is available from July 2026, when HM Land Registry began publishing UPRNs with Price Paid Data.</p>
+                @endif
             </div>
             <div class="inline-flex self-start rounded-sm border border-zinc-200 bg-zinc-50 p-1 text-xs font-medium" aria-label="Map display">
                 <button type="button" data-map-mode="sales" class="monthly-map-mode rounded-sm bg-zinc-900 px-3 py-1.5 text-white">Sales volume</button>
                 <button type="button" data-map-mode="price" class="monthly-map-mode rounded-sm px-3 py-1.5 text-zinc-600 hover:text-zinc-950">Median price</button>
+                @if ($propertyMapAvailable)
+                    <button type="button" data-map-mode="properties" class="monthly-map-mode rounded-sm px-3 py-1.5 text-zinc-600 hover:text-zinc-950">Property Sales</button>
+                @endif
             </div>
         </div>
-        <div id="monthly-district-map" class="h-96 w-full bg-zinc-100 md:h-[34rem]"></div>
+        <div id="monthly-district-map" class="h-96 w-full bg-zinc-100 md:h-[34rem]" @if ($propertyMapAvailable) data-property-points-url="{{ $propertyMapPointsUrl }}" @endif></div>
         <div class="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 px-6 py-3 text-xs text-zinc-500">
             <span id="monthly-map-description">Bubble size and colour show recorded sales volume.</span>
-            <div class="flex items-center gap-2" aria-label="Map colour scale">
+            <div id="monthly-map-scale-legend" class="flex items-center gap-2" aria-label="Map colour scale">
                 <span>Lower</span>
                 <span id="monthly-map-scale" class="h-2.5 w-28 rounded-full" style="background: linear-gradient(to right, #22c55e, #84cc16, #facc15, #f97316, #dc2626);"></span>
                 <span>Higher</span>
             </div>
-            <span>{{ number_format(count($districtMapPoints)) }} districts mapped · ONSPD postcode coordinates</span>
+            <span id="monthly-map-coverage">{{ number_format(count($districtMapPoints)) }} districts mapped · ONSPD postcode coordinates</span>
         </div>
     </section>
 
@@ -325,20 +335,28 @@
 
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+@if ($propertyMapAvailable)
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.9.1/dist/proj4.min.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+@endif
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const mapElement = document.getElementById('monthly-district-map');
     const points = @json($districtMapPoints);
 
-    if (!mapElement || typeof L === 'undefined' || !points.length) {
+    if (!mapElement || typeof L === 'undefined' || (!points.length && !@json($propertyMapAvailable))) {
         return;
     }
 
-    const map = L.map(mapElement, { scrollWheelZoom: false }).setView([52.7, -1.7], 6);
+    const map = L.map(mapElement, { scrollWheelZoom: false, maxZoom: 19 }).setView([52.7, -1.7], 6);
     const layer = L.layerGroup().addTo(map);
+    const descriptionElement = document.getElementById('monthly-map-description');
+    const scaleElement = document.getElementById('monthly-map-scale');
+    const scaleLegendElement = document.getElementById('monthly-map-scale-legend');
+    const coverageElement = document.getElementById('monthly-map-coverage');
     const formatNumber = new Intl.NumberFormat('en-GB');
     const formatPrice = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 });
-    const maximumSales = Math.max(...points.map((point) => point.sales));
+    const maximumSales = Math.max(...points.map((point) => point.sales), 1);
     const salesValues = points.map((point) => point.sales).sort((a, b) => a - b);
     const prices = points.map((point) => point.median_price).filter((price) => price !== null).sort((a, b) => a - b);
     const salesAt = (percentile) => salesValues[Math.min(salesValues.length - 1, Math.floor(salesValues.length * percentile))] || 0;
@@ -346,14 +364,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 18,
+        maxZoom: 19,
     }).addTo(map);
 
     const titleCase = (value) => value.toLowerCase().replace(/\b\w/g, (character) => character.toUpperCase());
     const salesColour = (sales) => sales >= salesAt(0.95) ? '#dc2626' : sales >= salesAt(0.85) ? '#f97316' : sales >= salesAt(0.7) ? '#facc15' : sales >= salesAt(0.5) ? '#84cc16' : '#22c55e';
     const priceColour = (price) => price >= priceAt(0.8) ? '#075985' : price >= priceAt(0.6) ? '#0284c7' : price >= priceAt(0.4) ? '#38bdf8' : price >= priceAt(0.2) ? '#7dd3fc' : '#bae6fd';
 
-    const render = (mode) => {
+    const renderAggregates = (mode) => {
         layer.clearLayers();
         const isSales = mode === 'sales';
 
@@ -377,12 +395,112 @@ document.addEventListener('DOMContentLoaded', function () {
             marker.addTo(layer);
         });
 
-        document.getElementById('monthly-map-description').textContent = isSales
+        descriptionElement.textContent = isSales
             ? 'Bubble size shows volume; colour moves from green to red as district sales increase.'
             : 'Colour shows median sale price; bubble sizes are fixed for easier comparison.';
-        document.getElementById('monthly-map-scale').style.background = isSales
+        scaleElement.style.background = isSales
             ? 'linear-gradient(to right, #22c55e, #84cc16, #facc15, #f97316, #dc2626)'
             : 'linear-gradient(to right, #bae6fd, #7dd3fc, #38bdf8, #0284c7, #075985)';
+    };
+
+    @if ($propertyMapAvailable)
+    if (typeof proj4 === 'undefined' || typeof L.markerClusterGroup === 'undefined') return;
+
+    proj4.defs('EPSG:27700', '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs');
+
+    const propertyMapNote = document.getElementById('monthly-property-map-note');
+    const clusters = L.markerClusterGroup({chunkedLoading: true, maxClusterRadius: 40, removeOutsideVisibleBounds: true, spiderfyOnMaxZoom: true});
+    const typeNames = {D: 'Detached', S: 'Semi-detached', T: 'Terraced', F: 'Flat / maisonette', O: 'Other'};
+    const tenureNames = {F: 'Freehold', L: 'Leasehold', U: 'Unknown'};
+    let activeRequest = null;
+    let loadTimer = null;
+    let propertyModeActive = false;
+
+    const popupFor = (point) => {
+        const popup = document.createElement('div');
+        popup.className = 'text-xs leading-5';
+        const title = document.createElement('strong');
+        title.textContent = point.address || point.postcode || 'Property sale';
+        popup.appendChild(title);
+        const details = document.createElement('div');
+        details.textContent = formatPrice.format(point.price) + ' · ' + (typeNames[point.property_type] || 'Other') + ' · ' + (tenureNames[point.tenure] || 'Other');
+        popup.appendChild(details);
+        const location = document.createElement('div');
+        location.textContent = [point.area, point.postcode, point.date].filter(Boolean).join(' · ');
+        popup.appendChild(location);
+        if (point.url) {
+            const link = document.createElement('a');
+            link.className = 'mt-1 inline-block font-semibold text-lime-700 hover:underline';
+            link.href = point.url;
+            link.textContent = 'View property';
+            popup.appendChild(link);
+        }
+        return popup;
+    };
+
+    const loadPropertyPoints = () => {
+        if (!propertyModeActive) return;
+        window.clearTimeout(loadTimer);
+        loadTimer = window.setTimeout(() => {
+            const bounds = map.getBounds();
+            const southWest = proj4('EPSG:4326', 'EPSG:27700', [bounds.getWest(), bounds.getSouth()]);
+            const northEast = proj4('EPSG:4326', 'EPSG:27700', [bounds.getEast(), bounds.getNorth()]);
+            const url = new URL(mapElement.dataset.propertyPointsUrl, window.location.origin);
+            url.searchParams.set('e_min', String(Math.floor(Math.min(southWest[0], northEast[0]))));
+            url.searchParams.set('e_max', String(Math.ceil(Math.max(southWest[0], northEast[0]))));
+            url.searchParams.set('n_min', String(Math.floor(Math.min(southWest[1], northEast[1]))));
+            url.searchParams.set('n_max', String(Math.ceil(Math.max(southWest[1], northEast[1]))));
+            url.searchParams.set('limit', '2500');
+
+            if (activeRequest) activeRequest.abort();
+            activeRequest = new AbortController();
+            descriptionElement.textContent = 'Loading properties in view…';
+
+            fetch(url, {signal: activeRequest.signal})
+                .then((response) => {
+                    if (!response.ok) throw new Error('Map response was not ok');
+                    return response.json();
+                })
+                .then((payload) => {
+                    if (!propertyModeActive) return;
+                    const propertyPoints = Array.isArray(payload.points) ? payload.points : [];
+                    clusters.clearLayers();
+                    propertyPoints.forEach((point) => {
+                        const coordinates = proj4('EPSG:27700', 'EPSG:4326', [point.easting, point.northing]);
+                        clusters.addLayer(L.circleMarker([coordinates[1], coordinates[0]], {radius: 6, color: '#fff', fillColor: '#65a30d', fillOpacity: .9, weight: 2}).bindPopup(popupFor(point)));
+                    });
+                    descriptionElement.textContent = payload.truncated
+                        ? 'Showing 2,500 properties in view. Zoom in for more detail.'
+                        : 'Showing ' + propertyPoints.length.toLocaleString('en-GB') + ' properties in view.';
+                })
+                .catch((error) => {
+                    if (error.name !== 'AbortError') descriptionElement.textContent = 'Property points could not be loaded right now.';
+                });
+        }, 250);
+    };
+
+    map.on('moveend', loadPropertyPoints);
+    @endif
+
+    const render = (mode) => {
+        @if ($propertyMapAvailable)
+        propertyModeActive = mode === 'properties';
+        propertyMapNote?.classList.toggle('hidden', !propertyModeActive);
+        scaleLegendElement?.classList.toggle('hidden', propertyModeActive);
+        coverageElement?.classList.toggle('hidden', propertyModeActive);
+
+        if (propertyModeActive) {
+            layer.clearLayers();
+            if (!map.hasLayer(clusters)) map.addLayer(clusters);
+            map.invalidateSize();
+            loadPropertyPoints();
+            return;
+        }
+
+        if (activeRequest) activeRequest.abort();
+        if (map.hasLayer(clusters)) map.removeLayer(clusters);
+        @endif
+        renderAggregates(mode);
     };
 
     document.querySelectorAll('.monthly-map-mode').forEach((button) => {
@@ -397,6 +515,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    new ResizeObserver(() => map.invalidateSize()).observe(mapElement);
     render('sales');
 });
 </script>

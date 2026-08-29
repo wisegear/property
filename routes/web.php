@@ -75,6 +75,9 @@ Route::view('/legal', 'legal.index')->name('legal.index');
 
 Route::get('/property', [PropertyController::class, 'home'])->name('property.home');
 Route::get('/property/monthly-snapshot', [PropertyController::class, 'monthlySnapshot'])->name('property.monthly-snapshot');
+Route::get('/property/monthly-snapshot/{year}/{month}/points', [PropertyController::class, 'monthlySnapshotPoints'])
+    ->where(['year' => '[0-9]{4}', 'month' => '0[1-9]|1[0-2]'])
+    ->name('property.monthly-snapshot.points');
 Route::get('/property/monthly-snapshot/{year}/{month}', [PropertyController::class, 'monthlySnapshotByMonth'])
     ->where(['year' => '[0-9]{4}', 'month' => '0[1-9]|1[0-2]'])
     ->name('property.monthly-snapshot.show');
@@ -144,6 +147,9 @@ Route::get('/insights/crime', [CrimeController::class, 'index'])->name('insights
 Route::get('/insights/crime/{area}', [CrimeController::class, 'show'])->name('insights.crime.show');
 Route::get('/insights/swap-rates', [SwapRateController::class, 'index'])->name('insights.swap-rates');
 Route::get('/top-property-sales', [TopSalesController::class, 'index'])->name('top-sales.index');
+Route::get('/top-property-sales/{year}/{month}/points', [TopSalesController::class, 'points'])
+    ->where(['year' => '\\d{4}', 'month' => '\\d{2}'])
+    ->name('top-sales.points');
 Route::get('/top-property-sales/{year}/{month}', [TopSalesController::class, 'show'])
     ->where(['year' => '\\d{4}', 'month' => '\\d{2}'])
     ->name('top-sales.show');

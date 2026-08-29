@@ -7,6 +7,10 @@
 @push('head')
 <link rel="canonical" href="{{ $canonicalUrl }}">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+@if ($propertyMapAvailable)
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+@endif
 @endpush
 
 @section('content')
@@ -75,17 +79,27 @@
 
     <section class="overflow-hidden border border-zinc-200 bg-white shadow-sm">
         <div class="flex flex-col gap-4 border-b border-zinc-100 p-6 sm:flex-row sm:items-end sm:justify-between">
-            <div><p class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Geography</p><h2 class="mt-2 text-2xl font-semibold text-zinc-950">High Value Property map</h2><p class="mt-1 text-sm text-zinc-500">District-centred aggregates; no raw transaction markers are sent to the browser.</p></div>
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Geography</p>
+                <h2 class="mt-2 text-2xl font-semibold text-zinc-950">High Value Property map</h2>
+                <p id="high-value-map-description" class="mt-1 text-sm text-zinc-500">District-centred aggregates; no raw transaction markers are sent to the browser.</p>
+                @if ($propertyMapAvailable)
+                    <p id="property-map-note" class="mt-3 hidden text-xs leading-5 text-zinc-500">Property-level mapping is available from July 2026, when HM Land Registry began publishing UPRNs with Price Paid Data.</p>
+                @endif
+            </div>
             <div class="inline-flex self-start border border-zinc-200 bg-zinc-50 p-1 text-xs font-medium">
-                @foreach (['sales' => 'Number of sales', 'median' => 'Median price', 'value' => 'Total value'] as $mode => $label)
+                @foreach (['sales' => 'Number of sales', 'median' => 'Median price', 'value' => 'Total value', ...($propertyMapAvailable ? ['properties' => 'Property Sales'] : [])] as $mode => $label)
                     <button type="button" data-map-mode="{{ $mode }}" class="high-value-map-mode px-3 py-2 {{ $mode === 'sales' ? 'bg-zinc-900 text-white' : 'text-zinc-600' }}">{{ $label }}</button>
                 @endforeach
             </div>
         </div>
-        @if (count($mapPoints))
-            <div id="high-value-map" class="h-96 w-full bg-zinc-100 md:h-[34rem]"></div>
+        @if (count($mapPoints) || $propertyMapAvailable)
+            <div id="high-value-map" class="h-96 w-full bg-zinc-100 md:h-[34rem]" @if ($propertyMapAvailable) data-property-points-url="{{ $propertyMapPointsUrl }}" @endif></div>
         @else
             <div class="grid h-64 place-items-center bg-zinc-50 px-6 text-center text-sm text-zinc-500">Map coordinates are not available in this environment.</div>
+        @endif
+        @if ($propertyMapAvailable)
+            <p id="property-map-status" class="hidden border-t border-zinc-100 px-6 py-3 text-xs text-zinc-500">Loading properties in view…</p>
         @endif
     </section>
 
@@ -149,6 +163,10 @@
 
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+@if ($propertyMapAvailable)
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.9.1/dist/proj4.min.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+@endif
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const trendElement = document.getElementById('threshold-trend');
@@ -157,27 +175,136 @@ document.addEventListener('DOMContentLoaded', () => {
         new Chart(trendElement, {type: 'line', data: {labels: trend.map(point => point.label), datasets: [{data: trend.map(point => point.value), borderColor: '#65a30d', backgroundColor: 'rgba(101,163,13,.08)', fill: true, tension: .25, pointRadius: 2}]}, options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {y: {ticks: {callback: value => '£' + Number(value).toLocaleString()}}}}});
     }
     const mapElement = document.getElementById('high-value-map');
-    if (!mapElement) return;
-    const points = @json($mapPoints);
-    const map = L.map(mapElement, {scrollWheelZoom: false}).setView([52.8, -1.5], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '&copy; OpenStreetMap contributors'}).addTo(map);
-    const layer = L.layerGroup().addTo(map);
-    const metric = (point, mode) => mode === 'sales' ? point.high_value_sales : mode === 'median' ? point.median_price : point.total_value;
-    const render = mode => {
-        layer.clearLayers();
-        const maximum = Math.max(...points.map(point => metric(point, mode)), 1);
-        points.forEach(point => {
-            const value = metric(point, mode);
-            const median = point.median_price === null ? 'Unavailable' : '£' + Number(point.median_price).toLocaleString();
-            L.circleMarker([point.lat, point.lng], {radius: 6 + Math.sqrt(value / maximum) * 20, color: '#fff', weight: 1.5, fillColor: mode === 'sales' ? '#65a30d' : mode === 'median' ? '#0284c7' : '#7c3aed', fillOpacity: .8})
-                .bindPopup('<strong>' + point.district + '</strong><br>' + Number(point.high_value_sales).toLocaleString() + ' high-value sales<br>Median: ' + median + '<br>Total value: £' + Number(point.total_value).toLocaleString()).addTo(layer);
-        });
-    };
-    document.querySelectorAll('.high-value-map-mode').forEach(button => button.addEventListener('click', () => {
-        document.querySelectorAll('.high-value-map-mode').forEach(item => { item.classList.remove('bg-zinc-900', 'text-white'); item.classList.add('text-zinc-600'); });
-        button.classList.add('bg-zinc-900', 'text-white'); button.classList.remove('text-zinc-600'); render(button.dataset.mapMode);
-    }));
-    render('sales');
+    if (mapElement) {
+        const points = @json($mapPoints);
+        const map = L.map(mapElement, {scrollWheelZoom: false}).setView([52.8, -1.5], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '&copy; OpenStreetMap contributors'}).addTo(map);
+        const layer = L.layerGroup().addTo(map);
+        const metric = (point, mode) => mode === 'sales' ? point.high_value_sales : mode === 'median' ? point.median_price : point.total_value;
+        const renderAggregates = mode => {
+            layer.clearLayers();
+            const maximum = Math.max(...points.map(point => metric(point, mode)), 1);
+            points.forEach(point => {
+                const value = metric(point, mode);
+                const median = point.median_price === null ? 'Unavailable' : '£' + Number(point.median_price).toLocaleString();
+                L.circleMarker([point.lat, point.lng], {radius: 6 + Math.sqrt(value / maximum) * 20, color: '#fff', weight: 1.5, fillColor: mode === 'sales' ? '#65a30d' : mode === 'median' ? '#0284c7' : '#7c3aed', fillOpacity: .8})
+                    .bindPopup('<strong>' + point.district + '</strong><br>' + Number(point.high_value_sales).toLocaleString() + ' high-value sales<br>Median: ' + median + '<br>Total value: £' + Number(point.total_value).toLocaleString()).addTo(layer);
+            });
+        };
+
+        @if ($propertyMapAvailable)
+        if (typeof proj4 === 'undefined' || typeof L.markerClusterGroup === 'undefined') return;
+
+        proj4.defs('EPSG:27700', '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs');
+
+        const mapDescription = document.getElementById('high-value-map-description');
+        const propertyMapNote = document.getElementById('property-map-note');
+        const propertyMapStatus = document.getElementById('property-map-status');
+        const clusters = L.markerClusterGroup({chunkedLoading: true, maxClusterRadius: 40, removeOutsideVisibleBounds: true, spiderfyOnMaxZoom: true});
+
+        const typeNames = {D: 'Detached', S: 'Semi-detached', T: 'Terraced', F: 'Flat / maisonette', O: 'Other'};
+        const tenureNames = {F: 'Freehold', L: 'Leasehold', U: 'Unknown'};
+        let activeRequest = null;
+        let loadTimer = null;
+        let propertyModeActive = false;
+
+        const popupFor = point => {
+            const popup = document.createElement('div');
+            popup.className = 'text-xs leading-5';
+            const title = document.createElement('strong');
+            title.textContent = point.address || point.postcode || 'Property sale';
+            popup.appendChild(title);
+            const details = document.createElement('div');
+            details.textContent = '£' + Number(point.price).toLocaleString('en-GB') + ' · ' + (typeNames[point.property_type] || 'Other') + ' · ' + (tenureNames[point.tenure] || 'Other');
+            popup.appendChild(details);
+            const location = document.createElement('div');
+            location.textContent = [point.area, point.postcode, point.date].filter(Boolean).join(' · ');
+            popup.appendChild(location);
+            if (point.url) {
+                const link = document.createElement('a');
+                link.className = 'mt-1 inline-block font-semibold text-lime-700 hover:underline';
+                link.href = point.url;
+                link.textContent = 'View property';
+                popup.appendChild(link);
+            }
+            return popup;
+        };
+
+        const loadPropertyPoints = () => {
+            if (!propertyModeActive) return;
+            window.clearTimeout(loadTimer);
+            loadTimer = window.setTimeout(() => {
+                const bounds = map.getBounds();
+                const southWest = proj4('EPSG:4326', 'EPSG:27700', [bounds.getWest(), bounds.getSouth()]);
+                const northEast = proj4('EPSG:4326', 'EPSG:27700', [bounds.getEast(), bounds.getNorth()]);
+                const url = new URL(mapElement.dataset.propertyPointsUrl, window.location.origin);
+                url.searchParams.set('e_min', String(Math.floor(Math.min(southWest[0], northEast[0]))));
+                url.searchParams.set('e_max', String(Math.ceil(Math.max(southWest[0], northEast[0]))));
+                url.searchParams.set('n_min', String(Math.floor(Math.min(southWest[1], northEast[1]))));
+                url.searchParams.set('n_max', String(Math.ceil(Math.max(southWest[1], northEast[1]))));
+                url.searchParams.set('limit', '2500');
+
+                if (activeRequest) activeRequest.abort();
+                activeRequest = new AbortController();
+                if (propertyMapStatus) propertyMapStatus.textContent = 'Loading properties in view…';
+
+                fetch(url, {signal: activeRequest.signal})
+                    .then(response => {
+                        if (!response.ok) throw new Error('Map response was not ok');
+                        return response.json();
+                    })
+                    .then(payload => {
+                        if (!propertyModeActive) return;
+                        const propertyPoints = Array.isArray(payload.points) ? payload.points : [];
+                        clusters.clearLayers();
+                        propertyPoints.forEach(point => {
+                            const coordinates = proj4('EPSG:27700', 'EPSG:4326', [point.easting, point.northing]);
+                            clusters.addLayer(L.circleMarker([coordinates[1], coordinates[0]], {radius: 6, color: '#fff', fillColor: '#65a30d', fillOpacity: .9, weight: 2}).bindPopup(popupFor(point)));
+                        });
+                        if (propertyMapStatus) propertyMapStatus.textContent = payload.truncated ? 'Showing 2,500 properties in view. Zoom in for more detail.' : 'Showing ' + propertyPoints.length.toLocaleString('en-GB') + ' properties in view.';
+                    })
+                    .catch(error => {
+                        if (error.name !== 'AbortError' && propertyMapStatus) propertyMapStatus.textContent = 'Property points could not be loaded right now.';
+                    });
+            }, 250);
+        };
+
+        map.on('moveend', loadPropertyPoints);
+        @endif
+
+        const render = mode => {
+            @if ($propertyMapAvailable)
+            propertyModeActive = mode === 'properties';
+            propertyMapNote?.classList.toggle('hidden', !propertyModeActive);
+            propertyMapStatus?.classList.toggle('hidden', !propertyModeActive);
+            if (mapDescription) mapDescription.textContent = propertyModeActive
+                ? 'Individual properties in this month’s high-value segment, located using HM Land Registry UPRNs.'
+                : 'District-centred aggregates; no raw transaction markers are sent to the browser.';
+
+            if (propertyModeActive) {
+                layer.clearLayers();
+                if (!map.hasLayer(clusters)) map.addLayer(clusters);
+                map.invalidateSize();
+                loadPropertyPoints();
+                return;
+            }
+
+            if (activeRequest) activeRequest.abort();
+            if (map.hasLayer(clusters)) map.removeLayer(clusters);
+            @endif
+            renderAggregates(mode);
+        };
+
+        document.querySelectorAll('.high-value-map-mode').forEach(button => button.addEventListener('click', () => {
+            document.querySelectorAll('.high-value-map-mode').forEach(item => { item.classList.remove('bg-zinc-900', 'text-white'); item.classList.add('text-zinc-600'); });
+            button.classList.add('bg-zinc-900', 'text-white');
+            button.classList.remove('text-zinc-600');
+            render(button.dataset.mapMode);
+        }));
+
+        new ResizeObserver(() => map.invalidateSize()).observe(mapElement);
+        render('sales');
+    }
 });
 </script>
 @endpush

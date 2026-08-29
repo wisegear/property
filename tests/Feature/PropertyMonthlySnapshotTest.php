@@ -207,6 +207,60 @@ class PropertyMonthlySnapshotTest extends TestCase
             ->assertSee('£300,000');
     }
 
+    public function test_property_sales_map_tab_is_only_available_from_july_2026(): void
+    {
+        DB::table('land_registry')->insert([
+            $this->transaction('june-map', 250000, '2026-06-10', 'T', 'N', 'F', 'A'),
+            $this->transaction('july-map', 350000, '2026-07-10', 'D', 'N', 'F', 'A'),
+        ]);
+
+        $this->get('/property/monthly-snapshot/2026/06')
+            ->assertOk()
+            ->assertDontSee('data-map-mode="properties"', false)
+            ->assertDontSee('Property-level mapping is available from July 2026')
+            ->assertDontSee('data-property-points-url', false);
+
+        $this->getJson('/property/monthly-snapshot/2026/06/points?e_min=0&e_max=700000&n_min=0&n_max=1300000')
+            ->assertNotFound();
+
+        $this->get('/property/monthly-snapshot/2026/07')
+            ->assertOk()
+            ->assertSee('data-map-mode="properties"', false)
+            ->assertSee('Property Sales')
+            ->assertSee('Property-level mapping is available from July 2026')
+            ->assertSee('/property/monthly-snapshot/2026/07/points', false);
+    }
+
+    public function test_monthly_snapshot_property_points_only_include_category_a_uprns_with_onsud_coordinates(): void
+    {
+        $mapped = $this->transaction('mapped', 500000, '2026-07-10', 'D', 'N', 'F', 'A');
+        $missingOnsud = $this->transaction('no-onsud', 450000, '2026-07-11', 'T', 'N', 'F', 'A');
+        $missingUprn = $this->transaction('no-uprn', 400000, '2026-07-12', 'F', 'N', 'L', 'A');
+        $categoryB = $this->transaction('category-b', 900000, '2026-07-13', 'D', 'N', 'F', 'B');
+        DB::table('land_registry')->insert([$mapped, $missingOnsud, $missingUprn, $categoryB]);
+
+        DB::table('land_registry_uprn')->insert([
+            ['transaction_id' => $mapped['TransactionID'], 'uprn' => '200000000001'],
+            ['transaction_id' => $missingOnsud['TransactionID'], 'uprn' => '200000000002'],
+            ['transaction_id' => $categoryB['TransactionID'], 'uprn' => '200000000003'],
+        ]);
+        DB::table('onsud')->insert([
+            ['UPRN' => '200000000001', 'GRIDGB1E' => 530000, 'GRIDGB1N' => 180000],
+            ['UPRN' => '200000000002', 'GRIDGB1E' => null, 'GRIDGB1N' => null],
+            ['UPRN' => '200000000003', 'GRIDGB1E' => 531000, 'GRIDGB1N' => 181000],
+        ]);
+
+        $this->getJson('/property/monthly-snapshot/2026/07/points?e_min=500000&e_max=550000&n_min=150000&n_max=200000')
+            ->assertOk()
+            ->assertJsonCount(1, 'points')
+            ->assertJsonPath('truncated', false)
+            ->assertJsonPath('points.0.price', 500000)
+            ->assertJsonPath('points.0.easting', 530000)
+            ->assertJsonMissing(['price' => 900000])
+            ->assertJsonMissing(['price' => 450000])
+            ->assertJsonMissing(['price' => 400000]);
+    }
+
     /**
      * @return array<string, mixed>
      */

@@ -173,11 +173,56 @@ class MonthlyPropertySnapshot
         return $latestDate === null ? now()->startOfMonth() : Carbon::parse($latestDate)->startOfMonth();
     }
 
+    /** @return array{points: array<int, array<string, int|string>>, truncated: bool} */
+    public function propertyMapPoints(Carbon $month, int $eastingMin, int $eastingMax, int $northingMin, int $northingMax, int $limit = 2500): array
+    {
+        $rows = $this->monthQuery($month->copy()->startOfMonth())
+            ->join('land_registry_uprn', 'land_registry.TransactionID', '=', 'land_registry_uprn.transaction_id')
+            ->join('onsud', 'land_registry_uprn.uprn', '=', 'onsud.UPRN')
+            ->whereNotNull('onsud.GRIDGB1E')
+            ->whereNotNull('onsud.GRIDGB1N')
+            ->whereBetween('onsud.GRIDGB1E', [$eastingMin, $eastingMax])
+            ->whereBetween('onsud.GRIDGB1N', [$northingMin, $northingMax])
+            ->orderByDesc('land_registry.Price')
+            ->limit($limit + 1)
+            ->get([
+                'land_registry.Price', 'land_registry.Date', 'land_registry.Postcode', 'land_registry.PAON',
+                'land_registry.SAON', 'land_registry.Street', 'land_registry.TownCity', 'land_registry.District',
+                'land_registry.PropertyType', 'land_registry.Duration', 'onsud.GRIDGB1E', 'onsud.GRIDGB1N',
+            ]);
+
+        $truncated = $rows->count() > $limit;
+
+        return [
+            'points' => $rows->take($limit)->map(fn (object $sale): array => [
+                'easting' => (int) $sale->GRIDGB1E,
+                'northing' => (int) $sale->GRIDGB1N,
+                'price' => (int) $sale->Price,
+                'date' => Carbon::parse($sale->Date)->format('j M Y'),
+                'postcode' => (string) $sale->Postcode,
+                'address' => collect([$sale->PAON, $sale->SAON, $sale->Street])->filter()->implode(', '),
+                'area' => collect([$sale->TownCity, $sale->District])->filter()->unique()->implode(', '),
+                'property_type' => (string) $sale->PropertyType,
+                'tenure' => (string) $sale->Duration,
+                'url' => route('property.show.slug', ['slug' => $this->propertySlug($sale)], false),
+            ])->values()->all(),
+            'truncated' => $truncated,
+        ];
+    }
+
     private function monthQuery(Carbon $month): Builder
     {
         return DB::table('land_registry')
             ->where('PPDCategoryType', self::CATEGORY)
             ->whereBetween('Date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()]);
+    }
+
+    private function propertySlug(object $sale): string
+    {
+        return collect([$sale->Postcode, $sale->PAON, $sale->Street, $sale->SAON ?? null])
+            ->filter(fn (mixed $part): bool => trim((string) $part) !== '')
+            ->map(fn (mixed $part): string => trim(preg_replace('/-+/', '-', preg_replace('/[^a-z0-9]+/', '-', strtolower((string) $part))) ?? '', '-'))
+            ->implode('-');
     }
 
     /**
