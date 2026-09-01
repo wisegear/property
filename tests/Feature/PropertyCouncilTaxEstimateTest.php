@@ -58,12 +58,53 @@ class PropertyCouncilTaxEstimateTest extends TestCase
             ->assertSee('Likely Bands B–C · standard two-adult charge')
             ->assertSee('Kensington and Chelsea average Council Tax charges')
             ->assertSee("This is an estimate, not the property's official band or bill.", false)
+            ->assertDontSee('High Value Council Tax Surcharge')
             ->assertViewHas('councilTaxEstimate', function (?array $estimate): bool {
                 return $estimate !== null
                     && $estimate['low_band'] === 'B'
                     && $estimate['high_band'] === 'C'
                     && $estimate['authority'] === 'Kensington and Chelsea';
             });
+    }
+
+    public function test_property_page_displays_the_high_value_surcharge_separately(): void
+    {
+        DB::table('land_registry')->insert([
+            'TransactionID' => '22222222-2222-2222-2222-222222222222',
+            'Price' => 2250000,
+            'Date' => '2025-03-15 00:00:00',
+            'Postcode' => 'AB1 2CD',
+            'PropertyType' => 'D',
+            'NewBuild' => 'N',
+            'Duration' => 'F',
+            'PAON' => '10',
+            'Street' => 'MARKET ROAD',
+            'Locality' => 'LOCAL',
+            'TownCity' => 'TOWN',
+            'District' => 'DISTRICT',
+            'County' => 'COUNTY',
+            'PPDCategoryType' => 'A',
+        ]);
+        DB::table('onspd_v2')->insert([
+            'pcds' => 'AB1 2CD',
+            'ctry25cd' => 'E92000001',
+            'rgn25cd' => 'E12000001',
+            'lad25cd' => 'E09000020',
+        ]);
+        DB::table('hpi_monthly')->insert([
+            $this->hpiRow('E92000001', '1991-01-04', 18),
+            $this->hpiRow('E92000001', '1995-01-01', 20),
+            $this->hpiRow('E12000001', '1995-01-01', 40),
+            $this->hpiRow('E12000001', '2025-01-03', 160),
+        ]);
+
+        $this->get('/property/ab1-2cd-10-market-road')
+            ->assertOk()
+            ->assertSee('High Value Council Tax Surcharge')
+            ->assertSee('£2m–£2.5m')
+            ->assertSee('£2,500 per year')
+            ->assertSee('on top of normal Council Tax')
+            ->assertSee("property's 2026 Valuation Office valuation", false);
     }
 
     public function test_recent_category_a_sale_uses_the_latest_available_hpi_month(): void

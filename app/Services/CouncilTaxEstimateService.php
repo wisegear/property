@@ -85,12 +85,48 @@ class CouncilTaxEstimateService
             ? $this->englishAuthorityRate((string) ($geography?->lad25cd ?? ''))
             : null;
 
-        return $this->fromValuations(
+        $estimate = $this->fromValuations(
             valuations: $valuations,
             countryCode: $countryCode,
             bandDCharge: $localRate['band_d'] ?? null,
             authority: $localRate['authority'] ?? null,
         );
+
+        if ($estimate === null) {
+            return null;
+        }
+
+        $latestSalePrice = $sales
+            ->filter(fn (object $sale): bool => in_array(($sale->PPDCategoryType ?? null), ['A', 'B'], true) && (int) ($sale->Price ?? 0) > 0)
+            ->sortByDesc(fn (object $sale): string => (string) ($sale->Date ?? ''))
+            ->map(fn (object $sale): int => (int) $sale->Price)
+            ->first();
+
+        $estimate['high_value_surcharge'] = $this->getHighValueCouncilTaxSurcharge($latestSalePrice, $countryCode);
+
+        return $estimate;
+    }
+
+    /** @return array{amount: int, band: string, latest_sale_price: int}|null */
+    public function getHighValueCouncilTaxSurcharge(?int $latestSalePrice, string $countryCode): ?array
+    {
+        if ($countryCode !== 'E92000001' || $latestSalePrice === null || $latestSalePrice < 2_000_000) {
+            return null;
+        }
+
+        [$amount, $band] = match (true) {
+            $latestSalePrice >= 5_000_000 => [7_500, '£5m+'],
+            $latestSalePrice >= 3_500_000 => [5_000, '£3.5m–£5m'],
+            $latestSalePrice >= 2_500_000 => [3_500, '£2.5m–£3.5m'],
+            $latestSalePrice >= 2_000_000 => [2_500, '£2m–£2.5m'],
+            default => [2_500, '£2m–£2.5m'],
+        };
+
+        return [
+            'amount' => $amount,
+            'band' => $band,
+            'latest_sale_price' => $latestSalePrice,
+        ];
     }
 
     /**

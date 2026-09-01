@@ -26,5 +26,22 @@
         <p class="border-t border-zinc-100 px-5 py-3 text-xs leading-relaxed text-zinc-500 sm:px-6">
             This is an estimate, not the property's official band or bill. It uses {{ $councilTaxEstimate['rate_basis'] }} Council Tax charges; the actual amount can vary by parish, local levy, discounts, premiums and exemptions.
         </p>
+
+        @if($councilTaxEstimate['high_value_surcharge'] ?? null)
+            @php($highValueSurcharge = $councilTaxEstimate['high_value_surcharge'])
+            <div class="border-t border-zinc-200 px-5 py-4 sm:px-6">
+                <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <h3 class="text-sm font-semibold text-zinc-700">High Value Council Tax Surcharge</h3>
+                    <span class="text-xs font-semibold uppercase tracking-wide text-zinc-500">From April 2028</span>
+                </div>
+
+                <p class="mt-2 text-sm leading-relaxed text-zinc-600">
+                    The latest recorded sale price of £{{ number_format($highValueSurcharge['latest_sale_price']) }} falls within the {{ $highValueSurcharge['band'] }} band of the forthcoming High Value Council Tax Surcharge. Based on that sale price, this would indicate an additional <strong class="font-semibold text-zinc-700">£{{ number_format($highValueSurcharge['amount']) }} per year</strong> from April 2028, on top of normal Council Tax.
+                </p>
+                <p class="mt-2 text-xs leading-relaxed text-zinc-500">
+                    The actual surcharge will be determined using the property's 2026 Valuation Office valuation rather than its recorded sale price.
+                </p>
+            </div>
+        @endif
     </section>
 @endif
