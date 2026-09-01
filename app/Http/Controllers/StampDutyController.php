@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\CouncilTaxEstimateService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class StampDutyController extends Controller
 {
+    public function __construct(
+        private CouncilTaxEstimateService $councilTaxEstimateService,
+    ) {}
+
     /**
      * Show the calculator page (you can point this at a Blade view).
      * If you haven’t made the Blade yet, this will still let you POST to /stamp-duty/calc and get JSON back.
@@ -154,6 +159,10 @@ class StampDutyController extends Controller
             'base_breakdown' => $base['bands'],
             'surcharges' => $surcharges,
             'total_tax' => round($base['tax'] + $surchargeTotal, 2),
+            'high_value_council_tax_surcharge' => $this->councilTaxEstimateService->getHighValueCouncilTaxSurcharge(
+                (int) round($price),
+                'E92000001',
+            ),
         ];
     }
 

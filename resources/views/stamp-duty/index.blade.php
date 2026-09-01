@@ -69,7 +69,7 @@
         </div>
 
         {{-- Results panel --}}
-        <div class="lg:col-span-2">
+        <div class="flex flex-col gap-6 lg:col-span-2">
             <div class="rounded-sm border border-gray-200 bg-white p-6 shadow-sm">
                 <h2 class="text-lg font-medium text-gray-900 mb-4">Results</h2>
 
@@ -125,6 +125,31 @@
 
                 <div id="placeholder" class="text-sm text-gray-600">Enter details on the left and hit <em>Calculate</em> to see the breakdown.</div>
             </div>
+
+            <section id="hvcts-panel" class="hidden rounded-sm border border-gray-200 bg-white p-6 shadow-sm" aria-labelledby="hvcts-heading">
+                <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <h2 id="hvcts-heading" class="text-lg font-medium text-gray-900">High Value Council Tax Surcharge</h2>
+                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">From April 2028</span>
+                </div>
+
+                <div class="mt-4 grid gap-4 sm:grid-cols-[minmax(0,0.38fr)_minmax(0,1fr)]">
+                    <div class="rounded border border-gray-200 bg-gray-50 p-4">
+                        <div class="text-xs text-gray-500">Indicative annual surcharge</div>
+                        <div id="hvcts-amount" class="mt-2 text-xl font-semibold text-gray-900"></div>
+                        <div id="hvcts-band" class="mt-1 text-xs font-medium text-lime-700"></div>
+                    </div>
+                    <div class="flex flex-col gap-3 text-sm leading-6 text-gray-700">
+                        <p id="hvcts-summary"></p>
+                        <p class="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+                            This surcharge applies to qualifying residential properties in <strong>England only</strong>. It does not apply to properties in Northern Ireland, even though both use SDLT.
+                        </p>
+                    </div>
+                </div>
+
+                <p class="mt-4 border-t border-gray-100 pt-3 text-xs leading-relaxed text-gray-500">
+                    This is an indication based on the property price entered. Actual liability will be determined using a separate 2026 Valuation Office valuation and is additional to normal Council Tax and Stamp Duty.
+                </p>
+            </section>
         </div>
 
         {{-- Notes --}}
@@ -229,6 +254,26 @@
     } else {
       sBody.innerHTML = '';
       sWrap.classList.add('hidden');
+    }
+
+    const hvctsPanel = el('hvcts-panel');
+    if (data.jurisdiction === 'SDLT (England & Northern Ireland)') {
+      const price = Number(inputs.price || 0);
+      const surcharge = data.high_value_council_tax_surcharge;
+
+      if (surcharge) {
+        el('hvcts-amount').textContent = `${fmtGBP(surcharge.amount)} per year`;
+        el('hvcts-band').textContent = `${surcharge.band} band`;
+        el('hvcts-summary').textContent = `Based on the entered property price of ${fmtGBP(price)}, this would indicate an additional ${fmtGBP(surcharge.amount)} per year in High Value Council Tax Surcharge for a property in England.`;
+      } else {
+        el('hvcts-amount').textContent = 'No charge indicated';
+        el('hvcts-band').textContent = 'Below the current £2m threshold';
+        el('hvcts-summary').textContent = `The entered property price of ${fmtGBP(price)} is below the current £2 million threshold for the surcharge.`;
+      }
+
+      hvctsPanel.classList.remove('hidden');
+    } else {
+      hvctsPanel.classList.add('hidden');
     }
 
     // raw json
