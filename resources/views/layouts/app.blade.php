@@ -978,10 +978,10 @@
                 </div>
             </div>
             <div class="mx-auto mt-8 flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-slate-800 pt-5 text-xs text-slate-500">
-                <span>&copy; {{ now()->year }} Lee Wisener · PropertyResearch.uk</span>
+                <span>&copy; {{ now()->year }} Lee Wisener · <a href="https://propertyresearch.uk">PropertyResearch</a> · <a href="https://blogshed.uk">BlogShed.uk</a></span>
                 <span>
                     Built using <a href="https://laravel.com" target="_blank" rel="noopener noreferrer" class="text-slate-400 transition hover:text-white">Laravel</a>
-                    · Hosted with <a href="https://www.hetzner.com/cloud/" target="_blank" rel="noopener noreferrer" class="text-slate-400 transition hover:text-white">Hetzner Cloud</a>
+                    · Hosted with <a href="https://www.ovh.co.uk" target="_blank" rel="noopener noreferrer" class="text-slate-400 transition hover:text-white">OVH</a>
                 </span>
             </div>
         </footer>
