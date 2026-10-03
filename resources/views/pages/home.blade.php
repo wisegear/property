@@ -1,112 +1,54 @@
 @extends('layouts.app')
 
+@push('head')
+<style>
+    #home-observatory [x-cloak] { display: none !important; }
+</style>
+@endpush
+
 @section('content')
-    {{-- Hero --}}
-    <section class="relative z-0 -mx-6 -mt-6 overflow-hidden bg-white py-8 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.18)] md:py-9">
-        <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] md:gap-8">
-            <div class="max-w-4xl">
-                <div class="flex flex-wrap items-center gap-3">
-                    <div class="inline-flex items-center gap-2 text-xs font-medium text-zinc-600">
-                        <span class="h-2 w-2 rounded-full bg-lime-600"></span>
-                        Independent UK property data
-                    </div>
+<div id="home-observatory" class="-mx-6 -mt-6 bg-slate-100/70 px-4 py-8 sm:px-6 lg:py-10">
+    <div class="mx-auto flex max-w-7xl flex-col gap-9 lg:gap-12">
+        <section class="relative rounded-3xl bg-slate-900 px-6 py-9 shadow-xl shadow-slate-900/10 sm:p-10 lg:p-14">
+            <div class="grid items-center gap-9 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
+                <div>
+                    <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300"><span class="h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true"></span>Independent UK property data</p>
                     @auth
                         @if (Auth::id() === 1)
-                            <div class="inline-flex items-center gap-2 rounded border border-emerald-200 bg-white px-3 py-1 text-xs font-medium text-emerald-800">
-                                <span class="relative flex h-2.5 w-2.5">
-                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70"></span>
-                                    <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
-                                </span>
-                                Admin Online
-                            </div>
+                            <p class="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-200">Admin Online</p>
                         @endif
                     @endauth
+                    <h1 class="mt-6 text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl lg:leading-[1.08]">A clearer view.<br><span class="text-emerald-300">From street level<br>to market level.</span></h1>
+                    <p class="mt-6 max-w-lg text-base leading-7 text-slate-300">Make sense of the property market with independent data on sold prices, property records and the economy.</p>
+                    <a href="{{ route('insights.dashboard') }}" class="mt-7 inline-flex items-center gap-3 text-sm font-medium text-white underline decoration-slate-500 underline-offset-4 hover:text-emerald-300">Explore the wider market <span aria-hidden="true">↗</span></a>
                 </div>
-                <h1 class="mt-4 text-3xl font-bold tracking-tight text-zinc-950 md:text-4xl">
-                    Explore property prices, sales history and local trends
-                </h1>
-                <p class="mt-3 text-md leading-7 text-zinc-500">
-                    Search property sales, EPC certificates and local housing data. Check house prices, explore your street or postcode, 
-                    and understand how the market is changing in your area.
-                </p>
-
-                <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-zinc-600">
-                    <p>31 million property sales • 29 million EPC certificates • Updated monthly</p>
-                </div>
-            </div>
-
-            <div class="hidden min-w-0 justify-end md:flex">
-                <a
-                    href="https://apps.apple.com/gb/app/id6794914030"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Download PropertyResearch on the App Store (opens in a new tab)"
-                    class="group block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-4"
-                >
-                    <img
-                        src="{{ asset('/applogo.jpg') }}"
-                        alt="PropertyResearch iPhone app"
-                        width="768"
-                        height="512"
-                        class="h-auto w-full object-contain transition-transform duration-200 group-hover:scale-[1.02]"
-                    >
-                </a>
-            </div>
-        </div>
-    </section>
-
-<div class="mx-auto flex max-w-7xl flex-col gap-8 px-4 pt-8 pb-8 md:pb-10">
-    <section class="overflow-visible rounded-sm border border-lime-200/70 bg-lime-50/50 p-5 md:p-6">
-        <div class="grid gap-5 md:grid-cols-2 md:items-start lg:grid-cols-[22fr_40fr_38fr]">
-            <div class="md:col-span-2 lg:col-span-1 lg:self-center">
-                <h2 class="text-lg font-bold text-zinc-900">Search properties</h2>
-                <p class="mt-1 text-sm text-zinc-600">Search properties across England and Wales</p>
-            </div>
-
-            <div>
-                <label for="home-street-search" class="mb-2 block text-xs font-semibold text-zinc-700">Street search</label>
-                <div class="relative">
-                    <input
-                        id="home-street-search"
-                        type="text"
-                        autocomplete="off"
-                        placeholder="Street, place or postcode district"
-                        class="w-full rounded border border-lime-200 bg-white px-4 py-2.5 text-sm focus:border-lime-600 focus:outline-none focus:ring-2 focus:ring-lime-200"
-                    />
-                    <div
-                        id="home-street-suggestions"
-                        class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-y-auto rounded border border-zinc-200 bg-white text-sm shadow-lg">
+                <div class="min-w-0 rounded-2xl bg-white p-6 text-slate-900 shadow-lg sm:p-8" x-data="{ searchMode: 'postcode' }">
+                    <h2 class="text-2xl font-semibold tracking-tight">Search properties</h2>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">Search properties across England and Wales</p>
+                    <div class="mt-6 flex gap-6 border-b border-slate-200" role="group" aria-label="Search method">
+                        <button type="button" @click="searchMode = 'postcode'" :aria-pressed="searchMode === 'postcode'" :class="searchMode === 'postcode' ? 'border-emerald-700 text-emerald-800' : 'border-transparent text-slate-500'" class="cursor-pointer border-b-2 pb-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-emerald-600">Postcode search</button>
+                        <button type="button" @click="searchMode = 'street'" :aria-pressed="searchMode === 'street'" :class="searchMode === 'street' ? 'border-emerald-700 text-emerald-800' : 'border-transparent text-slate-500'" class="cursor-pointer border-b-2 pb-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-emerald-600">Street search</button>
                     </div>
+                    <div class="mt-6" x-show="searchMode === 'postcode'">
+                        <label for="home-postcode" class="mb-2 block text-sm font-medium">Enter a postcode</label>
+                        <form method="GET" action="{{ route('property.search') }}" class="flex flex-col gap-3">
+                            <input id="home-postcode" name="postcode" type="text" value="{{ old('postcode', request('postcode', '')) }}" placeholder="E.g. SW7 5PH" required class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3.5 text-base focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                            <button type="submit" class="flex cursor-pointer items-center justify-between rounded-lg bg-emerald-800 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">Explore property records <span aria-hidden="true">→</span></button>
+                        </form>
+                        <p class="mt-3 text-xs leading-5 text-slate-500">Open the full property record for an England or Wales postcode.</p>
+                    </div>
+                    <div class="mt-6" x-show="searchMode === 'street'" x-cloak>
+                        <label for="home-street-search" class="mb-2 block text-sm font-medium">Street, place or postcode district</label>
+                        <div class="relative">
+                            <input id="home-street-search" type="text" autocomplete="off" placeholder="E.g. High Street, Oxford" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3.5 text-base focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                            <div id="home-street-suggestions" class="absolute z-20 mt-2 hidden max-h-64 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white text-sm shadow-xl"></div>
+                        </div>
+                        <p class="mt-3 text-xs leading-5 text-slate-500">Matches streets with at least 3 recorded sales. Add a place or postcode district to narrow common names.</p>
+                    </div>
+                    <p class="mt-5 border-t border-slate-100 pt-4 text-xs text-slate-500">Sales history. Energy performance. Free to explore.</p>
                 </div>
-
-                <p class="mt-2 text-xs text-zinc-500">Matches streets with at least 3 recorded sales. Add a place or postcode district to narrow common names.</p>
             </div>
-
-            <div class="lg:pl-8">
-                <label for="home-postcode" class="mb-2 block text-xs font-semibold text-zinc-700">Postcode search</label>
-                <form method="GET" action="{{ route('property.search') }}" class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <input
-                        id="home-postcode"
-                        name="postcode"
-                        type="text"
-                        value="{{ old('postcode', request('postcode', '')) }}"
-                        placeholder="E.g. SW7 5PH"
-                        class="min-w-0 flex-1 rounded border border-lime-200 bg-white px-4 py-2.5 text-sm focus:border-lime-600 focus:outline-none focus:ring-2 focus:ring-lime-200 lg:w-64 lg:flex-none"
-                    />
-
-                    <button
-                        type="submit"
-                        class="rounded bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
-                    >
-                        Search
-                    </button>
-                </form>
-
-                <p class="mt-2 text-xs text-zinc-500">Open the full property record for an England or Wales postcode.</p>
-            </div>
-        </div>
-    </section>
-
+        </section>
     @php
         $formatCompactCount = static function (int $value): string {
             if ($value >= 1000000) {
@@ -149,40 +91,22 @@
         ];
     @endphp
 
-    {{-- Live Stats Section --}}
-    <section class="grid grid-cols-1 overflow-hidden rounded-sm border border-slate-200 bg-white divide-y divide-slate-200 lg:grid-cols-5 lg:divide-x lg:divide-y-0">
+    <section aria-label="UK property statistics" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         @foreach($homepageStatCards as $card)
-            <x-home.stat-card
-                :value="$card['value']"
-                :label="$card['label']"
-                :icon="$card['icon']"
-            />
+            <div class="flex min-w-0 flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 lg:p-6">
+                <p class="text-sm text-slate-500">{{ $card['label'] }}</p>
+                <p class="text-2xl font-semibold tracking-tight text-slate-900 xl:text-3xl">{{ html_entity_decode($card['value']) }}</p>
+            </div>
         @endforeach
     </section>
-
-    {{-- Property Stress Index --}}
-    <div>
-        @include('partials.stress-score-panel', ['totalStress' => $totalStress ?? null, 'isSticky' => false, 'showDashboardLink' => true])
-    </div>
-
     <section>
-        <div class="rounded-sm border border-zinc-200 bg-white p-6">
-            <div class="flex h-full flex-col gap-3">
-                <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                        <h2 class="text-lg font-semibold text-zinc-900">UK Housing Market Snapshot</h2>
-                        <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
-                            <p class="text-sm text-zinc-600">Latest complete Land Registry quarter vs previous quarter</p>
-                            <a href="{{ route('insights.dashboard') }}"
-                               class="inline-flex items-center gap-2 text-sm font-medium text-lime-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
-                                View Market Insights
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-
+        <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">The market at a glance</h2>
+            <a href="{{ route('economic.dashboard') }}" class="text-sm font-semibold text-emerald-800 hover:underline">Explore the indicators ↗</a>
+        </div>
+        <div class="grid items-stretch gap-5 {{ is_null($totalStress ?? null) ? '' : 'lg:grid-cols-[1fr_2fr]' }}">
+            @include('partials.stress-score-panel', ['totalStress' => $totalStress ?? null, 'isSticky' => false, 'showDashboardLink' => true, 'isObservatory' => true])
+            <div class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 lg:p-8">
                     @php
                     $transactionChange = (float) ($homepageMarketMovements['transaction_change_percent'] ?? -34.1);
                     $priceChange = (float) ($homepageMarketMovements['median_price_change_percent'] ?? -0.2);
@@ -269,47 +193,41 @@
                     ];
                     @endphp
 
-                    <span class="inline-flex w-fit items-center rounded-full px-3 py-1 text-sm font-semibold {{ $conditionClasses[$condition['color']] ?? $conditionClasses['gray'] }}">
-                        {{ $condition['label'] }} Market
-                    </span>
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h3 class="text-lg font-semibold tracking-tight text-slate-900">UK Housing Market Snapshot</h3>
+                    <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $conditionClasses[$condition['color']] ?? $conditionClasses['gray'] }}">{{ $condition['label'] }} Market</span>
                 </div>
-
-                <div class="grid grid-cols-1 overflow-hidden rounded-sm border border-slate-200 bg-white divide-y divide-slate-200 xl:grid-cols-4 xl:divide-x xl:divide-y-0">
+                <p class="mt-2 text-sm text-slate-500">Latest complete Land Registry quarter vs previous quarter</p>
+                <div class="mt-7 grid grid-cols-2 gap-x-5 gap-y-7">
                     @foreach ($snapshotCards as $card)
-                        <x-home.snapshot-card
-                            :value="$card['value']"
-                            :label="$card['label']"
-                            :detail="$card['detail']"
-                            :tone="$card['tone']"
-                            :icon="$card['icon']"
-                            :gauge-value="$card['gauge_value']"
-                            :gauge-variant="$card['gauge_variant']"
-                            :invert-gauge="$card['invert_gauge']"
-                        />
+                        <div>
+                            <p class="text-sm text-slate-500">{{ $card['label'] }}</p>
+                            <p class="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{{ $card['value'] }}</p>
+                            <p class="mt-2 text-xs text-slate-500">{{ $card['detail'] }}</p>
+                        </div>
                     @endforeach
                 </div>
-
+                <a href="{{ route('insights.dashboard') }}" class="mt-7 inline-flex text-sm font-semibold text-emerald-800 hover:underline">View Market Insights →</a>
             </div>
         </div>
     </section>
-
-    {{-- Explore PropertyResearch --}}
-    <section class="overflow-hidden rounded-sm border border-zinc-200 bg-white">
-        <div class="flex flex-col gap-2 border-b border-zinc-200 bg-zinc-50/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-6">
+    {{-- Go deeper into the data --}}
+    <section class="">
+        <div class="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between md:px-6">
             <div>
-                <h2 class="text-xl font-bold text-zinc-900">Explore PropertyResearch</h2>
+                <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Go deeper into the data</h2>
                 <p class="mt-1 text-sm text-zinc-600">Free UK property data, market indicators and local research.</p>
             </div>
             <a href="{{ route('insights.dashboard') }}" class="text-sm font-semibold text-lime-700 hover:underline">View current market insights →</a>
         </div>
 
-        <div class="grid divide-y divide-zinc-200 md:grid-cols-3 md:divide-x md:divide-y-0">
-            <div class="relative overflow-hidden bg-lime-50/40 p-5 md:p-6">
-                <div class="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-lime-100/70" aria-hidden="true"></div>
+        <div class="grid gap-5 md:grid-cols-3">
+            <div class="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 md:p-7">
+                <div class="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-emerald-100/50" aria-hidden="true"></div>
                 <div class="relative">
                     <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-lime-700">High-end market research</p>
-                    <h3 class="mt-2 font-bold text-zinc-900">High Value Property</h3>
-                    <p class="mt-1 text-xs leading-5 text-zinc-600">Explore the top 10% of residential transactions and see where expensive homes are selling.</p>
+                    <h3 class="mt-3 text-xl font-semibold tracking-tight text-slate-900">High Value Property</h3>
+                    <p class="mt-1 text-sm leading-6 text-zinc-600">Explore the top 10% of residential transactions and see where expensive homes are selling.</p>
 
                     <div class="mt-4 grid grid-cols-2 border-y border-lime-200/70 text-xs text-zinc-600">
                         <span class="border-b border-r border-lime-200/70 py-2.5 pr-2">90th percentile</span>
@@ -325,9 +243,9 @@
                 </div>
             </div>
 
-            <div class="p-5 md:p-6">
-                <h3 class="font-bold text-zinc-900">Swap Rates</h3>
-                <p class="mt-1 text-xs leading-5 text-zinc-500">Wholesale market rates influencing fixed mortgage pricing.</p>
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 md:p-7">
+                <h3 class="text-xl font-semibold tracking-tight text-slate-900">Swap Rates</h3>
+                <p class="mt-1 text-sm leading-6 text-zinc-500">Wholesale market rates influencing fixed mortgage pricing.</p>
                 <div class="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-y border-zinc-100 py-3">
                     @foreach(collect($homepageSwapRates['rates'] ?? [])->take(3) as $rate)
                         @php
@@ -347,12 +265,12 @@
                 </div>
             </div>
 
-            <div class="relative overflow-hidden bg-lime-50/40 p-5 md:p-6">
-                <div class="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-lime-100/70" aria-hidden="true"></div>
+            <div class="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 md:p-7">
+                <div class="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-emerald-100/50" aria-hidden="true"></div>
                 <div class="relative">
                     <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-lime-700">New property research</p>
-                    <h3 class="mt-2 font-bold text-zinc-900">Property Monthly Snapshot</h3>
-                    <p class="mt-1 text-xs leading-5 text-zinc-600">See what the latest Land Registry month reveals about sales, prices and market activity.</p>
+                    <h3 class="mt-3 text-xl font-semibold tracking-tight text-slate-900">Property Monthly Snapshot</h3>
+                    <p class="mt-1 text-sm leading-6 text-zinc-600">See what the latest Land Registry month reveals about sales, prices and market activity.</p>
 
                     <div class="mt-4 grid grid-cols-2 border-y border-lime-200/70 text-xs text-zinc-600">
                         <span class="border-b border-r border-lime-200/70 py-2.5 pr-2">Monthly comparisons</span>
@@ -370,12 +288,23 @@
         </div>
     </section>
 
+    <section class="grid items-center gap-6 rounded-2xl border border-slate-200 bg-white p-6 sm:grid-cols-[1fr_240px] sm:p-8">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-800">Research on the move</p>
+            <h2 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Your property research. In your pocket.</h2>
+            <p class="mt-3 max-w-lg text-sm leading-6 text-slate-500">Explore property sales, EPC records, schools and market insights with the PropertyResearch iPhone app.</p>
+            <a href="https://apps.apple.com/gb/app/id6794914030" target="_blank" rel="noopener noreferrer" class="mt-5 inline-flex text-sm font-semibold text-emerald-800 hover:underline">Discover the iPhone app ↗</a>
+        </div>
+        <a href="https://apps.apple.com/gb/app/id6794914030" target="_blank" rel="noopener noreferrer" aria-label="Download PropertyResearch on the App Store (opens in a new tab)">
+            <img src="{{ asset('/applogo.jpg') }}" alt="PropertyResearch iPhone app" width="768" height="512" loading="lazy" class="mx-auto h-auto w-full max-w-60 rounded-lg">
+        </a>
+    </section>
     {{-- Blog Section --}}
     @if($posts->count() > 0)
     <section class="border-t border-zinc-200 pt-7">
         <div class="mb-5 flex items-end justify-between gap-4">
             <div>
-                <h2 class="text-xl font-bold text-zinc-900">Latest Insights</h2>
+                <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Latest Insights</h2>
                 <p class="mt-1 text-sm text-zinc-500">Analysis and commentary on the UK property market</p>
             </div>
             <a href="{{ url('/blog') }}" class="hidden items-center gap-2 text-sm font-semibold text-lime-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2 sm:inline-flex">
@@ -386,7 +315,7 @@
             </a>
         </div>
 
-        <div class="grid grid-cols-1 overflow-hidden border-y border-zinc-200 bg-white lg:grid-cols-2 lg:divide-x lg:divide-zinc-200">
+        <div class="grid grid-cols-1 overflow-hidden rounded-2xl border border-slate-200 bg-white lg:grid-cols-2 lg:divide-x lg:divide-zinc-200">
             @foreach($posts->chunk((int) ceil($posts->count() / 2)) as $columnPosts)
                 <div class="grid grid-cols-1 divide-y divide-zinc-200">
                     @foreach($columnPosts as $post)
@@ -421,6 +350,7 @@
     </section>
     @endif
 
+    </div>
 </div>
 @push('scripts')
 <script>

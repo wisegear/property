@@ -1,6 +1,7 @@
 @php
     $totalStress = $totalStress ?? null;
     $isSticky = $isSticky ?? true;
+    $isObservatory = $isObservatory ?? false;
     $showDashboardLink = $showDashboardLink ?? false;
     $stressScore = is_null($totalStress) ? null : max(0, min(100, round(($totalStress / 24) * 100)));
 
@@ -20,7 +21,9 @@
 
 @if(! is_null($stressScore))
     @php
-        $panelClasses = 'rounded-sm border border-zinc-200 bg-white p-5 md:p-6';
+        $panelClasses = $isObservatory
+            ? 'rounded-2xl border border-slate-200 bg-white p-6 lg:p-8'
+            : 'rounded-sm border border-zinc-200 bg-white p-5 md:p-6';
 
         if ($isSticky) {
             $panelClasses .= ' sticky top-0 z-40 bg-white/95 backdrop-blur-sm';
@@ -28,9 +31,9 @@
     @endphp
 
     <section class="{{ $panelClasses }}">
-        <div class="grid gap-5 lg:grid-cols-2 lg:items-center">
+        <div class="{{ $isObservatory ? 'flex h-full flex-col justify-between gap-6' : 'grid gap-5 lg:grid-cols-2 lg:items-center' }}">
             <div>
-                <h2 class="text-lg font-bold text-zinc-900">Property Market Stress Index</h2>
+                <h2 class="{{ $isObservatory ? 'text-lg font-semibold tracking-tight text-slate-900' : 'text-lg font-bold text-zinc-900' }}">Property Market Stress Index</h2>
                 <p class="mt-1 text-sm leading-5 text-zinc-600">Eight housing and economic indicators combined into one current score.</p>
                 @if($showDashboardLink)
                     <div class="mt-3 flex justify-start">
@@ -45,7 +48,7 @@
             <div>
                 <div class="flex items-end justify-between gap-4">
                     <div class="flex items-baseline gap-1.5">
-                        <span class="text-3xl font-bold tracking-tight text-zinc-900">{{ $stressScore }}</span>
+                        <span class="{{ $isObservatory ? 'text-6xl font-semibold tracking-tight text-slate-900' : 'text-3xl font-bold tracking-tight text-zinc-900' }}">{{ $stressScore }}</span>
                         <span class="text-sm text-zinc-500">/ 100</span>
                     </div>
                     <span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $stressTone }}">{{ $stressLabel }}</span>
