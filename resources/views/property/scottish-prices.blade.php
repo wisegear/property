@@ -98,7 +98,7 @@
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Trend · {{ $chartScopeLabel }}</p>
                         <h2 class="mt-2 text-xl font-semibold text-zinc-900">Average residential property price by year</h2>
-                        <p class="mt-2 text-sm text-zinc-600">Yearly average of mean residential property prices.</p>
+                        <p class="mt-2 text-sm text-zinc-600">Yearly average of monthly mean prices. Monthly means are calculated from total sales value divided by sales volume.</p>
                     </div>
                 </div>
                 <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
@@ -110,8 +110,8 @@
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Price Trend · {{ $chartScopeLabel }}</p>
-                        <h2 class="mt-2 text-xl font-semibold text-zinc-900">Median residential property price by year</h2>
-                        <p class="mt-2 text-sm text-zinc-600">Yearly average of median residential property prices.</p>
+                        <h2 class="mt-2 text-xl font-semibold text-zinc-900">Median and quartile property prices by year</h2>
+                        <p class="mt-2 text-sm text-zinc-600">Yearly averages of monthly medians and quartiles; these are not annual transaction-level percentiles.</p>
                     </div>
                 </div>
                 <div class="mt-6 h-72 min-w-0 overflow-hidden sm:h-80">
@@ -163,6 +163,8 @@
     const years = @json($years);
     const meanPrices = @json($meanPrices);
     const medianPrices = @json($medianPrices);
+    const lowerQuartilePrices = @json($lowerQuartilePrices);
+    const upperQuartilePrices = @json($upperQuartilePrices);
     const salesVolumes = @json($salesVolumes);
     const salesValues = @json($salesValues);
 
@@ -277,6 +279,7 @@
         data: {
             labels: years,
             datasets: [{
+                label: 'Median',
                 data: medianPrices,
                 borderColor: '#0891b2',
                 backgroundColor: 'rgba(8, 145, 178, 0.14)',
@@ -284,16 +287,29 @@
                 tension: 0.28,
                 pointRadius: 2.5,
                 pointHoverRadius: 4,
+            }, {
+                label: 'Lower quartile',
+                data: lowerQuartilePrices,
+                borderColor: '#7c3aed',
+                tension: 0.28,
+                pointRadius: 2.5,
+            }, {
+                label: 'Upper quartile',
+                data: upperQuartilePrices,
+                borderColor: '#d97706',
+                tension: 0.28,
+                pointRadius: 2.5,
             }],
         },
         options: {
             ...commonOptions,
             plugins: {
                 ...commonOptions.plugins,
+                legend: { display: true },
                 tooltip: {
                     ...commonOptions.plugins.tooltip,
                     callbacks: {
-                        label: (context) => gbpFormatter.format(context.parsed.y ?? 0),
+                        label: (context) => context.dataset.label + ': ' + gbpFormatter.format(context.parsed.y),
                     },
                 },
             },

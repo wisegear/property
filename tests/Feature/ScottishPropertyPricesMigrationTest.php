@@ -20,10 +20,12 @@ class ScottishPropertyPricesMigrationTest extends TestCase
             'month',
             'local_authority',
             'local_authority_code',
-            'median_residential_property_price',
+            'median',
+            'lower_quartile',
+            'upper_quartile',
             'mean_residential_property_price',
-            'volume_of_residential_property_sales',
-            'value_of_residential_property_sales',
+            'volume',
+            'total_value',
             'created_at',
             'updated_at',
         ]));
@@ -40,6 +42,30 @@ class ScottishPropertyPricesMigrationTest extends TestCase
             'scottish_property_prices_month_local_authority_code_unique',
             ['month', 'local_authority_code']
         );
+    }
+
+    public function test_revised_migration_preserves_existing_records_and_can_be_rolled_back(): void
+    {
+        $migration = require database_path('migrations/2026_10_10_124230_update_scottish_property_prices_for_revised_ros_fields.php');
+        $migration->down();
+        DB::table('scottish_property_prices')->insert([
+            'month' => 'April 2003', 'local_authority' => 'Aberdeen City',
+            'local_authority_code' => 'S12000033',
+            'median_residential_property_price' => 51000,
+            'mean_residential_property_price' => 71967,
+            'volume_of_residential_property_sales' => 521,
+            'value_of_residential_property_sales' => 37494560,
+        ]);
+        $migration->up();
+        $this->assertDatabaseHas('scottish_property_prices', [
+            'month' => 'April 2003', 'median' => 51000,
+            'volume' => 521, 'total_value' => 37494560,
+            'mean_residential_property_price' => 71967,
+            'lower_quartile' => null, 'upper_quartile' => null,
+        ]);
+        $migration->down();
+        $this->assertDatabaseHas('scottish_property_prices', ['median_residential_property_price' => 51000]);
+        $migration->up();
     }
 
     protected function assertIndexExists(string $indexName, array $expectedColumns): void

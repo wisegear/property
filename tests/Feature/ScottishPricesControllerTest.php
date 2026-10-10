@@ -23,10 +23,12 @@ class ScottishPricesControllerTest extends TestCase
             $table->string('month');
             $table->string('local_authority');
             $table->string('local_authority_code', 12);
-            $table->unsignedInteger('volume_of_residential_property_sales')->nullable();
+            $table->unsignedInteger('volume')->nullable();
             $table->unsignedInteger('mean_residential_property_price')->nullable();
-            $table->unsignedInteger('median_residential_property_price')->nullable();
-            $table->unsignedBigInteger('value_of_residential_property_sales')->nullable();
+            $table->decimal('median', 14, 2)->nullable();
+            $table->decimal('lower_quartile', 14, 2)->nullable();
+            $table->decimal('upper_quartile', 14, 2)->nullable();
+            $table->unsignedBigInteger('total_value')->nullable();
             $table->timestamps();
         });
     }
@@ -66,14 +68,16 @@ class ScottishPricesControllerTest extends TestCase
                 && $stats['latestSalesValue'] === 4890000.0;
         });
 
-        $this->assertSame(['Aberdeen City', 'Dundee City'], Cache::get('scottish_prices:authorities'));
+        $this->assertSame(['Aberdeen City', 'Dundee City'], Cache::get('scottish_prices:v2:authorities'));
         $this->assertSame([
             'years' => [2003, 2004],
             'meanPrices' => [110000.0, 135000.0],
             'medianPrices' => [95000.0, 111000.0],
+            'lowerQuartilePrices' => [null, null],
+            'upperQuartilePrices' => [null, null],
             'salesVolumes' => [30, 36],
             'salesValues' => [3160000.0, 4890000.0],
-        ], Cache::get('scottish_prices:scotland'));
+        ], Cache::get('scottish_prices:v2:scotland'));
     }
 
     public function test_scottish_prices_page_filters_to_a_local_authority_and_caches_that_dataset(): void
@@ -95,9 +99,11 @@ class ScottishPricesControllerTest extends TestCase
             'years' => [2003, 2004],
             'meanPrices' => [105000.0, 132500.0],
             'medianPrices' => [92500.0, 109000.0],
+            'lowerQuartilePrices' => [null, null],
+            'upperQuartilePrices' => [null, null],
             'salesVolumes' => [22, 21],
             'salesValues' => [2200000.0, 2760000.0],
-        ], Cache::get('scottish_prices:la:'.md5('aberdeen city')));
+        ], Cache::get('scottish_prices:v2:la:'.md5('aberdeen city')));
     }
 
     public function test_public_api_returns_scottish_prices_and_filters_by_authority(): void
@@ -138,16 +144,16 @@ class ScottishPricesControllerTest extends TestCase
     public function test_latest_month_is_read_from_the_table_instead_of_a_stale_cache_entry(): void
     {
         $this->seedScottishPropertyPrices();
-        Cache::put('scottish_prices:latest_month', 'May 2003', now()->addDays(45));
+        Cache::put('scottish_prices:v2:latest_month', 'May 2003', now()->addDays(45));
 
         DB::table('scottish_property_prices')->insert([
             'month' => 'June 2026',
             'local_authority' => 'Aberdeen City',
             'local_authority_code' => 'S12000033',
-            'volume_of_residential_property_sales' => 10,
+            'volume' => 10,
             'mean_residential_property_price' => 200000,
-            'median_residential_property_price' => 190000,
-            'value_of_residential_property_sales' => 2000000,
+            'median' => 190000,
+            'total_value' => 2000000,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -158,6 +164,26 @@ class ScottishPricesControllerTest extends TestCase
             ->assertSee('Latest data: June 2026');
     }
 
+    public function test_scotland_view_uses_national_records_without_double_counting_councils(): void
+    {
+        $this->seedScottishPropertyPrices();
+        DB::table('scottish_property_prices')->insert([
+            'month' => 'April 2003', 'local_authority' => 'Scotland',
+            'local_authority_code' => 'S92000003', 'volume' => 30,
+            'total_value' => 3160000, 'mean_residential_property_price' => 105333,
+            'median' => 95000.50, 'lower_quartile' => 70000.25,
+            'upper_quartile' => 140000.75,
+        ]);
+        $this->get('/property/scottish-prices')->assertOk()
+            ->assertViewHas('localAuthorities', ['Aberdeen City', 'Dundee City'])
+            ->assertViewHas('years', [2003])
+            ->assertViewHas('salesVolumes', [30])
+            ->assertViewHas('salesValues', [3160000.0])
+            ->assertViewHas('medianPrices', [95000.50])
+            ->assertViewHas('lowerQuartilePrices', [70000.25])
+            ->assertViewHas('upperQuartilePrices', [140000.75]);
+    }
+
     private function seedScottishPropertyPrices(): void
     {
         DB::table('scottish_property_prices')->insert([
@@ -165,10 +191,10 @@ class ScottishPricesControllerTest extends TestCase
                 'month' => 'April 2003',
                 'local_authority' => 'Aberdeen City',
                 'local_authority_code' => 'S12000033',
-                'volume_of_residential_property_sales' => 10,
+                'volume' => 10,
                 'mean_residential_property_price' => 100000,
-                'median_residential_property_price' => 90000,
-                'value_of_residential_property_sales' => 1000000,
+                'median' => 90000,
+                'total_value' => 1000000,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -176,10 +202,10 @@ class ScottishPricesControllerTest extends TestCase
                 'month' => 'May 2003',
                 'local_authority' => 'Aberdeen City',
                 'local_authority_code' => 'S12000033',
-                'volume_of_residential_property_sales' => 12,
+                'volume' => 12,
                 'mean_residential_property_price' => 110000,
-                'median_residential_property_price' => 95000,
-                'value_of_residential_property_sales' => 1200000,
+                'median' => 95000,
+                'total_value' => 1200000,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -187,10 +213,10 @@ class ScottishPricesControllerTest extends TestCase
                 'month' => 'June 2003',
                 'local_authority' => 'Dundee City',
                 'local_authority_code' => 'S12000042',
-                'volume_of_residential_property_sales' => 8,
+                'volume' => 8,
                 'mean_residential_property_price' => 120000,
-                'median_residential_property_price' => 100000,
-                'value_of_residential_property_sales' => 960000,
+                'median' => 100000,
+                'total_value' => 960000,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -198,10 +224,10 @@ class ScottishPricesControllerTest extends TestCase
                 'month' => 'January 2004',
                 'local_authority' => 'Aberdeen City',
                 'local_authority_code' => 'S12000033',
-                'volume_of_residential_property_sales' => 9,
+                'volume' => 9,
                 'mean_residential_property_price' => 130000,
-                'median_residential_property_price' => 108000,
-                'value_of_residential_property_sales' => 1170000,
+                'median' => 108000,
+                'total_value' => 1170000,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -209,10 +235,10 @@ class ScottishPricesControllerTest extends TestCase
                 'month' => 'February 2004',
                 'local_authority' => 'Aberdeen City',
                 'local_authority_code' => 'S12000033',
-                'volume_of_residential_property_sales' => 12,
+                'volume' => 12,
                 'mean_residential_property_price' => 135000,
-                'median_residential_property_price' => 110000,
-                'value_of_residential_property_sales' => 1590000,
+                'median' => 110000,
+                'total_value' => 1590000,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -220,10 +246,10 @@ class ScottishPricesControllerTest extends TestCase
                 'month' => 'March 2004',
                 'local_authority' => 'Dundee City',
                 'local_authority_code' => 'S12000042',
-                'volume_of_residential_property_sales' => 15,
+                'volume' => 15,
                 'mean_residential_property_price' => 140000,
-                'median_residential_property_price' => 115000,
-                'value_of_residential_property_sales' => 2130000,
+                'median' => 115000,
+                'total_value' => 2130000,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -231,10 +257,10 @@ class ScottishPricesControllerTest extends TestCase
                 'month' => 'Unknown Month',
                 'local_authority' => 'Aberdeen City',
                 'local_authority_code' => 'S12000033',
-                'volume_of_residential_property_sales' => 99,
+                'volume' => 99,
                 'mean_residential_property_price' => 999999,
-                'median_residential_property_price' => 999999,
-                'value_of_residential_property_sales' => 9999999,
+                'median' => 999999,
+                'total_value' => 9999999,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

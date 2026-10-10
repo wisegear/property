@@ -78,9 +78,9 @@ class ImportScottishPropertyPrices extends Command
 
     private function flushScottishPricesCaches(): void
     {
-        Cache::forget('scottish_prices:authorities');
-        Cache::forget('scottish_prices:latest_month');
-        Cache::forget('scottish_prices:scotland');
+        Cache::forget('scottish_prices:v2:authorities');
+        Cache::forget('scottish_prices:v2:latest_month');
+        Cache::forget('scottish_prices:v2:scotland');
 
         DB::table('scottish_property_prices')
             ->whereNotNull('local_authority')
@@ -91,7 +91,7 @@ class ImportScottishPropertyPrices extends Command
             ->filter()
             ->unique()
             ->each(function (string $authority): void {
-                Cache::forget('scottish_prices:la:'.md5(mb_strtolower($authority)));
+                Cache::forget('scottish_prices:v2:la:'.md5(mb_strtolower($authority)));
             });
     }
 }

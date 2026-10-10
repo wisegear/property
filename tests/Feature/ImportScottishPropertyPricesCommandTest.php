@@ -93,17 +93,17 @@ class ImportScottishPropertyPricesCommandTest extends TestCase
                 'month' => 'April 2003',
                 'local_authority_code' => 'S12000033',
                 'local_authority' => 'Aberdeen City',
-                'volume_of_residential_property_sales' => 521,
+                'volume' => 521,
                 'mean_residential_property_price' => 71967,
-                'median_residential_property_price' => 51000,
-                'value_of_residential_property_sales' => 37495000,
+                'median' => 51000,
+                'total_value' => 37495000,
             ]);
 
             $this->assertNull(
                 DB::table('scottish_property_prices')
                     ->where('month', 'April 2003')
                     ->where('local_authority_code', 'S12000034')
-                    ->value('volume_of_residential_property_sales')
+                    ->value('volume')
             );
 
             $this->writeWorkbook($filePath, [
@@ -139,10 +139,10 @@ class ImportScottishPropertyPricesCommandTest extends TestCase
                 'month' => 'April 2003',
                 'local_authority_code' => 'S12000033',
                 'local_authority' => 'Aberdeen City Updated',
-                'volume_of_residential_property_sales' => 522,
+                'volume' => 522,
                 'mean_residential_property_price' => 72000,
-                'median_residential_property_price' => 52000,
-                'value_of_residential_property_sales' => 37500000,
+                'median' => 52000,
+                'total_value' => 37500000,
             ]);
         } finally {
             $this->restoreHome($previousHome);
@@ -171,19 +171,19 @@ class ImportScottishPropertyPricesCommandTest extends TestCase
                     'month' => 'February 2026',
                     'local_authority' => 'Aberdeen City',
                     'local_authority_code' => 'S12000033',
-                    'volume_of_residential_property_sales' => 100,
+                    'volume' => 100,
                     'mean_residential_property_price' => 200000,
-                    'median_residential_property_price' => 190000,
-                    'value_of_residential_property_sales' => 20000000,
+                    'median' => 190000,
+                    'total_value' => 20000000,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ],
             ]);
 
-            Cache::put('scottish_prices:authorities', ['Aberdeen City'], now()->addDays(45));
-            Cache::put('scottish_prices:latest_month', 'February 2026', now()->addDays(45));
-            Cache::put('scottish_prices:scotland', ['years' => [2026]], now()->addDays(45));
-            Cache::put('scottish_prices:la:'.md5('aberdeen city'), ['years' => [2026]], now()->addDays(45));
+            Cache::put('scottish_prices:v2:authorities', ['Aberdeen City'], now()->addDays(45));
+            Cache::put('scottish_prices:v2:latest_month', 'February 2026', now()->addDays(45));
+            Cache::put('scottish_prices:v2:scotland', ['years' => [2026]], now()->addDays(45));
+            Cache::put('scottish_prices:v2:la:'.md5('aberdeen city'), ['years' => [2026]], now()->addDays(45));
 
             $this->writeWorkbook($filePath, [
                 [
@@ -212,14 +212,59 @@ class ImportScottishPropertyPricesCommandTest extends TestCase
                 ->expectsOutput('Import complete. Imported 1 row(s).')
                 ->assertExitCode(0);
 
-            $this->assertNull(Cache::get('scottish_prices:authorities'));
-            $this->assertNull(Cache::get('scottish_prices:latest_month'));
-            $this->assertNull(Cache::get('scottish_prices:scotland'));
-            $this->assertNull(Cache::get('scottish_prices:la:'.md5('aberdeen city')));
+            $this->assertNull(Cache::get('scottish_prices:v2:authorities'));
+            $this->assertNull(Cache::get('scottish_prices:v2:latest_month'));
+            $this->assertNull(Cache::get('scottish_prices:v2:scotland'));
+            $this->assertNull(Cache::get('scottish_prices:v2:la:'.md5('aberdeen city')));
         } finally {
             $this->restoreHome($previousHome);
             @unlink($filePath);
             @rmdir($downloads);
+            @rmdir($home);
+        }
+    }
+
+    public function test_it_imports_revised_headers_and_updates_quartiles_without_duplicates(): void
+    {
+        $home = sys_get_temp_dir().'/scottish-prices-revised-'.uniqid('', true);
+        mkdir($home.'/Downloads', 0777, true);
+        $previousHome = $_SERVER['HOME'] ?? getenv('HOME') ?: null;
+        $_SERVER['HOME'] = $home;
+        $filePath = $home.'/Downloads/ros.xlsx';
+
+        try {
+            $headers = ['', 'Month', 'local_authority', 'local_authority_code', 'median', 'loqwer_quartile', 'upper_quartile', 'volume', 'total_value'];
+            $this->writeWorkbook($filePath, [
+                $headers,
+                ['', 'April 2003', 'Aberdeen City', 'S12000033', '51,000.50', '34,500.25', '85,500.75', '521', '37,494,560'],
+                ['', 'May 2003', 'Aberdeen City', 'S12000033', '', '', 'suppressed', '0', '0'],
+                ['', '', 'Aberdeen City', 'S12000033', '100', '50', '150', '1', '100'],
+            ]);
+            $this->artisan('scottish-prices:import')->expectsOutput('Import complete. Imported 2 row(s).')->assertSuccessful();
+            $this->assertDatabaseHas('scottish_property_prices', [
+                'month' => 'April 2003', 'median' => 51000.50,
+                'lower_quartile' => 34500.25, 'upper_quartile' => 85500.75,
+                'volume' => 521, 'total_value' => 37494560,
+                'mean_residential_property_price' => 71967,
+            ]);
+            $this->assertDatabaseHas('scottish_property_prices', [
+                'month' => 'May 2003', 'mean_residential_property_price' => null,
+                'median' => null, 'lower_quartile' => null, 'upper_quartile' => null,
+            ]);
+            $headers[5] = 'lower_quartile';
+            $this->writeWorkbook($filePath, [$headers, ['', 'April 2003', 'Aberdeen City', 'S12000033', '52000', '35000.50', '86000.50', '522', '37500000']]);
+            $this->artisan('scottish-prices:import')->assertSuccessful();
+            $this->assertSame(2, DB::table('scottish_property_prices')->count());
+            $this->assertDatabaseHas('scottish_property_prices', ['month' => 'April 2003', 'lower_quartile' => 35000.50, 'upper_quartile' => 86000.50]);
+            $this->get('/property/scottish-prices?local_authority=Aberdeen%20City')
+                ->assertOk()
+                ->assertViewHas('lowerQuartilePrices', [35000.50])
+                ->assertViewHas('upperQuartilePrices', [86000.50])
+                ->assertSee('Median and quartile property prices by year');
+        } finally {
+            $this->restoreHome($previousHome);
+            @unlink($filePath);
+            @rmdir($home.'/Downloads');
             @rmdir($home);
         }
     }
