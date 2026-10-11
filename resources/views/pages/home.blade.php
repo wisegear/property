@@ -299,16 +299,16 @@
             <img src="{{ asset('/applogo.jpg') }}" alt="PropertyResearch iPhone app" width="768" height="512" loading="lazy" class="mx-auto h-auto w-full max-w-60 rounded-lg">
         </a>
     </section>
-    {{-- Blog Section --}}
-    @if($posts->count() > 0)
+    {{-- Change Log Section --}}
+    @if($changeLogEntries->count() > 0)
     <section class="border-t border-zinc-200 pt-7">
         <div class="mb-5 flex items-end justify-between gap-4">
             <div>
-                <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Latest Insights</h2>
-                <p class="mt-1 text-sm text-zinc-500">Analysis and commentary on the UK property market</p>
+                <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Latest Changes</h2>
+                <p class="mt-1 text-sm text-zinc-500">Changes and data updates across PropertyResearch. Visit my property blog at <a href="https://wisener.net" class="font-semibold text-lime-700 hover:underline">wisener.net</a>.</p>
             </div>
-            <a href="{{ url('/blog') }}" class="hidden items-center gap-2 text-sm font-semibold text-lime-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2 sm:inline-flex">
-                View all posts
+            <a href="{{ route('changelog.index') }}" class="hidden items-center gap-2 text-sm font-semibold text-lime-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2 sm:inline-flex">
+                View change log
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                 </svg>
@@ -316,20 +316,20 @@
         </div>
 
         <div class="grid grid-cols-1 overflow-hidden rounded-2xl border border-slate-200 bg-white lg:grid-cols-2 lg:divide-x lg:divide-zinc-200">
-            @foreach($posts->chunk((int) ceil($posts->count() / 2)) as $columnPosts)
+            @foreach($changeLogEntries->chunk((int) ceil($changeLogEntries->count() / 2)) as $columnEntries)
                 <div class="grid grid-cols-1 divide-y divide-zinc-200">
-                    @foreach($columnPosts as $post)
-                    <a href="/blog/{{ $post->slug }}"
+                    @foreach($columnEntries as $entry)
+                    <a href="{{ route('changelog.show', $entry) }}"
                        class="group grid min-h-32 grid-cols-[minmax(0,1fr)_auto] items-center gap-5 p-5 transition-colors duration-200 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime-600">
                         <div class="min-w-0">
                             <div class="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                                {{ $post->date->format('M j, Y') }}
+                                {{ $entry->category }} · {{ $entry->published_at->format('M j, Y') }}
                             </div>
                             <h3 class="line-clamp-2 text-base font-bold leading-5 text-zinc-900 transition-colors group-hover:text-lime-700 sm:text-[1.05rem]">
-                                {{ $post->title }}
+                                {{ $entry->title }}
                             </h3>
                             <p class="mt-2 line-clamp-2 text-sm leading-5 text-zinc-500">
-                                {{ $post->summary }}
+                                {{ Str::limit($entry->body, 160) }}
                             </p>
                         </div>
                         <svg class="h-4 w-4 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5 group-hover:text-lime-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -343,8 +343,8 @@
 
         {{-- Mobile "View all" link --}}
         <div class="mt-4 sm:hidden">
-            <a href="{{ url('/blog') }}" class="block text-sm font-semibold text-lime-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
-                View all posts →
+            <a href="{{ route('changelog.index') }}" class="block text-sm font-semibold text-lime-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
+                View change log →
             </a>
         </div>
     </section>

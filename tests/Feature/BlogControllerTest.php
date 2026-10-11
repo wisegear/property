@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\BlogController;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -14,6 +16,10 @@ class BlogControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Route::middleware('web')->group(function (): void {
+            Route::resource('/blog', BlogController::class);
+        });
 
         $this->ensureBlogTablesExist();
     }

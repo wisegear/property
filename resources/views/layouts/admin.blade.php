@@ -8,7 +8,6 @@
         <title>{{ config('app.name', 'Blog') }}</title>
 
 
-        
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
@@ -30,7 +29,6 @@
                     <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-700">
                         <a href="/admin" class="hover:text-lime-600">Dashboard</a>
                         <a href="/admin/users" class="hover:text-lime-600">Users</a>
-                        <a href="/admin/blog" class="hover:text-lime-600">Blog</a>
                         <a href="{{ route('admin.changelog.index') }}" class="hover:text-lime-600">Change Log</a>
                         <a href="/admin/support" class="hover:text-lime-600">Support</a>
 
@@ -89,17 +87,13 @@
                 document.addEventListener('DOMContentLoaded', function () {
                     const btn = document.getElementById('dataDropdownButton');
                     const menu = document.getElementById('dataDropdownMenu');
-            
                     if (!btn || !menu) return;
-            
                     btn.addEventListener('click', function (e) {
                         e.stopPropagation();
                         menu.classList.toggle('hidden');
                     });
-            
                     document.addEventListener('click', function (e) {
                         if (menu.classList.contains('hidden')) return;
-            
                         if (!menu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
                             menu.classList.add('hidden');
                         }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BlogPosts;
+use App\Models\ChangeLogEntry;
 use App\Services\HomepageDataService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Cache;
@@ -18,8 +18,7 @@ class PagesController extends Controller
 {
     public function home(HomepageDataService $homepageDataService): View
     {
-        // Get the 4 most recent blog posts
-        $posts = BlogPosts::where('published', true)->orderBy('date', 'desc')->take(4)->get();
+        $changeLogEntries = ChangeLogEntry::query()->where('published_at', '<=', now())->latest('published_at')->limit(4)->get();
 
         // Get stats from cache only (warmed by home:stats-warm command)
         $stats = Cache::get('homepage_stats', [
@@ -42,7 +41,7 @@ class PagesController extends Controller
         }
 
         return view('pages.home', [
-            'posts' => $posts,
+            'changeLogEntries' => $changeLogEntries,
             'stats' => $stats,
             'totalStress' => $totalStress,
             ...$homepagePanels,

@@ -25,7 +25,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
     public function test_home_page_shows_quick_postcode_search_above_market_stress_panel_and_links_to_swap_rates_from_the_panel_grid(): void
     {
         $view = $this->view('pages.home', [
-            'posts' => collect(),
+            'changeLogEntries' => collect(),
             'stats' => [
                 'property_records' => 31092167,
                 'uk_avg_price' => 268421,

@@ -102,14 +102,12 @@
 
 <body class="bg-zinc-50">
     <div class="min-h-screen flex flex-col">
-        
         <!-- ============================================ -->
         <!-- DESKTOP HEADER (Logo & Social Links & Auth) -->
         <!-- Hidden on mobile (xl:block = show on extra large screens only) -->
         <!-- ============================================ -->
         <div class="hidden">
             <div class="mx-auto flex max-w-7xl items-center py-4">
-                
                 <!-- Left Section: Social Media Icons -->
                 <div class="flex-1 flex items-center">
                     <div class="inline-flex items-center gap-4 text-sm">
@@ -122,7 +120,6 @@
                                 <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.473 0 16 .513 16 1.146v13.708c0 .633-.527 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146Zm4.943 12.248V6.169H2.542v7.225h2.401ZM3.743 5.182c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.225 2.4 3.934c0 .694.506 1.248 1.327 1.248Zm1.945 8.212h2.401V9.359c0-.216.016-.432.08-.586.175-.431.576-.878 1.25-.878.883 0 1.237.662 1.237 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225Z"/>
                             </svg>
                         </a>
-                        
                         <!-- Facebook -->
                         <a href="https://www.facebook.com/lee.wisener" target="_blank" rel="noopener"
                            class="inline-flex items-center justify-center w-8 h-8 rounded border border-zinc-300 bg-white/80 text-[#1877F2] hover:bg-zinc-100 transition shadow-sm"
@@ -131,7 +128,6 @@
                                 <path d="M16 8.049C16 3.604 12.418 0 8 0S0 3.604 0 8.049C0 12.07 2.925 15.401 6.75 16v-5.625H4.719V8.049H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98H10.554c-.993 0-1.304.621-1.304 1.258v1.51h2.219l-.354 2.326H9.25V16C13.075 15.401 16 12.07 16 8.049Z"/>
                             </svg>
                         </a>
-                        
                         <!-- WhatsApp -->
                         <a href="https://wa.me/447720868799?text=Hi%20Lee%2C%20I%27m%20contacting%20you%20about%20propertyresearch.uk" target="_blank" rel="noopener"
                            class="inline-flex items-center justify-center w-8 h-8 rounded border border-zinc-300 bg-white/80 text-[#25D366] hover:bg-zinc-100 transition shadow-sm"
@@ -207,7 +203,6 @@
                 <a href="{{ url('/') }}" class="inline-flex shrink-0 items-baseline tracking-tight text-slate-800">
                     <span class="text-xl font-bold">PropertyResearch</span><span class="text-base font-bold text-lime-700">.uk</span>
                 </a>
-                
                 <!-- Mobile Toggle Button (hidden on desktop) -->
                 <button id="navToggle" 
                         aria-controls="primaryNav" 
@@ -223,13 +218,11 @@
                 <!-- Primary Navigation Links -->
                 <div id="primaryNav"
                      class="hidden min-w-0 flex-1 flex-col justify-center text-sm md:flex md:flex-row md:items-center md:gap-1">
-                    
                     <!-- Home Link -->
                     <a href="{{ url('/') }}"
                        class="hidden px-3 py-4 {{ request()->is('/') ? 'text-zinc-900' : 'text-zinc-700 hover:text-lime-700' }}">
                         Home
                     </a>
-                    
                     <!-- Property Dropdown Menu -->
                     <div class="relative">
                         <button id="propertyMenuButton" 
@@ -242,7 +235,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
-                        
                         <!-- Property Dropdown Content (2 columns) -->
                         <div id="propertyDropdown" 
                              role="menu" 
@@ -341,7 +333,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
-                        
                         <!-- Economics Dropdown Content (2 columns) -->
                         <div id="economicsDropdown" 
                              role="menu" 
@@ -457,12 +448,6 @@
                                class="block px-4 py-2 hover:bg-zinc-100 text-zinc-700 {{ request()->routeIs('top-sales.index') ? 'font-semibold' : '' }}">
                                 High Value Property
                             </a>
-                            <a href="{{ url('/blog') }}"
-                               role="menuitem"
-                               tabindex="-1"
-                               class="block px-4 py-2 text-zinc-700 hover:bg-zinc-100">
-                                Blog
-                            </a>
                         </div>
                     </div>
 
@@ -519,7 +504,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
-                        
                         <!-- Calculators Dropdown Content -->
                         <div id="calculatorsDropdown" 
                              role="menu" 
@@ -540,12 +524,7 @@
                         </div>
                     </div>
 
-                    <!-- Blog Link -->
-                    <a href="{{ url('/blog') }}"
-                       class="hidden px-3 py-4 {{ request()->is('blog') ? 'text-zinc-900' : 'text-zinc-700 hover:text-lime-700' }}">
-                        Blog
-                    </a>
-                    
+
                     <!-- About Link -->
                     <a href="{{ url('/about') }}"
                        class="px-3 py-4 {{ request()->is('about') ? 'font-semibold text-zinc-900' : 'text-zinc-700 hover:text-lime-700' }}">
@@ -607,7 +586,6 @@
                 <a href="{{ url('/') }}" class="inline-flex items-baseline tracking-tight text-slate-800">
                     <span class="text-xl font-bold">PropertyResearch</span><span class="text-base font-bold text-lime-700">.uk</span>
                 </a>
-                
                 <!-- Mobile Menu Toggle Button -->
                 <button id="mobileNavToggle" 
                         aria-controls="mobileNav" 
@@ -623,13 +601,11 @@
 
             <!-- Collapsible Mobile Menu (hidden by default) -->
             <div id="mobileNav" class="hidden flex-col mt-3 space-y-1 w-full text-sm">
-                
                 <!-- Home Link -->
                 <a href="{{ url('/') }}" 
                    class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
                     Home
                 </a>
-                
                 <!-- Property Dropdown (Mobile) -->
                 <div>
                     <button id="mobilePropertyBtn"
@@ -639,7 +615,6 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    
                     <!-- Property Submenu Items -->
                     <div id="mobilePropertyMenu" class="hidden flex-col pl-2 space-y-1 mt-1">
                         <a href="{{ url('/property') }}" 
@@ -698,7 +673,6 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    
                     <!-- Stress Indicators Submenu Items -->
                     <div id="mobileIndicatorsMenu" class="hidden flex-col pl-2 space-y-1 mt-1">
                         <a href="{{ url('/economic-dashboard') }}" 
@@ -768,7 +742,6 @@
                            class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100 {{ request()->routeIs('top-sales.index') ? 'font-semibold' : '' }}">
                             High Value Property
                         </a>
-                        <a href="{{ url('/blog') }}" class="block rounded px-3 py-2 text-zinc-700 hover:bg-zinc-100">Blog</a>
                     </div>
                 </div>
 
@@ -811,7 +784,6 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    
                     <!-- Calculators Submenu Items -->
                     <div id="mobileCalculatorsMenu" class="hidden flex-col pl-2 space-y-1 mt-1">
                         <a href="{{ url('/mortgage-calculator') }}" 
@@ -825,12 +797,7 @@
                     </div>
                 </div>
 
-                <!-- Blog Link -->
-                <a href="{{ url('/blog') }}"
-                   class="hidden rounded px-3 py-2 text-zinc-700 hover:bg-zinc-100">
-                    Blog
-                </a>
-                
+
                 <!-- About Link -->
                 <a href="{{ url('/about') }}" 
                    class="block px-3 py-2 rounded text-zinc-700 hover:bg-zinc-100">
@@ -851,7 +818,6 @@
                                 <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.473 0 16 .513 16 1.146v13.708c0 .633-.527 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146Zm4.943 12.248V6.169H2.542v7.225h2.401ZM3.743 5.182c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.225 2.4 3.934c0 .694.506 1.248 1.327 1.248Zm1.945 8.212h2.401V9.359c0-.216.016-.432.08-.586.175-.431.576-.878 1.25-.878.883 0 1.237.662 1.237 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225Z"/>
                             </svg>
                         </a>
-                        
                         <!-- Facebook -->
                         <a href="https://www.facebook.com/lee.wisener" 
                            target="_blank" 
@@ -862,7 +828,6 @@
                                 <path d="M16 8.049C16 3.604 12.418 0 8 0S0 3.604 0 8.049C0 12.07 2.925 15.401 6.75 16v-5.625H4.719V8.049H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98H10.554c-.993 0-1.304.621-1.304 1.258v1.51h2.219l-.354 2.326H9.25V16C13.075 15.401 16 12.07 16 8.049Z"/>
                             </svg>
                         </a>
-                        
                         <!-- WhatsApp -->
                         <a href="https://wa.me/447720868799?text=Hi%20Lee%2C%20I%27m%20contacting%20you%20about%20propertyresearch.uk"
                            target="_blank"
@@ -978,7 +943,7 @@
                 </div>
             </div>
             <div class="mx-auto mt-8 flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-slate-800 pt-5 text-xs text-slate-500">
-                <span>&copy; {{ now()->year }} Lee Wisener · <a href="https://propertyresearch.uk">PropertyResearch</a> · <a href="https://blogshed.uk">BlogShed.uk</a></span>
+                <span>&copy; {{ now()->year }} Lee Wisener · <a href="https://propertyresearch.uk">PropertyResearch</a> · <a href="https://wisener.net">Wisener.net</a></span>
                 <span>
                     Built using <a href="https://laravel.com" target="_blank" rel="noopener noreferrer" class="text-slate-400 transition hover:text-white">Laravel</a>
                     · Hosted with <a href="https://www.ovh.co.uk" target="_blank" rel="noopener noreferrer" class="text-slate-400 transition hover:text-white">OVH</a>

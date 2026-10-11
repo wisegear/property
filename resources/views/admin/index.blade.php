@@ -18,7 +18,6 @@
         </div>
         <div class="flex items-center gap-3">
             <a href="{{ url('/admin/users') }}" class="rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50">Manage Users</a>
-            <a href="{{ url('/admin/blogposts') }}" class="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-black">Manage Blog</a>
         </div>
     </section>
 
@@ -53,34 +52,6 @@
                     {{-- icon --}}
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4"><path d="M7.5 7.5a3 3 0 116 0 3 3 0 01-6 0z"/><path fill-rule="evenodd" d="M4.5 18a6 6 0 1112 0v.75a.75.75 0 01-.75.75h-10.5a.75.75 0 01-.75-.75V18z" clip-rule="evenodd"/></svg>
                     View users
-                </a>
-            </div>
-        </div>
-
-        {{-- Blog Posts Card --}}
-        <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-zinc-800">Blog posts</h2>
-                <span class="inline-flex items-center rounded-md bg-cyan-50 px-2.5 py-0.5 text-xs font-medium text-cyan-700 ring-1 ring-inset ring-cyan-600/20">{{ $blogposts->count() }} total</span>
-            </div>
-            <div class="mt-5 grid grid-cols-2 gap-4 text-sm text-zinc-600">
-                <div class="rounded-lg border border-zinc-200 p-3">
-                    <p class="text-zinc-500">Unpublished</p>
-                    <p class="mt-1 text-2xl font-semibold text-zinc-900">{{ $blogunpublished->count() }}</p>
-                </div>
-                <div class="rounded-lg border border-zinc-200 p-3">
-                    <p class="text-zinc-500">Published</p>
-                    <p class="mt-1 text-2xl font-semibold text-zinc-900">{{ $blogposts->count() - $blogunpublished->count() }}</p>
-                </div>
-            </div>
-            <div class="mt-5 flex items-center gap-3">
-                <a href="{{ url('/admin/blog') }}" class="inline-flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4"><path d="M4.5 4.5h15v2.25h-15zM4.5 9.75h15v2.25h-15zM4.5 15h15v2.25h-15z"/></svg>
-                    View posts
-                </a>
-                <a href="{{ url('../blog/create') }}" class="inline-flex items-center gap-2 rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-black">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M12 4.5a.75.75 0 01.75.75v6h6a.75.75 0 010 1.5h-6v6a.75.75 0 01-1.5 0v-6h-6a.75.75 0 010-1.5h6v-6A.75.75 0 0112 4.5z" clip-rule="evenodd"/></svg>
-                    New post
                 </a>
             </div>
         </div>
@@ -179,7 +150,6 @@
         <h3 class="text-base font-semibold text-zinc-800">Quick links</h3>
         <div class="mt-4 flex flex-wrap gap-3">
             <a href="{{ url('/admin/users') }}" class="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50">Users</a>
-            <a href="{{ url('/admin/blog') }}" class="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50">Blog</a>
             <a href="{{ url('/admin/support') }}" class="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50">Support</a>
         </div>
     </section>

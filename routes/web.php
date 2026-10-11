@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\ChangeLogController as AdminChangeLogController;
 use App\Http\Controllers\Admin\DataUpdateController;
 use App\Http\Controllers\AdminArrearsController;
-use App\Http\Controllers\AdminBlogController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminInflationController;
 use App\Http\Controllers\AdminInterestRateController;
@@ -13,7 +12,6 @@ use App\Http\Controllers\AdminSupportController;
 use App\Http\Controllers\AdminUnemploymentController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminWageGrowthController;
-use App\Http\Controllers\BlogController;
 use App\Http\Controllers\ChangeLogController;
 use App\Http\Controllers\CommentsController;
 use App\Http\Controllers\CrimeController;
@@ -167,7 +165,6 @@ Route::get('/deprivation/scotland/{dz}', [DeprivationController::class, 'showSco
 Route::get('/deprivation/wales/{lsoa}', [DeprivationController::class, 'showWales'])->name('deprivation.wales.show');
 Route::get('/deprivation/northern-ireland/{sa}', [DeprivationController::class, 'showNorthernIreland'])->name('deprivation.ni.show');
 
-Route::resource('/blog', BlogController::class);
 Route::get('/changelog', [ChangeLogController::class, 'index'])->name('changelog.index');
 Route::get('/changelog/{changeLogEntry}', [ChangeLogController::class, 'show'])->name('changelog.show');
 
@@ -204,7 +201,6 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::resource('/', AdminController::class);
             Route::resource('users', AdminUserController::class);
-            Route::resource('blog', AdminBlogController::class);
             Route::resource('postcodes', AdminPostCodesController::class);
             Route::resource('/support', AdminSupportController::class);
             Route::resource('updates', DataUpdateController::class)->except(['show']);

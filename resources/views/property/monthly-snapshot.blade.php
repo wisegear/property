@@ -328,7 +328,6 @@
 
     <aside class="flex flex-col gap-3 rounded-sm border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 sm:flex-row sm:items-center sm:justify-between">
         <p><strong>About this snapshot:</strong> Category A arm's-length sales only. The latest Land Registry month is provisional while records are backfilled.</p>
-        <a href="/blog/category-a-vs-category-b-property-sales-what-the-land-registry-is-actually-telling-you" class="shrink-0 font-semibold text-amber-900 underline decoration-amber-400 underline-offset-4">How categories work</a>
     </aside>
 </div>
 @endsection

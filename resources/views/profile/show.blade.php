@@ -60,9 +60,9 @@
                 <ul class="space-y-6 text-sm">
                     @foreach ($userPosts as $post)
                         <li class="flex flex-col border-l-2 pl-3 text-lime-700">
-                            <a href="/blog/{{ $post->slug }}" class="text-zinc-800 underline decoration-zinc-400 hover:decoration-lime-600 hover:text-lime-600 font-medium">
+                            <span class="text-zinc-800 font-medium">
                                 {{ $post->title }}
-                            </a>
+                            </span>
                             <span class="text-xs text-zinc-500">{{ $post->created_at->format('d M Y') }}</span>
                         </li>
                     @endforeach
@@ -83,9 +83,9 @@
                     @foreach ($userComments as $c)
                         <li class="border-l-2 pl-3 text-lime-700">
                             @if($c['post_slug'])
-                                <a href="/blog/{{ $c['post_slug'] }}" class="text-zinc-800 underline decoration-zinc-400 hover:decoration-lime-600 hover:text-lime-600 font-medium">
+                                <span class="text-zinc-800 font-medium">
                                     {{ $c['post_title'] }}
-                                </a>
+                                </span>
                             @else
                                 <span class="text-zinc-800 font-medium">[Post no longer available]</span>
                             @endif
