@@ -2,11 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\BlogController;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class CheckboxValueTest extends TestCase
@@ -15,10 +13,6 @@ class CheckboxValueTest extends TestCase
 
     public function test_blog_create_checkboxes_have_value_one(): void
     {
-        Route::middleware('web')->group(function (): void {
-            Route::resource('/blog', BlogController::class);
-        });
-
         $admin = User::factory()->create();
         $roleId = DB::table('user_roles')->insertGetId([
             'name' => 'Admin',

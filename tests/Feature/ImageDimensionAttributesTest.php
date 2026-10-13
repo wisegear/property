@@ -9,7 +9,7 @@ class ImageDimensionAttributesTest extends TestCase
     public function test_home_page_hero_renders_the_app_promotion_with_intrinsic_dimensions(): void
     {
         $renderedHome = view('pages.home', [
-            'changeLogEntries' => collect(),
+            'posts' => collect(),
             'stats' => [],
             'totalStress' => null,
             'homepageMarketMovements' => [],

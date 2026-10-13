@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\BlogCategories;
+use App\Models\BlogPosts;
 use App\Models\ChangeLogEntry;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,33 +24,36 @@ class ChangeLogTest extends TestCase
         $this->get(route('changelog.index', absolute: false))->assertOk()->assertSeeInOrder(['Newest update', 'Older update'])->assertDontSee('Future update');
     }
 
-    public function test_home_page_shows_only_the_four_latest_published_change_log_entries(): void
+    public function test_home_page_shows_only_the_four_latest_published_blog_posts(): void
     {
-        $entries = collect(range(1, 5))->map(fn (int $day) => ChangeLogEntry::factory()->create([
-            'title' => "Homepage update {$day}",
-            'body' => "Details for homepage update {$day}.",
-            'published_at' => now()->subDays($day),
+        $posts = collect(range(1, 5))->map(fn (int $day) => BlogPosts::factory()->state(fn () => ['user_id' => User::factory()->create()->id, 'categories_id' => BlogCategories::factory()->create()->id])->create([
+            'title' => "Homepage post {$day}",
+            'published' => true,
+            'date' => now()->subDays($day),
         ]));
-        ChangeLogEntry::factory()->create(['title' => 'Scheduled homepage update', 'published_at' => now()->addDay()]);
+        BlogPosts::factory()->state(fn () => ['user_id' => User::factory()->create()->id, 'categories_id' => BlogCategories::factory()->create()->id])->create(['title' => 'Unpublished homepage post', 'published' => false, 'date' => now()]);
+        ChangeLogEntry::factory()->create(['title' => 'Homepage changelog update']);
 
         $response = $this->get(route('home', absolute: false));
 
-        $response->assertOk()->assertSee('Latest Changes')->assertSee('View change log')
-            ->assertSeeInOrder($entries->take(4)->pluck('title')->all())
-            ->assertDontSee('Homepage update 5')->assertDontSee('Scheduled homepage update')
-            ->assertDontSee('Latest Insights');
+        $response->assertOk()->assertSee('Latest Insights')->assertSee('View all posts')
+            ->assertSeeInOrder($posts->take(4)->pluck('title')->all())
+            ->assertDontSee('Homepage post 5')->assertDontSee('Unpublished homepage post')
+            ->assertDontSee('Latest Changes')->assertDontSee('Homepage changelog update');
 
-        foreach ($entries->take(4) as $entry) {
-            $response->assertSee(route('changelog.show', $entry), false)->assertSee($entry->body);
+        foreach ($posts->take(4) as $post) {
+            $response->assertSee('/blog/'.$post->slug, false)->assertSee($post->summary);
         }
+
+        $response->assertSeeInOrder(['<!-- Blog Link -->', '<!-- About Link -->'], false);
     }
 
-    public function test_home_page_hides_change_log_section_when_no_entries_are_published(): void
+    public function test_home_page_hides_blog_section_when_no_posts_are_published(): void
     {
-        ChangeLogEntry::factory()->create(['title' => 'Scheduled homepage update', 'published_at' => now()->addDay()]);
+        BlogPosts::factory()->state(fn () => ['user_id' => User::factory()->create()->id, 'categories_id' => BlogCategories::factory()->create()->id])->create(['title' => 'Unpublished homepage post', 'published' => false]);
 
         $this->get(route('home', absolute: false))->assertOk()
-            ->assertDontSee('Latest Changes')->assertDontSee('Scheduled homepage update');
+            ->assertDontSee('Latest Insights')->assertDontSee('Unpublished homepage post');
     }
 
     public function test_public_entry_displays_its_details_and_author(): void
@@ -97,18 +102,12 @@ class ChangeLogTest extends TestCase
         $this->actingAs(User::factory()->create())->get(route('admin.changelog.index', absolute: false))->assertForbidden();
     }
 
-    public function test_blog_routes_are_unavailable_and_navigation_has_no_blog_links(): void
+    public function test_blog_routes_and_navigation_are_available(): void
     {
-        foreach (['/blog', '/blog/create', '/blog/market-update', '/blog/1/edit', '/admin/blog', '/admin/blog/create'] as $path) {
-            $this->get($path)->assertNotFound();
-        }
-
-        foreach (app('router')->getRoutes() as $route) {
-            $this->assertFalse(str_contains($route->uri(), 'blog'));
-        }
-
-        $this->get('/')->assertOk()->assertDontSee(url('/blog').'"', false);
-        $this->actingAs($this->createAdmin())->get('/admin')->assertOk()->assertDontSee(url('/blog').'"', false);
+        $this->get(route('blog.index', absolute: false))->assertOk();
+        $this->get('/')->assertOk()->assertSee(url('/blog').'"', false);
+        $this->actingAs($this->createAdmin())->get(route('admin.blog.index', absolute: false))
+            ->assertOk()->assertSee('Blog Management');
     }
 
     private function createAdmin(): User

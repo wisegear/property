@@ -25,7 +25,7 @@ class HomePagePostcodeQuickSearchTest extends TestCase
     public function test_home_page_shows_quick_postcode_search_above_market_stress_panel_and_links_to_swap_rates_from_the_panel_grid(): void
     {
         $view = $this->view('pages.home', [
-            'changeLogEntries' => collect(),
+            'posts' => collect(),
             'stats' => [
                 'property_records' => 31092167,
                 'uk_avg_price' => 268421,
@@ -186,7 +186,6 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'Monthly comparisons',
             'Regional map',
             'Explore the latest snapshot',
-            'PropertyResearch iPhone app',
         ]);
         $view->assertDontSee('128 live');
         $view->assertDontSee('Top signal (this period)');
@@ -197,12 +196,12 @@ class HomePagePostcodeQuickSearchTest extends TestCase
             'Street search',
             'Property sales',
             'Property Market Stress Index',
+            'PropertyResearch iPhone app',
             'UK Housing Market Snapshot',
             'Go deeper into the data',
             'High Value Property',
             'Swap Rates',
             'Property Monthly Snapshot',
-            'PropertyResearch iPhone app',
         ]);
     }
 
@@ -330,8 +329,8 @@ class HomePagePostcodeQuickSearchTest extends TestCase
         $response->assertSee('75% market breadth', false);
         $response->assertSee('1 / 4', false);
         $response->assertSee('25% liquidity falling', false);
-        $response->assertSee('Demand weakening');
-        $response->assertSee('Price growth stalling');
+        $response->assertSee('Demand strengthening');
+        $response->assertSee('Prices rising');
         $response->assertDontSee('Top Counties with Falling Sales:');
         $response->assertDontSee('Top Counties with Rising Prices:');
     }

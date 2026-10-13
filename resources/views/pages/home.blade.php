@@ -10,7 +10,15 @@
 <div id="home-observatory" class="-mx-6 -mt-6 bg-slate-100/70 px-4 py-8 sm:px-6 lg:py-10">
     <div class="mx-auto flex max-w-7xl flex-col gap-9 lg:gap-12">
         <section class="relative rounded-3xl bg-slate-900 px-6 py-9 shadow-xl shadow-slate-900/10 sm:p-10 lg:p-14">
-            <div class="grid items-center gap-9 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
+            <div class="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl" aria-hidden="true">
+                <svg viewBox="0 0 480 480" fill="none" class="absolute -left-12 top-4 h-96 w-96 text-emerald-300/10 sm:left-0 sm:h-[30rem] sm:w-[30rem] lg:-top-8 lg:left-8 lg:h-[36rem] lg:w-[36rem]" focusable="false">
+                    <path d="M40 220 240 60 440 220" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M88 184v236h304V184M320 124V76h48v86" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M208 420V300h64v120" stroke="currentColor" stroke-width="8" stroke-linejoin="round" />
+                    <path d="M128 244h48v56h-48zM304 244h48v56h-48z" stroke="currentColor" stroke-width="6" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <div class="relative grid items-center gap-9 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
                 <div>
                     <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300"><span class="h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true"></span>Independent UK property data</p>
                     @auth
@@ -104,8 +112,21 @@
             <h2 class="text-2xl font-semibold tracking-tight text-slate-900">The market at a glance</h2>
             <a href="{{ route('economic.dashboard') }}" class="text-sm font-semibold text-emerald-800 hover:underline">Explore the indicators ↗</a>
         </div>
-        <div class="grid items-stretch gap-5 {{ is_null($totalStress ?? null) ? '' : 'lg:grid-cols-[1fr_2fr]' }}">
-            @include('partials.stress-score-panel', ['totalStress' => $totalStress ?? null, 'isSticky' => false, 'showDashboardLink' => true, 'isObservatory' => true])
+        <div class="grid items-stretch gap-5 lg:grid-cols-[1fr_2fr]">
+            <div class="grid gap-5 {{ is_null($totalStress ?? null) ? '' : 'lg:grid-rows-2' }}">
+                @include('partials.stress-score-panel', ['totalStress' => $totalStress ?? null, 'isSticky' => false, 'showDashboardLink' => true, 'isObservatory' => true])
+                <section class="flex flex-col justify-between gap-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-800">Research on the move</p>
+                            <h2 class="mt-3 text-xl font-semibold tracking-tight text-slate-900">Your property research.<br>In your pocket.</h2>
+                        </div>
+                        <img src="{{ asset('/applogo.jpg') }}" alt="PropertyResearch iPhone app" width="768" height="512" loading="lazy" class="h-auto w-24 shrink-0 rounded-lg">
+                    </div>
+                    <p class="text-sm leading-6 text-slate-600">Property sales, EPC records, schools and market insights. Take PropertyResearch with you on your iPhone.</p>
+                    <a href="https://apps.apple.com/gb/app/id6794914030" target="_blank" rel="noopener noreferrer" aria-label="Download PropertyResearch on the App Store (opens in a new tab)" class="inline-flex items-center justify-between gap-3 rounded-lg bg-emerald-800 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">Discover the iPhone app <span aria-hidden="true">↗</span></a>
+                </section>
+            </div>
             <div class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 lg:p-8">
                     @php
                     $transactionChange = (float) ($homepageMarketMovements['transaction_change_percent'] ?? -34.1);
@@ -118,8 +139,8 @@
                     $decliningSalesTrend = -$fallingSalesPercent;
                     $condition = marketCondition($transactionChange, $priceChange, $fallingSalesPercent);
                     $labels = [
-                        'transactions' => 'Demand weakening',
-                        'price' => 'Price growth stalling',
+                        'transactions' => $transactionChange < 0 ? 'Demand weakening' : ($transactionChange > 0 ? 'Demand strengthening' : 'Demand unchanged'),
+                        'price' => $priceChange < 0 ? 'Price growth stalling' : ($priceChange > 0 ? 'Prices rising' : 'Prices unchanged'),
                         'rising' => 'Limited market breadth',
                         'falling' => 'Liquidity falling',
                     ];
@@ -154,8 +175,10 @@
                             'value' => number_format($transactionChange, 1).'%',
                             'label' => 'Transactions',
                             'detail' => $labels['transactions'],
-                            'tone' => $transactionColor === 'red' ? 'negative' : 'neutral',
-                            'icon' => 'trend-down',
+                            'tone' => $transactionChange < 0 ? 'negative' : ($transactionChange > 0 ? 'positive' : 'neutral'),
+                            'icon' => $transactionChange < 0 ? 'trend-down' : 'trend-up',
+                            'change' => $transactionChange,
+                            'share' => null,
                             'gauge_value' => $transactionChange,
                             'gauge_variant' => 'dashboard-dual',
                             'invert_gauge' => false,
@@ -164,8 +187,10 @@
                             'value' => number_format($priceChange, 1).'%',
                             'label' => 'Median price',
                             'detail' => $labels['price'],
-                            'tone' => $priceColor === 'red' ? 'negative' : 'neutral',
+                            'tone' => $priceChange < 0 ? 'negative' : ($priceChange > 0 ? 'positive' : 'neutral'),
                             'icon' => 'home',
+                            'change' => $priceChange,
+                            'share' => null,
                             'gauge_value' => $priceChange,
                             'gauge_variant' => 'dashboard-dual',
                             'invert_gauge' => false,
@@ -176,6 +201,8 @@
                             'detail' => $totalCounties > 0 ? number_format($risingPriceTrend, 0).'% market breadth' : 'No counties available',
                             'tone' => $risingBreadthTone,
                             'icon' => 'trend-up',
+                            'change' => null,
+                            'share' => $risingPriceTrend,
                             'gauge_value' => ($risingPriceTrend * 2) - 100,
                             'gauge_variant' => 'market-status',
                             'invert_gauge' => false,
@@ -186,6 +213,8 @@
                             'detail' => $totalCounties > 0 ? number_format($fallingSalesPercent, 0).'% liquidity falling' : 'No counties available',
                             'tone' => $fallingColor === 'red' ? 'negative' : 'neutral',
                             'icon' => 'alert',
+                            'change' => null,
+                            'share' => $fallingSalesPercent,
                             'gauge_value' => ($fallingSalesPercent * 2) - 100,
                             'gauge_variant' => 'market-status',
                             'invert_gauge' => true,
@@ -194,20 +223,66 @@
                     @endphp
 
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                    <h3 class="text-lg font-semibold tracking-tight text-slate-900">UK Housing Market Snapshot</h3>
-                    <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $conditionClasses[$condition['color']] ?? $conditionClasses['gray'] }}">{{ $condition['label'] }} Market</span>
+                    <div>
+                        <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">Quarterly market pulse</p>
+                        <h3 class="text-lg font-semibold tracking-tight text-slate-900">UK Housing Market Snapshot</h3>
+                    </div>
+                    <span class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold {{ $conditionClasses[$condition['color']] ?? $conditionClasses['gray'] }}"><span class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true"></span>{{ $condition['label'] }} Market</span>
                 </div>
                 <p class="mt-2 text-sm text-slate-500">Latest complete Land Registry quarter vs previous quarter</p>
-                <div class="mt-7 grid grid-cols-2 gap-x-5 gap-y-7">
+                <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                    Sales {{ $transactionChange < 0 ? 'fell' : ($transactionChange > 0 ? 'rose' : 'were unchanged') }}@if($transactionChange != 0) <strong class="font-semibold text-slate-900">{{ number_format(abs($transactionChange), 1) }}%</strong>@endif,
+                    while median prices {{ $priceChange < 0 ? 'fell' : ($priceChange > 0 ? 'rose' : 'were unchanged') }}@if($priceChange != 0) <strong class="font-semibold text-slate-900">{{ number_format(abs($priceChange), 1) }}%</strong>@endif.
+                </div>
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
                     @foreach ($snapshotCards as $card)
-                        <div>
-                            <p class="text-sm text-slate-500">{{ $card['label'] }}</p>
-                            <p class="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{{ $card['value'] }}</p>
+                        @php
+                            $accentClasses = match ($card['tone']) {
+                                'negative' => 'bg-rose-50 text-rose-700',
+                                'warning' => 'bg-amber-50 text-amber-700',
+                                'positive' => 'bg-emerald-50 text-emerald-700',
+                                default => 'bg-slate-100 text-slate-600',
+                            };
+                            $barClasses = match ($card['tone']) {
+                                'negative' => 'bg-rose-500',
+                                'warning' => 'bg-amber-500',
+                                'positive' => 'bg-emerald-500',
+                                default => 'bg-slate-400',
+                            };
+                        @endphp
+                        <div class="rounded-xl border border-slate-200 p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-xs font-medium text-slate-500">{{ $card['label'] }}</p>
+                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $accentClasses }}" aria-hidden="true">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        @if($card['icon'] === 'home')
+                                            <path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8" />
+                                        @elseif($card['icon'] === 'alert')
+                                            <path d="M4 4h16v16H4zM8 8h8M8 12h5M8 16h2" />
+                                        @elseif($card['icon'] === 'trend-down')
+                                            <path d="m3 6 7 7 4-4 7 9M15 18h6v-6" />
+                                        @else
+                                            <path d="m3 18 7-7 4 4 7-9M15 6h6v6" />
+                                        @endif
+                                    </svg>
+                                </span>
+                            </div>
+                            <p class="mt-3 text-3xl font-semibold tracking-tight text-slate-900">{{ $card['value'] }}</p>
+                            @if(! is_null($card['share']))
+                                <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100" aria-hidden="true">
+                                    <div class="h-full rounded-full {{ $barClasses }}" style="width: {{ max(0, min(100, $card['share'])) }}%"></div>
+                                </div>
+                            @else
+                                <p class="mt-3 text-[11px] font-medium text-slate-500"><span aria-hidden="true">{{ $card['change'] < 0 ? '↘' : ($card['change'] > 0 ? '↗' : '→') }}</span> Compared with previous quarter</p>
+                            @endif
                             <p class="mt-2 text-xs text-slate-500">{{ $card['detail'] }}</p>
                         </div>
                     @endforeach
                 </div>
-                <a href="{{ route('insights.dashboard') }}" class="mt-7 inline-flex text-sm font-semibold text-emerald-800 hover:underline">View Market Insights →</a>
+                <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                    <p class="text-[11px] text-slate-500">Source: HM Land Registry · England &amp; Wales</p>
+                    <a href="{{ route('insights.dashboard') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800 hover:underline">View Market Insights <span aria-hidden="true">→</span></a>
+                </div>
             </div>
         </div>
     </section>
@@ -288,27 +363,16 @@
         </div>
     </section>
 
-    <section class="grid items-center gap-6 rounded-2xl border border-slate-200 bg-white p-6 sm:grid-cols-[1fr_240px] sm:p-8">
-        <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-800">Research on the move</p>
-            <h2 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Your property research. In your pocket.</h2>
-            <p class="mt-3 max-w-lg text-sm leading-6 text-slate-500">Explore property sales, EPC records, schools and market insights with the PropertyResearch iPhone app.</p>
-            <a href="https://apps.apple.com/gb/app/id6794914030" target="_blank" rel="noopener noreferrer" class="mt-5 inline-flex text-sm font-semibold text-emerald-800 hover:underline">Discover the iPhone app ↗</a>
-        </div>
-        <a href="https://apps.apple.com/gb/app/id6794914030" target="_blank" rel="noopener noreferrer" aria-label="Download PropertyResearch on the App Store (opens in a new tab)">
-            <img src="{{ asset('/applogo.jpg') }}" alt="PropertyResearch iPhone app" width="768" height="512" loading="lazy" class="mx-auto h-auto w-full max-w-60 rounded-lg">
-        </a>
-    </section>
-    {{-- Change Log Section --}}
-    @if($changeLogEntries->count() > 0)
+    {{-- Blog Section --}}
+    @if($posts->count() > 0)
     <section class="border-t border-zinc-200 pt-7">
         <div class="mb-5 flex items-end justify-between gap-4">
             <div>
-                <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Latest Changes</h2>
-                <p class="mt-1 text-sm text-zinc-500">Changes and data updates across PropertyResearch. Visit my property blog at <a href="https://wisener.net" class="font-semibold text-lime-700 hover:underline">wisener.net</a>.</p>
+                <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Latest Insights</h2>
+                <p class="mt-1 text-sm text-zinc-500">Analysis and commentary on the UK property market</p>
             </div>
-            <a href="{{ route('changelog.index') }}" class="hidden items-center gap-2 text-sm font-semibold text-lime-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2 sm:inline-flex">
-                View change log
+            <a href="{{ url('/blog') }}" class="hidden items-center gap-2 text-sm font-semibold text-lime-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2 sm:inline-flex">
+                View all posts
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                 </svg>
@@ -316,21 +380,26 @@
         </div>
 
         <div class="grid grid-cols-1 overflow-hidden rounded-2xl border border-slate-200 bg-white lg:grid-cols-2 lg:divide-x lg:divide-zinc-200">
-            @foreach($changeLogEntries->chunk((int) ceil($changeLogEntries->count() / 2)) as $columnEntries)
+            @foreach($posts->chunk((int) ceil($posts->count() / 2)) as $columnPosts)
                 <div class="grid grid-cols-1 divide-y divide-zinc-200">
-                    @foreach($columnEntries as $entry)
-                    <a href="{{ route('changelog.show', $entry) }}"
+                    @foreach($columnPosts as $post)
+                    <a href="/blog/{{ $post->slug }}"
                        class="group grid min-h-32 grid-cols-[minmax(0,1fr)_auto] items-center gap-5 p-5 transition-colors duration-200 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime-600">
-                        <div class="min-w-0">
-                            <div class="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                                {{ $entry->category }} · {{ $entry->published_at->format('M j, Y') }}
+                        <div class="flex min-w-0 items-center gap-3 sm:gap-4">
+                            @if($post->original_image)
+                                <img src="{{ $post->featuredImageUrl('small') }}" alt="" width="96" height="96" loading="lazy" class="h-16 w-16 shrink-0 rounded-lg object-cover sm:h-24 sm:w-24">
+                            @endif
+                            <div class="min-w-0">
+                                <div class="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                                    {{ $post->date->format('M j, Y') }}
+                                </div>
+                                <h3 class="line-clamp-2 text-base font-bold leading-5 text-zinc-900 transition-colors group-hover:text-lime-700 sm:text-[1.05rem]">
+                                    {{ $post->title }}
+                                </h3>
+                                <p class="mt-2 line-clamp-2 text-sm leading-5 text-zinc-500">
+                                    {{ $post->summary }}
+                                </p>
                             </div>
-                            <h3 class="line-clamp-2 text-base font-bold leading-5 text-zinc-900 transition-colors group-hover:text-lime-700 sm:text-[1.05rem]">
-                                {{ $entry->title }}
-                            </h3>
-                            <p class="mt-2 line-clamp-2 text-sm leading-5 text-zinc-500">
-                                {{ Str::limit($entry->body, 160) }}
-                            </p>
                         </div>
                         <svg class="h-4 w-4 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5 group-hover:text-lime-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6" />
@@ -343,8 +412,8 @@
 
         {{-- Mobile "View all" link --}}
         <div class="mt-4 sm:hidden">
-            <a href="{{ route('changelog.index') }}" class="block text-sm font-semibold text-lime-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
-                View change log →
+            <a href="{{ url('/blog') }}" class="block text-sm font-semibold text-lime-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-600 focus-visible:ring-offset-2">
+                View all posts →
             </a>
         </div>
     </section>

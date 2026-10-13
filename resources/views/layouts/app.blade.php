@@ -525,6 +525,12 @@
                     </div>
 
 
+                    <!-- Blog Link -->
+                    <a href="{{ route('blog.index') }}"
+                       class="px-3 py-4 {{ request()->routeIs('blog.*') ? 'font-semibold text-zinc-900' : 'text-zinc-700 hover:text-lime-700' }}">
+                        Blog
+                    </a>
+
                     <!-- About Link -->
                     <a href="{{ url('/about') }}"
                        class="px-3 py-4 {{ request()->is('about') ? 'font-semibold text-zinc-900' : 'text-zinc-700 hover:text-lime-700' }}">
@@ -797,6 +803,12 @@
                     </div>
                 </div>
 
+
+                <!-- Blog Link -->
+                <a href="{{ route('blog.index') }}"
+                   class="block px-3 py-2 rounded hover:bg-zinc-100 {{ request()->routeIs('blog.*') ? 'font-semibold text-zinc-900' : 'text-zinc-700' }}">
+                    Blog
+                </a>
 
                 <!-- About Link -->
                 <a href="{{ url('/about') }}" 
