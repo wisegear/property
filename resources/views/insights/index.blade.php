@@ -5,7 +5,8 @@
 
 @section('content')
 <section class="-mx-6 -mt-6 border-b border-zinc-200 bg-white py-10">
-    <div class="mx-auto max-w-7xl px-4">
+    <div class="mx-auto grid max-w-7xl items-center gap-8 px-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.55fr)]">
+        <div class="min-w-0">
         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Property market research</p>
         <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">Places worth investigating</h1>
         <p class="mt-4 max-w-2xl text-sm leading-6 text-zinc-600">Find unusual changes in local sale prices and activity. Start with an area you care about, then explore the evidence behind the change.</p>
@@ -20,6 +21,10 @@
         @if ($lastRunAt)
             <p class="mt-4 text-xs text-zinc-500">Signals updated {{ $lastRunAt->timezone(config('app.timezone'))->format('d M Y, H:i') }} · Individual comparison dates appear below.</p>
         @endif
+        </div>
+        <div class="relative hidden self-stretch md:block">
+            <img src="{{ asset('/assets/images/site/property-insghts.jpg') }}" alt="Property market insights" class="absolute inset-0 h-full w-full object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
+        </div>
     </div>
 </section>
 <div class="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8">
