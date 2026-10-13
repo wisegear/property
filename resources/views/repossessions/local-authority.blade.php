@@ -6,12 +6,20 @@
         <div class="max-w-4xl">
             <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500"><span class="h-2 w-2 rounded-full bg-lime-500"></span>Court actions</p>
             <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">
-                Repossession claims – <span class="text-lime-600">{{ $local_authority }}</span>
+                Possession court actions – <span class="text-lime-600">{{ $local_authority }}</span>
             </h1>
             <p class="text-sm text-zinc-600">
-                Data from 2003 to 2025 provided by the court service. Next update January 2026, data is provided quarterly. It's important to note that Repossessions are part 
-                of a long process, only the possession action title "Repossession" reflects a property being repossessed.
+                Quarterly Ministry of Justice statistics on mortgage and landlord possession actions in the county courts.
+                Claims, orders and warrants are stages in the process; only the “Repossessions” action records repossessions by county court bailiffs.
             </p>
+            <span class="mt-4 inline-flex items-center gap-2 rounded-full border border-lime-200 bg-lime-50 px-3 py-1.5 text-xs font-semibold text-zinc-700">
+                <span class="h-2 w-2 rounded-full bg-lime-500" aria-hidden="true"></span>
+                @if ($latestPeriod[0] !== null)
+                    Data through {{ $latestPeriod[1] }} {{ $latestPeriod[0] }}
+                @else
+                    No data available
+                @endif
+            </span>
         </div>
         <div class="hidden justify-self-end md:block">
             <img src="{{ asset('assets/images/site/repo.jpg') }}" alt="Repossessions" class="h-44 w-full max-w-sm object-cover [mask-image:linear-gradient(to_right,transparent,black_22%)]">
@@ -19,6 +27,8 @@
         </div>
     </section>
 <div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
+
+    <p class="mb-6 text-sm leading-6 text-zinc-600">These charts count court actions, not unique cases or repossessed properties. A case can appear at several stages. The latest year may contain only part of the year; compare equivalent quarters when assessing changes.</p>
 
     @php
         // Year labels + totals
@@ -68,12 +78,6 @@
             }
         }
 
-        // Summary
-        $latestTotal = $totals->last();
-        $prevTotal = $totals->count() > 1 ? $totals[$totals->count() - 2] : null;
-        $latestYear = $labels->last();
-        $prevYear = $labels->count() > 1 ? $labels[$labels->count() - 2] : null;
-        $yoy = ($latestTotal !== null && $prevTotal !== null) ? ((int)$latestTotal - (int)$prevTotal) : null;
     @endphp
 
     {{-- Summary panels --}}
@@ -81,26 +85,28 @@
         <div class="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
             <div class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Total Claims Year To Date</div>
             <div class="mt-3 text-2xl font-semibold text-zinc-900">
-                {{ (int)($latestYear ?? 0) }}
-                <span class="ml-2 text-sm text-zinc-500">{{ number_format((int)($latestTotal ?? 0)) }}</span>
+                {{ $latest->year ?? '—' }}
+                <span class="ml-2 text-sm text-zinc-500">{{ $latest ? number_format((int) $latest->total) : '—' }}</span>
             </div>
         </div>
 
         <div class="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
-            <div class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Total Claims In The Previous Year</div>
+            <div class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Claims In Matching Quarters Last Year</div>
             <div class="mt-3 text-2xl font-semibold text-zinc-900">
-                {{ (int)($prevYear ?? 0) }}
-                <span class="ml-2 text-sm text-zinc-500">{{ number_format((int)($prevTotal ?? 0)) }}</span>
+                {{ $previous->year ?? '—' }}
+                <span class="ml-2 text-sm text-zinc-500">{{ $previous ? number_format((int) $previous->total) : 'Not available' }}</span>
             </div>
         </div>
 
         <div class="rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
-            <div class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Year-On-Year Change</div>
+            <div class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Change In Claims (Matching Quarters)</div>
             <div class="mt-3 text-2xl font-semibold {{ ($yoy ?? 0) < 0 ? 'text-lime-600' : 'text-rose-600' }}">
                 {{ $yoy === null ? '—' : (($yoy >= 0 ? '+' : '') . number_format((int)$yoy)) }}
             </div>
         </div>
     </div>
+
+    <p class="mb-6 text-sm text-zinc-600">Claims comparison uses {{ implode(', ', $comparisonQuarters) }} in {{ $latest->year ?? 'the latest year' }} and the same quarters in the previous year. @if ($previous === null) Matching prior-year data is unavailable. @endif</p>
 
     {{-- Charts --}}
 
