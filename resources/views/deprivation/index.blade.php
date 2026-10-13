@@ -24,9 +24,9 @@
       <p class="text-sm text-zinc-600 my-4">Note: “Deprivation” is a statistical term about access to resources and services; it is not a label on people or places. </p>
    
       <p class="text-xs text-zinc-600">
-        Decile colours: <span class="inline-block align-middle rounded px-1.5 py-0.5 text-[11px] bg-rose-300 text-zinc-900">1–3</span> higher deprivation ·
-        <span class="inline-block align-middle rounded px-1.5 py-0.5 text-[11px] bg-orange-300 text-zinc-900">4–7</span> mid ·
-        <span class="inline-block align-middle rounded px-1.5 py-0.5 text-[11px] bg-emerald-300 text-zinc-900">8–10</span> lower deprivation.
+        Decile colours: <x-decile-badge :decile="1">1–3</x-decile-badge> higher deprivation ·
+        <x-decile-badge :decile="4">4–6</x-decile-badge> mid ·
+        <x-decile-badge :decile="7">7–10</x-decile-badge> lower deprivation.
       </p>
     </div>
     <div class="hidden justify-self-end md:block">
@@ -130,21 +130,13 @@
               </thead>
               <tbody class="divide-y">
                 @foreach(($engTop10 ?? []) as $r)
-                  @php
-                    $d = (int)($r->decile ?? 0);
-                    $badge = match(true){
-                      $d >= 7 => 'bg-emerald-300 text-zinc-900',
-                      $d >= 4 => 'bg-orange-300 text-zinc-900',
-                      $d >= 1 => 'bg-rose-300 text-zinc-900',
-                      default => 'bg-zinc-300 text-zinc-900'};
-                  @endphp
                   <tr class="odd:bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
                     <td class="px-3 py-2">
                       <div class="font-medium text-gray-900"><a href="{{ route('deprivation.show', $r->lsoa_code) }}" class="text-lime-700 hover:text-lime-900 font-medium transition-colors duration-150">{{ $r->lsoa_name }}</a></div>
                     </td>
                     <td class="px-3 py-2 text-xs text-zinc-600">{{ $r->lsoa_code }}</td>
                     <td class="px-3 py-2">
-                      <span class="inline-flex items-center rounded px-2 py-1 text-xs {{ $badge }}">{{ $r->decile ?? 'N/A' }}</span>
+                      <x-decile-badge :decile="$r->decile" />
                     </td>
                     <td class="px-3 py-2">
                       <div class="font-medium">{{ number_format((int)$r->rank) }}</div>
@@ -184,21 +176,13 @@
               </thead>
               <tbody class="divide-y">
                 @foreach(($engBottom10 ?? []) as $r)
-                  @php
-                    $d = (int)($r->decile ?? 0);
-                    $badge = match(true){
-                      $d >= 7 => 'bg-emerald-300 text-zinc-900',
-                      $d >= 4 => 'bg-orange-300 text-zinc-900',
-                      $d >= 1 => 'bg-rose-300 text-zinc-900',
-                      default => 'bg-zinc-300 text-zinc-900'};
-                  @endphp
                   <tr class="odd:bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
                     <td class="px-3 py-2">
                       <div class="font-medium text-gray-900"><a href="{{ route('deprivation.show', $r->lsoa_code) }}" class="text-lime-700 hover:text-lime-900 font-medium transition-colors duration-150">{{ $r->lsoa_name }}</a></div>
                     </td>
                     <td class="px-3 py-2 text-xs text-zinc-600">{{ $r->lsoa_code }}</td>
                     <td class="px-3 py-2">
-                      <span class="inline-flex items-center rounded px-2 py-1 text-xs {{ $badge }}">{{ $r->decile ?? 'N/A' }}</span>
+                      <x-decile-badge :decile="$r->decile" />
                     </td>
                     <td class="px-3 py-2">
                       <div class="font-medium">{{ number_format((int)$r->rank) }}</div>
@@ -245,21 +229,13 @@
               </thead>
               <tbody class="divide-y">
                 @foreach(($scoTop10 ?? []) as $r)
-                  @php
-                    $d = (int)($r->decile ?? 0);
-                    $badge = match(true){
-                      $d >= 7 => 'bg-emerald-300 text-zinc-900',
-                      $d >= 4 => 'bg-orange-300 text-zinc-900',
-                      $d >= 1 => 'bg-rose-300 text-zinc-900',
-                      default => 'bg-zinc-300 text-zinc-900'};
-                  @endphp
                   <tr class="odd:bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
                     <td class="px-3 py-2">
                       <div class="font-medium text-gray-900"><a href="{{ route('deprivation.scot.show', $r->data_zone) }}" class="text-lime-700 hover:text-lime-900 font-medium transition-colors duration-150">{{ $r->Intermediate_Zone ?? '—' }}</a></div>
                     </td>
                     <td class="px-3 py-2 text-xs text-zinc-600">{{ $r->data_zone }}</td>
                     <td class="px-3 py-2">
-                      <span class="inline-flex items-center rounded px-2 py-1 text-xs {{ $badge }}">{{ $r->decile ?? 'N/A' }}</span>
+                      <x-decile-badge :decile="$r->decile" />
                     </td>
                     <td class="px-3 py-2">
                       <div class="font-medium">{{ number_format((int)$r->rank) }}</div>
@@ -299,21 +275,13 @@
               </thead>
               <tbody class="divide-y">
                 @foreach(($scoBottom10 ?? []) as $r)
-                  @php
-                    $d = (int)($r->decile ?? 0);
-                    $badge = match(true){
-                      $d >= 7 => 'bg-emerald-300 text-zinc-900',
-                      $d >= 4 => 'bg-orange-300 text-zinc-900',
-                      $d >= 1 => 'bg-rose-300 text-zinc-900',
-                      default => 'bg-zinc-300 text-zinc-900'};
-                  @endphp
                   <tr class="odd:bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
                     <td class="px-3 py-2">
                       <div class="font-medium text-gray-900"><a href="{{ route('deprivation.scot.show', $r->data_zone) }}" class="text-lime-700 hover:text-lime-900 font-medium transition-colors duration-150">{{ $r->Intermediate_Zone ?? '—' }}</a></div>
                     </td>
                     <td class="px-3 py-2 text-xs text-zinc-600">{{ $r->data_zone }}</td>
                     <td class="px-3 py-2">
-                      <span class="inline-flex items-center rounded px-2 py-1 text-xs {{ $badge }}">{{ $r->decile ?? 'N/A' }}</span>
+                      <x-decile-badge :decile="$r->decile" />
                     </td>
                     <td class="px-3 py-2">
                       <div class="font-medium">{{ number_format((int)$r->rank) }}</div>
@@ -360,21 +328,13 @@
               </thead>
               <tbody class="divide-y">
                 @foreach(($walTop10 ?? []) as $r)
-                  @php
-                    $d = (int)($r->decile ?? 0);
-                    $badge = match(true){
-                      $d >= 7 => 'bg-emerald-300 text-zinc-900',
-                      $d >= 4 => 'bg-orange-300 text-zinc-900',
-                      $d >= 1 => 'bg-rose-300 text-zinc-900',
-                      default => 'bg-zinc-300 text-zinc-900'};
-                  @endphp
                   <tr class="odd:bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
                     <td class="px-3 py-2">
                       <div class="font-medium text-gray-900"><a href="{{ route('deprivation.wales.show', $r->lsoa_code) }}" class="text-lime-700 hover:text-lime-900 font-medium transition-colors duration-150">{{ $r->lsoa_name ?? '—' }}</a></div>
                     </td>
                     <td class="px-3 py-2 text-xs text-zinc-600">{{ $r->lsoa_code }}</td>
                     <td class="px-3 py-2">
-                      <span class="inline-flex items-center rounded px-2 py-1 text-xs {{ $badge }}">{{ $r->decile ?? 'N/A' }}</span>
+                      <x-decile-badge :decile="$r->decile" />
                     </td>
                     <td class="px-3 py-2">
                       <div class="font-medium">{{ number_format((int)$r->rank) }}</div>
@@ -414,21 +374,13 @@
               </thead>
               <tbody class="divide-y">
                 @foreach(($walBottom10 ?? []) as $r)
-                  @php
-                    $d = (int)($r->decile ?? 0);
-                    $badge = match(true){
-                      $d >= 7 => 'bg-emerald-300 text-zinc-900',
-                      $d >= 4 => 'bg-orange-300 text-zinc-900',
-                      $d >= 1 => 'bg-rose-300 text-zinc-900',
-                      default => 'bg-zinc-300 text-zinc-900'};
-                  @endphp
                   <tr class="odd:bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
                     <td class="px-3 py-2">
                       <div class="font-medium text-gray-900"><a href="{{ route('deprivation.wales.show', $r->lsoa_code) }}" class="text-lime-700 hover:text-lime-900 font-medium transition-colors duration-150">{{ $r->lsoa_name ?? '—' }}</a></div>
                     </td>
                     <td class="px-3 py-2 text-xs text-zinc-600">{{ $r->lsoa_code }}</td>
                     <td class="px-3 py-2">
-                      <span class="inline-flex items-center rounded px-2 py-1 text-xs {{ $badge }}">{{ $r->decile ?? 'N/A' }}</span>
+                      <x-decile-badge :decile="$r->decile" />
                     </td>
                     <td class="px-3 py-2">
                       <div class="font-medium">{{ number_format((int)$r->rank) }}</div>
@@ -475,21 +427,13 @@
               </thead>
               <tbody class="divide-y">
                 @foreach(($niTop10 ?? []) as $r)
-                  @php
-                    $d = (int)($r->decile ?? 0);
-                    $badge = match(true){
-                      $d >= 7 => 'bg-emerald-300 text-zinc-900',
-                      $d >= 4 => 'bg-orange-300 text-zinc-900',
-                      $d >= 1 => 'bg-rose-300 text-zinc-900',
-                      default => 'bg-zinc-300 text-zinc-900'};
-                  @endphp
                   <tr class="odd:bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
                     <td class="px-3 py-2">
                       <div class="font-medium text-gray-900"><a href="{{ route('deprivation.ni.show', $r->sa_code) }}" class="text-lime-700 hover:text-lime-900 font-medium transition-colors duration-150">{{ $r->sa_name ?? '—' }}</a></div>
                     </td>
                     <td class="px-3 py-2 text-xs text-zinc-600">{{ $r->sa_code }}</td>
                     <td class="px-3 py-2">
-                      <span class="inline-flex items-center rounded px-2 py-1 text-xs {{ $badge }}">{{ $r->decile ?? 'N/A' }}</span>
+                      <x-decile-badge :decile="$r->decile" />
                     </td>
                     <td class="px-3 py-2">
                       <div class="font-medium">{{ number_format((int)$r->rank) }}</div>
@@ -529,21 +473,13 @@
               </thead>
               <tbody class="divide-y">
                 @foreach(($niBottom10 ?? []) as $r)
-                  @php
-                    $d = (int)($r->decile ?? 0);
-                    $badge = match(true){
-                      $d >= 7 => 'bg-emerald-300 text-zinc-900',
-                      $d >= 4 => 'bg-orange-300 text-zinc-900',
-                      $d >= 1 => 'bg-rose-300 text-zinc-900',
-                      default => 'bg-zinc-300 text-zinc-900'};
-                  @endphp
                   <tr class="odd:bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
                     <td class="px-3 py-2">
                       <div class="font-medium text-gray-900"><a href="{{ route('deprivation.ni.show', $r->sa_code) }}" class="text-lime-700 hover:text-lime-900 font-medium transition-colors duration-150">{{ $r->sa_name ?? '—' }}</a></div>
                     </td>
                     <td class="px-3 py-2 text-xs text-zinc-600">{{ $r->sa_code }}</td>
                     <td class="px-3 py-2">
-                      <span class="inline-flex items-center rounded px-2 py-1 text-xs {{ $badge }}">{{ $r->decile ?? 'N/A' }}</span>
+                      <x-decile-badge :decile="$r->decile" />
                     </td>
                     <td class="px-3 py-2">
                       <div class="font-medium">{{ number_format((int)$r->rank) }}</div>

@@ -20,9 +20,9 @@
           Note: Lower rank/decile = more deprived; higher rank/decile = less deprived. IMD 2025 (England).  Next update not expected until 2031.
         </p>
         <p class="text-xs text-zinc-600 mt-4">
-          Decile colours: <span class="inline-block align-middle rounded px-1.5 py-0.5 text-[11px] bg-rose-300 text-zinc-900">1–3</span> higher deprivation ·
-          <span class="inline-block align-middle rounded px-1.5 py-0.5 text-[11px] bg-orange-300 text-zinc-900">4–7</span> mid ·
-          <span class="inline-block align-middle rounded px-1.5 py-0.5 text-[11px] bg-emerald-300 text-zinc-900">8–10</span> lower deprivation.
+          Decile colours: <x-decile-badge :decile="1">1–3</x-decile-badge> higher deprivation ·
+          <x-decile-badge :decile="4">4–6</x-decile-badge> mid ·
+          <x-decile-badge :decile="7">7–10</x-decile-badge> lower deprivation.
         </p>
       </div>
       <div class="mt-2 md:mt-0 md:ml-8 flex-shrink-0">
@@ -147,32 +147,6 @@
   <section class="rounded border border-gray-200 bg-white/80 p-6 shadow-sm">
     <h2 class="text-lg font-semibold text-gray-900 mb-4">Domain Breakdown for {{ $row->LSOA_Name_2021 }}</h2>
 
-    @php
-      // Helper for badge colour based on decile: background/text colour by decile range, border always gray-200
-      $decileBadge = function ($decile) {
-          if (is_null($decile)) {
-              return ['bg' => 'bg-gray-100', 'text' => 'text-zinc-900', 'border' => 'border-zinc-50'];
-          }
-
-          // normalise e.g. "6 ", "05" etc
-          $decile = (int) trim((string) $decile);
-
-          if ($decile >= 1 && $decile <= 3) {
-              return ['bg' => 'bg-rose-200', 'text' => 'text-zinc-900', 'border' => 'border-gray-200'];
-          }
-          if ($decile >= 4 && $decile <= 6) {
-              return ['bg' => 'bg-amber-200', 'text' => 'text-zinc-900', 'border' => 'border-gray-200'];
-          }
-          if ($decile >= 7 && $decile <= 10) {
-              return ['bg' => 'bg-green-200', 'text' => 'text-zinc-900', 'border' => 'border-gray-200'];
-          }
-
-          return ['bg' => 'bg-gray-100', 'text' => 'text-zinc-900', 'border' => 'border-gray-200'];
-      };
-
-      $overallDecileStyles = $decileBadge($overall['decile'] ?? null);
-    @endphp
-
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       {{-- Overall IMD card --}}
       <div class="rounded border border-gray-200 bg-white/80 p-4 shadow-sm">
@@ -181,10 +155,7 @@
           <div class="text-xs text-gray-500">&nbsp;</div>
         </div>
         <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-700">
-          <span class="inline-flex items-center gap-1 rounded px-2 py-1 border text-xs font-medium {{ $overallDecileStyles['bg'] }} {{ $overallDecileStyles['text'] }} {{ $overallDecileStyles['border'] }}">
-            <span>Decile:</span>
-            <span class="font-semibold">{{ $overall['decile'] ?? 'N/A' }}</span>
-          </span>
+          <x-decile-badge :decile="$overall['decile'] ?? null" label />
           <span class="text-sm text-gray-700">
             Rank: {{ isset($overall['rank']) ? number_format($overall['rank']) . ' out of ' . number_format($total) : 'N/A' }}
           </span>
@@ -193,19 +164,13 @@
       </div>
 
       @foreach($domains as $d)
-        @php
-          $styles = $decileBadge($d['decile'] ?? null);
-        @endphp
         <div class="rounded border border-gray-200 bg-white/80 p-4 shadow-sm">
           <div class="flex items-start justify-between">
             <div class="font-medium text-gray-900">{{ $d['label'] }}</div>
             <div class="text-xs text-gray-500">{{ $d['weight'] ?? '' }} weight</div>
           </div>
           <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-700">
-            <span class="inline-flex items-center gap-1 rounded px-2 py-1 border text-xs font-medium {{ $styles['bg'] }} {{ $styles['text'] }} {{ $styles['border'] }}">
-              <span>Decile:</span>
-              <span class="font-semibold">{{ $d['decile'] ?? 'N/A' }}</span>
-            </span>
+            <x-decile-badge :decile="$d['decile'] ?? null" label />
             <span class="text-sm text-gray-700">
               Rank: {{ isset($d['rank']) ? number_format($d['rank']) . ' out of ' . number_format($total) : 'N/A' }}
             </span>

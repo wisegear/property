@@ -27,11 +27,11 @@
 
             <p class="text-xs text-zinc-600 mt-4">
                 Decile colours:
-                <span class="inline-block align-middle rounded px-1.5 py-0.5 text-[11px] bg-rose-300 text-zinc-900">1–3</span>
+                <x-decile-badge :decile="1">1–3</x-decile-badge>
                 higher deprivation ·
-                <span class="inline-block align-middle rounded px-1.5 py-0.5 text-[11px] bg-orange-300 text-zinc-900">4–7</span>
+                <x-decile-badge :decile="4">4–6</x-decile-badge>
                 mid ·
-                <span class="inline-block align-middle rounded px-1.5 py-0.5 text-[11px] bg-emerald-300 text-zinc-900">8–10</span>
+                <x-decile-badge :decile="7">7–10</x-decile-badge>
                 lower deprivation.
             </p>
         </div>
@@ -155,15 +155,9 @@
         @php
           $rankVal = (int) ($row->rank ?? 0);
           $overallDecile = $rankVal ? (int) ceil($rankVal / max(1, ($total/10))) : null;
-          $decBadge = match(true){
-            $overallDecile >= 8 => 'bg-emerald-100 text-emerald-800 ring-1 ring-inset ring-emerald-200',
-            $overallDecile >= 4 => 'bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-200',
-            $overallDecile >= 1 => 'bg-rose-100 text-rose-800 ring-1 ring-inset ring-rose-200',
-            default => 'bg-zinc-100 text-zinc-800'
-          };
         @endphp
         @if(!is_null($overallDecile))
-          <span class="inline-block px-3 py-1 rounded-full text-sm font-medium {{ $decBadge }} mr-2">Decile: {{ $overallDecile }}</span>
+          <x-decile-badge :decile="$overallDecile" label class="mr-2" />
         @endif
         @php
           $rankVal = (int) ($row->rank ?? 0);
@@ -220,13 +214,6 @@
         @php
             $rank = $d['rank'] ?? null;
             $decile = $rank ? (int) ceil($rank / max(1, ($total / 10))) : null;
-
-            $badge = match (true) {
-                $decile >= 8 => 'bg-emerald-100 text-emerald-800',
-                $decile >= 4 => 'bg-amber-100 text-amber-800',
-                $decile >= 1 => 'bg-rose-100 text-rose-800',
-                default      => 'bg-zinc-100 text-zinc-700',
-            };
         @endphp
 
         <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
@@ -243,9 +230,7 @@
             </div>
 
             @if($decile)
-                <span class="inline-flex items-center rounded px-2 py-1 text-xs font-medium {{ $badge }} mb-2">
-                    Decile: {{ $decile }}
-                </span>
+                <x-decile-badge :decile="$decile" label class="mb-2" />
             @endif
 
             <p class="text-sm text-gray-700">

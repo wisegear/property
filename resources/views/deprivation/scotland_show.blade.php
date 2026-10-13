@@ -10,20 +10,6 @@
   $rankVal = isset($row->rank) ? (int)$row->rank : 0;
   $pctLocal = $rankVal ? max(0, min(100, (int) round((1 - (($rankVal - 1) / $totalDisplay)) * 100))) : null;
 @endphp
-@php
-  $dec = (int) ($row->decile ?? 0);
-  $decileBadge = function ($decile) {
-    $value = (int) ($decile ?? 0);
-
-    return match (true) {
-      $value >= 8 => 'bg-emerald-100 text-emerald-800 ring-1 ring-inset ring-emerald-200',
-      $value >= 4 => 'bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-200',
-      $value >= 1 => 'bg-rose-100 text-rose-800 ring-1 ring-inset ring-rose-200',
-      default     => 'bg-zinc-100 text-zinc-800',
-    };
-  };
-  $badge = $decileBadge($dec);
-@endphp
 
 <script>
   // Load Leaflet on-demand if not present
@@ -54,9 +40,9 @@
       . Rankings are relative across Scotland (1 = most deprived, {{ number_format($totalDisplay) }} = least).
     </p>
       <p class="text-xs text-zinc-600 mt-4">
-        Decile colours: <span class="inline-block align-middle rounded px-1.5 py-0.5 text-[11px] bg-rose-300 text-zinc-900">1–3</span> higher deprivation ·
-        <span class="inline-block align-middle rounded px-1.5 py-0.5 text-[11px] bg-orange-300 text-zinc-900">4–7</span> mid ·
-        <span class="inline-block align-middle rounded px-1.5 py-0.5 text-[11px] bg-emerald-300 text-zinc-900">8–10</span> lower deprivation.
+        Decile colours: <x-decile-badge :decile="1">1–3</x-decile-badge> higher deprivation ·
+        <x-decile-badge :decile="4">4–6</x-decile-badge> mid ·
+        <x-decile-badge :decile="7">7–10</x-decile-badge> lower deprivation.
       </p>
   </div>
   <div class="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
@@ -164,9 +150,7 @@
   <div class="rounded border border-gray-200 bg-white/80 p-6 shadow-sm">
     <h3 class="text-base font-semibold text-gray-900 mb-2">Overall position</h3>
     <div class="flex flex-wrap items-center gap-3">
-      <span class="inline-flex items-center rounded-full px-2 py-1 text-xs {{ $badge }}">
-        Decile: {{ $row->decile ?? 'N/A' }}
-      </span>
+      <x-decile-badge :decile="$row->decile" label />
       <span class="text-xs text-gray-600">
         Rank: {{ $row->rank ? number_format($row->rank) : 'N/A' }} of {{ number_format($totalDisplay) }}
         @if(!is_null($pctLocal)) · top {{ $pctLocal }}%@endif
@@ -203,9 +187,7 @@
             @endphp
 
             @if(!is_null($domainDecile))
-              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $decileBadge($domainDecile) }}">
-                Decile {{ $domainDecile }}
-              </span>
+              <x-decile-badge :decile="$domainDecile" label />
             @endif
 
             <span class="text-xs text-gray-500">Rank</span>

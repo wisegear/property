@@ -129,11 +129,11 @@ class DeprivationScotlandTest extends TestCase
         $response = $this->get(route('deprivation.scot.show', ['dz' => 'S01012068']));
 
         $response->assertOk();
-        $response->assertSee('Decile 1');
-        $response->assertSee('Decile 5');
-        $response->assertSee('Decile 9');
-        $response->assertSee('bg-rose-100 text-rose-800 ring-1 ring-inset ring-rose-200', false);
-        $response->assertSee('bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-200', false);
-        $response->assertSee('bg-emerald-100 text-emerald-800 ring-1 ring-inset ring-emerald-200', false);
+        foreach ([1 => 'rose', 5 => 'amber', 9 => 'emerald'] as $decile => $colour) {
+            $this->assertMatchesRegularExpression(
+                '/<span class="[^"]*bg-'.$colour.'-50 text-'.$colour.'-800 ring-'.$colour.'-200[^"]*">\s*<span[^>]*>Decile:<\/span>\s*'.$decile.'\s*<\/span>/',
+                $response->getContent()
+            );
+        }
     }
 }
