@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,11 +16,12 @@ class InsightsFilterRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
+            'group' => ['nullable', 'string', Rule::in(['rising', 'falling', 'activity'])],
             'search' => ['nullable', 'string', 'max:120'],
             'type' => ['nullable', 'string', Rule::in([
                 'price_spike',
@@ -42,6 +44,7 @@ class InsightsFilterRequest extends FormRequest
     {
         return [
             'search.max' => 'Search terms must be 120 characters or fewer.',
+            'group.in' => 'Select a valid research filter.',
             'type.in' => 'Select a valid insight type filter.',
         ];
     }

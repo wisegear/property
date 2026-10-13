@@ -45,11 +45,16 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
     </section>
 <div class="mx-auto max-w-7xl px-4 py-8">
 
+    <aside class="mb-6 rounded-sm border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-zinc-700">
+        <p class="font-semibold text-zinc-900">Check the evidence before drawing conclusions</p>
+        <p class="mt-1">Recent registrations can be incomplete. Fewer recorded sales do not prove weaker demand, and median price changes may reflect a different mix of homes sold. Compare the dates on each finding with the price and sales history below. Data completeness has not been assessed for this area.</p>
+    </aside>
+
     <section class="rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between gap-3">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Current Insights</p>
-                <h2 class="mt-2 text-xl font-semibold text-zinc-900">Signals currently stored for {{ $sector }}</h2>
+                <h2 class="mt-2 text-xl font-semibold text-zinc-900">Findings to investigate in {{ $sector }}</h2>
             </div>
             <a href="{{ route('insights.index') }}" class="text-sm font-medium text-lime-700 hover:text-lime-600">Back to insights</a>
         </div>
@@ -67,7 +72,11 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
                         </div>
                     </div>
 
-                    <p class="mt-4 text-sm leading-6 text-zinc-700">{{ $insight->insight_text }}</p>
+                    <p class="mt-4 text-sm leading-6 text-zinc-700">{{ $insight->researchFinding() }}</p>
+                    <details class="mt-3 text-sm leading-6 text-zinc-600">
+                        <summary class="cursor-pointer">Original signal explanation</summary>
+                        <p class="mt-2">{{ $insight->insight_text }}</p>
+                    </details>
                 </article>
             @empty
                 <div class="rounded-sm border border-dashed border-zinc-300 bg-zinc-50 px-5 py-6 text-sm text-zinc-600">
@@ -79,7 +88,7 @@ Explore property price trends and sales activity in postcode sector {{ $sector }
 
     <section class="mt-8 rounded-sm border border-zinc-200 bg-white p-6 shadow-sm">
         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">Insight Trigger</p>
-        <h2 class="mt-2 text-xl font-semibold text-zinc-900">Rolling 12-Month Price Change That Triggered Insight</h2>
+        <h2 class="mt-2 text-xl font-semibold text-zinc-900">Rolling 12-Month Price Comparison</h2>
 
         @if ($recentPriceChange)
             <div class="mt-5 grid gap-4 md:grid-cols-3">

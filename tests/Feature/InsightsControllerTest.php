@@ -10,6 +10,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 class InsightsControllerTest extends TestCase
@@ -27,9 +28,8 @@ class InsightsControllerTest extends TestCase
 
         $routeResponse->assertOk();
         $routeResponse->assertViewIs('insights.index');
-        $routeResponse->assertSee('Stored insights by type');
-        $routeResponse->assertSee('Signal Mix');
-        $routeResponse->assertSee('insight-type-count-chart', false);
+        $routeResponse->assertSee('Places worth investigating');
+        $routeResponse->assertDontSee('insight-type-count-chart', false);
         $routeResponse->assertViewHas('query', function ($query): bool {
             if (! $query instanceof LengthAwarePaginator) {
                 return false;
@@ -85,11 +85,7 @@ class InsightsControllerTest extends TestCase
                 && $items[1]->area_code === 'CITY1';
         });
         $routeResponse->assertSee('search=city', false);
-        $routeResponse->assertViewHas('insightTypeCounts', function (array $counts): bool {
-            return $counts['price_spike'] === 0
-                && $counts['demand_collapse'] === 26
-                && $counts['price_collapse'] === 0;
-        });
+
     }
 
     public function test_search_filters_by_insight_type(): void
@@ -138,6 +134,7 @@ class InsightsControllerTest extends TestCase
     public function test_insights_index_view_renders_requested_listing_fields(): void
     {
         $view = $this->view('insights.index', [
+            'errors' => new ViewErrorBag,
             'query' => new LengthAwarePaginator([
                 MarketInsight::make([
                     'area_code' => 'Manchester',
@@ -178,34 +175,49 @@ class InsightsControllerTest extends TestCase
                 'unexpected_hotspot' => 0,
             ],
         ]);
-        $rendered = (string) $view;
-
-        $view->assertSee('Property Market Insights');
-        $view->assertSee('/insights/search', false);
-        $view->assertSee('Filter insights');
-        $view->assertSee('Stored insights by type');
-        $view->assertSee('Signal Mix');
-        $view->assertSee('insight-type-count-chart', false);
-        $view->assertSee('Price Spike');
-        $view->assertSee('Price Collapse');
-        $view->assertSee('Demand Collapse');
-        $view->assertSee('Liquidity Stress');
-        $view->assertSee('Liquidity Surge');
-        $view->assertSee('Market Freeze');
-        $view->assertSee('Sector Outperformance');
-        $view->assertSee('Momentum Reversal');
-        $view->assertSee('Unexpected Hotspot');
-        $view->assertSee('Most transactions');
-        $view->assertSee('Rolling Period');
+        $view->assertSee('Places worth investigating');
         $view->assertSee('Manchester');
-        $view->assertSee('Price acceleration');
-        $view->assertSee('Prices increased 21% year-on-year based on 142 sales.');
-        $view->assertSee('01 Jan 2025');
-        $view->assertSee('31 Dec 2025');
         $view->assertSee('142');
+        $view->assertSee('01 Jan 2025');
+        $view->assertSee('What to investigate next');
+        $view->assertSee('Data completeness has not been assessed');
         $view->assertSee(route('insights.show', ['sector' => 'manchester']), false);
-        $this->assertStringContainsString('min-h-[240px]', $rendered);
-        $this->assertStringNotContainsString('line-clamp-2', $rendered);
+    }
+
+    public function test_latest_period_combines_related_signals_and_excludes_historical_matches(): void
+    {
+        $this->insertInsight('B12', 'demand_collapse', 'Current activity', '2026-03-09 12:00:00', 49, -69);
+        $this->insertInsight('B12', 'market_freeze', 'Same activity', '2026-03-09 12:00:00', 49, -69);
+        $this->insertInsight('B12', 'price_spike', 'Historical price rise', '2026-03-09 12:00:00');
+        MarketInsight::query()->where('insight_type', 'price_spike')->update(['period_end' => '2025-11-30']);
+
+        $this->get('/insights')->assertOk()->assertViewHas('query', function ($areas): bool {
+            return $areas->total() === 1 && $areas->first()->latestSignals->count() === 2;
+        });
+        $this->get('/insights?group=rising')->assertOk()->assertViewHas('query', fn ($areas): bool => $areas->total() === 0);
+        $this->get('/insights?group=activity')->assertOk()->assertViewHas('query', fn ($areas): bool => $areas->total() === 1);
+    }
+
+    public function test_search_normalizes_postcode_spacing_and_group_validation(): void
+    {
+        $this->insertInsight('AL69', 'liquidity_stress', 'Activity', '2026-03-09 12:00:00');
+        $this->get('/insights?search=al6%209')->assertOk()->assertViewHas('query', fn ($areas): bool => $areas->total() === 1);
+        $this->get('/insights?group=invalid')->assertSessionHasErrors('group');
+        $this->get('/insights?search=missing')->assertOk()->assertSee('No matching areas with stored signals');
+    }
+
+    public function test_pagination_counts_areas_instead_of_signals_and_preserves_filters(): void
+    {
+        for ($index = 0; $index < 21; $index++) {
+            $this->insertInsight('AREA'.$index, 'demand_collapse', 'Activity', '2026-03-09 12:00:00');
+            $this->insertInsight('AREA'.$index, 'market_freeze', 'Related activity', '2026-03-09 12:00:00');
+        }
+
+        $this->get('/insights?group=activity&search=AREA&sort=sector_desc')
+            ->assertOk()->assertViewHas('query', fn ($areas): bool => $areas->total() === 21 && $areas->count() === 20)
+            ->assertSee('group=activity', false)->assertSee('search=AREA', false);
+        $this->get('/insights?group=activity&search=AREA&sort=sector_desc&page=2')
+            ->assertOk()->assertViewHas('query', fn ($areas): bool => $areas->count() === 1 && $areas->first()->latestSignals->count() === 2);
     }
 
     public function test_show_normalizes_sector_and_returns_insights_with_historical_data(): void

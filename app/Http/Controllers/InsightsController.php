@@ -6,7 +6,6 @@ use App\Http\Requests\InsightsFilterRequest;
 use App\Models\MarketInsight;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -72,7 +71,7 @@ class InsightsController extends Controller
             'query' => $query,
             'insightTypes' => $this->insightTypes(),
             'insightDescriptions' => $this->insightDescriptions(),
-            'insightTypeCounts' => $this->insightTypeCounts($request),
+            'selectedGroup' => (string) $request->validated('group', ''),
             'lastRunAt' => $lastRunAt === null ? null : Carbon::parse($lastRunAt),
             'selectedType' => is_string($selectedType) ? $selectedType : '',
             'search' => $search,
@@ -88,17 +87,39 @@ class InsightsController extends Controller
         $driver = DB::getDriverName();
         $likeOperator = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
 
-        $query = MarketInsight::query()
-            ->when($type !== '', function (Builder $builder) use ($type) {
-                $builder->where('insight_type', $type);
-            })
-            ->when($search !== '', function (Builder $builder) use ($search, $likeOperator) {
-                $builder->where(function ($nestedQuery) use ($search, $likeOperator) {
-                    $nestedQuery
-                        ->where('area_code', $likeOperator, '%'.$search.'%')
-                        ->orWhere('insight_text', $likeOperator, '%'.$search.'%');
-                });
+        $latest = MarketInsight::query()
+            ->selectRaw('MAX(latest.period_end)')
+            ->from('market_insights as latest')
+            ->whereColumn('latest.area_code', 'market_insights.area_code');
+
+        $representatives = MarketInsight::query()
+            ->selectRaw('MIN(id)')
+            ->where('period_end', '=', $latest)
+            ->groupBy('area_code');
+
+        $query = MarketInsight::query()->whereIn('id', $representatives);
+        $group = (string) $request->validated('group', '');
+        $types = $type !== '' ? [$type] : (MarketInsight::SIGNAL_GROUPS[$group] ?? []);
+
+        if ($types !== [] || $search !== '') {
+            $query->whereExists(function ($matching) use ($types, $search, $likeOperator): void {
+                $matching->selectRaw('1')->from('market_insights as matching')
+                    ->whereColumn('matching.area_code', 'market_insights.area_code')
+                    ->whereColumn('matching.period_end', 'market_insights.period_end');
+
+                if ($types !== []) {
+                    $matching->whereIn('matching.insight_type', $types);
+                }
+
+                if ($search !== '') {
+                    $matching->where(function ($nested) use ($search, $likeOperator): void {
+                        $normalized = strtoupper(str_replace(' ', '', $search));
+                        $nested->whereRaw("UPPER(REPLACE(matching.area_code, ' ', '')) LIKE ?", ['%'.$normalized.'%'])
+                            ->orWhere('matching.insight_text', $likeOperator, '%'.$search.'%');
+                    });
+                }
             });
+        }
 
         switch ($sort) {
             case 'transactions_desc':
@@ -127,9 +148,17 @@ class InsightsController extends Controller
                 break;
         }
 
-        return $query
-            ->paginate(self::PER_PAGE)
-            ->appends($request->query());
+        $areas = $query->paginate(self::PER_PAGE)->appends($request->query());
+        $signals = MarketInsight::query()->whereIn('area_code', $areas->getCollection()->pluck('area_code'))
+            ->orderByDesc('id')->get()->groupBy('area_code');
+
+        foreach ($areas as $area) {
+            $area->setRelation('latestSignals', $signals->get($area->area_code, collect())
+                ->filter(fn (MarketInsight $signal): bool => $signal->period_end->equalTo($area->period_end))
+                ->unique('insight_type')->values());
+        }
+
+        return $areas;
     }
 
     protected function sortOption(InsightsFilterRequest $request): string
@@ -143,34 +172,5 @@ class InsightsController extends Controller
         ];
 
         return in_array($sort, $allowed, true) ? $sort : 'sector_asc';
-    }
-
-    /**
-     * @return array<string, int>
-     */
-    protected function insightTypeCounts(InsightsFilterRequest $request): array
-    {
-        $search = trim((string) $request->validated('search', ''));
-        $driver = DB::getDriverName();
-        $likeOperator = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
-        $counts = array_fill_keys(array_keys($this->insightTypes()), 0);
-
-        $rows = MarketInsight::query()
-            ->select('insight_type', DB::raw('COUNT(*) as aggregate'))
-            ->when($search !== '', function (Builder $builder) use ($search, $likeOperator) {
-                $builder->where(function ($nestedQuery) use ($search, $likeOperator) {
-                    $nestedQuery
-                        ->where('area_code', $likeOperator, '%'.$search.'%')
-                        ->orWhere('insight_text', $likeOperator, '%'.$search.'%');
-                });
-            })
-            ->groupBy('insight_type')
-            ->get();
-
-        foreach ($rows as $row) {
-            $counts[(string) $row->insight_type] = (int) $row->aggregate;
-        }
-
-        return $counts;
     }
 }
